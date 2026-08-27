@@ -1,4 +1,4 @@
-export function Logo({ className = '' }: { className?: string }) {
+export function Logo({ className = '', dark = false }: { className?: string, dark?: boolean }) {
   return (
     <svg viewBox="0 0 160 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
       {/* Huzalabs Three Lines Icon */}
@@ -9,7 +9,7 @@ export function Logo({ className = '' }: { className?: string }) {
       
       {/* Logo Text */}
       <text x="42" y="27" fontFamily="inherit" fontSize="22" fontWeight="800" letterSpacing="-0.5">
-        <tspan className="fill-gray-900">Huza</tspan>
+        <tspan className={dark ? "fill-white" : "fill-gray-900"}>Huza</tspan>
         <tspan className="fill-[#2ec440]">Estate</tspan>
       </text>
     </svg>

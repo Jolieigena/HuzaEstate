@@ -24,7 +24,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         {/* Top Right Photo Count Pill */}
         <div className="absolute top-3 right-3 bg-slate-900/40 backdrop-blur-sm rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-sm font-semibold border border-white/30">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          {Math.floor(Math.random() * 15) + 5}
+          {(property.title.length % 15) + 5}
         </div>
 
       </Link>
@@ -79,8 +79,8 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <div className="w-px h-3 bg-gray-300"></div>
           <div className="flex items-center gap-1.5">
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-            <span className="font-bold text-gray-900">{property.sqm * 10}</span>
-            <span className="text-gray-500">sqft</span>
+            <span className="font-bold text-gray-900">{property.sqm}</span>
+            <span className="text-gray-500">sqm</span>
           </div>
         </div>
 
