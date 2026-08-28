@@ -18,10 +18,7 @@ export default function Home() {
               <h1 className="text-[5rem] sm:text-[6rem] lg:text-[7rem] font-medium text-black leading-[1.05] tracking-tight drop-shadow-sm">
                 Find it. Tour it. Own it.
               </h1>
-              <div className="mt-10">
-                <SearchBar />
-              </div>
-              <div className="mt-6 flex items-center gap-4">
+              <div className="mt-10 flex items-center gap-4">
                 <Link href="/properties" className="bg-slate-900 hover:bg-[#2ec440] active:bg-[#2ec440] text-white px-8 py-4 text-[15px] font-bold inline-flex items-center gap-2 transition-all duration-300 rounded-full shadow-sm hover:-translate-y-0.5">
                   Browse Properties
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
