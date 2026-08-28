@@ -16,6 +16,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
 
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
@@ -54,34 +55,59 @@ export default function Navbar() {
           Post a property
         </Link>
 
-        {/* Profile Dropdown */}
-        <div className="relative hidden md:block ml-2">
-          <button
-            onClick={() => setProfileOpen(!profileOpen)}
-            className="block relative rounded-full overflow-hidden border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
-            title="Profile Menu"
-          >
-            <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="User Profile" fill className="object-cover" />
-          </button>
-          
-          {profileOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl transition-all duration-200 py-2">
-              <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                <div className="text-sm font-bold text-slate-900">Jane Doe</div>
-                <div className="text-xs text-slate-500">jane@example.com</div>
+        {/* Conditional Auth Actions */}
+        {isLoggedIn ? (
+          <div className="relative hidden md:block ml-2">
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="block relative rounded-full border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
+              title="Profile Menu"
+            >
+              <div className="absolute inset-0 rounded-full overflow-hidden">
+                <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="User Profile" fill className="object-cover rounded-full" />
               </div>
-              <Link href="/dashboard" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                My Dashboard
-              </Link>
-              <Link href="/dashboard?tab=saved" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Saved Homes
-              </Link>
-              <button onClick={() => setProfileOpen(false)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3">
-                Log out
-              </button>
-            </div>
-          )}
-        </div>
+            </button>
+            
+            {profileOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl transition-all duration-200 py-2">
+                <div className="px-4 py-2 border-b border-slate-50 mb-1">
+                  <div className="text-sm font-bold text-slate-900">Jane Doe</div>
+                  <div className="text-xs text-slate-500">jane@example.com</div>
+                </div>
+                <Link href="/dashboard" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  My Dashboard
+                </Link>
+                <Link href="/dashboard?tab=saved" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  Saved Homes
+                </Link>
+                <button 
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setIsLoggedIn(false);
+                  }} 
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="hidden md:flex items-center gap-2 ml-2">
+            <button 
+              onClick={() => setIsLoggedIn(true)}
+              className="text-slate-600 hover:text-slate-900 font-medium text-sm px-4 py-2.5 transition-all"
+            >
+              Sign In
+            </button>
+            <button 
+              onClick={() => setIsLoggedIn(true)}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all"
+            >
+              Sign Up
+            </button>
+          </div>
+        )}
 
         {/* Mobile Menu Toggle */}
         <button
