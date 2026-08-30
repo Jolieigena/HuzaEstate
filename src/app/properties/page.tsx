@@ -24,7 +24,7 @@ export type BoundingBox = { minLat: number; maxLat: number; minLng: number; maxL
 function PropertiesContent() {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState(searchParams.get('type') ?? 'all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'map' | 'grid'>('map');
   const [mapBoundingBox, setMapBoundingBox] = useState<BoundingBox | null>(null);

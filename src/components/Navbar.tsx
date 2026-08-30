@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
+import { useAuth } from '@/lib/auth-context';
 
 const NAV_LINKS = [
   { href: '/buy', label: 'Buy' },
@@ -16,7 +18,8 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const { isLoggedIn, logout } = useAuth();
+  const pathname = usePathname();
 
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
@@ -27,11 +30,22 @@ export default function Navbar() {
 
       {/* Center Navigation Links */}
       <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
-        {NAV_LINKS.map(link => (
-          <Link key={link.href} href={link.href} className="hover:text-slate-900 transition-colors">
-            {link.label}
-          </Link>
-        ))}
+        {NAV_LINKS.map(link => {
+          const isActive = pathname === link.href;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`relative py-2 transition-colors duration-200 active:text-[#2ec440] after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:bg-[#2ec440] after:transition-all after:duration-300 ${
+                isActive
+                  ? 'text-slate-900 font-semibold after:w-full'
+                  : 'hover:text-slate-900 after:w-0 hover:after:w-full'
+              }`}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Right Actions */}
@@ -77,8 +91,8 @@ export default function Navbar() {
                 <button 
                   onClick={() => {
                     setProfileOpen(false);
-                    setIsLoggedIn(false);
-                  }} 
+                    logout();
+                  }}
                   className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3"
                 >
                   Log out
@@ -116,34 +130,39 @@ export default function Navbar() {
       {/* Mobile Menu Drawer */}
       {menuOpen && (
         <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-lg flex flex-col px-6 py-4 gap-1">
-          {NAV_LINKS.map(link => (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={() => setMenuOpen(false)}
-              className="py-3 text-slate-700 font-semibold border-b border-slate-50 last:border-b-0"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {NAV_LINKS.map(link => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className={`py-3 px-2 -mx-2 rounded-lg font-semibold border-b border-slate-50 last:border-b-0 transition-colors duration-150 active:bg-slate-100 ${
+                  isActive ? 'text-[#2ec440]' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             href="/properties"
             onClick={() => setMenuOpen(false)}
-            className="mt-3 text-center bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full"
+            className="mt-3 text-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
             Browse Properties
           </Link>
           <Link
             href="/post-property"
             onClick={() => setMenuOpen(false)}
-            className="mt-2 text-center bg-slate-900 text-white font-semibold text-sm px-5 py-3 rounded-full"
+            className="mt-2 text-center bg-slate-900 hover:bg-[#2ec440] active:bg-[#28b039] text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
             Post a property
           </Link>
           <Link
             href="/dashboard"
             onClick={() => setMenuOpen(false)}
-            className="mt-2 text-center border border-slate-200 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full"
+            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
             My Dashboard
           </Link>

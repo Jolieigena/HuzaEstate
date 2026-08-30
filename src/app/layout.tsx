@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import ConditionalFooter from "@/components/ConditionalFooter";
+import { AuthProvider } from "@/lib/auth-context";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -25,11 +26,13 @@ export default function RootLayout({
       <body
         className={`${nunitoSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
-        <Navbar />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <main className="flex-grow">
+            {children}
+          </main>
+          <ConditionalFooter />
+        </AuthProvider>
       </body>
     </html>
   );

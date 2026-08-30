@@ -1,9 +1,22 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { Logo } from '@/components/Logo';
+import { useAuth } from '@/lib/auth-context';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    login();
+    router.push('/dashboard');
+  };
+
   return (
     <div className="min-h-screen flex bg-white">
       {/* Left Side: Image */}
@@ -28,7 +41,7 @@ export default function LoginPage() {
           <h1 className="text-3xl font-black text-slate-900 mb-2">Welcome back</h1>
           <p className="text-slate-500 mb-8">Please enter your details to sign in.</p>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
               <input 

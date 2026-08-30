@@ -1,8 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import PropertyCard from '@/components/PropertyCard';
+import { mockProperties } from '@/lib/data';
 
 export default function RentPage() {
+  const featuredRentals = mockProperties.filter(property => property.type === 'rent');
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -21,19 +25,21 @@ export default function RentPage() {
           <p className="text-xl text-slate-200 max-w-2xl mx-auto mb-12 font-medium">Discover premium apartments and homes for rent with verified landlords and zero hassle.</p>
           
           {/* Search Bar */}
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center gap-3 shadow-2xl">
+          <form action="/properties" method="GET" className="max-w-3xl mx-auto bg-white rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center gap-3 shadow-2xl">
+            <input type="hidden" name="type" value="rent" />
             <div className="flex-grow flex items-center px-4 w-full sm:w-auto">
               <svg className="w-6 h-6 text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
+                name="q"
                 placeholder="Search by neighborhood, city, or zip code"
                 className="w-full bg-transparent border-none focus:outline-none text-slate-900 text-lg py-2 font-medium placeholder:font-normal"
               />
             </div>
-            <Link href="/properties?type=rent" className="w-full sm:w-auto bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 px-10 rounded-xl transition-colors whitespace-nowrap">
+            <button type="submit" className="w-full sm:w-auto bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 px-10 rounded-xl transition-colors whitespace-nowrap">
               Search Rentals
-            </Link>
-          </div>
+            </button>
+          </form>
         </div>
       </section>
 
@@ -86,6 +92,28 @@ export default function RentPage() {
             </div>
           </Link>
 
+        </div>
+      </section>
+
+      {/* Featured Rentals */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Rentals available now</h2>
+            <p className="text-slate-500 text-lg">A sample of what&apos;s currently available to rent across Rwanda.</p>
+          </div>
+          <Link
+            href="/properties?type=rent"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-6 py-3 rounded-full transition-all self-start sm:self-auto"
+          >
+            <span>View all rentals</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {featuredRentals.map(property => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
         </div>
       </section>
 

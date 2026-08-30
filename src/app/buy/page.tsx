@@ -1,8 +1,12 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import PropertyCard from '@/components/PropertyCard';
+import { mockProperties } from '@/lib/data';
 
 export default function BuyPage() {
+  const featuredForSale = mockProperties.filter(property => property.type === 'sale').slice(0, 3);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -21,19 +25,21 @@ export default function BuyPage() {
           <p className="text-xl text-slate-200 max-w-2xl mx-auto mb-12 font-medium">Discover the most exclusive properties for sale across Rwanda. Start your journey here.</p>
           
           {/* Search Bar */}
-          <div className="max-w-3xl mx-auto bg-white rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center gap-3 shadow-2xl">
+          <form action="/properties" method="GET" className="max-w-3xl mx-auto bg-white rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center gap-3 shadow-2xl">
+            <input type="hidden" name="type" value="sale" />
             <div className="flex-grow flex items-center px-4 w-full sm:w-auto">
               <svg className="w-6 h-6 text-slate-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-              <input 
-                type="text" 
+              <input
+                type="text"
+                name="q"
                 placeholder="Search by neighborhood, city, or zip code"
                 className="w-full bg-transparent border-none focus:outline-none text-slate-900 text-lg py-2 font-medium placeholder:font-normal"
               />
             </div>
-            <Link href="/properties" className="w-full sm:w-auto bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 px-10 rounded-xl transition-colors whitespace-nowrap">
+            <button type="submit" className="w-full sm:w-auto bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 px-10 rounded-xl transition-colors whitespace-nowrap">
               Search Homes
-            </Link>
-          </div>
+            </button>
+          </form>
         </div>
       </section>
 
@@ -42,8 +48,8 @@ export default function BuyPage() {
         <div className="grid md:grid-cols-3 gap-6">
           
           {/* Category 1 */}
-          <Link href="/properties" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
-            <Image 
+          <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
+            <Image
               src="https://images.unsplash.com/photo-1613490908592-fd5e6f520c4c?q=80&w=800&auto=format&fit=crop"
               alt="Luxury Villas"
               fill
@@ -57,8 +63,8 @@ export default function BuyPage() {
           </Link>
 
           {/* Category 2 */}
-          <Link href="/properties" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
-            <Image 
+          <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
+            <Image
               src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop"
               alt="City Apartments"
               fill
@@ -72,8 +78,8 @@ export default function BuyPage() {
           </Link>
 
           {/* Category 3 */}
-          <Link href="/properties" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
-            <Image 
+          <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
+            <Image
               src="https://images.unsplash.com/photo-1576941089067-2de3c901e126?q=80&w=800&auto=format&fit=crop"
               alt="Family Homes"
               fill
@@ -86,6 +92,45 @@ export default function BuyPage() {
             </div>
           </Link>
 
+        </div>
+      </section>
+
+      {/* Featured Homes for Sale */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Homes for sale right now</h2>
+            <p className="text-slate-500 text-lg">A sample of what&apos;s currently listed across Rwanda.</p>
+          </div>
+          <Link
+            href="/properties?type=sale"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-6 py-3 rounded-full transition-all self-start sm:self-auto"
+          >
+            <span>View all for-sale homes</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {featuredForSale.map(property => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
+        </div>
+      </section>
+
+      {/* Mortgage Cross-Sell */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
+        <div className="bg-slate-900 rounded-3xl p-10 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div>
+            <h3 className="text-2xl font-bold text-white mb-2">Not sure what you can afford?</h3>
+            <p className="text-slate-300">Estimate your monthly payment with our mortgage calculator before you start touring homes.</p>
+          </div>
+          <Link
+            href="/mortgages"
+            className="inline-flex items-center gap-2 bg-white hover:bg-[#2ec440] hover:text-white text-slate-900 font-bold px-8 py-3.5 rounded-xl transition-colors whitespace-nowrap"
+          >
+            Calculate my mortgage
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </Link>
         </div>
       </section>
 
@@ -122,7 +167,7 @@ export default function BuyPage() {
                 </li>
               </ul>
               
-              <Link href="/properties" className="inline-flex items-center gap-2 font-bold text-slate-900 hover:text-[#2ec440] transition-colors group">
+              <Link href="/properties?type=sale" className="inline-flex items-center gap-2 font-bold text-slate-900 hover:text-[#2ec440] transition-colors group">
                 Start browsing properties
                 <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
               </Link>
@@ -131,7 +176,7 @@ export default function BuyPage() {
             <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
               <Image 
                 src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop"
-                alt="Happy Homeowner"
+                alt="Happy Owner"
                 fill
                 className="object-cover"
               />
