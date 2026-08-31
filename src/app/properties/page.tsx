@@ -10,8 +10,10 @@ function PropertiesContent() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
   const [filterType, setFilterType] = useState(searchParams.get('type') ?? 'all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
   const [bedsFilter, setBedsFilter] = useState('all');
+  const [isPriceOpen, setIsPriceOpen] = useState(false);
+  const [customMinPrice, setCustomMinPrice] = useState('');
+  const [customMaxPrice, setCustomMaxPrice] = useState('');
 
   const filteredProperties = mockProperties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -21,10 +23,8 @@ function PropertiesContent() {
     const matchesPropType = propertyTypeFilter === 'all' || property.propertyType === propertyTypeFilter.toLowerCase();
     
     let matchesPrice = true;
-    if (priceFilter === 'under100') matchesPrice = property.price < 100000;
-    else if (priceFilter === '100-300') matchesPrice = property.price >= 100000 && property.price <= 300000;
-    else if (priceFilter === '300-500') matchesPrice = property.price > 300000 && property.price <= 500000;
-    else if (priceFilter === 'over500') matchesPrice = property.price > 500000;
+    if (customMinPrice) matchesPrice = matchesPrice && property.price >= Number(customMinPrice);
+    if (customMaxPrice) matchesPrice = matchesPrice && property.price <= Number(customMaxPrice);
 
     let matchesBeds = true;
     if (bedsFilter !== 'all') matchesBeds = property.bedrooms >= parseInt(bedsFilter);
@@ -69,20 +69,58 @@ function PropertiesContent() {
                 <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
               </div>
 
-              {/* Price dropdown */}
+              {/* Price Filter */}
               <div className="relative">
-                <select 
-                  value={priceFilter}
-                  onChange={(e) => setPriceFilter(e.target.value)}
-                  className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                <button 
+                  onClick={() => setIsPriceOpen(!isPriceOpen)}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
-                  <option value="all">Any Price</option>
-                  <option value="under100">Under $100k</option>
-                  <option value="100-300">$100k - $300k</option>
-                  <option value="300-500">$300k - $500k</option>
-                  <option value="over500">Over $500k</option>
-                </select>
-                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                  {customMinPrice || customMaxPrice ? `Price: $${customMinPrice || '0'} - $${customMaxPrice || 'Any'}` : 'Any Price'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+
+                {isPriceOpen && (
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-5 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-3 text-[15px]">Price Range</h3>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
+                        <input 
+                          type="number" 
+                          placeholder="Min"
+                          value={customMinPrice}
+                          onChange={(e) => setCustomMinPrice(e.target.value)}
+                          className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                        />
+                      </div>
+                      <span className="text-slate-400 font-medium">-</span>
+                      <div className="flex-1 relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
+                        <input 
+                          type="number" 
+                          placeholder="Max"
+                          value={customMaxPrice}
+                          onChange={(e) => setCustomMaxPrice(e.target.value)}
+                          className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <button 
+                        onClick={() => { setCustomMinPrice(''); setCustomMaxPrice(''); }}
+                        className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px]"
+                      >
+                        Reset
+                      </button>
+                      <button 
+                        onClick={() => setIsPriceOpen(false)}
+                        className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Beds & Baths dropdown */}
@@ -165,7 +203,7 @@ function PropertiesContent() {
             <h3 className="text-2xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">Try changing or removing some of your filters.</p>
             <button
-              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); setPriceFilter('all'); setBedsFilter('all'); }}
+              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); setCustomMinPrice(''); setCustomMaxPrice(''); setBedsFilter('all'); }}
               className="bg-[#2ec440] hover:bg-[#28b039] text-white font-bold py-2.5 px-6 rounded-full transition-colors shadow-sm"
             >
               Clear all filters
