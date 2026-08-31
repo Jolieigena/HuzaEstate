@@ -80,9 +80,23 @@ function PropertiesContent() {
                 </button>
 
                 {isPriceOpen && (
-                  <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-5 z-50 w-72">
-                    <h3 className="font-bold text-slate-900 mb-3 text-[15px]">Price Range</h3>
-                    <div className="flex items-center gap-3">
+                  <div className="absolute top-full left-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-2 px-2 text-[15px]">Price Range</h3>
+                    
+                    {/* Presets List */}
+                    <div className="flex flex-col gap-0.5 mb-4">
+                      <button onClick={() => { setCustomMinPrice(''); setCustomMaxPrice(''); setIsPriceOpen(false); }} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">Any Price</button>
+                      <button onClick={() => { setCustomMinPrice(''); setCustomMaxPrice('100000'); setIsPriceOpen(false); }} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">Under $100k</button>
+                      <button onClick={() => { setCustomMinPrice('100000'); setCustomMaxPrice('300000'); setIsPriceOpen(false); }} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">$100k - $300k</button>
+                      <button onClick={() => { setCustomMinPrice('300000'); setCustomMaxPrice('500000'); setIsPriceOpen(false); }} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">$300k - $500k</button>
+                      <button onClick={() => { setCustomMinPrice('500000'); setCustomMaxPrice(''); setIsPriceOpen(false); }} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">Over $500k</button>
+                    </div>
+
+                    <div className="w-full h-px bg-slate-100 mb-4"></div>
+
+                    {/* Custom Range */}
+                    <h4 className="font-bold text-slate-900 mb-2 px-2 text-[13px] uppercase tracking-wider">Custom</h4>
+                    <div className="flex items-center gap-3 px-2">
                       <div className="flex-1 relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
                         <input 
@@ -105,10 +119,10 @@ function PropertiesContent() {
                         />
                       </div>
                     </div>
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex gap-2 px-2">
                       <button 
                         onClick={() => { setCustomMinPrice(''); setCustomMaxPrice(''); }}
-                        className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px]"
+                        className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200"
                       >
                         Reset
                       </button>
