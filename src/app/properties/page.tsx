@@ -160,7 +160,7 @@ function PropertiesContent() {
                   onChange={(e) => setPropertyTypeFilter(e.target.value)}
                   className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
                 >
-                  <option value="all">Home Type</option>
+                  <option value="all">Type</option>
                   <option value="House">Houses</option>
                   <option value="Apartment">Apartments</option>
                   <option value="Land">Land</option>
