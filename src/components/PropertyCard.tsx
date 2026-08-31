@@ -8,8 +8,8 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   return (
-    <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-5 hover:shadow-xl transition-shadow duration-300">
-      <Link href={`/properties/${property.id}`} className="block relative w-full h-[220px] sm:h-[240px] rounded-2xl overflow-visible mb-4 group">
+    <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300">
+      <Link href={`/properties/${property.id}`} className="block relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
         {/* Main Image */}
         <div className="relative w-full h-full rounded-2xl overflow-hidden">
           <Image
@@ -84,9 +84,17 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
         </div>
 
-        {/* Address */}
-        <div className="text-[14.5px] text-gray-500 leading-snug mt-1 line-clamp-1">
-          {property.location}, {property.city}
+        {/* Address and Description */}
+        <div className="mt-1 flex flex-col gap-1">
+          <div className="text-[14.5px] font-medium text-slate-800 leading-snug truncate">
+            {property.title}
+          </div>
+          <div className="text-[14px] text-slate-500 leading-snug truncate">
+            {property.location}, {property.city}
+          </div>
+          <div className="text-[13px] text-slate-400 leading-snug line-clamp-1">
+            {property.description}
+          </div>
         </div>
 
         {/* Footer */}
