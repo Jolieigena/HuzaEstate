@@ -61,7 +61,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             {/* Sub Image 1 */}
             <div className="relative h-full w-full group cursor-pointer">
               <Image 
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop" 
+                src="https://images.unsplash.com/photo-puk9ju-kWHI?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 1"
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -72,7 +72,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             {/* Sub Image 2 */}
             <div className="relative h-full w-full group cursor-pointer">
               <Image 
-                src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?q=80&w=800&auto=format&fit=crop" 
+                src="https://images.unsplash.com/photo-WaC-JFfF21M?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 2"
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -83,7 +83,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             {/* Sub Image 3 */}
             <div className="relative h-full w-full group cursor-pointer">
               <Image 
-                src="https://images.unsplash.com/photo-1600566752355-35792bedcfea?q=80&w=800&auto=format&fit=crop" 
+                src="https://images.unsplash.com/photo-IPkPnaazXSY?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 3"
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -94,7 +94,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             {/* Sub Image 4 */}
             <div className="relative h-full w-full group cursor-pointer">
               <Image 
-                src="https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?q=80&w=800&auto=format&fit=crop" 
+                src="https://images.unsplash.com/photo-q6eSeT3euLU?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 4"
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"

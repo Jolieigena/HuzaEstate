@@ -13,7 +13,7 @@ export default function BuyPage() {
       <section className="relative pt-32 pb-40 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-40">
           <Image 
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-6vKo_e01VYY?q=80&w=2000&auto=format&fit=crop"
             alt="Luxury Home"
             fill
             className="object-cover"
@@ -50,7 +50,7 @@ export default function BuyPage() {
           {/* Category 1 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image
-              src="https://images.unsplash.com/photo-1613490908592-fd5e6f520c4c?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-U2Z0Da6KtpA?q=80&w=800&auto=format&fit=crop"
               alt="Luxury Villas"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -65,7 +65,7 @@ export default function BuyPage() {
           {/* Category 2 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
             <Image
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-24yvGQlBqXM?q=80&w=800&auto=format&fit=crop"
               alt="City Apartments"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -80,7 +80,7 @@ export default function BuyPage() {
           {/* Category 3 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image
-              src="https://images.unsplash.com/photo-1576941089067-2de3c901e126?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-Gq9DqlF2H7I?q=80&w=800&auto=format&fit=crop"
               alt="Family Homes"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -175,7 +175,7 @@ export default function BuyPage() {
             
             <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
               <Image 
-                src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=1000&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-NyUxn6DiEqQ?q=80&w=1000&auto=format&fit=crop"
                 alt="Happy Owner"
                 fill
                 className="object-cover"

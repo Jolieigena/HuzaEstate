@@ -22,7 +22,7 @@ export default function ContactPage() {
       {/* Left Side: Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1200&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo--kpThV2nkhM?q=80&w=1200&auto=format&fit=crop"
           alt="HuzaEstate Office"
           fill
           className="object-cover"

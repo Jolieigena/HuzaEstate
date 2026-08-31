@@ -9,42 +9,42 @@ export default function BlogPage() {
       title: "The Rise of Eco-Friendly Homes in Kigali",
       category: "Market Trends",
       date: "Oct 12, 2026",
-      image: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-WaC-JFfF21M?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 2,
       title: "5 Interior Design Trends Defining 2027",
       category: "Design",
       date: "Oct 08, 2026",
-      image: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-IPkPnaazXSY?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 3,
       title: "Understanding Mortgage Rates in Rwanda",
       category: "Finance",
       date: "Oct 01, 2026",
-      image: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-q6eSeT3euLU?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 4,
       title: "Nyarutarama Neighborhood Guide",
       category: "Neighborhoods",
       date: "Sep 28, 2026",
-      image: "https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-q8j5EmlOL1k?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 5,
       title: "How to Stage Your Home for a Quick Sale",
       category: "Selling",
       date: "Sep 20, 2026",
-      image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-CapqzCpuKQ0?q=80&w=800&auto=format&fit=crop",
     },
     {
       id: 6,
       title: "Investing in Commercial Real Estate vs Residential",
       category: "Investing",
       date: "Sep 15, 2026",
-      image: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-yTmUEouMVcY?q=80&w=800&auto=format&fit=crop",
     },
   ];
 
@@ -55,7 +55,7 @@ export default function BlogPage() {
       <section className="pt-8 px-6 sm:px-10 max-w-[1400px] mx-auto">
         <Link href="#" className="group relative block h-[600px] rounded-[2.5rem] overflow-hidden shadow-2xl">
           <Image 
-            src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-Wr6Vk7dEv54?q=80&w=2000&auto=format&fit=crop"
             alt="Featured Post"
             fill
             className="object-cover transition-transform duration-700 group-hover:scale-105"

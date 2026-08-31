@@ -40,6 +40,21 @@ const createPointIcon = () =>
     iconAnchor: [8, 8],
   });
 
+// Wraps a control so clicks/scrolls inside it never reach the underlying Leaflet map.
+// (React's synthetic onClick fires too late to stop Leaflet's own native container
+// listener, which is attached directly via addEventListener — this uses Leaflet's
+// own DomEvent utility, which is the mechanism its built-in controls rely on.)
+function MapOverlayControl({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ref.current) {
+      L.DomEvent.disableClickPropagation(ref.current);
+      L.DomEvent.disableScrollPropagation(ref.current);
+    }
+  }, []);
+  return <div ref={ref} className={className}>{children}</div>;
+}
+
 // Component to dynamically fit bounds when properties change
 function MapUpdater({ properties, viewMode, disableAutoPan }: { properties: Property[], viewMode?: 'map' | 'grid', disableAutoPan?: boolean }) {
   const map = useMap();
@@ -132,9 +147,13 @@ function MapInteractions({
     };
 
     const handleClick = (e: any) => {
-      if (modeRef.current === 'point') {
+      // A plain click on the map background (not while drawing or panning-search,
+      // and not on a marker/popup/control — those stop propagation before this fires)
+      // drops a search point right where the user clicked.
+      if (modeRef.current === 'none') {
         setPointCenter(e.latlng);
-        setMode('none');
+        setDrawnBounds(null);
+        notifyBounds(null);
         if (onPointSearchChangeRef.current) {
           onPointSearchChangeRef.current({ lat: e.latlng.lat, lng: e.latlng.lng, radiusKm: radiusKmRef.current });
         }
@@ -180,26 +199,23 @@ function MapInteractions({
   };
 
   useEffect(() => {
-    if (mode === 'draw' || mode === 'point') {
+    if (mode === 'draw') {
       map.getContainer().style.cursor = 'crosshair';
-      map.dragging.enable();
+      map.dragging.disable();
     } else {
       map.getContainer().style.cursor = '';
       map.dragging.enable();
-    }
-    if (mode === 'draw') {
-      map.dragging.disable();
     }
   }, [mode, map]);
 
   return (
     <>
       {/* Search as I move */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[400]">
+      <MapOverlayControl className="absolute top-4 left-1/2 -translate-x-1/2 z-[400]">
         <label className="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-md cursor-pointer border border-slate-100 hover:bg-slate-50 transition-colors">
-          <input 
-            type="checkbox" 
-            checked={mode === 'pan'} 
+          <input
+            type="checkbox"
+            checked={mode === 'pan'}
             onChange={(e) => {
               if (e.target.checked) {
                 setMode('pan');
@@ -215,30 +231,36 @@ function MapInteractions({
           />
           <span className="text-[13px] font-bold text-slate-700 whitespace-nowrap">Search as I move map</span>
         </label>
+      </MapOverlayControl>
+
+      {/* Hint + radius selector for click-to-search */}
+      <MapOverlayControl className="absolute top-16 left-1/2 -translate-x-1/2 z-[400] flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-md border border-slate-100">
+        {pointCenter ? (
+          <>
+            <span className="text-[12px] font-bold text-slate-700">Within</span>
+            <select
+              value={radiusKm}
+              onChange={(e) => setRadiusKm(Number(e.target.value))}
+              className="text-[12px] font-bold text-[#2ec440] bg-transparent focus:outline-none cursor-pointer"
+            >
+              <option value={1}>1 km</option>
+              <option value={3}>3 km</option>
+              <option value={5}>5 km</option>
+              <option value={10}>10 km</option>
+            </select>
+            <button onClick={clearPointSearch} className="text-slate-400 hover:text-red-500 transition-colors ml-1" title="Clear location search">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </>
+        ) : (
+          <span className="text-[12px] font-bold text-slate-500 whitespace-nowrap">Click anywhere on the map to search that area</span>
+        )}
       </div>
 
-      {/* Radius selector for click-to-search */}
-      {pointCenter && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[400] flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-md border border-slate-100">
-          <span className="text-[12px] font-bold text-slate-700">Within</span>
-          <select
-            value={radiusKm}
-            onChange={(e) => setRadiusKm(Number(e.target.value))}
-            className="text-[12px] font-bold text-[#2ec440] bg-transparent focus:outline-none cursor-pointer"
-          >
-            <option value={1}>1 km</option>
-            <option value={3}>3 km</option>
-            <option value={5}>5 km</option>
-            <option value={10}>10 km</option>
-          </select>
-        </div>
-      )}
-
-      {/* Draw / Point-search Buttons */}
-      <div className="absolute top-20 left-4 z-[400] flex flex-col gap-2">
+      {/* Draw Button */}
+      <div className="absolute top-28 left-4 z-[400] flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
+          onClick={() => {
             if (mode === 'draw') {
               setMode('none');
             } else {
@@ -255,39 +277,12 @@ function MapInteractions({
         </button>
         {drawnBounds && mode !== 'draw' && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
+            onClick={() => {
               setDrawnBounds(null);
               notifyBoundsImmediate(null);
             }}
             className="w-[42px] h-[42px] bg-white text-red-500 rounded-full shadow-md flex items-center justify-center hover:bg-red-50 transition-all"
             title="Clear Area"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-          </button>
-        )}
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (mode === 'point') {
-              setMode('none');
-            } else {
-              setMode('point');
-              setDrawnBounds(null);
-              notifyBoundsImmediate(null);
-            }
-          }}
-          className={`w-[42px] h-[42px] rounded-full shadow-md flex items-center justify-center transition-all ${mode === 'point' ? 'bg-[#2ec440] text-white' : 'bg-white text-slate-700 hover:text-slate-900'}`}
-          title="Click on the map to search a location"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-        </button>
-        {pointCenter && mode !== 'point' && (
-          <button
-            onClick={(e) => { e.stopPropagation(); clearPointSearch(); }}
-            className="w-[42px] h-[42px] bg-white text-red-500 rounded-full shadow-md flex items-center justify-center hover:bg-red-50 transition-all"
-            title="Clear location search"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -319,8 +314,8 @@ function CustomMapControls() {
   return (
     <>
       {/* Top Left: Expand */}
-      <div className="absolute top-4 left-4 z-[400]">
-        <button 
+      <div className="absolute top-4 left-4 z-[400]" onClick={(e) => e.stopPropagation()}>
+        <button
           onClick={() => {
             const el = document.getElementById('map-container');
             if (el) {
@@ -338,14 +333,14 @@ function CustomMapControls() {
       </div>
 
       {/* Top Right: Layers */}
-      <div className="absolute top-4 right-4 z-[400]">
+      <div className="absolute top-4 right-4 z-[400]" onClick={(e) => e.stopPropagation()}>
         <button className="w-[42px] h-[42px] bg-white rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-slate-900 hover:scale-105 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
         </button>
       </div>
 
       {/* Bottom Right: Locate & Zoom */}
-      <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-3">
+      <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={() => {
             map.locate().on("locationfound", function (e) {
@@ -381,7 +376,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
   const [mapId, setMapId] = useState(0);
 
   // Interaction states
-  const [interactionMode, setInteractionMode] = useState<'none' | 'pan' | 'draw' | 'point'>('none');
+  const [interactionMode, setInteractionMode] = useState<'none' | 'pan' | 'draw'>('none');
   const [drawnBounds, setDrawnBounds] = useState<L.LatLngBounds | null>(null);
   const [pointCenter, setPointCenter] = useState<L.LatLng | null>(null);
   const [radiusKm, setRadiusKm] = useState(3);

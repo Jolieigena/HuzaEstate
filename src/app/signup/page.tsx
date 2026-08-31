@@ -22,7 +22,7 @@ export default function SignupPage() {
       {/* Left Side: Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image 
-          src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-24yvGQlBqXM?q=80&w=1200&auto=format&fit=crop"
           alt="Luxury Real Estate"
           fill
           className="object-cover"

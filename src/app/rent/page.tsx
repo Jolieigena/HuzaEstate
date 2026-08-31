@@ -13,7 +13,7 @@ export default function RentPage() {
       <section className="relative pt-32 pb-40 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-40">
           <Image 
-            src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-q8j5EmlOL1k?q=80&w=2000&auto=format&fit=crop"
             alt="Luxury Apartment"
             fill
             className="object-cover"
@@ -50,7 +50,7 @@ export default function RentPage() {
           {/* Category 1 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image 
-              src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-CapqzCpuKQ0?q=80&w=800&auto=format&fit=crop"
               alt="Studio Apartments"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -65,7 +65,7 @@ export default function RentPage() {
           {/* Category 2 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
             <Image 
-              src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-yTmUEouMVcY?q=80&w=800&auto=format&fit=crop"
               alt="Shared Homes"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -80,7 +80,7 @@ export default function RentPage() {
           {/* Category 3 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image 
-              src="https://images.unsplash.com/photo-1600607687931-cebf5f4bb59b?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-Wr6Vk7dEv54?q=80&w=800&auto=format&fit=crop"
               alt="Short Term"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -123,7 +123,7 @@ export default function RentPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
               <Image 
-                src="https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=1000&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-6vKo_e01VYY?q=80&w=1000&auto=format&fit=crop"
                 alt="Happy Renter"
                 fill
                 className="object-cover"
