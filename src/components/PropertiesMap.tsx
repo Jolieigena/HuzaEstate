@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Property } from '@/lib/data';
 import Link from 'next/link';
@@ -31,6 +31,15 @@ const createPriceIcon = (price: number) => {
   });
 };
 
+// Marker for a click-to-search point
+const createPointIcon = () =>
+  L.divIcon({
+    className: 'custom-point-marker',
+    html: `<div class="w-4 h-4 rounded-full bg-[#2ec440] border-2 border-white shadow-md"></div>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+
 // Component to dynamically fit bounds when properties change
 function MapUpdater({ properties, viewMode, disableAutoPan }: { properties: Property[], viewMode?: 'map' | 'grid', disableAutoPan?: boolean }) {
   const map = useMap();
@@ -56,8 +65,11 @@ function MapUpdater({ properties, viewMode, disableAutoPan }: { properties: Prop
   return null;
 }
 
-// Handles Map drawing and panning filters
-function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundingBoxChange }: any) {
+// Handles Map drawing, panning, and click-to-search filters
+function MapInteractions({
+  mode, setMode, drawnBounds, setDrawnBounds, onBoundingBoxChange,
+  pointCenter, setPointCenter, radiusKm, setRadiusKm, onPointSearchChange,
+}: any) {
   const map = useMap();
   const [startPt, setStartPt] = useState<L.LatLng | null>(null);
   const [endPt, setEndPt] = useState<L.LatLng | null>(null);
@@ -65,12 +77,16 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
   const modeRef = React.useRef(mode);
   const startPtRef = React.useRef(startPt);
   const endPtRef = React.useRef(endPt);
+  const radiusKmRef = React.useRef(radiusKm);
   const onBoundingBoxChangeRef = React.useRef(onBoundingBoxChange);
+  const onPointSearchChangeRef = React.useRef(onPointSearchChange);
 
   React.useEffect(() => { modeRef.current = mode; }, [mode]);
   React.useEffect(() => { startPtRef.current = startPt; }, [startPt]);
   React.useEffect(() => { endPtRef.current = endPt; }, [endPt]);
+  React.useEffect(() => { radiusKmRef.current = radiusKm; }, [radiusKm]);
   React.useEffect(() => { onBoundingBoxChangeRef.current = onBoundingBoxChange; }, [onBoundingBoxChange]);
+  React.useEffect(() => { onPointSearchChangeRef.current = onPointSearchChange; }, [onPointSearchChange]);
 
   React.useEffect(() => {
     const notifyBounds = (b: L.LatLngBounds | null) => {
@@ -115,18 +131,38 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
       }
     };
 
+    const handleClick = (e: any) => {
+      if (modeRef.current === 'point') {
+        setPointCenter(e.latlng);
+        setMode('none');
+        if (onPointSearchChangeRef.current) {
+          onPointSearchChangeRef.current({ lat: e.latlng.lat, lng: e.latlng.lng, radiusKm: radiusKmRef.current });
+        }
+      }
+    };
+
     map.on('moveend', handleMoveEnd);
     map.on('mousedown', handleMouseDown);
     map.on('mousemove', handleMouseMove);
     map.on('mouseup', handleMouseUp);
+    map.on('click', handleClick);
 
     return () => {
       map.off('moveend', handleMoveEnd);
       map.off('mousedown', handleMouseDown);
       map.off('mousemove', handleMouseMove);
       map.off('mouseup', handleMouseUp);
+      map.off('click', handleClick);
     };
-  }, [map, setDrawnBounds, setMode]);
+  }, [map, setDrawnBounds, setMode, setPointCenter]);
+
+  // Keep the point search in sync if the radius changes after a point is dropped
+  React.useEffect(() => {
+    if (pointCenter && onPointSearchChange) {
+      onPointSearchChange({ lat: pointCenter.lat, lng: pointCenter.lng, radiusKm });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pointCenter, radiusKm]);
 
   const notifyBoundsImmediate = (b: L.LatLngBounds | null) => {
     if (!b) {
@@ -138,13 +174,21 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
     }
   };
 
+  const clearPointSearch = () => {
+    setPointCenter(null);
+    if (onPointSearchChange) onPointSearchChange(null);
+  };
+
   useEffect(() => {
-    if (mode === 'draw') {
+    if (mode === 'draw' || mode === 'point') {
       map.getContainer().style.cursor = 'crosshair';
-      map.dragging.disable();
+      map.dragging.enable();
     } else {
       map.getContainer().style.cursor = '';
       map.dragging.enable();
+    }
+    if (mode === 'draw') {
+      map.dragging.disable();
     }
   }, [mode, map]);
 
@@ -160,28 +204,47 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
               if (e.target.checked) {
                 setMode('pan');
                 setDrawnBounds(null);
+                clearPointSearch();
                 notifyBoundsImmediate(map.getBounds());
               } else {
                 setMode('none');
                 notifyBoundsImmediate(null);
               }
-            }} 
-            className="accent-[#2ec440] w-4 h-4 cursor-pointer" 
+            }}
+            className="accent-[#2ec440] w-4 h-4 cursor-pointer"
           />
           <span className="text-[13px] font-bold text-slate-700 whitespace-nowrap">Search as I move map</span>
         </label>
       </div>
 
-      {/* Draw Button */}
+      {/* Radius selector for click-to-search */}
+      {pointCenter && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[400] flex items-center gap-2 bg-white px-3 py-2 rounded-full shadow-md border border-slate-100">
+          <span className="text-[12px] font-bold text-slate-700">Within</span>
+          <select
+            value={radiusKm}
+            onChange={(e) => setRadiusKm(Number(e.target.value))}
+            className="text-[12px] font-bold text-[#2ec440] bg-transparent focus:outline-none cursor-pointer"
+          >
+            <option value={1}>1 km</option>
+            <option value={3}>3 km</option>
+            <option value={5}>5 km</option>
+            <option value={10}>10 km</option>
+          </select>
+        </div>
+      )}
+
+      {/* Draw / Point-search Buttons */}
       <div className="absolute top-20 left-4 z-[400] flex flex-col gap-2">
-        <button 
-          onClick={(e) => { 
-            e.stopPropagation(); 
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
             if (mode === 'draw') {
               setMode('none');
             } else {
               setMode('draw');
               setDrawnBounds(null);
+              clearPointSearch();
               notifyBoundsImmediate(null);
             }
           }}
@@ -191,14 +254,40 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
         </button>
         {drawnBounds && mode !== 'draw' && (
-          <button 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              setDrawnBounds(null); 
-              notifyBoundsImmediate(null); 
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setDrawnBounds(null);
+              notifyBoundsImmediate(null);
             }}
             className="w-[42px] h-[42px] bg-white text-red-500 rounded-full shadow-md flex items-center justify-center hover:bg-red-50 transition-all"
             title="Clear Area"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        )}
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (mode === 'point') {
+              setMode('none');
+            } else {
+              setMode('point');
+              setDrawnBounds(null);
+              notifyBoundsImmediate(null);
+            }
+          }}
+          className={`w-[42px] h-[42px] rounded-full shadow-md flex items-center justify-center transition-all ${mode === 'point' ? 'bg-[#2ec440] text-white' : 'bg-white text-slate-700 hover:text-slate-900'}`}
+          title="Click on the map to search a location"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.243-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+        {pointCenter && mode !== 'point' && (
+          <button
+            onClick={(e) => { e.stopPropagation(); clearPointSearch(); }}
+            className="w-[42px] h-[42px] bg-white text-red-500 rounded-full shadow-md flex items-center justify-center hover:bg-red-50 transition-all"
+            title="Clear location search"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
@@ -211,6 +300,14 @@ function MapInteractions({ mode, setMode, drawnBounds, setDrawnBounds, onBoundin
       )}
       {drawnBounds && (
         <Rectangle bounds={drawnBounds} pathOptions={{ color: '#2ec440', weight: 2, fillOpacity: 0.1 }} />
+      )}
+
+      {/* Point-search visuals */}
+      {pointCenter && (
+        <>
+          <Circle center={pointCenter} radius={radiusKm * 1000} pathOptions={{ color: '#2ec440', weight: 2, fillOpacity: 0.12 }} />
+          <Marker position={pointCenter} icon={createPointIcon()} />
+        </>
       )}
     </>
   );
@@ -276,15 +373,18 @@ interface PropertiesMapProps {
   properties: Property[];
   viewMode?: 'map' | 'grid';
   onBoundingBoxChange?: (bbox: any) => void;
+  onPointSearchChange?: (point: { lat: number; lng: number; radiusKm: number } | null) => void;
 }
 
-export default function PropertiesMap({ properties, viewMode = 'map', onBoundingBoxChange }: PropertiesMapProps) {
+export default function PropertiesMap({ properties, viewMode = 'map', onBoundingBoxChange, onPointSearchChange }: PropertiesMapProps) {
   const [mounted, setMounted] = useState(false);
   const [mapId, setMapId] = useState(0);
-  
+
   // Interaction states
-  const [interactionMode, setInteractionMode] = useState<'none' | 'pan' | 'draw'>('none');
+  const [interactionMode, setInteractionMode] = useState<'none' | 'pan' | 'draw' | 'point'>('none');
   const [drawnBounds, setDrawnBounds] = useState<L.LatLngBounds | null>(null);
+  const [pointCenter, setPointCenter] = useState<L.LatLng | null>(null);
+  const [radiusKm, setRadiusKm] = useState(3);
 
   useEffect(() => {
     setMounted(true);
@@ -315,14 +415,19 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         
-        <MapUpdater properties={properties} viewMode={viewMode} disableAutoPan={interactionMode !== 'none' || drawnBounds !== null} />
+        <MapUpdater properties={properties} viewMode={viewMode} disableAutoPan={interactionMode !== 'none' || drawnBounds !== null || pointCenter !== null} />
         <CustomMapControls />
-        <MapInteractions 
+        <MapInteractions
           mode={interactionMode}
           setMode={setInteractionMode}
           drawnBounds={drawnBounds}
           setDrawnBounds={setDrawnBounds}
           onBoundingBoxChange={onBoundingBoxChange}
+          pointCenter={pointCenter}
+          setPointCenter={setPointCenter}
+          radiusKm={radiusKm}
+          setRadiusKm={setRadiusKm}
+          onPointSearchChange={onPointSearchChange}
         />
 
         {validProperties.map((property) => (

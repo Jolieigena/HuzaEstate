@@ -370,16 +370,6 @@ export default function ManagerDashboard() {
           {/* Sidebar Navigation */}
           <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-28 flex flex-col gap-2">
-              <div className="flex items-center gap-3 px-4 py-3 mb-2 rounded-xl bg-white border border-slate-100 shadow-sm">
-                <div className="w-10 h-10 rounded-full overflow-hidden relative flex-shrink-0">
-                  <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="Jane Doe" fill className="object-cover" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-bold text-slate-900 text-sm truncate">Jane Doe</div>
-                  <div className="text-xs text-slate-500 truncate">Property Owner</div>
-                </div>
-              </div>
-
               <nav className="flex flex-col gap-2">
                 {NAV_ITEMS.map(item => (
                   <button

@@ -20,6 +20,18 @@ const PropertiesMap = dynamic(() => import('@/components/PropertiesMap'), {
 });
 
 export type BoundingBox = { minLat: number; maxLat: number; minLng: number; maxLng: number };
+export type PointSearch = { lat: number; lng: number; radiusKm: number };
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
@@ -28,6 +40,7 @@ function PropertiesContent() {
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'map' | 'grid'>('map');
   const [mapBoundingBox, setMapBoundingBox] = useState<BoundingBox | null>(null);
+  const [pointSearch, setPointSearch] = useState<PointSearch | null>(null);
 
   const filteredProperties = mockProperties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -39,7 +52,10 @@ function PropertiesContent() {
       ? (property.lat! >= mapBoundingBox.minLat && property.lat! <= mapBoundingBox.maxLat &&
          property.lng! >= mapBoundingBox.minLng && property.lng! <= mapBoundingBox.maxLng)
       : true;
-    return matchesSearch && matchesType && matchesPropType && matchesBounds;
+    const matchesPoint = pointSearch
+      ? haversineKm(property.lat!, property.lng!, pointSearch.lat, pointSearch.lng) <= pointSearch.radiusKm
+      : true;
+    return matchesSearch && matchesType && matchesPropType && matchesBounds && matchesPoint;
   });
 
   return (
@@ -156,8 +172,8 @@ function PropertiesContent() {
               <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">No properties found</h3>
               <p className="text-slate-500">Try adjusting your search criteria or clear your filters.</p>
-              <button 
-                onClick={() => { setSearchTerm(''); setFilterType('all'); }}
+              <button
+                onClick={() => { setSearchTerm(''); setFilterType('all'); setMapBoundingBox(null); setPointSearch(null); }}
                 className="mt-6 text-[#2ec440] font-bold hover:underline"
               >
                 Clear all filters
@@ -170,10 +186,11 @@ function PropertiesContent() {
         <div className={`w-full lg:w-[45%] h-[calc(100vh-280px)] lg:h-[calc(100vh-140px)] rounded-2xl overflow-hidden sticky top-6 
           ${viewMode === 'map' ? 'block' : 'hidden'}
         `}>
-          <PropertiesMap 
-            properties={filteredProperties} 
-            viewMode={viewMode} 
+          <PropertiesMap
+            properties={filteredProperties}
+            viewMode={viewMode}
             onBoundingBoxChange={setMapBoundingBox}
+            onPointSearchChange={setPointSearch}
           />
         </div>
       </div>
