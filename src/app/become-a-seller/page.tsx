@@ -28,7 +28,7 @@ export default function BecomeASellerPage() {
       {/* Left Side: Image */}
       <div className="hidden lg:block lg:w-1/2 relative">
         <Image
-          src="https://images.unsplash.com/photo-puk9ju-kWHI?q=80&w=1200&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1577971132997-c10be9372519?q=80&w=1200&auto=format&fit=crop"
           alt="List your property with HuzaEstate"
           fill
           className="object-cover"

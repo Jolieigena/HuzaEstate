@@ -9,7 +9,7 @@ export default function PostPropertyPage() {
       <section className="relative pt-28 pb-20 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-30">
           <Image
-            src="https://images.unsplash.com/photo--kpThV2nkhM?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1694771169926-abc9a56508c1?q=80&w=2000&auto=format&fit=crop"
             alt="List your property"
             fill
             className="object-cover"

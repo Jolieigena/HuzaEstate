@@ -255,10 +255,10 @@ function MapInteractions({
         ) : (
           <span className="text-[12px] font-bold text-slate-500 whitespace-nowrap">Click anywhere on the map to search that area</span>
         )}
-      </div>
+      </MapOverlayControl>
 
       {/* Draw Button */}
-      <div className="absolute top-28 left-4 z-[400] flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+      <MapOverlayControl className="absolute top-28 left-4 z-[400] flex flex-col gap-2">
         <button
           onClick={() => {
             if (mode === 'draw') {
@@ -287,7 +287,7 @@ function MapInteractions({
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         )}
-      </div>
+      </MapOverlayControl>
 
       {/* Drawing visuals */}
       {startPt && endPt && mode === 'draw' && (
@@ -314,7 +314,7 @@ function CustomMapControls() {
   return (
     <>
       {/* Top Left: Expand */}
-      <div className="absolute top-4 left-4 z-[400]" onClick={(e) => e.stopPropagation()}>
+      <MapOverlayControl className="absolute top-4 left-4 z-[400]">
         <button
           onClick={() => {
             const el = document.getElementById('map-container');
@@ -330,17 +330,17 @@ function CustomMapControls() {
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>
         </button>
-      </div>
+      </MapOverlayControl>
 
       {/* Top Right: Layers */}
-      <div className="absolute top-4 right-4 z-[400]" onClick={(e) => e.stopPropagation()}>
+      <MapOverlayControl className="absolute top-4 right-4 z-[400]">
         <button className="w-[42px] h-[42px] bg-white rounded-full shadow-md flex items-center justify-center text-slate-700 hover:text-slate-900 hover:scale-105 transition-all">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
         </button>
-      </div>
+      </MapOverlayControl>
 
       {/* Bottom Right: Locate & Zoom */}
-      <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+      <MapOverlayControl className="absolute bottom-6 right-4 z-[400] flex flex-col gap-3">
         <button 
           onClick={() => {
             map.locate().on("locationfound", function (e) {
@@ -359,7 +359,7 @@ function CustomMapControls() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14"></path></svg>
           </button>
         </div>
-      </div>
+      </MapOverlayControl>
     </>
   );
 }
@@ -480,9 +480,6 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
             </Popup>
           </Marker>
         ))}
-        
-        <MapUpdater properties={properties} viewMode={viewMode} />
-        <CustomMapControls />
       </MapContainer>
       
       <style jsx global>{`
