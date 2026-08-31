@@ -45,6 +45,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
               src={property.imageUrl} 
               alt={property.title}
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               priority
             />
@@ -64,6 +65,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 src="https://images.unsplash.com/photo-1682773083924-6f0f5a700d8b?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 1"
                 fill
+                sizes="(max-width: 768px) 100vw, 25vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
@@ -75,6 +77,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 src="https://images.unsplash.com/photo-1756245994882-cf32d49fde5a?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 2"
                 fill
+                sizes="(max-width: 768px) 100vw, 25vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
@@ -86,6 +89,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 src="https://images.unsplash.com/photo-1609507315751-216f91bc8ffb?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 3"
                 fill
+                sizes="(max-width: 768px) 100vw, 25vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
@@ -97,6 +101,7 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
                 src="https://images.unsplash.com/photo-1682773083915-5375145f99e5?q=80&w=800&auto=format&fit=crop" 
                 alt="Property Detail 4"
                 fill
+                sizes="(max-width: 768px) 100vw, 25vw"
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
