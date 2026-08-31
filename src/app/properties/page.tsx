@@ -10,6 +10,8 @@ function PropertiesContent() {
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
   const [filterType, setFilterType] = useState(searchParams.get('type') ?? 'all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all');
+  const [bedsFilter, setBedsFilter] = useState('all');
 
   const filteredProperties = mockProperties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -18,7 +20,16 @@ function PropertiesContent() {
     const matchesType = filterType === 'all' || property.type === filterType;
     const matchesPropType = propertyTypeFilter === 'all' || property.propertyType === propertyTypeFilter.toLowerCase();
     
-    return matchesSearch && matchesType && matchesPropType;
+    let matchesPrice = true;
+    if (priceFilter === 'under100') matchesPrice = property.price < 100000;
+    else if (priceFilter === '100-300') matchesPrice = property.price >= 100000 && property.price <= 300000;
+    else if (priceFilter === '300-500') matchesPrice = property.price > 300000 && property.price <= 500000;
+    else if (priceFilter === 'over500') matchesPrice = property.price > 500000;
+
+    let matchesBeds = true;
+    if (bedsFilter !== 'all') matchesBeds = property.bedrooms >= parseInt(bedsFilter);
+    
+    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds;
   });
 
   return (
@@ -59,16 +70,36 @@ function PropertiesContent() {
               </div>
 
               {/* Price dropdown */}
-              <button className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all">
-                Price
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
+              <div className="relative">
+                <select 
+                  value={priceFilter}
+                  onChange={(e) => setPriceFilter(e.target.value)}
+                  className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                >
+                  <option value="all">Any Price</option>
+                  <option value="under100">Under $100k</option>
+                  <option value="100-300">$100k - $300k</option>
+                  <option value="300-500">$300k - $500k</option>
+                  <option value="over500">Over $500k</option>
+                </select>
+                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
 
               {/* Beds & Baths dropdown */}
-              <button className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all">
-                Beds & Baths
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-              </button>
+              <div className="relative">
+                <select 
+                  value={bedsFilter}
+                  onChange={(e) => setBedsFilter(e.target.value)}
+                  className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                >
+                  <option value="all">Any Beds</option>
+                  <option value="1">1+ beds</option>
+                  <option value="2">2+ beds</option>
+                  <option value="3">3+ beds</option>
+                  <option value="4">4+ beds</option>
+                </select>
+                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </div>
 
               {/* Home Type dropdown */}
               <div className="relative">
@@ -134,7 +165,7 @@ function PropertiesContent() {
             <h3 className="text-2xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">Try changing or removing some of your filters.</p>
             <button
-              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); }}
+              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); setPriceFilter('all'); setBedsFilter('all'); }}
               className="bg-[#2ec440] hover:bg-[#28b039] text-white font-bold py-2.5 px-6 rounded-full transition-colors shadow-sm"
             >
               Clear all filters
