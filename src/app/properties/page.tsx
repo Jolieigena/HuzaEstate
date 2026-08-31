@@ -14,6 +14,10 @@ function PropertiesContent() {
   const [isPriceOpen, setIsPriceOpen] = useState(false);
   const [customMinPrice, setCustomMinPrice] = useState('');
   const [customMaxPrice, setCustomMaxPrice] = useState('');
+  
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [minSqm, setMinSqm] = useState('');
+  const [maxSqm, setMaxSqm] = useState('');
 
   const filteredProperties = mockProperties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -28,8 +32,12 @@ function PropertiesContent() {
 
     let matchesBeds = true;
     if (bedsFilter !== 'all') matchesBeds = property.bedrooms >= parseInt(bedsFilter);
+
+    let matchesSqm = true;
+    if (minSqm) matchesSqm = matchesSqm && property.sqm >= Number(minSqm);
+    if (maxSqm) matchesSqm = matchesSqm && property.sqm <= Number(maxSqm);
     
-    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds;
+    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesSqm;
   });
 
   return (
@@ -169,10 +177,58 @@ function PropertiesContent() {
               </div>
 
               {/* More Filters button */}
-              <button className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                More
-              </button>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsMoreOpen(!isMoreOpen)}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                  {minSqm || maxSqm ? 'More (1)' : 'More'}
+                </button>
+
+                {isMoreOpen && (
+                  <div className="absolute top-full right-0 xl:left-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-5 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-4 text-[15px]">Square Meters (sqm)</h3>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 relative">
+                        <input 
+                          type="number" 
+                          placeholder="Min sqm"
+                          value={minSqm}
+                          onChange={(e) => setMinSqm(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                        />
+                      </div>
+                      <span className="text-slate-400 font-medium">-</span>
+                      <div className="flex-1 relative">
+                        <input 
+                          type="number" 
+                          placeholder="Max sqm"
+                          value={maxSqm}
+                          onChange={(e) => setMaxSqm(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex gap-2">
+                      <button 
+                        onClick={() => { setMinSqm(''); setMaxSqm(''); }}
+                        className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200"
+                      >
+                        Reset
+                      </button>
+                      <button 
+                        onClick={() => setIsMoreOpen(false)}
+                        className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
@@ -217,7 +273,7 @@ function PropertiesContent() {
             <h3 className="text-2xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">Try changing or removing some of your filters.</p>
             <button
-              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); setCustomMinPrice(''); setCustomMaxPrice(''); setBedsFilter('all'); }}
+              onClick={() => { setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all'); setCustomMinPrice(''); setCustomMaxPrice(''); setBedsFilter('all'); setMinSqm(''); setMaxSqm(''); }}
               className="bg-[#2ec440] hover:bg-[#28b039] text-white font-bold py-2.5 px-6 rounded-full transition-colors shadow-sm"
             >
               Clear all filters
