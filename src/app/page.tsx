@@ -5,6 +5,8 @@ import { mockProperties } from "@/lib/data";
 import Link from "next/link";
 import Image from "next/image";
 
+import AISearchBar from "@/components/AISearchBar";
+
 export default function Home() {
   const featuredProperties = mockProperties.slice(0, 3);
 
@@ -13,23 +15,19 @@ export default function Home() {
       {/* Hero Section */}
       <section className="w-full bg-white pt-12 md:pt-16 overflow-hidden">
         {/* Text Content (Constrained Width) */}
-        <div className="max-w-[1400px] mx-auto px-8 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-start">
-            <div className="md:w-3/5">
-              <h1 className="animate-fade-in-up text-[5rem] sm:text-[6rem] lg:text-[7rem] font-medium text-black leading-[1.05] tracking-tight drop-shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-8 relative z-20">
+          <div className="flex flex-col justify-start items-start">
+            <div className="w-full md:max-w-3xl">
+              <h1 className="animate-fade-in-up text-[4rem] sm:text-[5rem] lg:text-[6rem] font-medium text-black leading-[1.05] tracking-tight drop-shadow-sm mb-6">
                 Find it. Tour it. Own it.
               </h1>
-              <div className="animate-fade-in-up mt-10 flex items-center gap-4" style={{ animationDelay: "150ms" }}>
-                <Link href="/properties" className="bg-slate-900 hover:bg-[#2ec440] active:bg-[#2ec440] text-white px-8 py-4 text-[15px] font-bold inline-flex items-center gap-2 transition-all duration-300 rounded-full shadow-sm hover:-translate-y-0.5">
-                  Browse Properties
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-                </Link>
-              </div>
-            </div>
-            <div className="animate-fade-in-up md:w-1/3 mt-8 md:mt-6 text-gray-500 text-[17px] leading-relaxed max-w-sm" style={{ animationDelay: "300ms" }}>
-              <p>
-                With us you will find not just accommodation, but a place where your new life begins, full of cosiness and possibilities.
+              <p className="animate-fade-in-up text-gray-500 text-[18px] leading-relaxed max-w-xl mb-10" style={{ animationDelay: "150ms" }}>
+                With us you will find not just accommodation, but a place where your new life begins. Simply describe what you are looking for.
               </p>
+              
+              <div className="animate-fade-in-up w-full" style={{ animationDelay: "300ms" }}>
+                <AISearchBar />
+              </div>
             </div>
           </div>
         </div>
