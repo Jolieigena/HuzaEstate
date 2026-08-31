@@ -1,0 +1,1 @@
+const fs = require('fs'); let data = fs.readFileSync('src/lib/data.ts', 'utf8'); data = data.replace(/virtualTourUrl:[^,]+,\r?\n\s*/g, ''); data = data.replace(/(propertyType:\s*['"][^'"]+['"],)/g, '\\n    virtualTourUrl: \'https://my.matterport.com/show/?m=JGPnGQ6hosj\','); fs.writeFileSync('src/lib/data.ts', data);
