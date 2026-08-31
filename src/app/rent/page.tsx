@@ -13,7 +13,7 @@ export default function RentPage() {
       <section className="relative pt-32 pb-40 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-40">
           <Image 
-            src="https://images.unsplash.com/photo-1489493887464-892be6d1daae?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1756245994834-61974c290b61?q=80&w=2000&auto=format&fit=crop"
             alt="Luxury Apartment"
             fill
             className="object-cover"
@@ -50,7 +50,7 @@ export default function RentPage() {
           {/* Category 1 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image 
-              src="https://images.unsplash.com/photo-1667987566780-3b31fa5485c8?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1717960331841-a36791e8d2f5?q=80&w=800&auto=format&fit=crop"
               alt="Studio Apartments"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -65,7 +65,7 @@ export default function RentPage() {
           {/* Category 2 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
             <Image 
-              src="https://images.unsplash.com/photo-1607712617949-8c993d290809?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1756245994848-1eb2be3b9b63?q=80&w=800&auto=format&fit=crop"
               alt="Shared Homes"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -80,7 +80,7 @@ export default function RentPage() {
           {/* Category 3 */}
           <Link href="/properties?type=rent" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image 
-              src="https://images.unsplash.com/photo-1535759554012-8cbbc491f0b7?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1678225892688-e4a3bd3d9214?q=80&w=800&auto=format&fit=crop"
               alt="Short Term"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"

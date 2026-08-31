@@ -26,7 +26,7 @@ export default function MortgagesPage() {
       <section className="relative pt-24 pb-32 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-30">
           <Image 
-            src="https://images.unsplash.com/photo-1694771170304-42b0b9b8d80d?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1682773083912-ff5ee5fa557b?q=80&w=2000&auto=format&fit=crop"
             alt="Mortgage Consultation"
             fill
             className="object-cover"

@@ -21,7 +21,7 @@ export default function SellPage() {
       <section className="relative pt-32 pb-40 overflow-hidden bg-slate-900">
         <div className="absolute inset-0 opacity-40">
           <Image 
-            src="https://images.unsplash.com/photo-1605230521018-61f2095a762a?q=80&w=2000&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1689013398652-83eb10e8e9bd?q=80&w=2000&auto=format&fit=crop"
             alt="Luxury Home"
             fill
             className="object-cover"

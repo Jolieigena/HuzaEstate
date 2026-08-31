@@ -75,7 +75,7 @@ export default function ConsumerDashboard() {
       location: "Nyarutarama, Kigali",
       price: "$350,000",
       specs: "4 Beds • 4 Baths • 450 sqm",
-      image: "https://images.unsplash.com/photo-1694771170628-275b8df48171?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1678225892688-e4a3bd3d9214?q=80&w=800&auto=format&fit=crop",
       status: "For Sale"
     },
     {
@@ -84,7 +84,7 @@ export default function ConsumerDashboard() {
       location: "Kiyovu, Kigali",
       price: "$1,200/mo",
       specs: "2 Beds • 2 Baths • 120 sqm",
-      image: "https://images.unsplash.com/photo-1577971132997-c10be9372519?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1689013398652-83eb10e8e9bd?q=80&w=800&auto=format&fit=crop",
       status: "For Rent"
     },
     {
@@ -93,7 +93,7 @@ export default function ConsumerDashboard() {
       location: "Gacuriro, Kigali",
       price: "$280,000",
       specs: "3 Beds • 2 Baths • 320 sqm",
-      image: "https://images.unsplash.com/photo-1516426122078-c23e76319801?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1779900275257-aaadab6d9285?q=80&w=800&auto=format&fit=crop",
       status: "For Sale"
     },
     {
@@ -102,7 +102,7 @@ export default function ConsumerDashboard() {
       location: "Kimihurura, Kigali",
       price: "$2,500/mo",
       specs: "3 Beds • 3 Baths • 200 sqm",
-      image: "https://images.unsplash.com/photo-1489493887464-892be6d1daae?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1507427100689-2bf8574e32d4?q=80&w=800&auto=format&fit=crop",
       status: "For Rent"
     }
   ];
@@ -229,7 +229,7 @@ export default function ConsumerDashboard() {
                   {/* Property 1 */}
                   <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
                     <div className="relative h-56 overflow-hidden">
-                      <Image src="https://images.unsplash.com/photo-1667987566780-3b31fa5485c8?q=80&w=800&auto=format&fit=crop" alt="Active Lease" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image src="https://images.unsplash.com/photo-1720605739861-9f5110c7e529?q=80&w=800&auto=format&fit=crop" alt="Active Lease" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-[#2ec440]"></div>
                         Active Lease
@@ -254,7 +254,7 @@ export default function ConsumerDashboard() {
                   {/* Property 2 */}
                   <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
                     <div className="relative h-56 overflow-hidden">
-                      <Image src="https://images.unsplash.com/photo-1607712617949-8c993d290809?q=80&w=800&auto=format&fit=crop" alt="Owned Home" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image src="https://images.unsplash.com/photo-1682773083908-a0e9ffadd175?q=80&w=800&auto=format&fit=crop" alt="Owned Home" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-slate-400"></div>
                         Owned Property
@@ -466,7 +466,7 @@ export default function ConsumerDashboard() {
                     
                     <div className="flex-grow flex flex-col md:flex-row items-center gap-6">
                       <div className="w-24 h-24 rounded-2xl overflow-hidden relative flex-shrink-0 shadow-md">
-                        <Image src="https://images.unsplash.com/photo-1535759554012-8cbbc491f0b7?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
+                        <Image src="https://images.unsplash.com/photo-1667504320745-eade6c25e053?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
                       </div>
                       <div className="text-center md:text-left">
                         <h3 className="text-xl font-bold text-slate-900 mb-1">Luxury Villa with Pool</h3>
@@ -498,7 +498,7 @@ export default function ConsumerDashboard() {
                     
                     <div className="flex-grow flex flex-col md:flex-row items-center gap-6">
                       <div className="w-24 h-24 rounded-2xl overflow-hidden relative flex-shrink-0 shadow-md">
-                        <Image src="https://images.unsplash.com/photo-1605230521018-61f2095a762a?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
+                        <Image src="https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
                       </div>
                       <div className="text-center md:text-left">
                         <h3 className="text-xl font-bold text-slate-900 mb-1">Modern City Apartment</h3>
@@ -570,7 +570,7 @@ export default function ConsumerDashboard() {
                     <div className="flex items-center justify-between mb-8">
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-2xl overflow-hidden relative shadow-md flex-shrink-0">
-                          <Image src="https://images.unsplash.com/photo-1734362815901-24bdeb199da5?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
+                          <Image src="https://images.unsplash.com/photo-1689013398932-b576a11e07a1?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-slate-900">Downtown Penthouse Suite</h3>
@@ -665,7 +665,7 @@ export default function ConsumerDashboard() {
                             <p className="text-xs text-slate-500 mb-3">2 hours ago</p>
                             <div className="flex gap-4 p-3 border border-slate-100 rounded-xl bg-slate-50">
                               <div className="w-16 h-16 rounded-lg overflow-hidden relative flex-shrink-0">
-                                <Image src="https://images.unsplash.com/photo-1589011398512-d9f30a2fdfa8?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
+                                <Image src="https://images.unsplash.com/photo-1708772565588-33785e13aa46?q=80&w=400&auto=format&fit=crop" alt="Property" fill className="object-cover" />
                               </div>
                               <div>
                                 <div className="font-bold text-slate-900 text-sm">Eco-Friendly Family Home</div>

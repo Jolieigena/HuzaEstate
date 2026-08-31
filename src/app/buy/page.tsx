@@ -50,7 +50,7 @@ export default function BuyPage() {
           {/* Category 1 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image
-              src="https://images.unsplash.com/photo-1589011398512-d9f30a2fdfa8?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1609507315751-216f91bc8ffb?q=80&w=800&auto=format&fit=crop"
               alt="Luxury Villas"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -65,7 +65,7 @@ export default function BuyPage() {
           {/* Category 2 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl md:-translate-y-8">
             <Image
-              src="https://images.unsplash.com/photo-1694771169938-01b054e0b107?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1682773083915-5375145f99e5?q=80&w=800&auto=format&fit=crop"
               alt="City Apartments"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -80,7 +80,7 @@ export default function BuyPage() {
           {/* Category 3 */}
           <Link href="/properties?type=sale" className="group relative h-80 rounded-3xl overflow-hidden bg-slate-900 shadow-xl">
             <Image
-              src="https://images.unsplash.com/photo-1694771170304-42b0b9b8d80d?q=80&w=800&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1756245994834-61974c290b61?q=80&w=800&auto=format&fit=crop"
               alt="Family Homes"
               fill
               className="object-cover opacity-60 group-hover:opacity-80 group-hover:scale-105 transition-all duration-500"
@@ -175,7 +175,7 @@ export default function BuyPage() {
             
             <div className="relative h-[600px] rounded-3xl overflow-hidden shadow-2xl">
               <Image 
-                src="https://images.unsplash.com/photo-1694771169926-abc9a56508c1?q=80&w=1000&auto=format&fit=crop"
+                src="https://images.unsplash.com/photo-1717960331841-a36791e8d2f5?q=80&w=1000&auto=format&fit=crop"
                 alt="Happy Owner"
                 fill
                 className="object-cover"
