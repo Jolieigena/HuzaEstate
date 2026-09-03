@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import AppShell from "@/components/AppShell";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import { AuthProvider } from "@/lib/auth-context";
+import { ToastProvider } from "@/lib/toast-context";
 
 const nunitoSans = Nunito_Sans({
   variable: "--font-nunito-sans",
@@ -27,11 +28,10 @@ export default function RootLayout({
         className={`${nunitoSans.variable} font-sans antialiased min-h-screen flex flex-col`}
       >
         <AuthProvider>
-          <Navbar />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <ConditionalFooter />
+          <ToastProvider>
+            <AppShell>{children}</AppShell>
+            <ConditionalFooter />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

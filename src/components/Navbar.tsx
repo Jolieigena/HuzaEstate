@@ -11,6 +11,8 @@ const NAV_LINKS = [
   { href: '/buy', label: 'Buy' },
   { href: '/rent', label: 'Rent' },
   { href: '/sell', label: 'Sell' },
+  { href: '/build', label: 'Build' },
+  { href: '/renovate', label: 'Renovate' },
   { href: '/mortgages', label: 'Mortgages' },
   { href: '/blog', label: 'Blog' },
 ];
@@ -29,14 +31,14 @@ export default function Navbar() {
       </Link>
 
       {/* Center Navigation Links */}
-      <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+      <nav className="hidden md:flex items-center gap-3 lg:gap-8 text-sm font-medium text-slate-600">
         {NAV_LINKS.map(link => {
           const isActive = pathname === link.href;
           return (
             <Link
               key={link.href}
               href={link.href}
-              className={`relative py-2 transition-colors duration-200 active:text-[#2ec440] after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:bg-[#2ec440] after:transition-all after:duration-300 ${
+              className={`relative py-2 transition-colors duration-200 active:text-[#2ec440] after:content-[''] after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:bg-[#2ec440] after:transition-all after:duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2ec440] focus-visible:ring-offset-2 focus-visible:rounded-sm ${
                 isActive
                   ? 'text-slate-900 font-semibold after:w-full'
                   : 'hover:text-slate-900 after:w-0 hover:after:w-full'
@@ -88,7 +90,13 @@ export default function Navbar() {
                 <Link href="/dashboard?tab=saved" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                   Saved Homes
                 </Link>
-                <button 
+                <Link href="/studio/build" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  Build Projects
+                </Link>
+                <Link href="/studio/renovate" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  Renovation Projects
+                </Link>
+                <button
                   onClick={() => {
                     setProfileOpen(false);
                     logout();
@@ -137,7 +145,7 @@ export default function Navbar() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className={`py-3 px-2 -mx-2 rounded-lg font-semibold border-b border-slate-50 last:border-b-0 transition-colors duration-150 active:bg-slate-100 ${
+                className={`py-3 px-2 -mx-2 rounded-lg font-semibold border-b border-slate-50 last:border-b-0 transition-colors duration-150 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2ec440] ${
                   isActive ? 'text-[#2ec440]' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
@@ -165,6 +173,20 @@ export default function Navbar() {
             className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
             My Dashboard
+          </Link>
+          <Link
+            href="/studio/build"
+            onClick={() => setMenuOpen(false)}
+            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
+          >
+            Build Projects
+          </Link>
+          <Link
+            href="/studio/renovate"
+            onClick={() => setMenuOpen(false)}
+            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
+          >
+            Renovation Projects
           </Link>
         </div>
       )}
