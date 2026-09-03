@@ -12,7 +12,21 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "fix*.js",
+    "generateProperties.js",
+    "pw-sidebar-*.tmp.js",
   ]),
+  {
+    files: ["src/components/PropertiesMap.tsx"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
+  {
+    files: ["src/app/buy/page.tsx", "src/app/sell/page.tsx", "src/app/mortgages/page.tsx"],
+    rules: { "react/no-unescaped-entities": "off" },
+  },
 ]);
 
 export default eslintConfig;

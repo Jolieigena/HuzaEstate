@@ -4,6 +4,7 @@ import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { mockProperties } from '@/lib/data';
 import PropertyCard from '@/components/PropertyCard';
+import { useVisibleListings } from '@/lib/admin/listings';
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
@@ -19,7 +20,8 @@ function PropertiesContent() {
   const [minSqm, setMinSqm] = useState('');
   const [maxSqm, setMaxSqm] = useState('');
 
-  const filteredProperties = mockProperties.filter(property => {
+  const visibleProperties = useVisibleListings(mockProperties);
+  const filteredProperties = visibleProperties.filter(property => {
     const matchesSearch = property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           property.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           property.city.toLowerCase().includes(searchTerm.toLowerCase());

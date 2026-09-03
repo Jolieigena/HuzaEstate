@@ -1,11 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import PropertyCard from '@/components/PropertyCard';
+import PublicPropertyGrid from '@/components/PublicPropertyGrid';
 import { mockProperties } from '@/lib/data';
 
 export default function BuyPage() {
-  const featuredForSale = mockProperties.filter(property => property.type === 'sale').slice(0, 3);
+  const forSale = mockProperties.filter(property => property.type === 'sale');
 
   return (
     <div className="min-h-screen bg-white">
@@ -110,11 +110,7 @@ export default function BuyPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {featuredForSale.map(property => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        <PublicPropertyGrid properties={forSale} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
       </section>
 
       {/* Mortgage Cross-Sell */}

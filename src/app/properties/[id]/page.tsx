@@ -3,16 +3,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { mockProperties } from '@/lib/data';
 import { notFound } from 'next/navigation';
+import ListingVisibilityGate from '@/components/ListingVisibilityGate';
 
 export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const property = mockProperties.find(p => p.id === resolvedParams.id);
-  
+
   if (!property) {
     notFound();
   }
 
   return (
+    <ListingVisibilityGate propertyId={property.id} propertyTitle={property.title}>
     <div className="w-full bg-white min-h-screen pb-24">
       {/* Title Section (Above Grid) */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-8 pb-6">
@@ -215,5 +217,6 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </div>
     </div>
+    </ListingVisibilityGate>
   );
 }

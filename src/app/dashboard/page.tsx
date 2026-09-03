@@ -1,72 +1,18 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-interface PaymentRecord {
-  id: string;
-  label: string;
-  date: string;
-  amount: number;
-  method: string;
-}
+const VALID_TABS = ['saved', 'properties', 'payments', 'tours', 'applications', 'coshopping'];
 
-const PAYMENT_HISTORY: PaymentRecord[] = [
-  { id: 'p1', label: 'November Rent', date: 'Nov 1, 2027', amount: 1200, method: 'MTN Mobile Money' },
-  { id: 'p2', label: 'October Rent', date: 'Oct 1, 2027', amount: 1200, method: 'Visa •••• 4242' },
-  { id: 'p3', label: 'September Rent', date: 'Sep 1, 2027', amount: 1200, method: 'MTN Mobile Money' },
-];
-
-export default function ConsumerDashboard() {
-  const [activeTab, setActiveTab] = useState('saved');
-
-  // Rent payment state
-  const [rentPaid, setRentPaid] = useState(false);
-  const [isPaying, setIsPaying] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'momo' | 'card'>('momo');
-  const [momoProvider, setMomoProvider] = useState('MTN Mobile Money');
-  const [momoPhone, setMomoPhone] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-
-  const handleMomoPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMomoPhone(e.target.value.replace(/[^0-9+\s]/g, '').slice(0, 16));
-  };
-
-  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 16);
-    setCardNumber(digits.replace(/(.{4})/g, '$1 ').trim());
-  };
-
-  const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setCardExpiry(digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits);
-  };
-
-  const handleCardCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4));
-  };
-
-  const handlePaySubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setRentPaid(true);
-    setIsPaying(false);
-  };
-
-  const paymentHistory: PaymentRecord[] = rentPaid
-    ? [
-        {
-          id: 'new',
-          label: 'December Rent',
-          date: 'Just now',
-          amount: 1200,
-          method: paymentMethod === 'momo' ? momoProvider : `Card •••• ${cardNumber.replace(/\s/g, '').slice(-4) || '••••'}`,
-        },
-        ...PAYMENT_HISTORY,
-      ]
-    : PAYMENT_HISTORY;
+function DashboardContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab = VALID_TABS.includes(tabParam ?? '') ? (tabParam as string) : 'saved';
+  const goToTab = (tab: string) => router.push(`/dashboard?tab=${tab}`);
 
   const savedProperties = [
     {
@@ -112,69 +58,24 @@ export default function ConsumerDashboard() {
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
         
         {/* Dashboard Header */}
-        <div className="mb-12">
-          <h1 className="text-3xl font-black text-slate-900 mb-2">My HuzaEstate</h1>
-          <p className="text-slate-500 font-medium">Manage your saved homes, tours, and applications.</p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 mb-2">My HuzaEstate</h1>
+            <p className="text-slate-500 font-medium">Manage your saved homes, tours, applications, and construction tracking.</p>
+          </div>
+          <Link
+            href="/execution"
+            className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-3 rounded-2xl text-xs sm:text-sm shadow-sm transition-all flex items-center gap-2 whitespace-nowrap self-start md:self-auto"
+          >
+            <span>🏗️</span>
+            <span>Construction Execution Tracking →</span>
+          </Link>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          
-          {/* Sidebar Navigation */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <nav className="flex flex-col gap-2 sticky top-28">
-              <button 
-                onClick={() => setActiveTab('saved')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'saved' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill={activeTab === 'saved' ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                Saved Homes
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('properties')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'properties' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                My Properties
-              </button>
-
-              <button
-                onClick={() => setActiveTab('payments')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'payments' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Payments
-              </button>
-
-              <button
-                onClick={() => setActiveTab('tours')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'tours' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                My Tours
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('applications')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'applications' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                Rental Applications
-              </button>
-
-              <button 
-                onClick={() => setActiveTab('coshopping')}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-all ${activeTab === 'coshopping' ? 'bg-[#2ec440]/10 text-[#2ec440]' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                Co-shopping
-              </button>
-            </nav>
-          </aside>
-
+        <div>
           {/* Main Content Area */}
-          <main className="flex-grow">
-            
+          <main>
+
             {/* SAVED HOMES TAB */}
             {activeTab === 'saved' && (
               <div>
@@ -244,7 +145,7 @@ export default function ConsumerDashboard() {
                         Kiyovu, Kigali
                       </p>
                       <div className="mt-auto">
-                        <button onClick={() => setActiveTab('payments')} className="block text-center w-full bg-slate-900 hover:bg-[#2ec440] text-white font-semibold py-3 rounded-xl transition-all shadow-sm">
+                        <button onClick={() => goToTab('payments')} className="block text-center w-full bg-slate-900 hover:bg-[#2ec440] text-white font-semibold py-3 rounded-xl transition-all shadow-sm">
                           Manage Lease
                         </button>
                       </div>
@@ -279,171 +180,19 @@ export default function ConsumerDashboard() {
               </div>
             )}
 
-            {/* PAYMENTS TAB */}
+            {/* PAYMENTS TAB — superseded by the dedicated Payments/Invoices/Contracts module, which never asks for a PIN, OTP or full card in the browser. */}
             {activeTab === 'payments' && (
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Rent Payments</h2>
-
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8 mb-6">
-                  {rentPaid ? (
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-full bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center flex-shrink-0">
-                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">You&apos;re all paid up</h3>
-                        <p className="text-slate-500 text-sm">Next payment of $1,200 is due Jan 1, 2028 for Downtown Penthouse Suite.</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-500 mb-1">Amount Due</div>
-                          <div className="text-3xl font-black text-slate-900">$1,200</div>
-                          <div className="text-sm text-slate-500 mt-1">Downtown Penthouse Suite · Due Dec 1, 2027</div>
-                        </div>
-                        {!isPaying && (
-                          <button
-                            onClick={() => setIsPaying(true)}
-                            className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-8 py-3.5 rounded-xl transition-colors shadow-lg whitespace-nowrap"
-                          >
-                            Pay Rent
-                          </button>
-                        )}
-                      </div>
-
-                      {isPaying && (
-                        <form onSubmit={handlePaySubmit} className="mt-6 pt-6 border-t border-slate-100 space-y-5">
-                          <div className="grid grid-cols-2 gap-3">
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMethod('momo')}
-                              className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left ${
-                                paymentMethod === 'momo' ? 'border-[#2ec440] bg-[#2ec440]/10 text-slate-900' : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                              }`}
-                            >
-                              Mobile Money
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPaymentMethod('card')}
-                              className={`px-4 py-3 rounded-xl border text-sm font-semibold transition-colors text-left ${
-                                paymentMethod === 'card' ? 'border-[#2ec440] bg-[#2ec440]/10 text-slate-900' : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                              }`}
-                            >
-                              Debit / Credit Card
-                            </button>
-                          </div>
-
-                          {paymentMethod === 'momo' ? (
-                            <>
-                              <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Provider</label>
-                                <select
-                                  value={momoProvider}
-                                  onChange={(e) => setMomoProvider(e.target.value)}
-                                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
-                                >
-                                  <option>MTN Mobile Money</option>
-                                  <option>Airtel Money</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
-                                <input
-                                  type="tel"
-                                  inputMode="tel"
-                                  pattern="[0-9+\s]*"
-                                  maxLength={16}
-                                  value={momoPhone}
-                                  onChange={handleMomoPhoneChange}
-                                  placeholder="+250 xxx xxx xxx"
-                                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                                  required
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <div>
-                                <label className="block text-sm font-bold text-slate-700 mb-2">Card Number</label>
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  value={cardNumber}
-                                  onChange={handleCardNumberChange}
-                                  maxLength={19}
-                                  placeholder="1234 5678 9012 3456"
-                                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                                  required
-                                />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <label className="block text-sm font-bold text-slate-700 mb-2">Expiry</label>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={cardExpiry}
-                                    onChange={handleCardExpiryChange}
-                                    maxLength={5}
-                                    placeholder="MM/YY"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm font-bold text-slate-700 mb-2">CVV</label>
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={cardCvv}
-                                    onChange={handleCardCvvChange}
-                                    maxLength={4}
-                                    placeholder="123"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                                    required
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          <div className="flex items-center gap-3 pt-2">
-                            <button type="submit" className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
-                              Pay $1,200
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setIsPaying(false)}
-                              className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </form>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
-                  <h3 className="font-bold text-slate-900 text-lg mb-6">Payment History</h3>
-                  <div className="flex flex-col gap-4">
-                    {paymentHistory.map(item => (
-                      <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">✓</div>
-                          <div>
-                            <div className="font-bold text-slate-900 text-sm">{item.label}</div>
-                            <div className="text-xs text-slate-500">{item.method} • {item.date}</div>
-                          </div>
-                        </div>
-                        <div className="font-black text-slate-900">${item.amount.toLocaleString()}</div>
-                      </div>
-                    ))}
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Payments</h2>
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8 md:p-12 text-center">
+                  <div className="w-14 h-14 rounded-full bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </div>
+                  <h3 className="text-lg font-bold text-slate-900 mb-2">Payments now live at a dedicated page</h3>
+                  <p className="text-slate-500 text-sm max-w-md mx-auto mb-6">Invoices, milestone funding, receipts and refunds have moved to secure, provider-based pages that never collect a card CVV, PIN or one-time code in the browser.</p>
+                  <Link href="/payments" className="inline-block bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-8 py-3.5 rounded-xl transition-colors shadow-lg">
+                    Go to Payments
+                  </Link>
                 </div>
               </div>
             )}
@@ -694,5 +443,28 @@ export default function ConsumerDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+function DashboardFallback() {
+  return (
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 animate-pulse">
+        <div className="h-9 w-64 bg-slate-200 rounded-lg mb-3" />
+        <div className="h-5 w-80 bg-slate-200 rounded-lg mb-12" />
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="h-64 bg-white rounded-3xl border border-slate-100" />
+          <div className="h-64 bg-white rounded-3xl border border-slate-100" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ConsumerDashboard() {
+  return (
+    <Suspense fallback={<DashboardFallback />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

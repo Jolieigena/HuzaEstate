@@ -1,12 +1,13 @@
-import PropertyCard from "@/components/PropertyCard";
+import PublicPropertyGrid from "@/components/PublicPropertyGrid";
 import SearchBar from "@/components/SearchBar";
 import Reveal from "@/components/Reveal";
+import { ProcessVideoCard } from "@/components/ProcessVideo";
+import { buildVideos, renovateVideos } from "@/lib/videos";
 import { mockProperties } from "@/lib/data";
 import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
-  const featuredProperties = mockProperties.slice(0, 3);
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -70,7 +71,7 @@ export default function Home() {
               </Reveal>
               <Reveal delay={100} className="lg:col-span-5 flex flex-col justify-end pb-2">
                 <p className="text-slate-600 text-lg font-normal leading-relaxed">
-                  Whether you need to find the perfect family home, a high-yield investment, or a luxury rental, we're here to help you achieve your goals with unparalleled market expertise.
+                  Whether you need to find the perfect family home, a high-yield investment, or a luxury rental, we&apos;re here to help you achieve your goals with unparalleled market expertise.
                 </p>
               </Reveal>
             </div>
@@ -81,7 +82,7 @@ export default function Home() {
                   <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Premium Listings</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">Access to over 2,500+ exclusive properties that you won't find on any other public market.</p>
+                <p className="text-slate-600 text-[15px] leading-relaxed">Access to over 2,500+ exclusive properties that you won&apos;t find on any other public market.</p>
               </Reveal>
 
               <Reveal delay={100} className="flex flex-col items-start gap-3 group">
@@ -105,7 +106,7 @@ export default function Home() {
                   <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">Proven Expertise</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">With deep experience in Rwanda's real estate, we have helped over 1,200 happy families relocate.</p>
+                <p className="text-slate-600 text-[15px] leading-relaxed">With deep experience in Rwanda&apos;s real estate, we have helped over 1,200 happy families relocate.</p>
               </Reveal>
             </div>
           </div>
@@ -178,12 +179,48 @@ export default function Home() {
           </Reveal>
 
           {/* Property Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {featuredProperties.map((property, index) => (
-              <Reveal key={property.id} delay={index * 120}>
-                <PropertyCard property={property} />
-              </Reveal>
-            ))}
+          <PublicPropertyGrid properties={mockProperties} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" revealAnimation />
+        </div>
+      </section>
+
+      {/* More than finding a home */}
+      <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
+        <div className="max-w-[1400px] mx-auto">
+          <Reveal className="max-w-2xl mb-12">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">More than finding a home</h2>
+            <p className="text-slate-600 text-lg leading-relaxed mt-4">
+              HuzaEstate helps you discover property, shape new ideas and improve the spaces you already own.
+            </p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Reveal className="bg-white border border-slate-200 rounded-3xl p-3 shadow-sm hover:shadow-xl transition-shadow duration-300">
+              <ProcessVideoCard video={buildVideos.overview} aspectClassName="aspect-video" />
+              <div className="p-5">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Design a new home</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
+                  Describe your ideas and requirements and explore personalised home concepts with Huza AI before you build.
+                </p>
+                <Link href="/build" className="inline-flex items-center gap-2 text-[#2ec440] font-bold text-sm hover:text-[#28b039] transition-colors">
+                  Explore Build
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </Link>
+              </div>
+            </Reveal>
+
+            <Reveal delay={100} className="bg-white border border-slate-200 rounded-3xl p-3 shadow-sm hover:shadow-xl transition-shadow duration-300">
+              <ProcessVideoCard video={renovateVideos.overview} aspectClassName="aspect-video" />
+              <div className="p-5">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Transform your current space</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
+                  Upload your existing property and explore renovation directions with Huza AI before committing to the work.
+                </p>
+                <Link href="/renovate" className="inline-flex items-center gap-2 text-[#2ec440] font-bold text-sm hover:text-[#28b039] transition-colors">
+                  Explore Renovate
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </Link>
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>

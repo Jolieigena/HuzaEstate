@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import PropertyCard from '@/components/PropertyCard';
+import PublicPropertyGrid from '@/components/PublicPropertyGrid';
 import { mockProperties } from '@/lib/data';
 
 export default function RentPage() {
@@ -110,11 +110,7 @@ export default function RentPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {featuredRentals.map(property => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        <PublicPropertyGrid properties={featuredRentals} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
       </section>
 
       {/* Value Prop */}

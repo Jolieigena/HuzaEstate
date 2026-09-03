@@ -8,6 +8,8 @@ const FOOTER_LINKS = [
       { href: '/buy', label: 'Buy' },
       { href: '/rent', label: 'Rent' },
       { href: '/sell', label: 'Sell' },
+      { href: '/build', label: 'Build' },
+      { href: '/renovate', label: 'Renovate' },
       { href: '/properties', label: 'Browse Properties' },
     ],
   },
@@ -17,6 +19,7 @@ const FOOTER_LINKS = [
       { href: '/mortgages', label: 'Mortgages' },
       { href: '/blog', label: 'Blog' },
       { href: '/post-property', label: 'Post a property' },
+      { href: '/professionals/apply', label: 'Become a Professional' },
     ],
   },
   {
@@ -25,6 +28,7 @@ const FOOTER_LINKS = [
       { href: '/login', label: 'Sign in' },
       { href: '/signup', label: 'Sign up' },
       { href: '/dashboard', label: 'My Dashboard' },
+      { href: '/professional', label: 'Professional Portal' },
     ],
   },
 ];
