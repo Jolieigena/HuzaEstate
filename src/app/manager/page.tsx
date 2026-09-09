@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
+import { type Property } from '@/lib/data';
+import SellerTourControl from '@/components/SellerTourControl';
+import { useAllProperties } from '@/lib/sellerListings/hooks';
+import EditPropertyModal from '@/components/EditPropertyModal';
 
 function ApplyGate() {
   return (
@@ -34,65 +38,44 @@ interface Listing {
   leads: number;
   image: string;
   trend: number[];
+  /** Full source record — SellerTourControl needs more than id/image to
+   *  build a good generation prompt (bedrooms, bathrooms, location, ...). */
+  property: Property;
 }
 
-const LISTINGS: Listing[] = [
-  {
-    id: 'l1',
-    title: 'Downtown Loft',
-    rent: 1450,
-    status: 'Active',
-    views: 1875,
-    saves: 130,
-    leads: 19,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=200&auto=format&fit=crop',
-    trend: [60, 70, 68, 80, 78, 90, 95, 100, 110, 105, 120, 130],
-  },
-  {
-    id: 'l2',
-    title: 'Luxury Villa with Pool',
-    rent: 3500,
-    status: 'Pending',
-    views: 1420,
-    saves: 215,
-    leads: 8,
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=200&auto=format&fit=crop',
-    trend: [120, 140, 135, 150, 145, 160, 158, 170, 165, 180, 190, 200],
-  },
-  {
-    id: 'l3',
-    title: 'Modern City Apartment',
-    rent: 1200,
-    status: 'Active',
-    views: 1240,
-    saves: 84,
-    leads: 12,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=200&auto=format&fit=crop',
-    trend: [40, 55, 42, 60, 58, 70, 65, 80, 75, 90, 95, 110],
-  },
-  {
-    id: 'l4',
-    title: 'Lakeview Studio',
-    rent: 650,
-    status: 'Active',
-    views: 610,
-    saves: 28,
-    leads: 5,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?q=80&w=200&auto=format&fit=crop',
-    trend: [20, 25, 22, 30, 28, 35, 33, 40, 42, 45, 48, 52],
-  },
-  {
-    id: 'l5',
-    title: 'Eco-Friendly Home',
-    rent: 850,
-    status: 'Leased',
-    views: 940,
-    saves: 42,
-    leads: 0,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=200&auto=format&fit=crop',
-    trend: [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 28],
-  },
-];
+// Keyed to real mockProperties ids (not fabricated ones) so that generating
+// a tour here actually shows up when a buyer views that same property at
+// /properties/[id] — see PropertyTourSection, which reads tours by
+// propertyId from the same shared store.
+const LISTING_META: Record<string, Pick<Listing, 'status' | 'views' | 'saves' | 'leads' | 'trend'>> = {
+  'prop-1': { status: 'Active', views: 1875, saves: 130, leads: 19, trend: [60, 70, 68, 80, 78, 90, 95, 100, 110, 105, 120, 130] },
+  'prop-2': { status: 'Pending', views: 1420, saves: 215, leads: 8, trend: [120, 140, 135, 150, 145, 160, 158, 170, 165, 180, 190, 200] },
+  'prop-3': { status: 'Active', views: 1240, saves: 84, leads: 12, trend: [40, 55, 42, 60, 58, 70, 65, 80, 75, 90, 95, 110] },
+  'prop-4': { status: 'Active', views: 610, saves: 28, leads: 5, trend: [20, 25, 22, 30, 28, 35, 33, 40, 42, 45, 48, 52] },
+  'prop-5': { status: 'Leased', views: 940, saves: 42, leads: 0, trend: [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 28] },
+};
+
+// Any listed property without hand-authored stats (i.e. everything outside
+// the 5 curated ids above) still needs to be manageable — it just gets
+// sensible zeroed/default performance numbers instead of fabricated ones.
+const DEFAULT_META: Pick<Listing, 'status' | 'views' | 'saves' | 'leads' | 'trend'> = {
+  status: 'Active',
+  views: 0,
+  saves: 0,
+  leads: 0,
+  trend: [0, 0],
+};
+
+function toListing(property: Property): Listing {
+  return {
+    id: property.id,
+    title: property.title,
+    rent: property.price,
+    image: property.imageUrl,
+    property,
+    ...(LISTING_META[property.id] ?? DEFAULT_META),
+  };
+}
 
 const REVENUE_TREND = [
   { month: 'Apr', value: 3400 },
@@ -207,6 +190,56 @@ function BarBreakdown({ items, format }: { items: BarBreakdownItem[]; format?: (
   );
 }
 
+function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: (property: Property) => void }) {
+  const isLeased = listing.status === 'Leased';
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div className={`relative w-full h-36 ${isLeased ? 'opacity-50 grayscale' : ''}`}>
+        <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+        <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
+          {listing.status}
+        </span>
+      </div>
+
+      <div className="p-5 flex flex-col gap-4">
+        <div>
+          <div className={`font-bold leading-snug ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</div>
+          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}/mo</div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm">
+            <div>
+              <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.views.toLocaleString()}</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Views</div>
+            </div>
+            <div>
+              <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.saves}</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Saves</div>
+            </div>
+            <div>
+              <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-blue-600'}`}>{listing.leads}</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Leads</div>
+            </div>
+          </div>
+          <Sparkline data={listing.trend} color={isLeased ? '#94a3b8' : SERIES_COLOR} />
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+          <SellerTourControl property={listing.property} />
+          <button
+            onClick={() => onEdit(listing.property)}
+            className="text-slate-400 hover:text-slate-900 font-semibold text-sm transition-colors"
+          >
+            {isLeased ? 'Relist' : 'Edit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const CHART_W = 680;
 const CHART_H = 260;
 const MARGIN = { top: 20, right: 20, bottom: 30, left: 56 };
@@ -313,7 +346,6 @@ const NAV_ITEMS: { id: 'overview' | 'listings' | 'applications' | 'payments'; la
     id: 'listings',
     label: 'My Listings',
     iconPath: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m3-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
-    badge: LISTINGS.length,
   },
   {
     id: 'applications',
@@ -331,11 +363,25 @@ const NAV_ITEMS: { id: 'overview' | 'listings' | 'applications' | 'payments'; la
 
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'applications' | 'payments'>('overview');
+  const [listingSearch, setListingSearch] = useState('');
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const { isApprovedSeller } = useAuth();
+  // Every property a seller could manage — mockProperties (all 60-80 of
+  // them, not just the 5 hand-curated ones) plus anything posted this
+  // session, with saved edits already merged in.
+  const allProperties = useAllProperties();
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
   }
+
+  const LISTINGS: Listing[] = allProperties.map(toListing);
+
+  const filteredListings = listingSearch.trim()
+    ? LISTINGS.filter((l) =>
+        `${l.title} ${l.property.location} ${l.property.city}`.toLowerCase().includes(listingSearch.trim().toLowerCase())
+      )
+    : LISTINGS;
 
   const statusCounts = {
     Active: LISTINGS.filter(l => l.status === 'Active').length,
@@ -383,13 +429,13 @@ export default function ManagerDashboard() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath}></path></svg>
                       {item.label}
                     </div>
-                    {item.badge !== undefined && (
+                    {(item.badge !== undefined || item.id === 'listings') && (
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-sm ${
                           item.badgeTone === 'alert' ? 'bg-red-500 text-white' : 'bg-white text-slate-900 border border-slate-100'
                         }`}
                       >
-                        {item.badge}
+                        {item.id === 'listings' ? LISTINGS.length : item.badge}
                       </span>
                     )}
                   </button>
@@ -502,59 +548,31 @@ export default function ManagerDashboard() {
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Active Listings</h2>
-
-                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-slate-50 border-b border-slate-100">
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Property</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Status</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Views</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Saves</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Leads</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500">Trend</th>
-                          <th className="py-4 px-6 font-semibold text-sm text-slate-500 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {LISTINGS.map((listing, i) => {
-                          const isLeased = listing.status === 'Leased';
-                          return (
-                            <tr key={listing.id} className={`${i < LISTINGS.length - 1 ? 'border-b border-slate-50' : ''} hover:bg-slate-50/50 transition-colors`}>
-                              <td className="py-4 px-6">
-                                <div className="flex items-center gap-4">
-                                  <div className={`w-12 h-12 rounded-lg overflow-hidden relative flex-shrink-0 ${isLeased ? 'opacity-50 grayscale' : ''}`}>
-                                    <Image src={listing.image} alt={listing.title} fill className="object-cover" />
-                                  </div>
-                                  <div>
-                                    <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</div>
-                                    <div className={`text-xs ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}/mo</div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-4 px-6">
-                                <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${STATUS_BADGE[listing.status]}`}>{listing.status}</span>
-                              </td>
-                              <td className={`py-4 px-6 font-semibold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.views.toLocaleString()}</td>
-                              <td className={`py-4 px-6 font-semibold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.saves}</td>
-                              <td className={`py-4 px-6 font-bold ${isLeased ? 'text-slate-400' : 'text-blue-600'}`}>{listing.leads}</td>
-                              <td className="py-4 px-6">
-                                <Sparkline data={listing.trend} color={isLeased ? '#94a3b8' : SERIES_COLOR} />
-                              </td>
-                              <td className="py-4 px-6 text-right">
-                                <button className="text-slate-400 hover:text-slate-900 font-semibold text-sm transition-colors">
-                                  {isLeased ? 'Relist' : 'Edit'}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+                  <h2 className="text-2xl font-bold text-slate-900">Active Listings</h2>
+                  <div className="relative w-full sm:w-72">
+                    <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    <input
+                      type="text"
+                      value={listingSearch}
+                      onChange={(e) => setListingSearch(e.target.value)}
+                      placeholder="Search all listings by title or location…"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
+                    />
                   </div>
                 </div>
+
+                {filteredListings.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredListings.map((listing) => (
+                      <ListingCard key={listing.id} listing={listing} onEdit={setEditingProperty} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-3xl border border-slate-100 shadow-sm py-16 px-6 text-center text-slate-400 text-sm">
+                    No listings match &ldquo;{listingSearch}&rdquo;.
+                  </div>
+                )}
               </div>
             )}
 
@@ -756,6 +774,8 @@ export default function ManagerDashboard() {
           </main>
         </div>
       </div>
+
+      <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />
     </div>
   );
 }

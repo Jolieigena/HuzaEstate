@@ -1,16 +1,25 @@
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { mockProperties } from '@/lib/data';
-import { notFound } from 'next/navigation';
-import ListingVisibilityGate from '@/components/ListingVisibilityGate';
+"use client";
 
-export default async function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  const property = mockProperties.find(p => p.id === resolvedParams.id);
+import React, { use } from 'react';
+import Link from 'next/link';
+import { useAllProperties } from '@/lib/sellerListings/hooks';
+import ListingVisibilityGate from '@/components/ListingVisibilityGate';
+import PropertyTourSection from '@/components/PropertyTourSection';
+import PropertyGallery from '@/components/PropertyGallery';
+
+export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const properties = useAllProperties();
+  const property = properties.find(p => p.id === id);
 
   if (!property) {
-    notFound();
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <h1 className="text-2xl font-bold text-slate-900">Property not found</h1>
+        <p className="text-slate-500">This listing may have been removed or the link is incorrect.</p>
+        <Link href="/properties" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Browse all properties</Link>
+      </div>
+    );
   }
 
   return (
@@ -37,85 +46,13 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Grid Image Gallery */}
+      {/* Photo Gallery */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 h-[400px] md:h-[500px] rounded-3xl overflow-hidden relative">
-          
-          {/* Main Big Image (Left Half) */}
-          <div className="md:col-span-2 relative h-full w-full group cursor-pointer">
-            <Image 
-              src={property.imageUrl} 
-              alt={property.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              priority
-            />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-            
-            {/* Status Badge Overlaid */}
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-slate-900 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider shadow-sm z-10">
-              For {property.type}
-            </div>
-          </div>
-
-          {/* 4 Smaller Images (Right Half) */}
-          <div className="hidden md:grid grid-cols-2 grid-rows-2 col-span-2 gap-2 h-full">
-            {/* Sub Image 1 */}
-            <div className="relative h-full w-full group cursor-pointer">
-              <Image 
-                src="https://images.unsplash.com/photo-1682773083924-6f0f5a700d8b?q=80&w=800&auto=format&fit=crop" 
-                alt="Property Detail 1"
-                fill
-                sizes="(max-width: 768px) 100vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-            </div>
-            
-            {/* Sub Image 2 */}
-            <div className="relative h-full w-full group cursor-pointer">
-              <Image 
-                src="https://images.unsplash.com/photo-1756245994882-cf32d49fde5a?q=80&w=800&auto=format&fit=crop" 
-                alt="Property Detail 2"
-                fill
-                sizes="(max-width: 768px) 100vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-            </div>
-
-            {/* Sub Image 3 */}
-            <div className="relative h-full w-full group cursor-pointer">
-              <Image 
-                src="https://images.unsplash.com/photo-1609507315751-216f91bc8ffb?q=80&w=800&auto=format&fit=crop" 
-                alt="Property Detail 3"
-                fill
-                sizes="(max-width: 768px) 100vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-            </div>
-
-            {/* Sub Image 4 */}
-            <div className="relative h-full w-full group cursor-pointer">
-              <Image 
-                src="https://images.unsplash.com/photo-1682773083915-5375145f99e5?q=80&w=800&auto=format&fit=crop" 
-                alt="Property Detail 4"
-                fill
-                sizes="(max-width: 768px) 100vw, 25vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300"></div>
-              
-              {/* Show All Photos Button */}
-              <Link href="/signup" className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm hover:bg-white text-slate-900 font-bold px-4 py-2 rounded-xl text-sm shadow-md transition-all flex items-center gap-2 border border-slate-200">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
-                Show all photos
-              </Link>
-            </div>
-          </div>
-        </div>
+        <PropertyGallery
+          images={property.images?.length ? property.images : [property.imageUrl]}
+          title={property.title}
+          badge={`For ${property.type}`}
+        />
       </div>
 
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 mt-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
@@ -160,36 +97,8 @@ export default async function PropertyDetailPage({ params }: { params: Promise<{
             {property.description}
           </p>
 
-          {/* 3D Virtual Walkthrough */}
-          {property.virtualTourUrl && (
-            <div className="mb-10">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                Interactive 3D Walkthrough
-              </h2>
-              <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-lg border border-slate-200 relative">
-                {/* Background Preview */}
-                <div className="absolute inset-0 bg-slate-900">
-                  <Image src={property.imageUrl} alt="Walkthrough Preview" fill className="object-cover opacity-50 blur-[2px]" />
-                </div>
-                
-                {/* Gated Overlay */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
-                  <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center mb-6 shadow-xl border border-white/20">
-                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                  </div>
-                  <h3 className="text-3xl font-bold text-white mb-3 drop-shadow-md">Exclusive 3D Walkthrough</h3>
-                  <p className="text-gray-200 max-w-md mb-8 text-[15px] leading-relaxed drop-shadow-sm">
-                    Create a free account or sign in to unlock the immersive 3D walkthrough for this property.
-                  </p>
-                  <Link href="/login" className="px-8 py-3.5 bg-slate-900 hover:bg-[#2ec440] text-white font-bold rounded-xl transition-colors shadow-lg hover:-translate-y-0.5 inline-flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
-                    Sign In to Unlock
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* AI-Generated 3D Tour (World Labs Marble) */}
+          <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} />
 
           <Link href="/properties" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path></svg>

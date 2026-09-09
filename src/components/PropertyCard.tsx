@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Property } from '@/lib/data';
+import TourWatchBadge from '@/components/TourWatchBadge';
 
 interface PropertyCardProps {
   property: Property;
@@ -9,9 +10,10 @@ interface PropertyCardProps {
 export default function PropertyCard({ property }: PropertyCardProps) {
   return (
     <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300">
-      <Link href={`/properties/${property.id}`} className="block relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
-        {/* Main Image */}
-        <div className="relative w-full h-full rounded-2xl overflow-hidden">
+      <div className="relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
+        {/* Main Image — the only anchor in this block, so overlay badges
+         *  below stay as plain positioned siblings rather than nested <a>s. */}
+        <Link href={`/properties/${property.id}`} className="absolute inset-0 block rounded-2xl overflow-hidden">
           <Image
             src={property.imageUrl}
             alt={property.title}
@@ -20,15 +22,17 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             className="object-cover group-hover:scale-105 transition-transform duration-700"
           />
           <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
-        </div>
+        </Link>
 
         {/* Top Right Photo Count Pill */}
-        <div className="absolute top-3 right-3 bg-slate-900/40 backdrop-blur-sm rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-sm font-semibold border border-white/30">
+        <div className="absolute top-3 right-3 z-10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-sm font-semibold border border-white/30 pointer-events-none">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          {(property.title.length % 15) + 5}
+          {(property.images?.length ?? ((property.title.length % 15) + 5))}
         </div>
 
-      </Link>
+        {/* Bottom Left: "Watch the 3D Tour" — only rendered once a tour is ready */}
+        <TourWatchBadge propertyId={property.id} className="absolute bottom-3 left-3 z-10" />
+      </div>
 
       {/* Property Details */}
       <div className="px-3 sm:px-4 flex flex-col gap-3">

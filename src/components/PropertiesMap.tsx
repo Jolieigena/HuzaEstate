@@ -5,6 +5,7 @@ import { Property } from '@/lib/data';
 import Link from 'next/link';
 import Image from 'next/image';
 import L from 'leaflet';
+import TourWatchBadge from '@/components/TourWatchBadge';
 
 // Create custom glowing price marker
 const createPriceIcon = (price: number) => {
@@ -432,18 +433,20 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
             icon={createPriceIcon(property.price)}
           >
             <Popup className="property-popup">
-              <Link href={`/properties/${property.id}`} className="block w-[340px] no-underline shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-2xl bg-white p-3 hover:-translate-y-1 transition-transform">
+              <div className="relative w-[340px]">
+                <TourWatchBadge propertyId={property.id} className="absolute top-5 left-5 z-10 !px-2 !py-1 !text-[10px]" />
+                <Link href={`/properties/${property.id}`} className="block w-full no-underline shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-2xl bg-white p-3 hover:-translate-y-1 transition-transform">
                 <div className="flex gap-4">
                   {/* Left: Image */}
                   <div className="relative w-28 h-28 rounded-xl overflow-hidden flex-shrink-0">
-                    <Image 
-                      src={property.imageUrl} 
-                      alt={property.title} 
-                      fill 
-                      className="object-cover" 
+                    <Image
+                      src={property.imageUrl}
+                      alt={property.title}
+                      fill
+                      className="object-cover"
                     />
                   </div>
-                  
+
                   {/* Right: Info */}
                   <div className="flex flex-col justify-center flex-1 py-1 overflow-hidden">
                     <div className="flex items-center justify-between mb-1">
@@ -476,7 +479,8 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
                     <div className="text-[11px] text-slate-400 font-medium truncate mt-1">{property.location}, {property.city}</div>
                   </div>
                 </div>
-              </Link>
+                </Link>
+              </div>
             </Popup>
           </Marker>
         ))}

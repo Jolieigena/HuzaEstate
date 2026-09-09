@@ -10,9 +10,12 @@ export interface Property {
   bathrooms: number;
   sqm: number;
   imageUrl: string;
+  /** All photos for this listing, cover photo first (images[0] === imageUrl).
+   *  Optional/undefined for older records that only ever had one photo —
+   *  callers should fall back to [imageUrl] in that case. */
+  images?: string[];
   type: 'sale' | 'rent';
   propertyType: 'house' | 'apartment' | 'land';
-  virtualTourUrl?: string;
   lat?: number;
   lng?: number;
 }
@@ -32,7 +35,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1507427100689-2bf8574e32d4?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.448,
     lng: 30.028
   },
@@ -50,7 +52,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1720605739861-9f5110c7e529?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.778,
     lng: 30.355
   },
@@ -68,7 +69,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083908-a0e9ffadd175?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.484,
     lng: 30.444
   },
@@ -86,7 +86,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1667504320745-eade6c25e053?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.964,
     lng: 30.460
   },
@@ -104,7 +103,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.598,
     lng: 30.346
   },
@@ -122,7 +120,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1689013398932-b576a11e07a1?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.090,
     lng: 30.237
   },
@@ -140,7 +137,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565588-33785e13aa46?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.853,
     lng: 29.929
   },
@@ -158,7 +154,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.635,
     lng: 30.148
   },
@@ -176,7 +171,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.904,
     lng: 30.544
   },
@@ -194,7 +188,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.570,
     lng: 29.447
   },
@@ -212,7 +205,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.302,
     lng: 30.798
   },
@@ -230,7 +222,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.532,
     lng: 29.583
   },
@@ -248,7 +239,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1518780664697-5b050e0bb626?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.393,
     lng: 29.892
   },
@@ -266,7 +256,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.425,
     lng: 29.737
   },
@@ -284,7 +273,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605146768851-ea244b94238e?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.319,
     lng: 30.522
   },
@@ -302,7 +290,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.454,
     lng: 30.625
   },
@@ -320,7 +307,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.497,
     lng: 29.979
   },
@@ -338,7 +324,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.703,
     lng: 30.182
   },
@@ -356,7 +341,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.533,
     lng: 30.394
   },
@@ -374,7 +358,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1598228726386-8a03bb3644f7?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.256,
     lng: 30.219
   },
@@ -392,7 +375,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1507427100689-2bf8574e32d4?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.190,
     lng: 30.586
   },
@@ -410,7 +392,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1720605739861-9f5110c7e529?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.405,
     lng: 29.886
   },
@@ -428,7 +409,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083908-a0e9ffadd175?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.339,
     lng: 30.332
   },
@@ -446,7 +426,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1667504320745-eade6c25e053?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.794,
     lng: 30.496
   },
@@ -464,7 +443,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.265,
     lng: 29.776
   },
@@ -482,7 +460,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1689013398932-b576a11e07a1?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.601,
     lng: 30.234
   },
@@ -500,7 +477,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565588-33785e13aa46?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.083,
     lng: 30.564
   },
@@ -518,7 +494,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.820,
     lng: 29.903
   },
@@ -536,7 +511,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.736,
     lng: 29.388
   },
@@ -554,7 +528,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.293,
     lng: 29.936
   },
@@ -572,7 +545,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.258,
     lng: 29.356
   },
@@ -590,7 +562,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.245,
     lng: 30.534
   },
@@ -608,7 +579,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1518780664697-5b050e0bb626?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.466,
     lng: 30.098
   },
@@ -626,7 +596,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.283,
     lng: 30.033
   },
@@ -644,7 +613,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605146768851-ea244b94238e?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.935,
     lng: 30.420
   },
@@ -662,7 +630,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.200,
     lng: 29.997
   },
@@ -680,7 +647,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.318,
     lng: 29.579
   },
@@ -698,7 +664,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.233,
     lng: 29.496
   },
@@ -716,7 +681,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.312,
     lng: 29.327
   },
@@ -734,7 +698,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1598228726386-8a03bb3644f7?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.998,
     lng: 30.316
   },
@@ -752,7 +715,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1507427100689-2bf8574e32d4?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.487,
     lng: 30.177
   },
@@ -770,7 +732,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1720605739861-9f5110c7e529?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.607,
     lng: 29.459
   },
@@ -788,7 +749,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083908-a0e9ffadd175?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.992,
     lng: 30.650
   },
@@ -806,7 +766,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1667504320745-eade6c25e053?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.871,
     lng: 29.712
   },
@@ -824,7 +783,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.886,
     lng: 29.578
   },
@@ -842,7 +800,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1689013398932-b576a11e07a1?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.415,
     lng: 29.686
   },
@@ -860,7 +817,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565588-33785e13aa46?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.509,
     lng: 29.832
   },
@@ -878,7 +834,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.159,
     lng: 30.048
   },
@@ -896,7 +851,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.098,
     lng: 29.499
   },
@@ -914,7 +868,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.319,
     lng: 29.414
   },
@@ -932,7 +885,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.314,
     lng: 30.046
   },
@@ -950,7 +902,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.837,
     lng: 29.871
   },
@@ -968,7 +919,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1518780664697-5b050e0bb626?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.556,
     lng: 29.879
   },
@@ -986,7 +936,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.837,
     lng: 30.424
   },
@@ -1004,7 +953,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605146768851-ea244b94238e?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.932,
     lng: 30.791
   },
@@ -1022,7 +970,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.240,
     lng: 29.482
   },
@@ -1040,7 +987,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.274,
     lng: 30.318
   },
@@ -1058,7 +1004,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.793,
     lng: 29.903
   },
@@ -1076,7 +1021,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.192,
     lng: 30.224
   },
@@ -1094,7 +1038,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1598228726386-8a03bb3644f7?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.452,
     lng: 30.120
   },
@@ -1112,7 +1055,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1507427100689-2bf8574e32d4?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.330,
     lng: 30.186
   },
@@ -1130,7 +1072,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1720605739861-9f5110c7e529?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.359,
     lng: 30.276
   },
@@ -1148,7 +1089,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083908-a0e9ffadd175?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.558,
     lng: 30.213
   },
@@ -1166,7 +1106,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1667504320745-eade6c25e053?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.932,
     lng: 29.989
   },
@@ -1184,7 +1123,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.998,
     lng: 30.722
   },
@@ -1202,7 +1140,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1689013398932-b576a11e07a1?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.520,
     lng: 29.436
   },
@@ -1220,7 +1157,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1708772565588-33785e13aa46?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.630,
     lng: 30.702
   },
@@ -1238,7 +1174,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.313,
     lng: 30.197
   },
@@ -1256,7 +1191,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.226,
     lng: 29.398
   },
@@ -1274,7 +1208,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.384,
     lng: 29.575
   },
@@ -1292,7 +1225,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600607688969-a5bfcd646154?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.500,
     lng: 30.784
   },
@@ -1310,7 +1242,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.025,
     lng: 29.981
   },
@@ -1328,7 +1259,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1518780664697-5b050e0bb626?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "land",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.325,
     lng: 29.624
   },
@@ -1346,7 +1276,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.276,
     lng: 29.678
   },
@@ -1364,7 +1293,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605146768851-ea244b94238e?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.558,
     lng: 29.651
   },
@@ -1382,7 +1310,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1605810230434-7631ac76ec81?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.190,
     lng: 30.194
   },
@@ -1400,7 +1327,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.606,
     lng: 30.202
   },
@@ -1418,7 +1344,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.340,
     lng: 30.645
   },
@@ -1436,7 +1361,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1523217582562-09d0def993a6?q=80&w=800&auto=format&fit=crop",
     type: "sale",
     propertyType: "house",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -1.869,
     lng: 29.881
   },
@@ -1454,7 +1378,6 @@ export const mockProperties: Property[] = [
     imageUrl: "https://images.unsplash.com/photo-1598228726386-8a03bb3644f7?q=80&w=800&auto=format&fit=crop",
     type: "rent",
     propertyType: "apartment",
-    virtualTourUrl: "https://my.matterport.com/show/?m=JGPnGQ6hosj",
     lat: -2.479,
     lng: 29.981
   }
