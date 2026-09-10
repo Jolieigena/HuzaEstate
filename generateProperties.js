@@ -154,9 +154,9 @@ for (let i = 1; i <= 80; i++) {
   const sideImageUrlId = exteriorImageIds[i % exteriorImageIds.length];
   const backImageUrlId = exteriorImageIds[(i + 1) % exteriorImageIds.length];
   
-  const imageUrl = "https://images.unsplash.com/photo-" + imageUrlId + "?q=80&w=800&auto=format&fit=crop";
-  const sideImageUrl = "https://images.unsplash.com/photo-" + sideImageUrlId + "?q=80&w=800&auto=format&fit=crop";
-  const backImageUrl = "https://images.unsplash.com/photo-" + backImageUrlId + "?q=80&w=800&auto=format&fit=crop";
+  const imageUrl = "https://images.unsplash.com/photo-" + imageUrlId + "?q=80&w=1600&auto=format&fit=crop";
+  const sideImageUrl = "https://images.unsplash.com/photo-" + sideImageUrlId + "?q=80&w=1600&auto=format&fit=crop";
+  const backImageUrl = "https://images.unsplash.com/photo-" + backImageUrlId + "?q=80&w=1600&auto=format&fit=crop";
   
   const galleryImages = ["\"" + sideImageUrl + "\"", "\"" + backImageUrl + "\""];
   
@@ -167,7 +167,7 @@ for (let i = 1; i <= 80; i++) {
 
   for (let j = 1; j <= 2; j++) {
     const galId = interiorImageIds[(i + j) % interiorImageIds.length];
-    const url = "https://images.unsplash.com/photo-" + galId + "?q=80&w=800&auto=format&fit=crop";
+    const url = "https://images.unsplash.com/photo-" + galId + "?q=80&w=1600&auto=format&fit=crop";
     galleryImages.push("\"" + url + "\"");
     const interiorCategory = j === 1 ? "living_room" : "bedroom";
     photosArray.push("{ url: \"" + url + "\", category: \"" + interiorCategory + "\" }");

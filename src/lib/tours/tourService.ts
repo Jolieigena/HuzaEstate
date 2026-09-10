@@ -122,12 +122,23 @@ function markFailed(propertyId: string, error: string | undefined) {
 }
 
 async function pollUntilSettled(propertyId: string, operationId: string, startedAt: number, attempt = 0) {
+  const currentState = TourStoreEngine.getStore().tours[propertyId];
+  if (currentState?.status === "failed" && currentState?.error === "Cancelled by user") {
+    return; // Stop polling if cancelled
+  }
+
   if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
     markFailed(propertyId, "Timed out waiting for World Labs to finish generating this tour.");
     return;
   }
 
   const data = await getWorldGenerationStatus(operationId, propertyId);
+
+  // Check again in case it was cancelled while fetch was in flight
+  const stateAfterFetch = TourStoreEngine.getStore().tours[propertyId];
+  if (stateAfterFetch?.status === "failed" && stateAfterFetch?.error === "Cancelled by user") {
+    return;
+  }
 
   if (!("status" in data)) {
     markFailed(propertyId, data.error);
@@ -190,5 +201,17 @@ export const TourService = {
 
   retry(property: Property): Promise<void> {
     return TourService.requestTour(property);
+  },
+
+  cancelTour(propertyId: string): void {
+    TourStoreEngine.mutate((s) => {
+      const existing = s.tours[propertyId];
+      if (existing && existing.status === 'pending') {
+        existing.status = 'failed';
+        existing.phase = 'failed';
+        existing.error = 'Cancelled by user';
+        existing.updatedAt = new Date().toISOString();
+      }
+    });
   },
 };
