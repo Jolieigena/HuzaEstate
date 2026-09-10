@@ -97,8 +97,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             {property.description}
           </p>
 
-          {/* AI-Generated 3D Tour or Matterport */}
-          <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} virtualTourUrl={property.virtualTourUrl} />
+          {/* AI-Generated 3D Tour (World Labs Marble) */}
+          <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} />
 
           <Link href="/properties" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path></svg>
