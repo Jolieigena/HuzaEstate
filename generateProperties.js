@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const imageIds = [
+const exteriorImageIds = [
   "1507427100689-2bf8574e32d4",
   "1720605739861-9f5110c7e529",
   "1682773083908-a0e9ffadd175",
@@ -9,18 +9,27 @@ const imageIds = [
   "1689013398932-b576a11e07a1",
   "1708772565588-33785e13aa46",
   "1682773083896-95176d8aecf8",
-  "1600596542815-ffad4c1539a9",
+  "1600585154340-be6161a56a0c",
   "1512917774080-9991f1c4c750",
   "1600607688969-a5bfcd646154",
-  "1600596542815-ffad4c1539a9",
+  "1580587771525-78b9dba3b914",
   "1518780664697-5b050e0bb626",
   "1564013799919-ab600027ffc6",
   "1605146768851-ea244b94238e",
-  "1605810230434-7631ac76ec81",
-  "1582268611958-ebfd161ef9cf",
-  "1512917774080-9991f1c4c750",
-  "1523217582562-09d0def993a6",
-  "1598228726386-8a03bb3644f7",
+];
+
+const interiorImageIds = [
+  "1600596542815-ffad4c1539a9", // living room
+  "1556910103-1c02745a872f", // kitchen
+  "1522771731478-44eb18d5c08d", // bedroom
+  "1552321554-5fefe8c9ef14", // bathroom
+  "1584622650111-993a426fbf0a", // bathroom
+  "1505691938895-1758d7feb511", // bedroom
+  "1540518614846-7eded433c457", // bedroom
+  "1556911220-e15b29be8c8f", // kitchen
+  "1600566752355-32c6cb39a794", // dining
+  "1598228726386-8a03bb3644f7", // living
+  "1523217582562-09d0def993a6", // living
 ];
 
 const locations = [
@@ -141,12 +150,12 @@ for (let i = 1; i <= 80; i++) {
 
   const currency = isSale ? "USD" : "USD/month";
   
-  const imageUrlId = imageIds[(i - 1) % imageIds.length];
+  const imageUrlId = exteriorImageIds[(i - 1) % exteriorImageIds.length];
   const imageUrl = "https://images.unsplash.com/photo-" + imageUrlId + "?q=80&w=800&auto=format&fit=crop";
   
   const galleryImages = [];
   for (let j = 1; j <= 4; j++) {
-    const galId = imageIds[(i + j) % imageIds.length];
+    const galId = interiorImageIds[(i + j) % interiorImageIds.length];
     galleryImages.push("\"https://images.unsplash.com/photo-" + galId + "?q=80&w=800&auto=format&fit=crop\"");
   }
   
