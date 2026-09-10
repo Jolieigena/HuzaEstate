@@ -75,6 +75,24 @@ export async function generateWorldForProperty(property: Property): Promise<Tour
   }
 }
 
+/** Attaches an already-generated World Labs world (by its world_id) to a
+ *  property instead of starting a new, billed generation — see
+ *  /api/tours/attach. Resolves synchronously (no polling): the world is
+ *  already done, so the server downloads+stores its assets and returns the
+ *  finished record directly. */
+export async function attachExistingWorld(propertyId: string, worldId: string): Promise<TourApiResponse> {
+  try {
+    const res = await fetch('/api/tours/attach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ propertyId, worldId }),
+    });
+    return (await res.json()) as TourApiResponse;
+  } catch {
+    return { error: 'Could not reach the tour service.' };
+  }
+}
+
 /** Polls World Labs (via our server) for the current state of a generation.
  *  propertyId is included so the server can download+store the finished
  *  assets under the right property and persist the record — see
@@ -210,6 +228,31 @@ export const TourService = {
 
   retry(property: Property): Promise<void> {
     return TourService.requestTour(property);
+  },
+
+  /** Links a property to a world that was already generated (and already
+   *  paid for) rather than kicking off a fresh generation — see
+   *  attachExistingWorld above. */
+  async attachExisting(propertyId: string, worldId: string): Promise<void> {
+    const now = new Date().toISOString();
+    TourStoreEngine.mutate((s) => {
+      const existing = s.tours[propertyId];
+      if (existing) {
+        existing.status = 'pending';
+        existing.phase = 'downloading_assets';
+        existing.updatedAt = now;
+        existing.error = undefined;
+      } else {
+        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: 'pending', phase: 'downloading_assets', requestedAt: now, updatedAt: now };
+      }
+    });
+
+    const data = await attachExistingWorld(propertyId, worldId);
+    if (!('status' in data)) {
+      markFailed(propertyId, data.error);
+      return;
+    }
+    applyResult(propertyId, data);
   },
 
   cancelTour(propertyId: string): void {

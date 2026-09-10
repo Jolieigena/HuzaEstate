@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getActiveTourProvider } from '@/lib/tours/provider';
 import { TourProviderUnavailableError, TourProviderRequestError } from '@/lib/tours/provider/types';
-import { downloadAndStoreTourAssets } from '@/lib/tours/assetPipeline';
+import { persistReadyGeneration } from '@/lib/tours/assetPipeline';
 import { upsertTourRecord } from '@/lib/tours/repository';
 
 // Give the download-and-store pipeline below more headroom than a
@@ -55,56 +55,7 @@ export async function GET(request: Request) {
     // Download and store our own copies BEFORE ever telling the client this
     // tour is "ready" — normal viewing must never depend on World Labs'
     // URLs again after this point (they can be signed/expiring anyway).
-    await upsertTourRecord(propertyId, {
-      status: 'pending',
-      phase: 'downloading_assets',
-      operationId,
-      worldId: result.worldId,
-      viewerUrl: result.viewerUrl,
-      providerMode: provider.mode,
-    });
-
-    let assets: Awaited<ReturnType<typeof downloadAndStoreTourAssets>> | undefined;
-    let pipelineError: string | undefined;
-    try {
-      assets = await downloadAndStoreTourAssets(propertyId, result);
-    } catch (err) {
-      pipelineError = err instanceof Error ? err.message : 'Failed to download and store the generated tour assets.';
-    }
-
-    // A tour is only "ready" once something real is actually stored to view
-    // — never mark it ready on World Labs' say-so alone.
-    const hasViewableAsset = Boolean(assets?.spzUrl || assets?.panoUrl);
-    if (!hasViewableAsset) {
-      const record = await upsertTourRecord(propertyId, {
-        status: 'failed',
-        phase: 'failed',
-        operationId,
-        worldId: result.worldId,
-        viewerUrl: result.viewerUrl,
-        error: pipelineError ?? 'Generation finished but no viewable asset (splat or panorama) could be downloaded and stored.',
-        providerMode: provider.mode,
-      });
-      return NextResponse.json({ ...record, providerId: provider.id });
-    }
-
-    const record = await upsertTourRecord(propertyId, {
-      status: 'ready',
-      phase: 'ready',
-      operationId,
-      worldId: result.worldId,
-      viewerUrl: result.viewerUrl,
-      thumbnailUrl: assets?.thumbnailUrl,
-      panoUrl: assets?.panoUrl,
-      spzUrl: assets?.spzUrl,
-      rawSpzUrls: result.spzUrls,
-      colliderUrl: assets?.colliderUrl,
-      caption: result.caption,
-      semanticsMetadata: result.semanticsMetadata,
-      readyAt: new Date().toISOString(),
-      providerMode: provider.mode,
-    });
-
+    const record = await persistReadyGeneration(propertyId, operationId, result, provider.mode);
     return NextResponse.json({ ...record, providerId: provider.id });
   } catch (err) {
     const message =

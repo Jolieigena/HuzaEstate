@@ -5,7 +5,9 @@
 
 import { getActiveAssetStorage } from "./assetStorage";
 import { filenameFor } from "./assetFilenames";
-import type { TourGenerationResult } from "./provider/types";
+import { upsertTourRecord } from "./repository";
+import type { TourGenerationResult, TourProviderMode } from "./provider/types";
+import type { TourRecord } from "./types";
 
 export interface PipelineAssets {
   spzUrl?: string;
@@ -93,4 +95,61 @@ export async function downloadAndStoreTourAssets(propertyId: string, result: Tou
   }
 
   return assets;
+}
+
+/**
+ * Shared by the polling status route (a fresh generation just finished) and
+ * the attach route (an already-existing World Labs world is being linked to
+ * a property instead) — once a result is confirmed "ready" upstream,
+ * download+store its assets and persist the record. A tour is only ever
+ * marked "ready" here once something real (splat or panorama) is actually
+ * stored on our side — never on World Labs' say-so alone.
+ */
+export async function persistReadyGeneration(propertyId: string, operationId: string, result: TourGenerationResult, providerMode: TourProviderMode): Promise<TourRecord> {
+  await upsertTourRecord(propertyId, {
+    status: "pending",
+    phase: "downloading_assets",
+    operationId,
+    worldId: result.worldId,
+    viewerUrl: result.viewerUrl,
+    providerMode,
+  });
+
+  let assets: PipelineAssets | undefined;
+  let pipelineError: string | undefined;
+  try {
+    assets = await downloadAndStoreTourAssets(propertyId, result);
+  } catch (err) {
+    pipelineError = err instanceof Error ? err.message : "Failed to download and store the generated tour assets.";
+  }
+
+  const hasViewableAsset = Boolean(assets?.spzUrl || assets?.panoUrl);
+  if (!hasViewableAsset) {
+    return upsertTourRecord(propertyId, {
+      status: "failed",
+      phase: "failed",
+      operationId,
+      worldId: result.worldId,
+      viewerUrl: result.viewerUrl,
+      error: pipelineError ?? "Generation finished but no viewable asset (splat or panorama) could be downloaded and stored.",
+      providerMode,
+    });
+  }
+
+  return upsertTourRecord(propertyId, {
+    status: "ready",
+    phase: "ready",
+    operationId,
+    worldId: result.worldId,
+    viewerUrl: result.viewerUrl,
+    thumbnailUrl: assets?.thumbnailUrl,
+    panoUrl: assets?.panoUrl,
+    spzUrl: assets?.spzUrl,
+    rawSpzUrls: result.spzUrls,
+    colliderUrl: assets?.colliderUrl,
+    caption: result.caption,
+    semanticsMetadata: result.semanticsMetadata,
+    readyAt: new Date().toISOString(),
+    providerMode,
+  });
 }

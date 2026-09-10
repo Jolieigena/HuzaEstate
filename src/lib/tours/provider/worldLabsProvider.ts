@@ -124,15 +124,11 @@ function toWorldPrompt(input: GenerationInput) {
  *  the same full asset set instead of generateTour's instant-done path
  *  silently dropping everything but operationId/status (the previous bug:
  *  it never read `data.response` at all). */
-function toGenerationResult(operationId: string, data: GenerateWorldResponse): TourGenerationResult {
-  if (data.error) {
-    return { operationId, status: "failed", error: data.error.message ?? "World generation failed." };
-  }
-  if (!data.done || !data.response) {
-    return { operationId, status: "pending" };
-  }
-
-  const world = data.response;
+/** Shared by toGenerationResult (generate/operations responses) and
+ *  getWorldById (GET /marble/v1/worlds/{world_id}, which returns a World
+ *  object directly, not wrapped in an operation envelope) — one place that
+ *  maps a WorldObject onto our typed "ready" result. */
+function worldToReadyResult(operationId: string, world: WorldObject): TourGenerationResult {
   const assets = world.assets;
   const mesh = assets?.mesh;
   const splats = assets?.splats;
@@ -157,6 +153,16 @@ function toGenerationResult(operationId: string, data: GenerateWorldResponse): T
         ? { groundPlaneOffsetMeters: semantics?.ground_plane_offset ?? undefined, metricScaleFactor: semantics?.metric_scale_factor ?? undefined }
         : undefined,
   };
+}
+
+function toGenerationResult(operationId: string, data: GenerateWorldResponse): TourGenerationResult {
+  if (data.error) {
+    return { operationId, status: "failed", error: data.error.message ?? "World generation failed." };
+  }
+  if (!data.done || !data.response) {
+    return { operationId, status: "pending" };
+  }
+  return worldToReadyResult(operationId, data.response);
 }
 
 /**
@@ -243,6 +249,52 @@ export const worldLabsProvider: TourProvider = {
       // just a field-name mismatch. Surface this loudly rather than
       // quietly proceeding with an undefined world id.
       return { operationId, status: "failed", error: "World Labs marked generation done but the response had no world id." };
+    }
+    return result;
+  },
+
+  async getWorldById(worldId) {
+    const apiKey = requireApiKey();
+
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/marble/v1/worlds/${encodeURIComponent(worldId)}`, {
+        headers: { "WLT-Api-Key": apiKey },
+      });
+    } catch (err) {
+      throw new TourProviderRequestError(`Could not reach World Labs: ${err instanceof Error ? err.message : "network error"}.`, "network");
+    }
+
+    if (res.status === 404) {
+      // World Labs' own dashboard ("Generations" table) displays only the
+      // first 8 hex characters of the real world_id (a full UUID) in its
+      // "ID" column — confirmed by comparing that display value against
+      // full world_ids this app had already stored from real generations.
+      // Pasting that truncated value here always 404s, so this is the most
+      // common way to land in this branch — worth a specific hint rather
+      // than a bare "not found".
+      const looksTruncated = !worldId.includes("-") && worldId.length < 32;
+      const hint = looksTruncated
+        ? ` World Labs' dashboard only shows a shortened ID in its "Generations" table — open that generation's "View trace" page to copy the full id (a UUID like "9cec3b9e-0dfb-4b5a-a660-4082e50d1fff").`
+        : "";
+      throw new TourProviderRequestError(`No World Labs world found with id "${worldId}".${hint}`, "validation");
+    }
+    if (!res.ok) throw await errorFromResponse(res);
+
+    let world: WorldObject;
+    try {
+      world = (await res.json()) as WorldObject;
+    } catch {
+      throw new TourProviderRequestError("World Labs returned a malformed response to the world lookup request.", "upstream");
+    }
+
+    // world:<id> rather than the real world id — an operationId here is
+    // just a record-keeping label (this path never polls an operation),
+    // and keeping it visually distinct from a real World Labs operation_id
+    // makes attached-not-generated records easy to spot later.
+    const result = worldToReadyResult(`world:${worldId}`, world);
+    if (!result.worldId) {
+      throw new TourProviderRequestError("World Labs returned a world with no world id.", "upstream");
     }
     return result;
   },

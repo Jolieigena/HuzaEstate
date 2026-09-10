@@ -89,4 +89,10 @@ export interface TourProvider {
 
   generateTour(input: GenerationInput): Promise<TourGenerationResult>;
   getGenerationStatus(operationId: string): Promise<TourGenerationResult>;
+  /** Fetches an already-generated world directly by its world_id (GET
+   *  /marble/v1/worlds/{world_id}) so a previously generated World Labs
+   *  world can be attached to a property instead of paying for a new
+   *  generation. Optional: only worldLabsProvider implements it — the mock
+   *  provider never creates real, independently-addressable worlds. */
+  getWorldById?(worldId: string): Promise<TourGenerationResult>;
 }

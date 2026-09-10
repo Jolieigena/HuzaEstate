@@ -224,12 +224,14 @@ function ListingActionsMenu({
   onEdit,
   onDelete,
   onSetMarketStatus,
+  onAttachExistingWorld,
 }: {
   listing: Listing;
   marketStatus: ListingModerationStatus;
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
   onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+  onAttachExistingWorld: (property: Property) => void;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -282,6 +284,9 @@ function ListingActionsMenu({
           
           {tour && (tour.status === 'ready' || tour.status === 'failed') && (
             item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })
+          )}
+          {(!tour || tour.status === 'ready' || tour.status === 'failed') && (
+            item('Attach Existing World ID', () => onAttachExistingWorld(listing.property))
           )}
 
           {item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
@@ -374,11 +379,13 @@ function ListingCard({
   onEdit,
   onDelete,
   onSetMarketStatus,
+  onAttachExistingWorld,
 }: {
   listing: Listing;
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
   onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+  onAttachExistingWorld: (property: Property) => void;
 }) {
   const isLeased = listing.status === 'Leased';
   const marketStatus = useListingModerationStatus(listing.id);
@@ -425,7 +432,7 @@ function ListingCard({
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <SellerTourControl property={listing.property} />
-          <ListingActionsMenu listing={listing} marketStatus={marketStatus} onEdit={onEdit} onDelete={onDelete} onSetMarketStatus={onSetMarketStatus} />
+          <ListingActionsMenu listing={listing} marketStatus={marketStatus} onEdit={onEdit} onDelete={onDelete} onSetMarketStatus={onSetMarketStatus} onAttachExistingWorld={onAttachExistingWorld} />
         </div>
       </div>
     </div>
@@ -560,6 +567,9 @@ export default function ManagerDashboard() {
   const [applicationPropertyFilter, setApplicationPropertyFilter] = useState('all');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const [attachingProperty, setAttachingProperty] = useState<Property | null>(null);
+  const [attachWorldId, setAttachWorldId] = useState('');
+  const [attachError, setAttachError] = useState<string | null>(null);
   const { isApprovedSeller, account } = useAuth();
   // Every property a seller could manage — mockProperties (all 60-80 of
   // them, not just the 5 hand-curated ones) plus anything posted this
@@ -794,7 +804,18 @@ export default function ManagerDashboard() {
                 {filteredListings.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {filteredListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} onEdit={setEditingProperty} onDelete={setDeletingProperty} onSetMarketStatus={handleSetMarketStatus} />
+                      <ListingCard
+                        key={listing.id}
+                        listing={listing}
+                        onEdit={setEditingProperty}
+                        onDelete={setDeletingProperty}
+                        onSetMarketStatus={handleSetMarketStatus}
+                        onAttachExistingWorld={(property) => {
+                          setAttachWorldId('');
+                          setAttachError(null);
+                          setAttachingProperty(property);
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -985,6 +1006,49 @@ export default function ManagerDashboard() {
         confirmLabel="Delete Listing"
         destructive
       />
+
+      <ConfirmModal
+        open={attachingProperty !== null}
+        onClose={() => setAttachingProperty(null)}
+        onConfirm={async () => {
+          if (!attachingProperty) return;
+          const worldId = attachWorldId.trim();
+          if (!worldId) {
+            setAttachError('Enter a world ID.');
+            return;
+          }
+          setAttachError(null);
+          await TourService.attachExisting(attachingProperty.id, worldId);
+          const result = TourService.getForProperty(attachingProperty.id);
+          if (result?.status === 'failed') {
+            setAttachError(result.error ?? 'Could not attach that world.');
+            return;
+          }
+          setAttachingProperty(null);
+        }}
+        title="Attach an existing 3D tour"
+        description={
+          <>
+            Link <span className="font-semibold text-slate-700">{attachingProperty?.title}</span> to a world that was already generated on the World Labs
+            platform, instead of generating (and paying for) a new one. Open the generation&apos;s{' '}
+            <a href="https://platform.worldlabs.ai/generations" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 font-semibold underline">
+              World Labs Generations page
+            </a>
+            , click &quot;View trace&quot; on the one you want, and copy its <span className="font-semibold text-slate-700">full</span> world ID — the
+            &quot;ID&quot; column on the table itself only shows a shortened version and won&apos;t work here.
+          </>
+        }
+        confirmLabel="Attach"
+      >
+        <input
+          type="text"
+          value={attachWorldId}
+          onChange={(e) => setAttachWorldId(e.target.value)}
+          placeholder="e.g. 9cec3b9e-0dfb-4b5a-a660-4082e50d1fff"
+          className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-300"
+        />
+        {attachError && <p className="text-xs font-semibold text-red-600 mt-2">{attachError}</p>}
+      </ConfirmModal>
     </div>
   );
 }
