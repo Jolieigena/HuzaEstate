@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { type Property } from '@/lib/data';
 import SellerTourControl from '@/components/SellerTourControl';
+import { useTourForProperty } from '@/lib/tours/hooks';
+import { TourService } from '@/lib/tours/tourService';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
@@ -231,6 +233,8 @@ function ListingActionsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  
+  const tour = useTourForProperty(listing.property.id);
 
   useEffect(() => {
     if (!open) return;
@@ -244,14 +248,15 @@ function ListingActionsMenu({
   const isUnpublished = marketStatus === 'unpublished';
   const isArchived = marketStatus === 'archived';
 
-  const item = (label: string, onClick: () => void, tone: 'default' | 'danger' = 'default') => (
+  const item = (label: string, onClick: () => void, tone: 'default' | 'danger' = 'default', disabled: boolean = false) => (
     <button
       type="button"
+      disabled={disabled}
       onClick={() => {
         onClick();
         setOpen(false);
       }}
-      className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors ${
+      className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors disabled:opacity-50 ${
         tone === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-50'
       }`}
     >
@@ -274,6 +279,11 @@ function ListingActionsMenu({
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg py-1.5 z-20">
           {item(listing.status === 'Leased' ? 'Relist' : 'Edit', () => onEdit(listing.property))}
+          
+          {tour && (tour.status === 'ready' || tour.status === 'failed') && (
+            item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })
+          )}
+
           {item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
           {item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
           {listing.isSellerPosted && (
