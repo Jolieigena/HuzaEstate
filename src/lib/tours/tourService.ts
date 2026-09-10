@@ -168,7 +168,16 @@ export const TourService = {
     const now = new Date().toISOString();
 
     TourStoreEngine.mutate((s) => {
-      s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: "pending", phase: "queued", requestedAt: now, updatedAt: now };
+      const existing = s.tours[propertyId];
+      if (existing) {
+        existing.status = "pending";
+        existing.phase = "queued";
+        existing.requestedAt = now;
+        existing.updatedAt = now;
+        existing.error = undefined;
+      } else {
+        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: "pending", phase: "queued", requestedAt: now, updatedAt: now };
+      }
     });
 
     const data = await generateWorldForProperty(property);
