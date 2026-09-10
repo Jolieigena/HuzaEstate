@@ -3,10 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import PublicPropertyGrid from '@/components/PublicPropertyGrid';
+import { mockProperties } from '@/lib/data';
 
 export default function SellPage() {
   const [address, setAddress] = useState('');
   const [valuationSubmitted, setValuationSubmitted] = useState(false);
+  const forSale = mockProperties.filter((property) => property.type === 'sale');
 
   const handleValuationSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -96,6 +99,24 @@ export default function SellPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* See what's selling */}
+      <section className="max-w-7xl mx-auto px-6 sm:px-10 py-24">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">See what&apos;s selling right now</h2>
+            <p className="text-slate-500 text-lg">A sample of homes currently for sale on HuzaEstate — this is the market your home would join.</p>
+          </div>
+          <Link
+            href="/properties?type=sale"
+            className="inline-flex items-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-6 py-3 rounded-full transition-all self-start sm:self-auto"
+          >
+            <span>Browse the market</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+          </Link>
+        </div>
+        <PublicPropertyGrid properties={forSale} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
       </section>
 
       {/* Process Section */}

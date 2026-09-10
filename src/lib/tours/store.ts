@@ -5,7 +5,6 @@
 
 import { TourStorageService } from "./storage";
 import { emptyTourStore } from "./types";
-import { seedToursIfEmpty } from "./seed";
 import type { TourStore } from "./types";
 
 type Listener = () => void;
@@ -19,20 +18,34 @@ function notifyListeners() {
 
 function ensureLoaded(): TourStore {
   if (store !== null) return store;
-  store = seedToursIfEmpty(TourStorageService.loadStore() ?? emptyTourStore());
-  
+  store = TourStorageService.loadStore() ?? emptyTourStore();
+
+  // Records created before the asset-storage rewrite point at
+  // /api/tours/panorama, a route that no longer exists (replaced by
+  // /api/tours/asset — see src/app/api/tours/asset/route.ts). There's no
+  // way to actually recover these: the old flat single-file cache layout
+  // isn't compatible with the new per-property directory structure, so
+  // the underlying asset is genuinely gone, not just moved. Clear the
+  // stale record back to "no tour yet" rather than leaving a permanently
+  // broken viewer — the owner can just regenerate.
+  // A short-lived bug (since removed — see git history of this file) auto-
+  // seeded a fake "ready" tour for every mock property pointing at
+  // /test-splat.spz, a file that was never actually added to public/. Any
+  // record with that exact marker was fabricated, not a real generation —
+  // clear it out here too so a browser that already ran the bug once
+  // doesn't keep showing a permanently-broken viewer from it.
   let migrated = false;
-  Object.values(store.tours).forEach(tour => {
-    if (tour.panoUrl && tour.panoUrl.includes('/api/tours/panorama')) {
-      tour.panoUrl = tour.panoUrl.replace('/api/tours/panorama', '/api/tours/asset') + '&file=panorama.jpg';
+  Object.entries(store.tours).forEach(([propertyId, tour]) => {
+    if (tour.panoUrl?.includes('/api/tours/panorama') || tour.viewerUrl?.includes('/api/tours/panorama') || tour.spzUrl === '/test-splat.spz') {
+      delete store!.tours[propertyId];
       migrated = true;
     }
   });
-  
+
   if (migrated) {
     TourStorageService.saveStore(store);
   }
-  
+
   return store;
 }
 

@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
-import { deriveImageFields } from '@/lib/photoCategories';
-import type { Property, PropertyPhoto } from '@/lib/data';
+import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
+import type { Property } from '@/lib/data';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 
@@ -25,7 +25,7 @@ export default function PostPropertyPage() {
   const [bathrooms, setBathrooms] = useState('');
   const [sqm, setSqm] = useState('');
   const [description, setDescription] = useState('');
-  const [photos, setPhotos] = useState<PropertyPhoto[]>([]);
+  const [photos, setPhotos] = useState<CategorizedPhoto[]>([]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ export default function PostPropertyPage() {
     setSubmitting(true);
 
     const [cityPart, ...rest] = city.split(',');
-    const { imageUrl, images } = deriveImageFields(photos, FALLBACK_IMAGE);
+    const { imageUrl, galleryImages } = deriveImageFields(photos, FALLBACK_IMAGE);
     const property = SellerListingsStoreEngine.add({
       title,
       description: description || `A ${propertyType} listed in ${location}.`,
@@ -46,7 +46,7 @@ export default function PostPropertyPage() {
       bathrooms: Number(bathrooms) || 0,
       sqm: Number(sqm) || 0,
       imageUrl,
-      images,
+      galleryImages,
       photos,
       type: listingType,
       propertyType,

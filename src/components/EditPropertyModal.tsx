@@ -4,8 +4,8 @@ import { useState } from 'react';
 import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
-import { deriveImageFields } from '@/lib/photoCategories';
-import type { Property, PropertyPhoto } from '@/lib/data';
+import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
+import type { Property } from '@/lib/data';
 
 interface EditPropertyModalProps {
   property: Property | null;
@@ -34,7 +34,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const { imageUrl, images } = deriveImageFields(form.photos, property.imageUrl);
+    const { imageUrl, galleryImages } = deriveImageFields(form.photos, property.imageUrl);
     PropertyOverridesStoreEngine.set(property.id, {
       title: form.title,
       description: form.description,
@@ -45,7 +45,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       bathrooms: Number(form.bathrooms) || 0,
       sqm: Number(form.sqm) || 0,
       imageUrl,
-      images,
+      galleryImages,
       photos: form.photos,
       type: form.type,
       propertyType: form.propertyType,
@@ -201,14 +201,22 @@ function toFormState(property: Property | null) {
   };
 }
 
-/** Properties created before categorized upload existed only have a flat
- *  images list — bucket those into a starting category (first photo as the
- *  presumed exterior front shot, the rest as "Other Room") so nothing the
- *  seller already uploaded is lost when they open the edit form; they can
- *  freely re-sort by removing and re-adding into the right slot. */
-function toPhotos(property: Property): PropertyPhoto[] {
-  if (property.photos?.length) return property.photos;
+/** Property.photos is looser than the upload form needs ({url, category?:
+ *  string} — seeded data isn't guaranteed to use a category we recognize),
+ *  and older/seeded properties may only have galleryImages or a single
+ *  imageUrl with no photos array at all — bucket those into a starting
+ *  category (first photo as the presumed exterior front shot, the rest as
+ *  "Other Room") so nothing already there is lost when the form opens;
+ *  the seller can freely re-sort by removing and re-adding into the right
+ *  slot. */
+function toPhotos(property: Property): CategorizedPhoto[] {
+  if (property.photos?.length) {
+    return property.photos.map((p, i) => ({
+      url: p.url,
+      category: p.category && isPhotoCategory(p.category) ? p.category : i === 0 ? 'exterior_front' : 'interior_other',
+    }));
+  }
 
-  const images = property.images?.length ? property.images : [property.imageUrl];
-  return images.map((url, i) => ({ url, category: i === 0 ? 'exterior_front' : 'interior_other' }));
+  const fallbackImages = property.galleryImages?.length ? property.galleryImages : [property.imageUrl];
+  return fallbackImages.map((url, i) => ({ url, category: i === 0 ? 'exterior_front' : 'interior_other' }));
 }
