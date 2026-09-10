@@ -151,12 +151,26 @@ for (let i = 1; i <= 80; i++) {
   const currency = isSale ? "USD" : "USD/month";
   
   const imageUrlId = exteriorImageIds[(i - 1) % exteriorImageIds.length];
-  const imageUrl = "https://images.unsplash.com/photo-" + imageUrlId + "?q=80&w=800&auto=format&fit=crop";
+  const sideImageUrlId = exteriorImageIds[i % exteriorImageIds.length];
+  const backImageUrlId = exteriorImageIds[(i + 1) % exteriorImageIds.length];
   
-  const galleryImages = [];
-  for (let j = 1; j <= 4; j++) {
+  const imageUrl = "https://images.unsplash.com/photo-" + imageUrlId + "?q=80&w=800&auto=format&fit=crop";
+  const sideImageUrl = "https://images.unsplash.com/photo-" + sideImageUrlId + "?q=80&w=800&auto=format&fit=crop";
+  const backImageUrl = "https://images.unsplash.com/photo-" + backImageUrlId + "?q=80&w=800&auto=format&fit=crop";
+  
+  const galleryImages = [sideImageUrl, backImageUrl];
+  
+  const photosArray = [];
+  photosArray.push("{ url: \"" + imageUrl + "\", category: \"exterior_front\" }");
+  photosArray.push("{ url: \"" + sideImageUrl + "\", category: \"exterior_side\" }");
+  photosArray.push("{ url: \"" + backImageUrl + "\", category: \"exterior_back\" }");
+
+  for (let j = 1; j <= 2; j++) {
     const galId = interiorImageIds[(i + j) % interiorImageIds.length];
-    galleryImages.push("\"https://images.unsplash.com/photo-" + galId + "?q=80&w=800&auto=format&fit=crop\"");
+    const url = "https://images.unsplash.com/photo-" + galId + "?q=80&w=800&auto=format&fit=crop";
+    galleryImages.push("\"" + url + "\"");
+    const interiorCategory = j === 1 ? "living_room" : "bedroom";
+    photosArray.push("{ url: \"" + url + "\", category: \"" + interiorCategory + "\" }");
   }
   
   const lat = -1.94 + (Math.random() - 0.5) * 1.5;
@@ -175,6 +189,7 @@ for (let i = 1; i <= 80; i++) {
   propStr += "    sqm: " + sqm + ",\n";
   propStr += "    imageUrl: \"" + imageUrl + "\",\n";
   propStr += "    galleryImages: [" + galleryImages.join(", ") + "],\n";
+  propStr += "    photos: [" + photosArray.join(", ") + "],\n";
   propStr += "    type: \"" + type + "\",\n";
   propStr += "    propertyType: \"" + propertyType + "\",\n";
   propStr += "    virtualTourUrl: \"https://my.matterport.com/show/?m=JGPnGQ6hosj\",\n";
@@ -197,6 +212,7 @@ fileContent += "  bathrooms: number;\n";
 fileContent += "  sqm: number;\n";
 fileContent += "  imageUrl: string;\n";
 fileContent += "  galleryImages?: string[];\n";
+fileContent += "  photos?: { url: string; category?: string }[];\n";
 fileContent += "  type: 'sale' | 'rent';\n";
 fileContent += "  propertyType: 'house' | 'apartment' | 'land';\n";
 fileContent += "  virtualTourUrl?: string;\n";
