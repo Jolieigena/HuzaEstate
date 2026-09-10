@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import Dialog from './Dialog';
-import PhotoPicker from './PhotoPicker';
+import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
-import type { Property } from '@/lib/data';
+import { deriveImageFields } from '@/lib/photoCategories';
+import type { Property, PropertyPhoto } from '@/lib/data';
 
 interface EditPropertyModalProps {
   property: Property | null;
@@ -33,6 +34,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
   const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const { imageUrl, images } = deriveImageFields(form.photos, property.imageUrl);
     PropertyOverridesStoreEngine.set(property.id, {
       title: form.title,
       description: form.description,
@@ -42,8 +44,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       bedrooms: Number(form.bedrooms) || 0,
       bathrooms: Number(form.bathrooms) || 0,
       sqm: Number(form.sqm) || 0,
-      imageUrl: form.images[0] ?? property.imageUrl,
-      images: form.images.length ? form.images : [property.imageUrl],
+      imageUrl,
+      images,
+      photos: form.photos,
       type: form.type,
       propertyType: form.propertyType,
     });
@@ -123,7 +126,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
-          <PhotoPicker images={form.images} onChange={(images) => setForm((f) => ({ ...f, images }))} />
+          <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} />
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5">
@@ -192,8 +195,20 @@ function toFormState(property: Property | null) {
     bedrooms: property ? String(property.bedrooms) : '',
     bathrooms: property ? String(property.bathrooms) : '',
     sqm: property ? String(property.sqm) : '',
-    images: property ? (property.images?.length ? property.images : [property.imageUrl]) : [],
+    photos: property ? toPhotos(property) : [],
     type: (property?.type ?? 'sale') as Property['type'],
     propertyType: (property?.propertyType ?? 'house') as Property['propertyType'],
   };
+}
+
+/** Properties created before categorized upload existed only have a flat
+ *  images list — bucket those into a starting category (first photo as the
+ *  presumed exterior front shot, the rest as "Other Room") so nothing the
+ *  seller already uploaded is lost when they open the edit form; they can
+ *  freely re-sort by removing and re-adding into the right slot. */
+function toPhotos(property: Property): PropertyPhoto[] {
+  if (property.photos?.length) return property.photos;
+
+  const images = property.images?.length ? property.images : [property.imageUrl];
+  return images.map((url, i) => ({ url, category: i === 0 ? 'exterior_front' : 'interior_other' }));
 }

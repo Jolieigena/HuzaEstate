@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { TourStoreEngine } from "./store";
 import type { TourRecord } from "./types";
 
@@ -34,7 +34,44 @@ function useTourSubscription<T>(select: () => T, getServerSnapshot: () => T): T 
   return useSyncExternalStore(TourStoreEngine.subscribe, getSnapshot, getServerSnapshot);
 }
 
+// localStorage (TourStoreEngine) is a fast local CACHE, not the source of
+// truth — it's per-browser, so a buyer on a different device would
+// otherwise never see a tour generated elsewhere. The real source of truth
+// is the server-side repository (see src/lib/tours/repository and
+// /api/tours/record); this reconciles the local cache against it once per
+// propertyId per pageload the first time any component asks for that
+// property's tour.
+const reconciledPropertyIds = new Set<string>();
+
+function reconcileWithServerRecord(propertyId: string) {
+  if (reconciledPropertyIds.has(propertyId)) return;
+  reconciledPropertyIds.add(propertyId);
+
+  fetch(`/api/tours/record?propertyId=${encodeURIComponent(propertyId)}`)
+    .then((res) => (res.ok ? (res.json() as Promise<TourRecord>) : null))
+    .then((record) => {
+      if (!record) return;
+      TourStoreEngine.mutate((s) => {
+        const local = s.tours[propertyId];
+        // The server record is authoritative — only keep the local one if
+        // it's demonstrably fresher (this tab is actively polling an
+        // in-progress generation the server hasn't persisted the latest
+        // step of yet).
+        if (local?.updatedAt && record.updatedAt && local.updatedAt > record.updatedAt) return;
+        s.tours[propertyId] = record;
+      });
+    })
+    .catch(() => {
+      // Best-effort — if this fails, whatever's already in the local cache
+      // (possibly nothing) is what renders. Never blocks the UI.
+    });
+}
+
 export function useTourForProperty(propertyId: string | undefined): TourRecord | undefined {
+  useEffect(() => {
+    if (propertyId) reconcileWithServerRecord(propertyId);
+  }, [propertyId]);
+
   return useTourSubscription(
     () => (propertyId ? TourStoreEngine.getStore().tours[propertyId] : undefined),
     () => undefined

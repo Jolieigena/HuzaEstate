@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/lib/auth-context';
 import { type Property } from '@/lib/data';
 import SellerTourControl from '@/components/SellerTourControl';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
+import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
+import { AdminService } from '@/lib/admin/service';
+import { useListingModerationStatus } from '@/lib/admin/listings';
+import type { ListingModerationStatus } from '@/lib/admin/types';
+import { useTenantApplications } from '@/lib/tenantApplications/hooks';
+import { TenantApplicationsStoreEngine, deriveListingStatus } from '@/lib/tenantApplications/store';
+import type { TenantApplication, ApplicationStage } from '@/lib/tenantApplications/types';
+import { formatRelativeTime } from '@/lib/build/format';
 import EditPropertyModal from '@/components/EditPropertyModal';
+import ConfirmModal from '@/components/shared/ConfirmModal';
 
 function ApplyGate() {
   return (
@@ -41,6 +51,10 @@ interface Listing {
   /** Full source record — SellerTourControl needs more than id/image to
    *  build a good generation prompt (bedrooms, bathrooms, location, ...). */
   property: Property;
+  /** Only seller-posted listings (ids always "seller-<uuid>", see
+   *  src/lib/sellerListings/store.ts) can be deleted — the curated
+   *  mockProperties are static seed data a seller doesn't own. */
+  isSellerPosted: boolean;
 }
 
 // Keyed to real mockProperties ids (not fabricated ones) so that generating
@@ -66,14 +80,21 @@ const DEFAULT_META: Pick<Listing, 'status' | 'views' | 'saves' | 'leads' | 'tren
   trend: [0, 0],
 };
 
-function toListing(property: Property): Listing {
+function toListing(property: Property, applications: TenantApplication[]): Listing {
+  const meta = LISTING_META[property.id] ?? DEFAULT_META;
+  // A real tenant application decides Pending/Leased when there is one —
+  // the hardcoded/default meta status is only ever the fallback for a
+  // property nothing has been applied to yet.
+  const status = deriveListingStatus(property.id, applications) ?? meta.status;
   return {
     id: property.id,
     title: property.title,
     rent: property.price,
     image: property.imageUrl,
     property,
-    ...(LISTING_META[property.id] ?? DEFAULT_META),
+    isSellerPosted: property.id.startsWith('seller-'),
+    ...meta,
+    status,
   };
 }
 
@@ -190,16 +211,182 @@ function BarBreakdown({ items, format }: { items: BarBreakdownItem[]; format?: (
   );
 }
 
-function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: (property: Property) => void }) {
-  const isLeased = listing.status === 'Leased';
+const MARKET_STATUS_BADGE: Partial<Record<ListingModerationStatus, string>> = {
+  unpublished: 'Off Market',
+  archived: 'Archived',
+};
+
+function ListingActionsMenu({
+  listing,
+  marketStatus,
+  onEdit,
+  onDelete,
+  onSetMarketStatus,
+}: {
+  listing: Listing;
+  marketStatus: ListingModerationStatus;
+  onEdit: (property: Property) => void;
+  onDelete: (property: Property) => void;
+  onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const isUnpublished = marketStatus === 'unpublished';
+  const isArchived = marketStatus === 'archived';
+
+  const item = (label: string, onClick: () => void, tone: 'default' | 'danger' = 'default') => (
+    <button
+      type="button"
+      onClick={() => {
+        onClick();
+        setOpen(false);
+      }}
+      className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors ${
+        tone === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-50'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className={`relative w-full h-36 ${isLeased ? 'opacity-50 grayscale' : ''}`}>
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+        aria-label="More actions"
+        aria-expanded={open}
+      >
+        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z"></path></svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg py-1.5 z-20">
+          {item(listing.status === 'Leased' ? 'Relist' : 'Edit', () => onEdit(listing.property))}
+          {item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
+          {item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
+          {listing.isSellerPosted && (
+            <div className="border-t border-slate-50 mt-1 pt-1">
+              {item('Delete', () => onDelete(listing.property), 'danger')}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ApplicationCard({
+  application,
+  propertyTitle,
+  onAdvance,
+  onReject,
+}: {
+  application: TenantApplication;
+  propertyTitle: string;
+  onAdvance: (id: string, next: ApplicationStage) => void;
+  onReject: (id: string) => void;
+}) {
+  const accentClass =
+    application.stage === 'screening' ? 'border-l-4 border-l-yellow-400' : application.stage === 'approved' ? 'border-l-4 border-l-[#2ec440]' : '';
+
+  return (
+    <div className={`bg-white rounded-xl p-4 shadow-sm border border-slate-200 ${accentClass}`}>
+      <div className="flex justify-between items-start mb-1 gap-2">
+        <div className="font-bold text-slate-900">{application.applicantName}</div>
+        <span className="text-xs font-bold text-slate-500 whitespace-nowrap">{formatRelativeTime(application.appliedAt)}</span>
+      </div>
+      <div className="text-xs text-slate-500 mb-2 truncate">{propertyTitle}</div>
+
+      {application.stage === 'screening' && (
+        <div className="flex items-center gap-2 text-xs font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded mb-3">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Awaiting background check
+        </div>
+      )}
+
+      {application.incomeLabel && (
+        <div className="text-xs text-slate-600 mb-1">Income: <span className="font-semibold text-green-600">{application.incomeLabel}</span></div>
+      )}
+      {application.creditScore && (
+        <div className={`text-xs text-slate-600 ${application.stage === 'approved' ? 'mb-4' : 'mb-3'}`}>
+          Credit: <span className={`font-semibold ${application.stage === 'approved' ? 'text-green-600' : ''}`}>{application.creditScore}</span>
+        </div>
+      )}
+
+      {application.stage === 'new' && (
+        <div className="flex gap-2">
+          <button onClick={() => onAdvance(application.id, 'screening')} className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">
+            Screen
+          </button>
+          <button onClick={() => onReject(application.id)} className="px-3 text-slate-400 hover:text-red-600 font-semibold text-xs transition-colors">
+            Reject
+          </button>
+        </div>
+      )}
+
+      {application.stage === 'screening' && (
+        <div className="flex gap-2">
+          <button onClick={() => onAdvance(application.id, 'approved')} className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">
+            Approve
+          </button>
+          <button onClick={() => onReject(application.id)} className="px-3 text-slate-400 hover:text-red-600 font-semibold text-xs transition-colors">
+            Reject
+          </button>
+        </div>
+      )}
+
+      {application.stage === 'approved' && (
+        <button
+          onClick={() => onAdvance(application.id, 'leased')}
+          className="w-full bg-[#2ec440] hover:bg-[#28b039] text-white font-semibold py-2 rounded-lg text-xs transition-colors shadow-sm"
+        >
+          Send Lease Agreement
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ListingCard({
+  listing,
+  onEdit,
+  onDelete,
+  onSetMarketStatus,
+}: {
+  listing: Listing;
+  onEdit: (property: Property) => void;
+  onDelete: (property: Property) => void;
+  onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+}) {
+  const isLeased = listing.status === 'Leased';
+  const marketStatus = useListingModerationStatus(listing.id);
+  const marketBadge = MARKET_STATUS_BADGE[marketStatus];
+  const isOffMarket = marketStatus !== 'published';
+
+  return (
+    <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
+      <div className={`relative w-full h-36 ${isLeased || isOffMarket ? 'opacity-50 grayscale' : ''}`}>
         <Image src={listing.image} alt={listing.title} fill className="object-cover" />
         <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
           {listing.status}
         </span>
+        {marketBadge && (
+          <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm bg-slate-900/80 text-white">
+            {marketBadge}
+          </span>
+        )}
       </div>
 
       <div className="p-5 flex flex-col gap-4">
@@ -228,12 +415,7 @@ function ListingCard({ listing, onEdit }: { listing: Listing; onEdit: (property:
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <SellerTourControl property={listing.property} />
-          <button
-            onClick={() => onEdit(listing.property)}
-            className="text-slate-400 hover:text-slate-900 font-semibold text-sm transition-colors"
-          >
-            {isLeased ? 'Relist' : 'Edit'}
-          </button>
+          <ListingActionsMenu listing={listing} marketStatus={marketStatus} onEdit={onEdit} onDelete={onDelete} onSetMarketStatus={onSetMarketStatus} />
         </div>
       </div>
     </div>
@@ -364,24 +546,42 @@ const NAV_ITEMS: { id: 'overview' | 'listings' | 'applications' | 'payments'; la
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'listings' | 'applications' | 'payments'>('overview');
   const [listingSearch, setListingSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<Listing['status'] | 'all'>('all');
+  const [applicationPropertyFilter, setApplicationPropertyFilter] = useState('all');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const { isApprovedSeller } = useAuth();
+  const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const { isApprovedSeller, account } = useAuth();
   // Every property a seller could manage — mockProperties (all 60-80 of
   // them, not just the 5 hand-curated ones) plus anything posted this
   // session, with saved edits already merged in.
   const allProperties = useAllProperties();
+  const applications = useTenantApplications();
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
   }
 
-  const LISTINGS: Listing[] = allProperties.map(toListing);
+  // "Remove from Market" / "Archive" reuse the same admin moderation
+  // overlay an administrator's Listings tool writes to (see
+  // src/lib/admin/listings.ts) — a listing is either visible to buyers or
+  // it isn't, regardless of who took it down, so this keeps one source of
+  // truth instead of a second, seller-only visibility flag.
+  const handleSetMarketStatus = (property: Property, status: ListingModerationStatus) => {
+    const reason =
+      status === 'unpublished' ? 'Removed from market by owner' : status === 'archived' ? 'Archived by owner' : 'Relisted by owner';
+    AdminService.setListingStatus(property.id, status, account?.id ?? 'seller', account?.name ?? 'Seller', reason);
+  };
 
-  const filteredListings = listingSearch.trim()
-    ? LISTINGS.filter((l) =>
-        `${l.title} ${l.property.location} ${l.property.city}`.toLowerCase().includes(listingSearch.trim().toLowerCase())
-      )
-    : LISTINGS;
+  const LISTINGS: Listing[] = allProperties.map((property) => toListing(property, applications));
+  const propertyTitleById = new Map(allProperties.map((p) => [p.id, p.title]));
+  const activeApplications = applications.filter((a) => a.stage !== 'rejected' && a.stage !== 'leased');
+
+  const filteredListings = LISTINGS.filter((l) => {
+    const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
+    const matchesSearch =
+      !listingSearch.trim() || `${l.title} ${l.property.location} ${l.property.city}`.toLowerCase().includes(listingSearch.trim().toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const statusCounts = {
     Active: LISTINGS.filter(l => l.status === 'Active').length,
@@ -429,13 +629,13 @@ export default function ManagerDashboard() {
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath}></path></svg>
                       {item.label}
                     </div>
-                    {(item.badge !== undefined || item.id === 'listings') && (
+                    {(item.badge !== undefined || item.id === 'listings' || item.id === 'applications') && (
                       <span
                         className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-sm ${
                           item.badgeTone === 'alert' ? 'bg-red-500 text-white' : 'bg-white text-slate-900 border border-slate-100'
                         }`}
                       >
-                        {item.id === 'listings' ? LISTINGS.length : item.badge}
+                        {item.id === 'listings' ? LISTINGS.length : item.id === 'applications' ? activeApplications.length : item.badge}
                       </span>
                     )}
                   </button>
@@ -534,22 +734,41 @@ export default function ManagerDashboard() {
             {activeTab === 'listings' && (
               <div>
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                    <div className="text-xs font-bold text-green-700 uppercase tracking-wide mb-1">Active</div>
-                    <div className="text-2xl font-black text-slate-900">{statusCounts.Active}</div>
-                  </div>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                    <div className="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">Pending</div>
-                    <div className="text-2xl font-black text-slate-900">{statusCounts.Pending}</div>
-                  </div>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                    <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Leased</div>
-                    <div className="text-2xl font-black text-slate-900">{statusCounts.Leased}</div>
-                  </div>
+                  {([
+                    { status: 'Active' as const, label: 'Active', count: statusCounts.Active, labelColor: 'text-green-700', ring: 'ring-green-500/30' },
+                    { status: 'Pending' as const, label: 'Pending', count: statusCounts.Pending, labelColor: 'text-yellow-700', ring: 'ring-yellow-500/30' },
+                    { status: 'Leased' as const, label: 'Leased', count: statusCounts.Leased, labelColor: 'text-slate-500', ring: 'ring-slate-400/30' },
+                  ]).map((tile) => {
+                    const isActive = statusFilter === tile.status;
+                    return (
+                      <button
+                        key={tile.status}
+                        type="button"
+                        onClick={() => setStatusFilter(isActive ? 'all' : tile.status)}
+                        className={`text-left bg-white rounded-2xl border shadow-sm p-5 transition-all hover:-translate-y-0.5 ${
+                          isActive ? `border-transparent ring-2 ${tile.ring}` : 'border-slate-100'
+                        }`}
+                      >
+                        <div className={`text-xs font-bold uppercase tracking-wide mb-1 ${tile.labelColor}`}>{tile.label}</div>
+                        <div className="text-2xl font-black text-slate-900">{tile.count}</div>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
-                  <h2 className="text-2xl font-bold text-slate-900">Active Listings</h2>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-2xl font-bold text-slate-900">{statusFilter === 'all' ? 'All Listings' : `${statusFilter} Listings`}</h2>
+                    {statusFilter !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => setStatusFilter('all')}
+                        className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
+                      >
+                        Clear filter
+                      </button>
+                    )}
+                  </div>
                   <div className="relative w-full sm:w-72">
                     <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     <input
@@ -565,7 +784,7 @@ export default function ManagerDashboard() {
                 {filteredListings.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                     {filteredListings.map((listing) => (
-                      <ListingCard key={listing.id} listing={listing} onEdit={setEditingProperty} />
+                      <ListingCard key={listing.id} listing={listing} onEdit={setEditingProperty} onDelete={setDeletingProperty} onSetMarketStatus={handleSetMarketStatus} />
                     ))}
                   </div>
                 ) : (
@@ -582,103 +801,63 @@ export default function ManagerDashboard() {
                 <div className="grid grid-cols-3 gap-4 mb-6">
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                     <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">New</div>
-                    <div className="text-2xl font-black text-slate-900">2</div>
+                    <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'new').length}</div>
                   </div>
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                     <div className="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">Screening</div>
-                    <div className="text-2xl font-black text-slate-900">1</div>
+                    <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'screening').length}</div>
                   </div>
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
                     <div className="text-xs font-bold text-green-700 uppercase tracking-wide mb-1">Approved</div>
-                    <div className="text-2xl font-black text-slate-900">1</div>
+                    <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'approved').length}</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-slate-900">Tenant Screening</h2>
-                  <select className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20">
-                    <option>Modern City Apartment</option>
-                    <option>Luxury Villa with Pool</option>
+                  <select
+                    value={applicationPropertyFilter}
+                    onChange={(e) => setApplicationPropertyFilter(e.target.value)}
+                    className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="all">All Properties</option>
+                    {Array.from(new Set(applications.map((a) => a.propertyId))).map((propertyId) => (
+                      <option key={propertyId} value={propertyId}>
+                        {propertyTitleById.get(propertyId) ?? propertyId}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 {/* Kanban Board */}
                 <div className="grid md:grid-cols-3 gap-6 overflow-x-auto pb-4">
-
-                  {/* Column: New */}
-                  <div className="bg-slate-100 rounded-2xl p-4 min-w-[280px]">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                      <h3 className="font-bold text-slate-700">New (2)</h3>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {/* Card */}
-                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:border-blue-300 cursor-pointer transition-colors">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-bold text-slate-900">Michael Smith</div>
-                          <span className="text-xs font-bold text-slate-500">2h ago</span>
+                  {(['new', 'screening', 'approved'] as const).map((stage) => {
+                    const stageApplications = applications.filter(
+                      (a) => a.stage === stage && (applicationPropertyFilter === 'all' || a.propertyId === applicationPropertyFilter)
+                    );
+                    const columnLabel = stage === 'new' ? 'New' : stage === 'screening' ? 'Screening' : 'Approved';
+                    return (
+                      <div key={stage} className="bg-slate-100 rounded-2xl p-4 min-w-[280px]">
+                        <div className="flex items-center justify-between mb-4 px-2">
+                          <h3 className="font-bold text-slate-700">{columnLabel} ({stageApplications.length})</h3>
                         </div>
-                        <div className="text-xs text-slate-600 mb-1">Income: <span className="font-semibold text-green-600">$85k/yr</span></div>
-                        <div className="text-xs text-slate-600 mb-3">Credit: <span className="font-semibold">720</span></div>
-                        <div className="flex gap-2">
-                          <button className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">Screen</button>
-                        </div>
-                      </div>
-
-                      {/* Card */}
-                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 hover:border-blue-300 cursor-pointer transition-colors">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-bold text-slate-900">Sarah Johnson</div>
-                          <span className="text-xs font-bold text-slate-500">1d ago</span>
-                        </div>
-                        <div className="text-xs text-slate-600 mb-1">Income: <span className="font-semibold text-green-600">$110k/yr</span></div>
-                        <div className="text-xs text-slate-600 mb-3">Credit: <span className="font-semibold">780</span></div>
-                        <div className="flex gap-2">
-                          <button className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">Screen</button>
+                        <div className="flex flex-col gap-3">
+                          {stageApplications.map((application) => (
+                            <ApplicationCard
+                              key={application.id}
+                              application={application}
+                              propertyTitle={propertyTitleById.get(application.propertyId) ?? 'Unknown property'}
+                              onAdvance={(id, next) => TenantApplicationsStoreEngine.setStage(id, next)}
+                              onReject={(id) => TenantApplicationsStoreEngine.setStage(id, 'rejected')}
+                            />
+                          ))}
+                          {stageApplications.length === 0 && (
+                            <div className="text-xs text-slate-400 text-center py-6">No applications here.</div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Column: Screening */}
-                  <div className="bg-slate-100 rounded-2xl p-4 min-w-[280px]">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                      <h3 className="font-bold text-slate-700">Screening (1)</h3>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {/* Card */}
-                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-yellow-400 cursor-pointer">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-bold text-slate-900">David & Emma</div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded mb-3">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                          Awaiting background check
-                        </div>
-                        <div className="text-xs text-slate-600">Income: <span className="font-semibold text-green-600">$140k/yr</span></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Column: Approved */}
-                  <div className="bg-slate-100 rounded-2xl p-4 min-w-[280px]">
-                    <div className="flex items-center justify-between mb-4 px-2">
-                      <h3 className="font-bold text-slate-700">Approved (1)</h3>
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {/* Card */}
-                      <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-[#2ec440] cursor-pointer">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="font-bold text-slate-900">Alex Thompson</div>
-                        </div>
-                        <div className="text-xs text-slate-600 mb-1">Income: <span className="font-semibold text-green-600">$95k/yr</span></div>
-                        <div className="text-xs text-slate-600 mb-4">Credit: <span className="font-semibold text-green-600">810</span></div>
-                        <button className="w-full bg-[#2ec440] hover:bg-[#28b039] text-white font-semibold py-2 rounded-lg text-xs transition-colors shadow-sm">
-                          Send Lease Agreement
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -776,6 +955,26 @@ export default function ManagerDashboard() {
       </div>
 
       <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />
+
+      <ConfirmModal
+        open={deletingProperty !== null}
+        onClose={() => setDeletingProperty(null)}
+        onConfirm={() => {
+          if (!deletingProperty) return;
+          SellerListingsStoreEngine.remove(deletingProperty.id);
+          PropertyOverridesStoreEngine.clear(deletingProperty.id);
+          setDeletingProperty(null);
+        }}
+        title="Delete this listing?"
+        description={
+          <>
+            <span className="font-semibold text-slate-700">{deletingProperty?.title}</span> will be removed from HuzaEstate immediately. Buyers will no
+            longer be able to view it, and this can&apos;t be undone.
+          </>
+        }
+        confirmLabel="Delete Listing"
+        destructive
+      />
     </div>
   );
 }

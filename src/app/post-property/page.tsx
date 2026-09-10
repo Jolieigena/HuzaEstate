@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
-import PhotoPicker from '@/components/PhotoPicker';
-import type { Property } from '@/lib/data';
+import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
+import { deriveImageFields } from '@/lib/photoCategories';
+import type { Property, PropertyPhoto } from '@/lib/data';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 
@@ -24,7 +25,7 @@ export default function PostPropertyPage() {
   const [bathrooms, setBathrooms] = useState('');
   const [sqm, setSqm] = useState('');
   const [description, setDescription] = useState('');
-  const [images, setImages] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<PropertyPhoto[]>([]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,6 +34,7 @@ export default function PostPropertyPage() {
     setSubmitting(true);
 
     const [cityPart, ...rest] = city.split(',');
+    const { imageUrl, images } = deriveImageFields(photos, FALLBACK_IMAGE);
     const property = SellerListingsStoreEngine.add({
       title,
       description: description || `A ${propertyType} listed in ${location}.`,
@@ -43,8 +45,9 @@ export default function PostPropertyPage() {
       bedrooms: Number(bedrooms) || 0,
       bathrooms: Number(bathrooms) || 0,
       sqm: Number(sqm) || 0,
-      imageUrl: images[0] || FALLBACK_IMAGE,
-      images: images.length ? images : [FALLBACK_IMAGE],
+      imageUrl,
+      images,
+      photos,
       type: listingType,
       propertyType,
     });
@@ -152,11 +155,7 @@ export default function PostPropertyPage() {
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
-                <PhotoPicker
-                  images={images}
-                  onChange={setImages}
-                  hint="The cover photo is also what your AI 3D tour will be generated from once the listing is live."
-                />
+                <CategorizedPhotoUpload photos={photos} onChange={setPhotos} />
               </div>
 
               <div>

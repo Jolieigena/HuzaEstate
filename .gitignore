@@ -37,8 +37,10 @@ yarn-error.log*
 # vercel
 .vercel
 
-# downloaded/cached tour panorama images (see src/lib/tours/assetStorage.ts)
+# dev-only fallbacks for tour assets/records — see
+# src/lib/tours/assetStorage/localFs.ts and src/lib/tours/repository/fileRepository.ts
 /.tour-asset-cache/
+/.tour-records/
 
 # typescript
 *.tsbuildinfo

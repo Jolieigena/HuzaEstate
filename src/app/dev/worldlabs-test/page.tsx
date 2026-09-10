@@ -20,7 +20,15 @@ export default function WorldLabsDevTestPage() {
   const [prompt, setPrompt] = useState('A realistic modern 3-bedroom house with a spacious living room, kitchen, natural lighting, and a garden.');
   const [phase, setPhase] = useState<Phase>('idle');
   const [log, setLog] = useState<string[]>([]);
-  const [result, setResult] = useState<{ worldId?: string; viewerUrl?: string; providerId?: string; providerMode?: string } | null>(null);
+  const [result, setResult] = useState<{
+    worldId?: string;
+    viewerUrl?: string;
+    providerId?: string;
+    providerMode?: string;
+    spzUrls?: Record<string, string>;
+    colliderUrl?: string;
+    caption?: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const appendLog = (line: string) => setLog((prev) => [...prev, `${new Date().toLocaleTimeString()}  ${line}`]);
@@ -45,8 +53,16 @@ export default function WorldLabsDevTestPage() {
       return;
     }
     setPhase('ready');
-    setResult({ worldId: data.worldId, viewerUrl: data.viewerUrl, providerId: data.providerId, providerMode: data.providerMode });
-    appendLog(`status: ready — world_id=${data.worldId}`);
+    setResult({
+      worldId: data.worldId,
+      viewerUrl: data.viewerUrl,
+      providerId: data.providerId,
+      providerMode: data.providerMode,
+      spzUrls: data.spzUrls,
+      colliderUrl: data.colliderUrl,
+      caption: data.caption,
+    });
+    appendLog(`status: ready — world id=${data.worldId ?? '(missing!)'} · spz keys=[${Object.keys(data.spzUrls ?? {}).join(', ') || 'none'}]`);
   };
 
   const handleGenerate = async () => {
@@ -124,9 +140,11 @@ export default function WorldLabsDevTestPage() {
         {error && <div className="mb-4 p-3 bg-red-900/30 border border-red-700/50 rounded-lg text-red-300">{error}</div>}
 
         {result && (
-          <div className="mb-4 p-3 bg-slate-900 border border-slate-700 rounded-lg">
+          <div className="mb-4 p-3 bg-slate-900 border border-slate-700 rounded-lg space-y-1">
             <div>provider: {result.providerId} ({result.providerMode})</div>
-            {result.worldId && <div>world_id: {result.worldId}</div>}
+            <div>
+              world id: {result.worldId ?? <span className="text-red-400">missing — check field name against the real response</span>}
+            </div>
             {result.viewerUrl && (
               <div>
                 viewer:{' '}
@@ -135,6 +153,12 @@ export default function WorldLabsDevTestPage() {
                 </a>
               </div>
             )}
+            {result.caption && <div>caption: {result.caption}</div>}
+            {result.colliderUrl && <div>collider_mesh_url: present</div>}
+            <div>
+              splats.spz_urls keys:{' '}
+              {result.spzUrls && Object.keys(result.spzUrls).length > 0 ? Object.keys(result.spzUrls).join(', ') : <span className="text-yellow-400">none returned</span>}
+            </div>
           </div>
         )}
 

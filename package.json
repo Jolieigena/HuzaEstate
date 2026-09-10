@@ -9,19 +9,23 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@sparkjsdev/spark": "^2.1.0",
     "@types/leaflet": "^1.9.22",
+    "@vercel/blob": "^2.8.0",
     "leaflet": "^1.9.4",
     "next": "16.3.2",
     "pannellum": "^2.5.7",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "three": "^0.186.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
     "eslint": "^9",
     "eslint-config-next": "16.3.2",
     "tailwindcss": "^4",

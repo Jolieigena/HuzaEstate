@@ -49,7 +49,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
       {/* Photo Gallery */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12">
         <PropertyGallery
-          images={property.images?.length ? property.images : [property.imageUrl]}
+          images={[property.imageUrl, ...(property.galleryImages || [])]}
           title={property.title}
           badge={`For ${property.type}`}
         />

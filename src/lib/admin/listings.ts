@@ -32,3 +32,13 @@ export function useIsListingVisible(propertyId: string): boolean {
   const state = useSyncExternalStore(AdminService.subscribe, AdminService.getSnapshot, AdminService.getServerSnapshot);
   return isListingVisible(state.listingModeration[propertyId]);
 }
+
+/** The specific moderation status for one listing — "published" when there's
+ *  no record at all, matching today's default-visible behavior. Used by the
+ *  Manager Portal to show/toggle "Remove from Market" and "Archive" (the
+ *  same underlying statuses an admin can also set), not just whether a
+ *  listing happens to be visible right now. */
+export function useListingModerationStatus(propertyId: string): ListingModerationStatus {
+  const state = useSyncExternalStore(AdminService.subscribe, AdminService.getSnapshot, AdminService.getServerSnapshot);
+  return state.listingModeration[propertyId]?.status ?? "published";
+}

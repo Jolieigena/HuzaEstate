@@ -46,4 +46,14 @@ export const SellerListingsStoreEngine = {
     notifyListeners();
     return property;
   },
+
+  /** Only ever removes a seller-posted listing (this store's own entries) —
+   *  there's no way to "delete" one of the curated mockProperties, which
+   *  are static seed data, not something a seller owns. */
+  remove(propertyId: string): void {
+    const current = ensureLoaded();
+    listings = current.filter((p) => p.id !== propertyId);
+    persist();
+    notifyListeners();
+  },
 };

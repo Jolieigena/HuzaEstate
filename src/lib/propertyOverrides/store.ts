@@ -39,6 +39,19 @@ export const PropertyOverridesStoreEngine = {
     persist();
     notifyListeners();
   },
+
+  /** Drops any saved edit for a property — called when a seller deletes
+   *  their own listing, so a stale override doesn't just sit around
+   *  keyed to an id nothing points to anymore. */
+  clear(propertyId: string): void {
+    const current = ensureLoaded();
+    if (!(propertyId in current)) return;
+    const next = { ...current };
+    delete next[propertyId];
+    overrides = next;
+    persist();
+    notifyListeners();
+  },
 };
 
 export function applyOverride(property: Property, overridesMap: PropertyOverrides): Property {
