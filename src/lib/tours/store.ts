@@ -20,6 +20,19 @@ function notifyListeners() {
 function ensureLoaded(): TourStore {
   if (store !== null) return store;
   store = seedToursIfEmpty(TourStorageService.loadStore() ?? emptyTourStore());
+  
+  let migrated = false;
+  Object.values(store.tours).forEach(tour => {
+    if (tour.panoUrl && tour.panoUrl.includes('/api/tours/panorama')) {
+      tour.panoUrl = tour.panoUrl.replace('/api/tours/panorama', '/api/tours/asset') + '&file=panorama.jpg';
+      migrated = true;
+    }
+  });
+  
+  if (migrated) {
+    TourStorageService.saveStore(store);
+  }
+  
   return store;
 }
 
