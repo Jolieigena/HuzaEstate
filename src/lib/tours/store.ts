@@ -5,6 +5,7 @@
 
 import { TourStorageService } from "./storage";
 import { emptyTourStore } from "./types";
+import { seedToursIfEmpty } from "./seed";
 import type { TourStore } from "./types";
 
 type Listener = () => void;
@@ -18,7 +19,7 @@ function notifyListeners() {
 
 function ensureLoaded(): TourStore {
   if (store !== null) return store;
-  store = TourStorageService.loadStore() ?? emptyTourStore();
+  store = seedToursIfEmpty(TourStorageService.loadStore() ?? emptyTourStore());
   return store;
 }
 
