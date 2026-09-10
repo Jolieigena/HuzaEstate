@@ -158,7 +158,7 @@ for (let i = 1; i <= 80; i++) {
   const sideImageUrl = "https://images.unsplash.com/photo-" + sideImageUrlId + "?q=80&w=800&auto=format&fit=crop";
   const backImageUrl = "https://images.unsplash.com/photo-" + backImageUrlId + "?q=80&w=800&auto=format&fit=crop";
   
-  const galleryImages = [sideImageUrl, backImageUrl];
+  const galleryImages = ["\"" + sideImageUrl + "\"", "\"" + backImageUrl + "\""];
   
   const photosArray = [];
   photosArray.push("{ url: \"" + imageUrl + "\", category: \"exterior_front\" }");
