@@ -9,20 +9,39 @@ import SplatViewer from './SplatViewer';
 interface PropertyTourSectionProps {
   propertyId: string;
   imageUrl: string;
+  virtualTourUrl?: string;
 }
 
 // Buyer/renter-facing viewer only — generating a tour costs money and is a
 // seller/developer action, done from their listing management screen (see
 // SellerTourControl). A visitor here can only ever view a tour that already
 // exists; there is no "Generate" button on this side.
-export default function PropertyTourSection({ propertyId, imageUrl }: PropertyTourSectionProps) {
+export default function PropertyTourSection({ propertyId, imageUrl, virtualTourUrl }: PropertyTourSectionProps) {
   const tour = useTourForProperty(propertyId);
-  // The real interactive 3D world (SplatViewer) is the default whenever we
-  // have one stored — Pannellum's 360° panorama is a lighter-weight
-  // preview, offered as a toggle rather than the primary experience.
   const [mode, setMode] = useState<'splat' | 'pano'>('splat');
 
-  // Nothing to show at all if the seller has never requested a tour.
+  if (virtualTourUrl) {
+    return (
+      <div id="tour" className="mb-10 scroll-mt-28">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            Interactive 3D Walkthrough
+          </h2>
+        </div>
+        <div className="w-full aspect-[16/9] lg:aspect-[21/9] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 shadow-sm relative">
+          <iframe 
+            src={virtualTourUrl} 
+            className="absolute inset-0 w-full h-full border-0" 
+            allowFullScreen 
+            allow="xr-spatial-tracking"
+          ></iframe>
+        </div>
+      </div>
+    );
+  }
+
+  // Nothing to show at all if the seller has never requested an AI tour.
   if (!tour || tour.status === 'failed') {
     return null;
   }
