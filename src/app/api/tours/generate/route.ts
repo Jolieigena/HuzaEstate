@@ -60,12 +60,31 @@ export async function POST(request: Request) {
   // so World Labs accepts the payload. Note: World Labs is designed for single objects, 
   // so mixing inside/outside photos in one request will force the model to attempt 
   // stitching them into a single continuous shape.
-  const allUsablePhotos: string[] = [];
+  
+  // Prioritize the most important rooms for the 4-image limit
+  const PRIORITY_CATEGORIES = ['exterior_front', 'living_room', 'kitchen', 'bathroom'];
+  
+  const allUsablePhotos: { url: string; category?: string }[] = [];
   for (const photo of body?.photos ?? []) {
     if (isUsablePhotoUrl(photo?.url)) {
-      allUsablePhotos.push(photo.url);
+      allUsablePhotos.push({ url: photo.url, category: photo.category });
     }
   }
+
+  // Sort photos so that priority categories appear first
+  allUsablePhotos.sort((a, b) => {
+    const idxA = a.category ? PRIORITY_CATEGORIES.indexOf(a.category) : -1;
+    const idxB = b.category ? PRIORITY_CATEGORIES.indexOf(b.category) : -1;
+    
+    // If both are in priority list, sort by priority order
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    // If only a is in priority list, it comes first
+    if (idxA !== -1) return -1;
+    // If only b is in priority list, it comes first
+    if (idxB !== -1) return 1;
+    // Otherwise preserve original order
+    return 0;
+  });
 
   let input: GenerationInput;
   if (allUsablePhotos.length >= 2) {
@@ -73,8 +92,8 @@ export async function POST(request: Request) {
     const cappedPhotos = allUsablePhotos.slice(0, 4);
     // Distribute the images evenly around a 360-degree circle
     const step = 360 / cappedPhotos.length;
-    const images = cappedPhotos.map((url, index) => ({
-      url,
+    const images = cappedPhotos.map((photo, index) => ({
+      url: photo.url,
       azimuth: Math.round(index * step),
     }));
     input = { mode: 'multiImage', images, prompt };
