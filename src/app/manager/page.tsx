@@ -394,7 +394,7 @@ function ListingCard({
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
-      <div className={`relative w-full h-36 ${isLeased || isOffMarket ? 'opacity-50 grayscale' : ''}`}>
+      <Link href={`/properties/${listing.id}`} className={`block relative w-full h-36 hover:opacity-90 transition-opacity ${isLeased || isOffMarket ? 'opacity-50 grayscale' : ''}`}>
         <Image src={listing.image} alt={listing.title} fill className="object-cover" />
         <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
           {listing.status}
@@ -404,11 +404,11 @@ function ListingCard({
             {marketBadge}
           </span>
         )}
-      </div>
+      </Link>
 
       <div className="p-5 flex flex-col gap-4">
         <div>
-          <div className={`font-bold leading-snug ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</div>
+          <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
           <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}/mo</div>
         </div>
 
