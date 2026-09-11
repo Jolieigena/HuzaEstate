@@ -109,6 +109,7 @@ function toWorldPrompt(input: GenerationInput) {
         type: "multi-image" as const,
         multi_image_prompt: input.images.map(({ url, azimuth }) => ({ azimuth, content: toImagePrompt(url) })),
         text_prompt: input.prompt,
+        ...(input.reconstructImages ? { reconstruct_images: true } : {}),
       };
     // video is modeled in the type system for a future upgrade (see
     // types.ts) but not wired up yet — reaching here means a caller tried

@@ -41,7 +41,7 @@ export type TourGenerationStatus = "pending" | "ready" | "failed";
 export type GenerationInput =
   | { mode: "text"; prompt: string }
   | { mode: "image"; imageUrl: string; prompt?: string }
-  | { mode: "multiImage"; images: { url: string; azimuth: number }[]; prompt?: string }
+  | { mode: "multiImage"; images: { url: string; azimuth: number }[]; prompt?: string; reconstructImages?: boolean }
   | { mode: "video"; videoUrl: string; prompt?: string };
 
 export interface TourGenerationResult {

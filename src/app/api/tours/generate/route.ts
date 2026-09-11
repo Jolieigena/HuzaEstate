@@ -88,26 +88,18 @@ export async function POST(request: Request) {
 
   let inputList: { category: string; input: GenerationInput }[] = [];
   
-  // Group by category for multiple scenes
-  const groupedPhotos: Record<string, { url: string; azimuth: number }[]> = {};
-  
   if (allUsablePhotos.length > 0) {
-    for (const photo of allUsablePhotos) {
-      const cat = photo.category || 'exterior_front';
-      if (!groupedPhotos[cat]) groupedPhotos[cat] = [];
-      groupedPhotos[cat].push({ url: photo.url, azimuth: 0 }); // We will adjust azimuth later
-    }
+    // RECONSTRUCTION EXPERIMENT:
+    // Instead of grouping by room, we feed all photos (up to 8) into a single generation
+    // using the reconstruct_images: true flag.
+    const capped = allUsablePhotos.slice(0, 8);
+    const step = 360 / capped.length;
+    const images = capped.map((p, index) => ({ url: p.url, azimuth: Math.round(index * step) }));
     
-    for (const [cat, photos] of Object.entries(groupedPhotos)) {
-      const capped = photos.slice(0, 4);
-      const step = 360 / capped.length;
-      const images = capped.map((p, index) => ({ url: p.url, azimuth: Math.round(index * step) }));
-      
-      if (images.length >= 2) {
-        inputList.push({ category: cat, input: { mode: 'multiImage', images, prompt } });
-      } else {
-        inputList.push({ category: cat, input: { mode: 'image', imageUrl: images[0].url, prompt } });
-      }
+    if (images.length >= 2) {
+      inputList.push({ category: 'whole_house_reconstruction', input: { mode: 'multiImage', images, prompt, reconstructImages: true } });
+    } else {
+      inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl: images[0].url, prompt } });
     }
   } else if (imageUrl) {
     inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl, prompt } });
