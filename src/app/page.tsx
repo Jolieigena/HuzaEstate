@@ -107,110 +107,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us / Trust Section */}
-      <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60 mt-12 md:mt-24">
-        <div className="max-w-[1400px] mx-auto">
-          {/* Section 1: Real Estate Expertise (Restored 4 Columns) */}
-          <div className="mb-24">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-16">
-              <Reveal className="lg:col-span-7">
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-                  Real estate expertise <br className="hidden lg:inline" />
-                  you can rely on
-                </h2>
-              </Reveal>
-              <Reveal delay={100} className="lg:col-span-5 flex flex-col justify-end pb-2">
-                <p className="text-slate-600 text-lg font-normal leading-relaxed">
-                  Whether you need to find the perfect family home, a high-yield investment, or a luxury rental, we&apos;re here to help you achieve your goals with unparalleled market expertise.
-                </p>
-              </Reveal>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <Reveal delay={0} className="flex flex-col items-start gap-3 group">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-900 shadow-sm mb-1 transition-transform duration-300 group-hover:-translate-y-1">
-                  <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Premium Listings</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">Access to over 2,500+ exclusive properties that you won&apos;t find on any other public market.</p>
-              </Reveal>
-
-              <Reveal delay={100} className="flex flex-col items-start gap-3 group">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-900 shadow-sm mb-1 transition-transform duration-300 group-hover:-translate-y-1">
-                  <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Verified Properties</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">Every property undergoes a rigorous 50-point inspection and legal verification before listing.</p>
-              </Reveal>
-
-              <Reveal delay={200} className="flex flex-col items-start gap-3 group">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-900 shadow-sm mb-1 transition-transform duration-300 group-hover:-translate-y-1">
-                  <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Fast Closings</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">Our in-house legal and finance teams ensure your transaction closes smoothly and quickly.</p>
-              </Reveal>
-
-              <Reveal delay={300} className="flex flex-col items-start gap-3 group">
-                <div className="p-3 bg-white border border-slate-200 rounded-2xl text-slate-900 shadow-sm mb-1 transition-transform duration-300 group-hover:-translate-y-1">
-                  <svg className="w-6 h-6 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">Proven Expertise</h3>
-                <p className="text-slate-600 text-[15px] leading-relaxed">With deep experience in Rwanda&apos;s real estate, we have helped over 1,200 happy families relocate.</p>
-              </Reveal>
-            </div>
-          </div>
-
-          <div className="w-full h-px bg-slate-200/60 my-16"></div>
-
-          {/* Section 2: Buy with confidence (The new 3 columns) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-16">
-            <Reveal className="lg:col-span-7">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-semibold text-xs uppercase tracking-wide mb-6">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                Verified Listings
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
-                Buy with absolute confidence.
-              </h2>
-            </Reveal>
-            <Reveal delay={100} className="lg:col-span-5 flex flex-col justify-end pb-2">
-              <p className="text-slate-600 text-lg font-normal leading-relaxed">
-                Every property listed on HuzaEstate undergoes a rigorous verification process. We ensure the title is clean, the photos are accurate, and the seller is verified before you even book a tour.
-              </p>
-            </Reveal>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            <Reveal delay={0} className="flex flex-col items-start gap-3 group">
-              <div className="w-10 h-10 rounded-full bg-[#2ec440]/10 flex items-center justify-center text-[#2ec440] mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">No hidden fees</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">No surprise agency costs. What you see is what you pay.</p>
-            </Reveal>
-
-            <Reveal delay={100} className="flex flex-col items-start gap-3 group">
-              <div className="w-10 h-10 rounded-full bg-[#2ec440]/10 flex items-center justify-center text-[#2ec440] mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Direct access</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">Direct access to dedicated buying agents to help you navigate the process.</p>
-            </Reveal>
-
-            <Reveal delay={200} className="flex flex-col items-start gap-3 group">
-              <div className="w-10 h-10 rounded-full bg-[#2ec440]/10 flex items-center justify-center text-[#2ec440] mb-2 transition-transform duration-300 group-hover:-translate-y-1">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Exclusive 3D Walkthroughs</h3>
-              <p className="text-slate-600 text-[15px] leading-relaxed">Tour properties virtually with our immersive 3D walkthroughs for every listing.</p>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
       {/* Featured Properties Section */}
-      <section className="w-full bg-white py-16 sm:py-20 px-6 sm:px-10 md:px-12">
+      <section className="w-full bg-white py-16 sm:py-20 px-6 sm:px-10 md:px-12 border-t border-slate-200/60 mt-12 md:mt-24">
         <div className="max-w-[1400px] mx-auto">
           {/* Section Header */}
           <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
@@ -218,6 +116,7 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Curated Exclusive Properties
               </h2>
+              <p className="text-slate-500 text-lg mt-2">Handpicked listings across Kigali and beyond.</p>
             </div>
             <Link
               href="/properties"
@@ -229,9 +128,28 @@ export default function Home() {
           </Reveal>
 
           {/* Property Grid */}
-          <PublicPropertyGrid properties={mockProperties} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" revealAnimation />
+          <PublicPropertyGrid properties={mockProperties} limit={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" revealAnimation />
+
+          {/* Trust Pills */}
+          <Reveal className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {[
+              { icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", label: "Premium Listings", value: "2,500+" },
+              { icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", label: "Verified Properties", value: "100%" },
+              { icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", label: "Fast Closings", value: "14 days" },
+              { icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z", label: "Families Helped", value: "1,200+" },
+            ].map((item, i) => (
+              <div key={item.label} className="flex flex-col items-center text-center gap-2 p-5 bg-[#f8fafc] rounded-2xl border border-slate-200/60">
+                <div className="p-2.5 bg-white border border-slate-200 rounded-xl shadow-sm">
+                  <svg className="w-5 h-5 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon}></path></svg>
+                </div>
+                <div className="text-2xl font-extrabold text-slate-900">{item.value}</div>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</div>
+              </div>
+            ))}
+          </Reveal>
         </div>
       </section>
+
 
       {/* More than finding a home */}
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
