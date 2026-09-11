@@ -108,7 +108,7 @@ export default function Home() {
       </section>
 
       {/* Featured Properties Section */}
-      <section className="w-full bg-white py-16 sm:py-20 px-6 sm:px-10 md:px-12 border-t border-slate-200/60 mt-12 md:mt-24">
+      <section className="w-full bg-white py-16 sm:py-20 px-6 sm:px-10 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           {/* Section Header */}
           <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
