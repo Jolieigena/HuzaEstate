@@ -86,50 +86,87 @@ export async function POST(request: Request) {
     return 0;
   });
 
-  let input: GenerationInput;
-  if (allUsablePhotos.length >= 2) {
-    // World Labs API enforces a strict maximum of 4 images for multiImage generation.
-    const cappedPhotos = allUsablePhotos.slice(0, 4);
-    // Distribute the images evenly around a 360-degree circle
-    const step = 360 / cappedPhotos.length;
-    const images = cappedPhotos.map((photo, index) => ({
-      url: photo.url,
-      azimuth: Math.round(index * step),
-    }));
-    input = { mode: 'multiImage', images, prompt };
+  let inputList: { category: string; input: GenerationInput }[] = [];
+  
+  // Group by category for multiple scenes
+  const groupedPhotos: Record<string, { url: string; azimuth: number }[]> = {};
+  
+  if (allUsablePhotos.length > 0) {
+    for (const photo of allUsablePhotos) {
+      const cat = photo.category || 'exterior_front';
+      if (!groupedPhotos[cat]) groupedPhotos[cat] = [];
+      groupedPhotos[cat].push({ url: photo.url, azimuth: 0 }); // We will adjust azimuth later
+    }
+    
+    for (const [cat, photos] of Object.entries(groupedPhotos)) {
+      const capped = photos.slice(0, 4);
+      const step = 360 / capped.length;
+      const images = capped.map((p, index) => ({ url: p.url, azimuth: Math.round(index * step) }));
+      
+      if (images.length >= 2) {
+        inputList.push({ category: cat, input: { mode: 'multiImage', images, prompt } });
+      } else {
+        inputList.push({ category: cat, input: { mode: 'image', imageUrl: images[0].url, prompt } });
+      }
+    }
   } else if (imageUrl) {
-    input = { mode: 'image', imageUrl, prompt };
+    inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl, prompt } });
   } else {
-    input = { mode: 'text', prompt };
+    inputList.push({ category: 'default', input: { mode: 'text', prompt } });
   }
 
   const propertyId = typeof body?.propertyId === 'string' && body.propertyId.length > 0 ? body.propertyId : undefined;
   const provider = getActiveTourProvider();
 
   try {
-    const result = await provider.generateTour(input);
+    const scenes: any[] = [];
+    
+    // Fire all generation requests in parallel
+    const promises = inputList.map(async ({ category, input }) => {
+      try {
+        const result = await provider.generateTour(input);
+        return {
+          id: result.operationId || `local_${Date.now()}_${Math.random()}`,
+          category,
+          status: result.status,
+          phase: result.status === 'failed' ? 'failed' : 'generating',
+          operationId: result.operationId,
+          worldId: result.worldId,
+          viewerUrl: result.viewerUrl,
+          error: result.error,
+          providerMode: provider.mode,
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Tour generation failed.';
+        return {
+          id: `local_${Date.now()}_${Math.random()}`,
+          category,
+          status: 'failed',
+          phase: 'failed',
+          error: message,
+          providerMode: provider.mode,
+        };
+      }
+    });
 
-    // Persist immediately so the record exists server-side (visible to any
-    // browser/device asking for this property's tour) from the moment
-    // generation starts, not only once it finishes.
+    const generatedScenes = await Promise.all(promises);
+    const overallStatus = generatedScenes.every(s => s.status === 'ready') ? 'ready' : generatedScenes.some(s => s.status === 'failed') ? 'failed' : 'pending';
+
     if (propertyId) {
       await upsertTourRecord(propertyId, {
-        status: result.status,
-        phase: result.status === 'failed' ? 'failed' : 'generating',
-        operationId: result.operationId,
-        worldId: result.worldId,
-        viewerUrl: result.viewerUrl,
-        error: result.error,
+        status: overallStatus as any,
+        phase: overallStatus === 'failed' ? 'failed' : 'generating',
+        scenes: generatedScenes,
         providerMode: provider.mode,
       });
     }
 
-    return NextResponse.json({ ...result, providerId: provider.id, providerMode: provider.mode, prompt });
+    return NextResponse.json({ scenes: generatedScenes, providerId: provider.id, providerMode: provider.mode, prompt });
   } catch (err) {
     const message = err instanceof TourProviderUnavailableError || err instanceof TourProviderRequestError ? err.message : err instanceof Error ? err.message : 'Tour generation failed.';
 
     if (propertyId) {
-      await upsertTourRecord(propertyId, { status: 'failed', phase: 'failed', error: message, providerMode: provider.mode });
+      await upsertTourRecord(propertyId, { status: 'failed', phase: 'failed', error: message, providerMode: provider.mode, scenes: [] });
     }
 
     if (err instanceof TourProviderUnavailableError) {

@@ -14,9 +14,9 @@ import type { TourGenerationStatus, TourProviderMode } from "./provider/types";
  */
 export type TourPhase = "queued" | "generating" | "downloading_assets" | "storing_assets" | "ready" | "failed";
 
-export interface TourRecord {
+export interface TourScene {
   id: string;
-  propertyId: string;
+  category: string;
   status: TourGenerationStatus;
   phase?: TourPhase;
   operationId?: string;
@@ -47,6 +47,17 @@ export interface TourRecord {
   /** AI-generated description of the world, if World Labs returned one. */
   caption?: string;
   semanticsMetadata?: { groundPlaneOffsetMeters?: number; metricScaleFactor?: number };
+  error?: string;
+  providerMode?: TourProviderMode;
+  readyAt?: string;
+}
+
+export interface TourRecord {
+  id: string;
+  propertyId: string;
+  status: TourGenerationStatus;
+  phase?: TourPhase;
+  scenes: TourScene[];
   error?: string;
   providerMode?: TourProviderMode;
   requestedAt: string;

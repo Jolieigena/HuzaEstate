@@ -28,10 +28,55 @@ export async function upsertTourRecord(propertyId: string, patch: Partial<TourRe
   const existing = await repo.get(propertyId);
   const now = new Date().toISOString();
 
+  let mergedScenes = existing?.scenes || [];
+  
+  if (patch.scenes) {
+    mergedScenes = patch.scenes;
+  } else if (patch.operationId && mergedScenes.length > 0) {
+    // If it's a partial patch for a specific operationId (from legacy/single-scene endpoints)
+    mergedScenes = mergedScenes.map(scene => {
+      if (scene.operationId === patch.operationId) {
+        return {
+          ...scene,
+          status: patch.status as any ?? scene.status,
+          phase: patch.phase ?? scene.phase,
+          worldId: patch.worldId ?? scene.worldId,
+          viewerUrl: patch.viewerUrl ?? scene.viewerUrl,
+          thumbnailUrl: (patch as any).thumbnailUrl ?? scene.thumbnailUrl,
+          panoUrl: (patch as any).panoUrl ?? scene.panoUrl,
+          spzUrl: (patch as any).spzUrl ?? scene.spzUrl,
+          rawSpzUrls: (patch as any).rawSpzUrls ?? scene.rawSpzUrls,
+          colliderUrl: (patch as any).colliderUrl ?? scene.colliderUrl,
+          caption: (patch as any).caption ?? scene.caption,
+          semanticsMetadata: (patch as any).semanticsMetadata ?? scene.semanticsMetadata,
+          error: patch.error ?? scene.error,
+          readyAt: patch.readyAt ?? scene.readyAt,
+        };
+      }
+      return scene;
+    });
+  }
+
+  // Recalculate overall status based on scenes
+  let overallStatus = patch.status ?? existing?.status ?? 'pending';
+  let overallPhase = patch.phase ?? existing?.phase ?? 'queued';
+
+  if (mergedScenes.length > 0) {
+    if (mergedScenes.every(s => s.status === 'ready')) {
+      overallStatus = 'ready';
+      overallPhase = 'ready';
+    } else if (mergedScenes.some(s => s.status === 'failed')) {
+      overallStatus = 'failed';
+      overallPhase = 'failed';
+    }
+  }
+
   const record: TourRecord = {
-    status: "pending",
     ...existing,
     ...patch,
+    status: overallStatus,
+    phase: overallPhase,
+    scenes: mergedScenes,
     id: existing?.id ?? patch.id ?? newId("tour"),
     propertyId,
     requestedAt: existing?.requestedAt ?? patch.requestedAt ?? now,

@@ -40,7 +40,13 @@ interface TourApiResult {
   prompt?: string;
 }
 
-type TourApiResponse = TourApiResult | { error: string };
+interface TourApiResponse {
+  scenes?: TourApiResult[];
+  error?: string;
+  providerId?: string;
+  providerMode?: "mock" | "live";
+  prompt?: string;
+}
 
 function toPromptInput(property: Property): PropertyPromptInput {
   return {
@@ -53,15 +59,6 @@ function toPromptInput(property: Property): PropertyPromptInput {
   };
 }
 
-/**
- * Kicks off generation for a property. Only whitelisted, structured
- * property fields (plus the property's own photos) are sent — the server
- * (src/app/api/tours/generate) builds the actual World Labs prompt itself,
- * and decides there whether enough categorized exterior angles exist to
- * generate from multiple photos rather than just the cover shot; this
- * function has no way to inject an arbitrary prompt (that's the separate
- * dev-only test panel).
- */
 export async function generateWorldForProperty(property: Property): Promise<TourApiResponse> {
   try {
     const res = await fetch("/api/tours/generate", {
@@ -75,11 +72,6 @@ export async function generateWorldForProperty(property: Property): Promise<Tour
   }
 }
 
-/** Attaches an already-generated World Labs world (by its world_id) to a
- *  property instead of starting a new, billed generation — see
- *  /api/tours/attach. Resolves synchronously (no polling): the world is
- *  already done, so the server downloads+stores its assets and returns the
- *  finished record directly. */
 export async function attachExistingWorld(propertyId: string, worldId: string): Promise<TourApiResponse> {
   try {
     const res = await fetch('/api/tours/attach', {
@@ -87,44 +79,82 @@ export async function attachExistingWorld(propertyId: string, worldId: string): 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ propertyId, worldId }),
     });
-    return (await res.json()) as TourApiResponse;
+    const data = await res.json();
+    return { scenes: [data] };
   } catch {
     return { error: 'Could not reach the tour service.' };
   }
 }
 
-/** Polls World Labs (via our server) for the current state of a generation.
- *  propertyId is included so the server can download+store the finished
- *  assets under the right property and persist the record — see
- *  /api/tours/status. */
-export async function getWorldGenerationStatus(operationId: string, propertyId: string): Promise<TourApiResponse> {
+export async function getWorldGenerationStatus(operationId: string, propertyId: string): Promise<TourApiResult | { error: string }> {
   try {
     const res = await fetch(`/api/tours/status?operationId=${encodeURIComponent(operationId)}&propertyId=${encodeURIComponent(propertyId)}`);
-    return (await res.json()) as TourApiResponse;
+    return (await res.json()) as TourApiResult | { error: string };
   } catch {
     return { error: "Could not reach the tour service." };
   }
 }
 
-function applyResult(propertyId: string, data: TourApiResult) {
+function applyResult(propertyId: string, operationId: string, data: TourApiResult) {
   TourStoreEngine.mutate((s) => {
     const existing = s.tours[propertyId];
     if (!existing) return;
-    existing.status = data.status;
-    existing.phase = data.phase;
-    existing.worldId = data.worldId;
-    existing.viewerUrl = data.viewerUrl;
-    existing.thumbnailUrl = data.thumbnailUrl;
-    existing.panoUrl = data.panoUrl;
-    existing.spzUrl = data.spzUrl;
-    existing.rawSpzUrls = data.rawSpzUrls;
-    existing.colliderUrl = data.colliderUrl;
-    existing.caption = data.caption;
-    existing.semanticsMetadata = data.semanticsMetadata;
-    existing.error = data.error;
-    existing.providerMode = data.providerMode;
+    
+    if (!existing.scenes) {
+      existing.scenes = [];
+    }
+    
+    const sceneIdx = existing.scenes.findIndex(sc => sc.operationId === operationId);
+    if (sceneIdx >= 0) {
+      const scene = existing.scenes[sceneIdx];
+      scene.status = data.status;
+      scene.phase = data.phase;
+      scene.worldId = data.worldId;
+      scene.viewerUrl = data.viewerUrl;
+      scene.thumbnailUrl = data.thumbnailUrl;
+      scene.panoUrl = data.panoUrl;
+      scene.spzUrl = data.spzUrl;
+      scene.rawSpzUrls = data.rawSpzUrls;
+      scene.colliderUrl = data.colliderUrl;
+      scene.caption = data.caption;
+      scene.semanticsMetadata = data.semanticsMetadata;
+      scene.error = data.error;
+      scene.providerMode = data.providerMode;
+      if (data.status !== "pending") scene.readyAt = new Date().toISOString();
+    } else {
+      // New scene
+      existing.scenes.push({
+        id: operationId,
+        category: 'default',
+        operationId,
+        status: data.status,
+        phase: data.phase,
+        worldId: data.worldId,
+        viewerUrl: data.viewerUrl,
+        thumbnailUrl: data.thumbnailUrl,
+        panoUrl: data.panoUrl,
+        spzUrl: data.spzUrl,
+        rawSpzUrls: data.rawSpzUrls,
+        colliderUrl: data.colliderUrl,
+        caption: data.caption,
+        semanticsMetadata: data.semanticsMetadata,
+        error: data.error,
+        providerMode: data.providerMode,
+        readyAt: data.status !== "pending" ? new Date().toISOString() : undefined,
+      });
+    }
+
+    // Update overall status
+    if (existing.scenes.every(sc => sc.status === 'ready')) {
+      existing.status = 'ready';
+      existing.phase = 'ready';
+      existing.readyAt = new Date().toISOString();
+    } else if (existing.scenes.some(sc => sc.status === 'failed')) {
+      existing.status = 'failed';
+      existing.phase = 'failed';
+    }
+    
     existing.updatedAt = new Date().toISOString();
-    if (data.status !== "pending") existing.readyAt = new Date().toISOString();
   });
 }
 
@@ -152,30 +182,28 @@ async function pollUntilSettled(propertyId: string, operationId: string, started
 
   const data = await getWorldGenerationStatus(operationId, propertyId);
 
-  // Check again in case it was cancelled while fetch was in flight
   const stateAfterFetch = TourStoreEngine.getStore().tours[propertyId];
   if (stateAfterFetch?.status === "failed" && stateAfterFetch?.error === "Cancelled by user") {
     return;
   }
 
   if (!("status" in data)) {
-    markFailed(propertyId, data.error);
+    // If one scene fails, do we fail the whole tour?
+    // Let's just update the scene to failed and let applyResult handle overall status.
+    applyResult(propertyId, operationId, { operationId, status: 'failed', phase: 'failed', error: data.error } as any);
     return;
   }
 
   if (data.status === "pending") {
     const delay = POLL_SCHEDULE_MS[attempt] ?? POLL_STEADY_STATE_MS;
     setTimeout(() => pollUntilSettled(propertyId, operationId, startedAt, attempt + 1), delay);
-    applyResult(propertyId, data);
+    applyResult(propertyId, operationId, data);
     return;
   }
 
-  applyResult(propertyId, data);
+  applyResult(propertyId, operationId, data);
 }
 
-/** Store-integrated orchestrator the UI actually calls: marks the property
- *  pending, starts generation, and drives polling until it settles. Built
- *  on generateWorldForProperty/getWorldGenerationStatus above. */
 export const TourService = {
   getForProperty(propertyId: string): TourRecord | undefined {
     return TourStoreEngine.getStore().tours[propertyId];
@@ -193,36 +221,34 @@ export const TourService = {
         existing.requestedAt = now;
         existing.updatedAt = now;
         existing.error = undefined;
+        existing.scenes = []; // reset scenes for new request
       } else {
-        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: "pending", phase: "queued", requestedAt: now, updatedAt: now };
+        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: "pending", phase: "queued", requestedAt: now, updatedAt: now, scenes: [] };
       }
     });
 
     const data = await generateWorldForProperty(property);
 
-    if (!("operationId" in data)) {
-      markFailed(propertyId, data.error);
+    if (data.error || !data.scenes || data.scenes.length === 0) {
+      markFailed(propertyId, data.error || 'No scenes were generated.');
       return;
     }
 
     TourStoreEngine.mutate((s) => {
       const existing = s.tours[propertyId];
       if (!existing) return;
-      existing.operationId = data.operationId;
+      existing.scenes = data.scenes as any;
       existing.providerMode = data.providerMode;
       existing.updatedAt = new Date().toISOString();
+      existing.phase = "generating";
     });
-    if (data.status !== "pending") {
-      applyResult(propertyId, data);
-    } else {
-      TourStoreEngine.mutate((s) => {
-        const existing = s.tours[propertyId];
-        if (existing) existing.phase = "generating";
-      });
-    }
 
-    if (data.status === "pending") {
-      pollUntilSettled(propertyId, data.operationId, Date.now());
+    for (const scene of data.scenes) {
+      if (scene.status === "pending" && scene.operationId) {
+        pollUntilSettled(propertyId, scene.operationId, Date.now());
+      } else if (scene.operationId) {
+        applyResult(propertyId, scene.operationId, scene);
+      }
     }
   },
 
@@ -230,9 +256,6 @@ export const TourService = {
     return TourService.requestTour(property);
   },
 
-  /** Links a property to a world that was already generated (and already
-   *  paid for) rather than kicking off a fresh generation — see
-   *  attachExistingWorld above. */
   async attachExisting(propertyId: string, worldId: string): Promise<void> {
     const now = new Date().toISOString();
     TourStoreEngine.mutate((s) => {
@@ -243,16 +266,20 @@ export const TourService = {
         existing.updatedAt = now;
         existing.error = undefined;
       } else {
-        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: 'pending', phase: 'downloading_assets', requestedAt: now, updatedAt: now };
+        s.tours[propertyId] = { id: `local_${propertyId}`, propertyId, status: 'pending', phase: 'downloading_assets', requestedAt: now, updatedAt: now, scenes: [] };
       }
     });
 
     const data = await attachExistingWorld(propertyId, worldId);
-    if (!('status' in data)) {
+    if (data.error || !data.scenes || data.scenes.length === 0) {
       markFailed(propertyId, data.error);
       return;
     }
-    applyResult(propertyId, data);
+    
+    const scene = data.scenes[0];
+    if (scene.operationId) {
+      applyResult(propertyId, scene.operationId, scene);
+    }
   },
 
   cancelTour(propertyId: string): void {
