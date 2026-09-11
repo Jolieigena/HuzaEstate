@@ -55,23 +55,27 @@ export async function POST(request: Request) {
 
   const imageUrl = isUsablePhotoUrl(body?.imageUrl) ? body.imageUrl : undefined;
 
-  // Different angles of the SAME building (front/side/back) can be stitched
-  // into one multi-image world; a backyard or interior room photo isn't
-  // another angle of the structure, so those never enter this map — see
-  // getAzimuthForCategory. First photo per angle wins if a category has more
-  // than one photo.
-  const exteriorAngles = new Map<number, string>();
+  // The user explicitly requested to send ALL images (interior & exterior) to the AI.
+  // We collect all usable photos and assign them evenly spaced azimuths (0 to 360) 
+  // so World Labs accepts the payload. Note: World Labs is designed for single objects, 
+  // so mixing inside/outside photos in one request will force the model to attempt 
+  // stitching them into a single continuous shape.
+  const allUsablePhotos: string[] = [];
   for (const photo of body?.photos ?? []) {
-    if (!isUsablePhotoUrl(photo?.url) || typeof photo?.category !== 'string') continue;
-    const azimuth = getAzimuthForCategory(photo.category);
-    if (azimuth !== undefined && !exteriorAngles.has(azimuth)) {
-      exteriorAngles.set(azimuth, photo.url);
+    if (isUsablePhotoUrl(photo?.url)) {
+      allUsablePhotos.push(photo.url);
     }
   }
 
   let input: GenerationInput;
-  if (exteriorAngles.size >= 2) {
-    input = { mode: 'multiImage', images: Array.from(exteriorAngles, ([azimuth, url]) => ({ azimuth, url })), prompt };
+  if (allUsablePhotos.length >= 2) {
+    // Distribute the images evenly around a 360-degree circle
+    const step = 360 / allUsablePhotos.length;
+    const images = allUsablePhotos.map((url, index) => ({
+      url,
+      azimuth: Math.round(index * step),
+    }));
+    input = { mode: 'multiImage', images, prompt };
   } else if (imageUrl) {
     input = { mode: 'image', imageUrl, prompt };
   } else {
