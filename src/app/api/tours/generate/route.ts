@@ -90,16 +90,51 @@ export async function POST(request: Request) {
   
   if (allUsablePhotos.length > 0) {
     // RECONSTRUCTION EXPERIMENT:
-    // Instead of grouping by room, we feed all photos (up to 8) into a single generation
-    // using the reconstruct_images: true flag.
     const capped = allUsablePhotos.slice(0, 8);
-    const step = 360 / capped.length;
-    const images = capped.map((p, index) => ({ url: p.url, azimuth: Math.round(index * step) }));
+    const sharp = require('sharp');
+    
+    const processedImages = await Promise.all(capped.map(async (p) => {
+      let buffer: Buffer;
+      if (p.url.startsWith('data:')) {
+        buffer = Buffer.from(p.url.split(',')[1], 'base64');
+      } else {
+        const res = await fetch(p.url);
+        if (!res.ok) throw new Error(`Failed to fetch image: ${p.url}`);
+        buffer = Buffer.from(await res.arrayBuffer());
+      }
+      
+      const originalMetadata = await sharp(buffer).metadata();
+      
+      const processedBuffer = await sharp(buffer)
+        .rotate() // auto-rotate based on EXIF orientation and remove the EXIF tag
+        .resize(1024, 768, { fit: 'cover' }) // Consistent aspect ratio and dimensions
+        .jpeg({ quality: 90 }) // strip all metadata by default in sharp
+        .toBuffer();
+        
+      const newMetadata = await sharp(processedBuffer).metadata();
+      
+      console.log(`\n--- Image Processing Log ---`);
+      console.log(`Original URL: ${p.url.substring(0, 50)}...`);
+      console.log(`Original Dimensions: ${originalMetadata.width}x${originalMetadata.height}`);
+      console.log(`Original EXIF Orientation: ${originalMetadata.orientation}`);
+      console.log(`Corrected Orientation: ${originalMetadata.orientation && originalMetadata.orientation !== 1 ? 'Yes' : 'No'}`);
+      console.log(`Final Dimensions: ${newMetadata.width}x${newMetadata.height}`);
+      
+      return `data:image/jpeg;base64,${processedBuffer.toString('base64')}`;
+    }));
+    
+    const newPrompt = "Reconstruct this real indoor property accurately from the provided photographs. Preserve the spatial structure shown in the source images. Maintain natural upright orientation, vertical walls, horizontal floors and ceilings, realistic room proportions, and consistent geometry. Do not rotate, invert, mirror, or flip the environment.";
+    
+    // Notice: azimuth is completely omitted
+    const images = processedImages.map(url => ({ url }));
+    
+    console.log(`\nSending ${images.length} images to World Labs...`);
+    console.log(`Prompt: ${newPrompt}`);
     
     if (images.length >= 2) {
-      inputList.push({ category: 'whole_house_reconstruction', input: { mode: 'multiImage', images, prompt, reconstructImages: true } });
+      inputList.push({ category: 'whole_house_reconstruction', input: { mode: 'multiImage', images, prompt: newPrompt, reconstructImages: true } });
     } else {
-      inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl: images[0].url, prompt } });
+      inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl: images[0].url, prompt: newPrompt } });
     }
   } else if (imageUrl) {
     inputList.push({ category: 'exterior_front', input: { mode: 'image', imageUrl, prompt } });

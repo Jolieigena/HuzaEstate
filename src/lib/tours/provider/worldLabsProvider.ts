@@ -107,7 +107,11 @@ function toWorldPrompt(input: GenerationInput) {
     case "multiImage":
       return {
         type: "multi-image" as const,
-        multi_image_prompt: input.images.map(({ url, azimuth }) => ({ azimuth, content: toImagePrompt(url) })),
+        multi_image_prompt: input.images.map(({ url, azimuth }) => {
+          const item: any = { content: toImagePrompt(url) };
+          if (azimuth !== undefined) item.azimuth = azimuth;
+          return item;
+        }),
         text_prompt: input.prompt,
         ...(input.reconstructImages ? { reconstruct_images: true } : {}),
       };
@@ -180,6 +184,28 @@ export const worldLabsProvider: TourProvider = {
     const apiKey = requireApiKey();
     const world_prompt = toWorldPrompt(input);
 
+    const payload = {
+      display_name: "HuzaEstate Property Tour",
+      model: "marble-1.1",
+      world_prompt,
+      permission: { allow_id_access: true },
+    };
+    
+    // Log payload for debugging (excluding image base64 data to keep it readable)
+    const logPayload = JSON.parse(JSON.stringify(payload));
+    if (logPayload.world_prompt?.multi_image_prompt) {
+      logPayload.world_prompt.multi_image_prompt.forEach((item: any) => {
+        if (item.content?.data_base64) {
+          item.content.data_base64 = "<base64_data_omitted>";
+        }
+      });
+    } else if (logPayload.world_prompt?.image_prompt?.data_base64) {
+      logPayload.world_prompt.image_prompt.data_base64 = "<base64_data_omitted>";
+    }
+    
+    console.log(`\n--- World Labs Request Payload ---`);
+    console.log(JSON.stringify(logPayload, null, 2));
+
     let res: Response;
     try {
       res = await fetch(`${API_BASE}/marble/v1/worlds:generate`, {
@@ -188,21 +214,7 @@ export const worldLabsProvider: TourProvider = {
           "WLT-Api-Key": apiKey,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          display_name: "HuzaEstate Property Tour",
-          model: "marble-1.1",
-          world_prompt,
-          // Worlds default to fully private (permission.public/allow_id_access
-          // both false) — viewable only by the account whose API key created
-          // them. Buyers opening world_marble_url in their own, unauthenticated
-          // browser would otherwise always hit "You don't have permission to
-          // view this world". allow_id_access makes it viewable by anyone with
-          // the link without also listing it in World Labs' public/community
-          // gallery (which `public: true` would do). This only matters for the
-          // debug/fallback viewerUrl now (see TourRecord.viewerUrl) — normal
-          // buyer viewing loads our own stored assets instead.
-          permission: { allow_id_access: true },
-        }),
+        body: JSON.stringify(payload),
       });
     } catch (err) {
       throw new TourProviderRequestError(`Could not reach World Labs: ${err instanceof Error ? err.message : "network error"}.`, "network");
