@@ -8,8 +8,8 @@ import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
 
 const NAV_LINKS = [
-  { href: '/buy', label: 'Buy' },
-  { href: '/rent', label: 'Rent' },
+  { href: '/properties?type=sale', label: 'Buy' },
+  { href: '/properties?type=rent', label: 'Rent' },
   { href: '/sell', label: 'Sell' },
   { href: '/build', label: 'Build' },
   { href: '/renovate', label: 'Renovate' },
