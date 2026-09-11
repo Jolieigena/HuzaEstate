@@ -52,8 +52,11 @@ export default function PropertyTourSection({ propertyId, imageUrl, virtualTourU
   const scenes = tour?.scenes || [];
   const activeScene = scenes[activeSceneIndex] || tour; // Fallback to tour for backwards compatibility if scenes is empty but tour has data
   
-  const activeSpzUrl = activeScene.spzUrl || tour.spzUrl;
-  const activePanoUrl = activeScene.panoUrl || tour.panoUrl;
+  const baseSpzUrl = activeScene.spzUrl || tour.spzUrl;
+  const basePanoUrl = activeScene.panoUrl || tour.panoUrl;
+  
+  const activeSpzUrl = baseSpzUrl ? `${baseSpzUrl}&v=${new Date(tour.updatedAt || Date.now()).getTime()}` : undefined;
+  const activePanoUrl = basePanoUrl ? `${basePanoUrl}&v=${new Date(tour.updatedAt || Date.now()).getTime()}` : undefined;
   const activeViewerUrl = activeScene.viewerUrl || tour.viewerUrl;
 
   const activeMode = activeSpzUrl ? mode : 'pano';
