@@ -213,6 +213,40 @@ export const TourService = {
     const propertyId = property.id;
     const now = new Date().toISOString();
 
+    // --- GUARD AGAINST DOUBLE GENERATION ---
+    // Before firing a new World Labs generation, check the server-side record.
+    // If there's already a live pending generation (e.g., the first click's
+    // image-processing took long enough that the UI showed "Retry"), we
+    // resume polling the existing operationIds instead of paying for a second one.
+    try {
+      const serverRes = await fetch(`/api/tours/record?propertyId=${encodeURIComponent(propertyId)}`);
+      if (serverRes.ok) {
+        const record = await serverRes.json();
+        const pendingScenes = (record.scenes || []).filter(
+          (sc: any) => sc.status === 'pending' && sc.operationId
+        );
+        if (pendingScenes.length > 0) {
+          console.log(`[TourService] Found ${pendingScenes.length} pending scene(s) on the server — resuming polling instead of generating a new world.`);
+          // Sync local state with server record so the UI shows "Generating…"
+          TourStoreEngine.mutate((s) => {
+            s.tours[propertyId] = {
+              ...record,
+              status: 'pending',
+              phase: record.phase ?? 'generating',
+              updatedAt: new Date().toISOString(),
+            };
+          });
+          for (const scene of pendingScenes) {
+            pollUntilSettled(propertyId, scene.operationId, Date.now());
+          }
+          return; // Do NOT fire a new generation
+        }
+      }
+    } catch {
+      // Network error reading server record — safe to fall through and generate normally
+    }
+    // --- END GUARD ---
+
     TourStoreEngine.mutate((s) => {
       const existing = s.tours[propertyId];
       if (existing) {

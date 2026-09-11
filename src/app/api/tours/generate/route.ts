@@ -107,8 +107,8 @@ export async function POST(request: Request) {
       
       const processedBuffer = await sharp(buffer)
         .rotate() // auto-rotate based on EXIF orientation and remove the EXIF tag
-        .resize(1024, 768, { fit: 'cover' }) // Consistent aspect ratio and dimensions
-        .jpeg({ quality: 90 }) // strip all metadata by default in sharp
+        .resize(1024, 768, { fit: 'inside', withoutEnlargement: true }) // Consistent dimensions without upscaling
+        .jpeg({ quality: 80 }) // strip all metadata and compress to save upload time
         .toBuffer();
         
       const newMetadata = await sharp(processedBuffer).metadata();
