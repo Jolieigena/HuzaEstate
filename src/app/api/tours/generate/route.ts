@@ -69,9 +69,11 @@ export async function POST(request: Request) {
 
   let input: GenerationInput;
   if (allUsablePhotos.length >= 2) {
+    // World Labs API enforces a strict maximum of 4 images for multiImage generation.
+    const cappedPhotos = allUsablePhotos.slice(0, 4);
     // Distribute the images evenly around a 360-degree circle
-    const step = 360 / allUsablePhotos.length;
-    const images = allUsablePhotos.map((url, index) => ({
+    const step = 360 / cappedPhotos.length;
+    const images = cappedPhotos.map((url, index) => ({
       url,
       azimuth: Math.round(index * step),
     }));
