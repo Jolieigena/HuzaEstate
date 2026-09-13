@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HuzaEstate
 
-## Getting Started
+HuzaEstate is a Next.js prototype for the Rwandan property market. It combines property discovery with seller tools, AI-assisted build and renovation workspaces, professional collaboration, construction execution, finance, and platform administration.
 
-First, run the development server:
+## Run locally
+
+Requirements: Node.js 20 or newer and npm.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>. The login page lists demo accounts for customer, seller, professional, contractor, and administrator workflows.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project structure
 
-## Learn More
+```text
+src/
+  app/                 Routes, layouts, and API endpoints
+    admin/             Administration portal
+    professional/      Professional and contractor workspace
+    studio/            Build and renovation workspaces
+    execution/         Construction execution tracking
+    api/               Properties, finance, and tour endpoints
+  components/          Shared UI and feature-oriented components
+  lib/                 Domain logic, stores, fixtures, and integrations
+    properties/        Property domain contracts
+    storage/            Cross-feature browser-storage helpers
+    tours/              Providers, repositories, and asset storage
+public/                 Static assets
+```
 
-To learn more about Next.js, take a look at the following resources:
+Route files should mainly compose feature components. Business rules and state transitions belong in the corresponding `src/lib/<feature>` module. Components used by one feature belong in `src/components/<feature>`; broadly reusable UI belongs in `src/components/shared`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data and persistence
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This repository currently behaves as a frontend prototype. Build, renovation, execution, finance, listings, and applications are seeded with demo data and persist primarily in `localStorage`. Helpers in `src/lib/storage` provide safe, consistent access while each feature continues to own its keys and data shape.
 
-## Deploy on Vercel
+Property fixtures remain in `src/lib/data.ts`; the reusable property contract lives in `src/lib/properties/types.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The tour subsystem crosses the client/server boundary:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- API handlers in `src/app/api/tours` start and monitor generation.
+- `src/lib/tours/provider` selects mock or World Labs generation.
+- `src/lib/tours/assetStorage` selects local storage or Vercel Blob.
+- `src/lib/tours/repository` stores the server-side tour record.
+- The browser store provides fast local reads for the generating client.
+
+Without provider credentials, tours use the mock provider. See `.env.example` for optional World Labs and Vercel Blob configuration.
+
+## Repository conventions
+
+- Import application modules through the `@/` alias where practical.
+- Keep domain types independent from demo fixtures.
+- Put environment-specific implementations behind a small resolver.
+- Preserve storage keys during refactors so existing demo sessions still load.
+- Root `fix*.js`, `script.py`, and `generateProperties.js` files are historical data utilities. Put new maintenance utilities in `scripts/` and document their inputs and output.
+
+## Current limitations
+
+The project has no production database or identity provider. Authentication and most persistence are local demo implementations. Production work should replace browser stores with authenticated server services and add migrations, authorization, monitoring, and automated tests for critical domain flows.

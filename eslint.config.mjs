@@ -12,10 +12,14 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    "fix*.js",
-    "generateProperties.js",
+    "public/vendor/**",
+    "scripts/legacy/**",
     "pw-sidebar-*.tmp.js",
   ]),
+  {
+    files: ["tests/**/*.cjs"],
+    rules: { "@typescript-eslint/no-require-imports": "off" },
+  },
   {
     files: ["src/components/PropertiesMap.tsx"],
     rules: {

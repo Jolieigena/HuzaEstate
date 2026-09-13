@@ -34,23 +34,23 @@ export default function CustomerExecutionListPage() {
 
       {/* Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 text-xs font-semibold">
-        {[
+        {([
           { key: "active", label: "Active Sites" },
           { key: "at_risk", label: "At Risk / Delayed" },
           { key: "handover", label: "Approaching Handover" },
           { key: "completed", label: "Completed Projects" },
           { key: "all", label: "All Projects" },
-        ].map((f) => (
+        ] as const).map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key as any)}
+            onClick={() => setFilter(f.key)}
             className={`px-4 py-2 rounded-xl transition-colors whitespace-nowrap ${
               filter === f.key
                 ? "bg-slate-900 text-white shadow-sm font-bold"
                 : "bg-white border text-slate-600 hover:bg-slate-50"
             }`}
           >
-            {f.label} ({filterExecutionProjects(projects, f.key as any).length})
+            {f.label} ({filterExecutionProjects(projects, f.key).length})
           </button>
         ))}
       </div>

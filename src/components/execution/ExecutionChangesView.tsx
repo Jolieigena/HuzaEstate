@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExecutionProject, ChangeRequest, ChangeOrder, CHANGE_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
+import { ExecutionProject, CHANGE_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
 import { ChangeOrderService } from "../../lib/execution/executionService";
 import { AddChangeRequestModal } from "./ExecutionModals";
 import { canPerformExecutionAction } from "../../lib/execution/permissions";
@@ -17,7 +17,7 @@ export function ExecutionChangesView({ project, currentRole }: ChangesViewProps)
 
   const canApproveCustomer = canPerformExecutionAction(currentRole, "change_request.approve_customer");
 
-  const handleAddChangeRequest = (data: any) => {
+  const handleAddChangeRequest: React.ComponentProps<typeof AddChangeRequestModal>["onSubmit"] = (data) => {
     ChangeOrderService.addRequest(
       project.id,
       {

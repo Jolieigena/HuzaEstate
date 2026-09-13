@@ -20,7 +20,7 @@ export function ExecutionScheduleView({ project, currentRole }: ScheduleViewProp
 
   const canEdit = canPerformExecutionAction(currentRole, "schedule.edit");
 
-  const handleAddTask = (data: any) => {
+  const handleAddTask: React.ComponentProps<typeof AddTaskModal>["onSubmit"] = (data) => {
     ExecutionScheduleService.addTask(
       project.id,
       {

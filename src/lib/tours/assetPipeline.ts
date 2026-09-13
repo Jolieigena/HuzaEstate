@@ -56,19 +56,19 @@ export function pickPrimarySpzSourceUrl(spzUrls: Record<string, string> | undefi
  * since "ready" must mean something is actually stored to view (see
  * status/route.ts).
  */
-export async function downloadAndStoreTourAssets(propertyId: string, result: TourGenerationResult): Promise<PipelineAssets> {
+export async function downloadAndStoreTourAssets(propertyId: string, result: TourGenerationResult, operationId = result.operationId): Promise<PipelineAssets> {
   const storage = getActiveAssetStorage();
   const assets: PipelineAssets = {};
 
   const primarySpzSource = pickPrimarySpzSourceUrl(result.spzUrls);
   if (primarySpzSource) {
-    const stored = await storage.storeFromUrl(propertyId, filenameFor("splat", primarySpzSource), primarySpzSource);
+    const stored = await storage.storeFromUrl(propertyId, filenameFor("splat", primarySpzSource, operationId), primarySpzSource);
     assets.spzUrl = stored.url;
   }
 
   if (result.panoUrl) {
     try {
-      const stored = await storage.storeFromUrl(propertyId, filenameFor("panorama", result.panoUrl), result.panoUrl);
+      const stored = await storage.storeFromUrl(propertyId, filenameFor("panorama", result.panoUrl, operationId), result.panoUrl);
       assets.panoUrl = stored.url;
     } catch {
       // best-effort — the splat viewer (or, lacking that, the World Labs
@@ -78,7 +78,7 @@ export async function downloadAndStoreTourAssets(propertyId: string, result: Tou
 
   if (result.thumbnailUrl) {
     try {
-      const stored = await storage.storeFromUrl(propertyId, filenameFor("thumbnail", result.thumbnailUrl), result.thumbnailUrl);
+      const stored = await storage.storeFromUrl(propertyId, filenameFor("thumbnail", result.thumbnailUrl, operationId), result.thumbnailUrl);
       assets.thumbnailUrl = stored.url;
     } catch {
       // best-effort, see above
@@ -87,7 +87,7 @@ export async function downloadAndStoreTourAssets(propertyId: string, result: Tou
 
   if (result.colliderUrl) {
     try {
-      const stored = await storage.storeFromUrl(propertyId, filenameFor("collider", result.colliderUrl), result.colliderUrl);
+      const stored = await storage.storeFromUrl(propertyId, filenameFor("collider", result.colliderUrl, operationId), result.colliderUrl);
       assets.colliderUrl = stored.url;
     } catch {
       // optional asset — never blocks the tour
@@ -118,7 +118,7 @@ export async function persistReadyGeneration(propertyId: string, operationId: st
   let assets: PipelineAssets | undefined;
   let pipelineError: string | undefined;
   try {
-    assets = await downloadAndStoreTourAssets(propertyId, result);
+    assets = await downloadAndStoreTourAssets(propertyId, result, operationId);
   } catch (err) {
     pipelineError = err instanceof Error ? err.message : "Failed to download and store the generated tour assets.";
   }
@@ -150,6 +150,7 @@ export async function persistReadyGeneration(propertyId: string, operationId: st
     caption: result.caption,
     semanticsMetadata: result.semanticsMetadata,
     readyAt: new Date().toISOString(),
+    error: undefined,
     providerMode,
   });
 }

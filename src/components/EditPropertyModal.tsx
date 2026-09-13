@@ -5,7 +5,7 @@ import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
-import type { Property } from '@/lib/data';
+import type { Property } from '@/lib/properties/types';
 
 interface EditPropertyModalProps {
   property: Property | null;

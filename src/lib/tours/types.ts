@@ -58,6 +58,19 @@ export interface TourRecord {
   status: TourGenerationStatus;
   phase?: TourPhase;
   scenes: TourScene[];
+  /** Legacy single-scene fields retained while stored records and callers
+   * migrate to `scenes`. New multi-scene records should use `scenes` as the
+   * source of truth. */
+  operationId?: string;
+  worldId?: string;
+  viewerUrl?: string;
+  thumbnailUrl?: string;
+  panoUrl?: string;
+  spzUrl?: string;
+  rawSpzUrls?: Record<string, string>;
+  colliderUrl?: string;
+  caption?: string;
+  semanticsMetadata?: { groundPlaneOffsetMeters?: number; metricScaleFactor?: number };
   error?: string;
   providerMode?: TourProviderMode;
   requestedAt: string;

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getTourRepository } from '@/lib/tours/repository';
+import { isValidPropertyId } from '@/lib/tours/validation';
 
 /**
  * Returns the server-persisted tour record for a property, if one exists —
@@ -13,8 +14,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const propertyId = searchParams.get('propertyId');
 
-  if (!propertyId) {
-    return NextResponse.json({ error: 'propertyId is required.' }, { status: 400 });
+  if (!isValidPropertyId(propertyId)) {
+    return NextResponse.json({ error: 'A valid propertyId is required.' }, { status: 400 });
   }
 
   const record = await getTourRepository().get(propertyId);

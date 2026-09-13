@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
-import type { Property } from '@/lib/data';
+import type { Property } from '@/lib/properties/types';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 

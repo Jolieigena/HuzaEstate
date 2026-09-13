@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExecutionProject, ExecutionDocument, ExecutionRole } from "../../lib/execution/types";
+import { ExecutionProject, ExecutionRole } from "../../lib/execution/types";
 
 interface DocumentsViewProps {
   project: ExecutionProject;

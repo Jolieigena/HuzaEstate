@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import type { Property } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 import { AdminService } from "./service";
 import type { ListingModerationRecord, ListingModerationStatus } from "./types";
 

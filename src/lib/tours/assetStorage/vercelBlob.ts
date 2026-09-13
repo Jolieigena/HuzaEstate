@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
-import { contentTypeForFilename } from "../assetFilenames";
+import { contentTypeForFilename, isKnownTourAssetFilename } from "../assetFilenames";
+import { assertPropertyId } from "../validation";
 import type { StoredAsset, TourAssetStorage } from "./types";
 
 // Real persistent storage. Activates automatically once BLOB_READ_WRITE_TOKEN
@@ -12,6 +13,8 @@ export const vercelBlobTourAssetStorage: TourAssetStorage = {
   mode: "vercel-blob",
 
   async storeFromUrl(propertyId, filename, sourceUrl): Promise<StoredAsset> {
+    assertPropertyId(propertyId);
+    if (!isKnownTourAssetFilename(filename)) throw new Error("Unknown tour asset filename.");
     const res = await fetch(sourceUrl);
     if (!res.ok) throw new Error(`Failed to download ${filename} (HTTP ${res.status}).`);
     const buffer = Buffer.from(await res.arrayBuffer());

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Property } from '@/lib/data';
+import type { Property } from '@/lib/properties/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import L from 'leaflet';

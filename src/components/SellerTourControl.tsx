@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTourForProperty } from '@/lib/tours/hooks';
 import { TourService } from '@/lib/tours/tourService';
-import type { Property } from '@/lib/data';
+import type { Property } from '@/lib/properties/types';
 
 interface SellerTourControlProps {
   property: Property;

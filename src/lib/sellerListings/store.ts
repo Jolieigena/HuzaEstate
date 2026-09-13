@@ -2,7 +2,7 @@
 // src/lib/tours/store.ts (module-level array + Set<Listener>).
 
 import { SellerListingsStorageService } from "./storage";
-import type { Property } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 
 type Listener = () => void;
 

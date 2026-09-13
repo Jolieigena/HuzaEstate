@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ExecutionProjectService } from "./executionService";
-import { ExecutionProject, ExecutionRole, ExecutionProjectStatus } from "./types";
+import { ExecutionProject, ExecutionRole } from "./types";
 
 export function useExecutionProjects(userId?: string, role: ExecutionRole = "customer") {
   const [projects, setProjects] = useState<ExecutionProject[]>([]);

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Property } from '@/lib/data';
+import type { Property } from '@/lib/properties/types';
 import TourWatchBadge from '@/components/TourWatchBadge';
 
 interface PropertyCardProps {

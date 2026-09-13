@@ -3,7 +3,7 @@
 import PropertyCard from "@/components/PropertyCard";
 import Reveal from "@/components/Reveal";
 import { useVisibleListings } from "@/lib/admin/listings";
-import type { Property } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 
 interface PublicPropertyGridProps {
   properties: Property[];

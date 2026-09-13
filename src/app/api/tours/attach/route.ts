@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getActiveTourProvider } from '@/lib/tours/provider';
 import { TourProviderUnavailableError, TourProviderRequestError } from '@/lib/tours/provider/types';
 import { persistReadyGeneration } from '@/lib/tours/assetPipeline';
+import { isValidPropertyId } from '@/lib/tours/validation';
 
 // Same rationale as status/route.ts — the download-and-store pipeline needs
 // more headroom than a platform's default function timeout.
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   const propertyId = typeof body?.propertyId === 'string' ? body.propertyId.trim() : '';
   const worldId = typeof body?.worldId === 'string' ? body.worldId.trim() : '';
 
-  if (!propertyId) return NextResponse.json({ error: 'propertyId is required.' }, { status: 400 });
+  if (!isValidPropertyId(propertyId)) return NextResponse.json({ error: 'A valid propertyId is required.' }, { status: 400 });
   if (!worldId) return NextResponse.json({ error: 'worldId is required.' }, { status: 400 });
 
   const provider = getActiveTourProvider();
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
   try {
     const result = await provider.getWorldById(worldId);
     const record = await persistReadyGeneration(propertyId, `world:${worldId}`, result, provider.mode);
-    return NextResponse.json({ ...record, providerId: provider.id });
+    const scene = record.scenes.find((scene) => scene.operationId === `world:${worldId}`);
+    return NextResponse.json({ ...scene, providerId: provider.id, providerMode: provider.mode });
   } catch (err) {
     const message = err instanceof TourProviderUnavailableError || err instanceof TourProviderRequestError ? err.message : err instanceof Error ? err.message : 'Failed to attach the existing world.';
 

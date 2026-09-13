@@ -23,7 +23,7 @@ export function ExecutionSiteDiaryView({ project, currentRole }: SiteDiaryViewPr
 
   const canCreate = canPerformExecutionAction(currentRole, "site_diary.create");
 
-  const handleAddEntry = (data: any) => {
+  const handleAddEntry: React.ComponentProps<typeof AddSiteDiaryModal>["onSubmit"] = (data) => {
     SiteDiaryService.addEntry(
       project.id,
       {
@@ -68,7 +68,7 @@ export function ExecutionSiteDiaryView({ project, currentRole }: SiteDiaryViewPr
       project.id,
       selectedEntry.id,
       amendReason,
-      { [amendField]: { before: (selectedEntry as any)[amendField] || "", after: amendValue } },
+      { [amendField]: { before: String(selectedEntry[amendField as keyof SiteDiaryEntry] || ""), after: amendValue } },
       currentRole === "customer" ? project.customerName : project.contractorName,
       currentRole
     );

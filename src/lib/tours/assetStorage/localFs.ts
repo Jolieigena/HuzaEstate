@@ -1,6 +1,8 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { StoredAsset, TourAssetStorage } from "./types";
+import { isKnownTourAssetFilename } from "../assetFilenames";
+import { resolveTourStoragePath } from "../storagePaths";
 
 // DEVELOPMENT-ONLY FALLBACK. This writes to the local filesystem
 // (process.cwd()/.tour-asset-cache), which is NOT durable on serverless
@@ -14,10 +16,8 @@ import type { StoredAsset, TourAssetStorage } from "./types";
 const CACHE_DIR = path.join(process.cwd(), ".tour-asset-cache");
 
 function targetPath(propertyId: string, filename: string): string {
-  // propertyId is always one of our own generated ids (prop-N / seller-<uuid>)
-  // and filename always comes from filenameFor() (see ../assetFilenames.ts)
-  // — never free-text user input — so this can't be used for path traversal.
-  return path.join(CACHE_DIR, propertyId, filename);
+  if (!isKnownTourAssetFilename(filename)) throw new Error("Unknown tour asset filename.");
+  return resolveTourStoragePath(CACHE_DIR, propertyId, filename);
 }
 
 async function exists(filePath: string): Promise<boolean> {

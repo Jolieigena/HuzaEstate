@@ -2,7 +2,7 @@
 // src/lib/tours/store.ts and src/lib/sellerListings/store.ts.
 
 import { PropertyOverridesStorageService, type PropertyOverrides } from "./storage";
-import type { Property } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 
 type Listener = () => void;
 

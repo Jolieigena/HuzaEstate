@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { readLocalTourAsset } from '@/lib/tours/assetStorage/localFs';
 import { isKnownTourAssetFilename, contentTypeForFilename } from '@/lib/tours/assetFilenames';
+import { isValidPropertyId } from '@/lib/tours/validation';
 
 // Serves the local-filesystem dev fallback's cached files (see
 // src/lib/tours/assetStorage/localFs.ts). When BLOB_READ_WRITE_TOKEN is
@@ -13,8 +14,8 @@ export async function GET(request: Request) {
   const propertyId = searchParams.get('propertyId');
   const file = searchParams.get('file');
 
-  if (!propertyId || !file) {
-    return NextResponse.json({ error: 'propertyId and file are required.' }, { status: 400 });
+  if (!isValidPropertyId(propertyId) || !file) {
+    return NextResponse.json({ error: 'A valid propertyId and file are required.' }, { status: 400 });
   }
   if (!isKnownTourAssetFilename(file)) {
     return NextResponse.json({ error: 'Unknown asset file.' }, { status: 400 });

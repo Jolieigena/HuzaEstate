@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExecutionProject, HandoverChecklist, WarrantyIssue, EXECUTION_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
+import { ExecutionProject, HandoverChecklist, EXECUTION_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
 import { HandoverService } from "../../lib/execution/executionService";
 import { canPerformExecutionAction } from "../../lib/execution/permissions";
 import Dialog from "../Dialog";

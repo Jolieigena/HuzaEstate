@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 import { SellerListingsStoreEngine } from "./store";
-import { mockProperties, type Property } from "@/lib/data";
+import { mockProperties } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 import { usePropertyOverrides } from "@/lib/propertyOverrides/hooks";
 import { applyOverride } from "@/lib/propertyOverrides/store";
 

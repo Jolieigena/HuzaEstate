@@ -20,7 +20,7 @@ export function ExecutionInspectionsView({ project, currentRole }: InspectionsVi
 
   const canPerform = canPerformExecutionAction(currentRole, "inspection.perform");
 
-  const handleRequestInspection = (data: any) => {
+  const handleRequestInspection: React.ComponentProps<typeof RequestInspectionModal>["onSubmit"] = (data) => {
     InspectionService.requestInspection(
       project.id,
       {

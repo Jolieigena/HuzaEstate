@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
-import { ExecutionProject, MaterialItem, MaterialSubstitution, MATERIAL_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
+import { ExecutionProject, MaterialSubstitution, MATERIAL_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
 import { canPerformExecutionAction } from "../../lib/execution/permissions";
-import Dialog from "../Dialog";
 
 interface MaterialsViewProps {
   project: ExecutionProject;
@@ -13,7 +11,7 @@ interface MaterialsViewProps {
 
 export function ExecutionMaterialsView({ project, currentRole }: MaterialsViewProps) {
   const [activeTab, setActiveTab] = useState<"materials" | "substitutions">("materials");
-  const [selectedSub, setSelectedSub] = useState<MaterialSubstitution | null>(null);
+  const [, setSelectedSub] = useState<MaterialSubstitution | null>(null);
 
   const canApproveSub = canPerformExecutionAction(currentRole, "material.substitution_approve");
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ExecutionProject, ExecutionRole, APPROVAL_STATUS_LABELS, ApprovalStatus } from "../../lib/execution/types";
+import { ExecutionProject, ExecutionRole, APPROVAL_STATUS_LABELS } from "../../lib/execution/types";
 import { ExecutionProjectService } from "../../lib/execution/executionService";
 
 interface SetupWizardProps {

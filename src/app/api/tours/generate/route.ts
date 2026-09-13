@@ -4,6 +4,7 @@ import { TourProviderUnavailableError, TourProviderRequestError, type Generation
 import { buildPromptFromProperty, type PropertyPromptInput } from '@/lib/tours/promptBuilder';
 import { getAzimuthForCategory } from '@/lib/photoCategories';
 import { upsertTourRecord } from '@/lib/tours/repository';
+import type { TourScene } from '@/lib/tours/types';
 
 const STATUS_BY_ERROR_KIND: Record<TourProviderRequestError['kind'], number> = {
   auth: 401,
@@ -149,7 +150,7 @@ export async function POST(request: Request) {
     const scenes: any[] = [];
     
     // Fire all generation requests in parallel
-    const promises = inputList.map(async ({ category, input }) => {
+    const promises = inputList.map(async ({ category, input }): Promise<TourScene> => {
       try {
         const result = await provider.generateTour(input);
         return {

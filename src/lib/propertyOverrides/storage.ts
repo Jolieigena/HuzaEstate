@@ -1,4 +1,4 @@
-import type { Property } from "@/lib/data";
+import type { Property } from "@/lib/properties/types";
 
 const STORE_KEY = "huzaestate_property_overrides_v1";
 

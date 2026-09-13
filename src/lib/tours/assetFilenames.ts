@@ -4,6 +4,8 @@
 // .jpg — confirmed from a real generation, not assumed), computed by
 // filenameFor() below. Shared by the storage layer (server) and the
 // serving route's whitelist check, so the two can't drift apart.
+import { createHash } from "node:crypto";
+
 export const TOUR_ASSET_BASENAMES = {
   splat: "world",
   panorama: "panorama",
@@ -45,11 +47,12 @@ function extensionFromUrl(url: string, kind: TourAssetKind): string {
 
 /** The exact filename we store an asset under — real extension, not an
  *  assumed one (see module comment). */
-export function filenameFor(kind: TourAssetKind, sourceUrl: string): string {
-  return `${TOUR_ASSET_BASENAMES[kind]}.${extensionFromUrl(sourceUrl, kind)}`;
+export function filenameFor(kind: TourAssetKind, sourceUrl: string, operationId?: string): string {
+  const scope = operationId ? `-${createHash("sha256").update(operationId).digest("hex")}` : "";
+  return `${TOUR_ASSET_BASENAMES[kind]}${scope}.${extensionFromUrl(sourceUrl, kind)}`;
 }
 
-const FILENAME_PATTERN = new RegExp(`^(${Object.values(TOUR_ASSET_BASENAMES).join("|")})\\.[a-z0-9]{2,5}$`, "i");
+const FILENAME_PATTERN = new RegExp(`^(${Object.values(TOUR_ASSET_BASENAMES).join("|")})(?:-[a-f0-9]{64})?\\.[a-z0-9]{2,5}$`, "i");
 
 /** Whitelist check for the asset-serving route — matches "<known
  *  kind>.<short alphanumeric extension>" only, so a request can never read

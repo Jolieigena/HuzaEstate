@@ -7,23 +7,9 @@ import AppHeader from "./AppHeader";
 import Sidebar from "./Sidebar";
 import MobileSidebarDrawer from "./MobileSidebarDrawer";
 import { useAuth } from "@/lib/auth-context";
+import { getRouteDisplay } from "@/lib/navigation/routeDisplay";
 
 const COLLAPSE_STORAGE_KEY = "huzaestate_sidebar_collapsed";
-
-/**
- * Route prefixes that make up the account-style app ("Saved Homes", Build
- * and Renovate studios, the Professional workspace). Everything else —
- * the public marketing site, the property marketplace, `/manager`, the
- * professional application's public explanation — keeps the original
- * Navbar untouched, logged in or not, per the "don't redesign existing
- * pages" restriction.
- */
-const ACCOUNT_SHELL_ROUTES = [/^\/dashboard(\/|$)/, /^\/studio(\/|$)/, /^\/professional(\/|$)/, /^\/execution(\/|$)/, /^\/payments(\/|$)/, /^\/invoices(\/|$)/, /^\/contracts(\/|$)/];
-const ADMIN_SHELL_ROUTE = /^\/admin(\/|$)/;
-
-function isAccountShellRoute(pathname: string): boolean {
-  return ACCOUNT_SHELL_ROUTES.some((pattern) => pattern.test(pathname));
-}
 
 function readStoredCollapsed(): boolean {
   try {
@@ -45,6 +31,7 @@ function readStoredCollapsed(): boolean {
 export default function AppShell({ children }: { children: ReactNode }) {
   const { isLoggedIn, isAuthReady } = useAuth();
   const pathname = usePathname();
+  const { shell } = getRouteDisplay(pathname);
   const [collapsed, setCollapsed] = useState(readStoredCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -64,11 +51,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
   // AdminShell) — no public Navbar, no dashboard AppHeader/Sidebar. This
   // check runs before the account-shell/Navbar branches below so `/admin`
   // never gets either, and every other route's branch is unaffected.
-  if (ADMIN_SHELL_ROUTE.test(pathname)) {
+  if (shell === "admin") {
     return <>{children}</>;
   }
 
-  if (!(isAuthReady && isLoggedIn) || !isAccountShellRoute(pathname)) {
+  if (!(isAuthReady && isLoggedIn) || shell !== "account") {
     return (
       <>
         <Navbar />

@@ -35,24 +35,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center w-full">
-      {/* Hero Section — search-first, like a marketplace homepage: a full-bleed
-          photo, Buy/Rent/Sell entry points, and the search bar itself all in
-          the first screen, rather than leading with a brand slogan. */}
-      <section className="relative w-full h-[560px] sm:h-[620px] md:h-[680px] flex items-center justify-center overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative w-full h-[580px] sm:h-[640px] md:h-[700px] flex items-center justify-center overflow-hidden">
         <Image
-          src="/hero-house-spacious.jpg"
+          src="/hero-house-white.jpg"
           alt="Find your next home in Rwanda"
           fill
           priority
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/80" />
+        {/* Light gradient — just enough to make text pop without killing the photo */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/45" />
 
         <div className="relative z-10 w-full max-w-3xl px-6 text-center">
-          <h1 className="animate-fade-in-up text-4xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.1] mb-4 drop-shadow-md">
+          <h1 className="animate-fade-in-up text-4xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white tracking-tight leading-[1.1] mb-3 drop-shadow-lg">
             Find your place in Rwanda
           </h1>
-          <p className="animate-fade-in-up text-white/90 text-base sm:text-lg font-medium mb-8 drop-shadow-sm" style={{ animationDelay: "100ms" }}>
+          <p className="animate-fade-in-up text-white/90 text-base sm:text-lg font-medium mb-8 drop-shadow" style={{ animationDelay: "100ms" }}>
             Search homes for sale, homes for rent, and list your own — all verified, all in one place.
           </p>
 
@@ -60,20 +59,20 @@ export default function Home() {
             <SearchBar />
           </div>
 
-          <div className="animate-fade-in-up mt-9 flex items-center justify-center gap-6 sm:gap-10" style={{ animationDelay: "300ms" }}>
+          <div className="animate-fade-in-up mt-10 flex items-center justify-center gap-6 sm:gap-10" style={{ animationDelay: "300ms" }}>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white">2,500+</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Listings</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">2,500+</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Listings</div>
             </div>
-            <div className="w-px h-8 bg-white/20"></div>
+            <div className="w-px h-8 bg-white/30"></div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white">1,200+</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Families helped</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">1,200+</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Families helped</div>
             </div>
-            <div className="w-px h-8 bg-white/20"></div>
+            <div className="w-px h-8 bg-white/30"></div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white">30</div>
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/70">Districts covered</div>
+              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">30</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Districts covered</div>
             </div>
           </div>
         </div>

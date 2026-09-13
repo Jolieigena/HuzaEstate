@@ -3,6 +3,7 @@ import { getActiveTourProvider } from '@/lib/tours/provider';
 import { TourProviderUnavailableError, TourProviderRequestError } from '@/lib/tours/provider/types';
 import { persistReadyGeneration } from '@/lib/tours/assetPipeline';
 import { upsertTourRecord } from '@/lib/tours/repository';
+import { isValidPropertyId } from '@/lib/tours/validation';
 
 // Give the download-and-store pipeline below more headroom than a
 // platform's default function timeout (e.g. Vercel Hobby defaults to 10s) —
@@ -25,6 +26,9 @@ export async function GET(request: Request) {
 
   if (!operationId) {
     return NextResponse.json({ error: 'operationId is required.' }, { status: 400 });
+  }
+  if (propertyId !== null && !isValidPropertyId(propertyId)) {
+    return NextResponse.json({ error: 'Invalid propertyId.' }, { status: 400 });
   }
 
   const provider = getActiveTourProvider();
@@ -56,7 +60,8 @@ export async function GET(request: Request) {
     // tour is "ready" — normal viewing must never depend on World Labs'
     // URLs again after this point (they can be signed/expiring anyway).
     const record = await persistReadyGeneration(propertyId, operationId, result, provider.mode);
-    return NextResponse.json({ ...record, providerId: provider.id });
+    const scene = record.scenes.find((scene) => scene.operationId === operationId);
+    return NextResponse.json({ ...scene, providerId: provider.id, providerMode: provider.mode });
   } catch (err) {
     const message =
       err instanceof TourProviderUnavailableError || err instanceof TourProviderRequestError
@@ -66,7 +71,7 @@ export async function GET(request: Request) {
           : 'Could not check tour status.';
 
     if (propertyId) {
-      await upsertTourRecord(propertyId, { status: 'failed', phase: 'failed', error: message, providerMode: provider.mode }).catch(() => {});
+      await upsertTourRecord(propertyId, { operationId, status: 'failed', phase: 'failed', error: message, providerMode: provider.mode }).catch(() => {});
     }
 
     if (err instanceof TourProviderUnavailableError) {

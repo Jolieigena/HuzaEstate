@@ -1,6 +1,8 @@
 import { fileTourRepository } from "./fileRepository";
 import { newId } from "../ids";
-import type { TourRecord } from "../types";
+import { sceneFields, scenesForRecord, withSceneState } from "../sceneState";
+import { assertPropertyId } from "../validation";
+import type { TourRecord, TourScene } from "../types";
 import type { TourRepository } from "./types";
 
 /**
@@ -23,68 +25,54 @@ export function getTourRepository(): TourRepository {
  *  the result back — the one place id/propertyId/requestedAt/updatedAt
  *  bookkeeping happens, so every caller (generate route, status route)
  *  gets it right the same way. */
-export async function upsertTourRecord(propertyId: string, patch: Partial<TourRecord>): Promise<TourRecord> {
-  const repo = getTourRepository();
-  const existing = await repo.get(propertyId);
-  const now = new Date().toISOString();
+// Serialize scene updates in this process so concurrent completions cannot
+// overwrite one another. A database repository should use a transaction.
+const pendingWrites = new Map<string, Promise<unknown>>();
 
-  let mergedScenes = existing?.scenes || [];
-  
-  if (patch.scenes) {
-    mergedScenes = patch.scenes;
-  } else if (patch.operationId && mergedScenes.length > 0) {
-    // If it's a partial patch for a specific operationId (from legacy/single-scene endpoints)
-    mergedScenes = mergedScenes.map(scene => {
-      if (scene.operationId === patch.operationId) {
-        return {
-          ...scene,
-          status: patch.status as any ?? scene.status,
-          phase: patch.phase ?? scene.phase,
-          worldId: patch.worldId ?? scene.worldId,
-          viewerUrl: patch.viewerUrl ?? scene.viewerUrl,
-          thumbnailUrl: (patch as any).thumbnailUrl ?? scene.thumbnailUrl,
-          panoUrl: (patch as any).panoUrl ?? scene.panoUrl,
-          spzUrl: (patch as any).spzUrl ?? scene.spzUrl,
-          rawSpzUrls: (patch as any).rawSpzUrls ?? scene.rawSpzUrls,
-          colliderUrl: (patch as any).colliderUrl ?? scene.colliderUrl,
-          caption: (patch as any).caption ?? scene.caption,
-          semanticsMetadata: (patch as any).semanticsMetadata ?? scene.semanticsMetadata,
-          error: patch.error ?? scene.error,
-          readyAt: patch.readyAt ?? scene.readyAt,
-        };
-      }
-      return scene;
-    });
-  }
+export function upsertTourRecord(propertyId: string, patch: Partial<TourRecord>): Promise<TourRecord> {
+  assertPropertyId(propertyId);
+  const previous = pendingWrites.get(propertyId) ?? Promise.resolve();
+  const write = previous.catch(() => {}).then(async () => {
+    const repo = getTourRepository();
+    const existing = await repo.get(propertyId);
+    const now = new Date().toISOString();
+    let scenes = patch.scenes ?? (existing ? scenesForRecord(existing) : []);
 
-  // Recalculate overall status based on scenes
-  let overallStatus = patch.status ?? existing?.status ?? 'pending';
-  let overallPhase = patch.phase ?? existing?.phase ?? 'queued';
-
-  if (mergedScenes.length > 0) {
-    if (mergedScenes.every(s => s.status === 'ready')) {
-      overallStatus = 'ready';
-      overallPhase = 'ready';
-    } else if (mergedScenes.some(s => s.status === 'failed')) {
-      overallStatus = 'failed';
-      overallPhase = 'failed';
+    if (!patch.scenes && patch.operationId) {
+      const index = scenes.findIndex((scene) => scene.operationId === patch.operationId);
+      const scene: TourScene = {
+        id: patch.operationId,
+        category: "default",
+        status: "pending",
+        ...(index >= 0 ? scenes[index] : {}),
+        ...sceneFields(patch),
+      };
+      scenes = index >= 0 ? scenes.map((current, i) => i === index ? scene : current) : [...scenes, scene];
+    } else if (!patch.scenes && patch.status === "failed") {
+      scenes = scenes.map((scene) => scene.status === "pending"
+        ? { ...scene, status: "failed", phase: "failed", error: patch.error }
+        : scene);
     }
-  }
 
-  const record: TourRecord = {
-    ...existing,
-    ...patch,
-    status: overallStatus,
-    phase: overallPhase,
-    scenes: mergedScenes,
-    id: existing?.id ?? patch.id ?? newId("tour"),
-    propertyId,
-    requestedAt: existing?.requestedAt ?? patch.requestedAt ?? now,
-    updatedAt: now,
-  };
-
-  await repo.set(propertyId, record);
-  return record;
+    const record: TourRecord = {
+      ...existing,
+      ...patch,
+      status: patch.status ?? existing?.status ?? "pending",
+      scenes,
+      id: existing?.id ?? patch.id ?? newId("tour"),
+      propertyId,
+      requestedAt: patch.requestedAt ?? existing?.requestedAt ?? now,
+      updatedAt: now,
+    };
+    const result = scenes.length ? withSceneState(record, scenes) : record;
+    await repo.set(propertyId, result);
+    return result;
+  });
+  pendingWrites.set(propertyId, write);
+  void write.finally(() => {
+    if (pendingWrites.get(propertyId) === write) pendingWrites.delete(propertyId);
+  }).catch(() => {});
+  return write;
 }
 
 export * from "./types";

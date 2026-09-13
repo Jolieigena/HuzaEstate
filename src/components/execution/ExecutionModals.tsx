@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Dialog from "../Dialog";
-import { ExecutionRole, TaskPriority, PhaseName, MaterialStatus, InspectionType, IssuePriority, DefectSeverity } from "../../lib/execution/types";
+import { ExecutionRole, TaskPriority, PhaseName, InspectionType, IssuePriority, DefectSeverity } from "../../lib/execution/types";
 
 interface ModalBaseProps {
   open: boolean;
@@ -16,7 +16,7 @@ export function AddTaskModal({ open, onClose, onSubmit }: ModalBaseProps & { onS
   const [plannedStart, setPlannedStart] = useState("");
   const [plannedFinish, setPlannedFinish] = useState("");
   const [assigneeName, setAssigneeName] = useState("Imara Construction Ltd");
-  const [assigneeRole, setAssigneeRole] = useState<ExecutionRole>("contractor");
+  const [assigneeRole] = useState<ExecutionRole>("contractor");
   const [priority, setPriority] = useState<TaskPriority>("normal");
 
   if (!open) return null;

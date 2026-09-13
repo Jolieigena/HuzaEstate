@@ -3,8 +3,6 @@
 import { ExecutionProject } from "./types";
 
 export function executionSeedProjects(): ExecutionProject[] {
-  const now = new Date().toISOString();
-
   return [
     {
       id: "exec-build-kigali",

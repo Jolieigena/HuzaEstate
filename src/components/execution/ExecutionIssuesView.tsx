@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
-import { ExecutionProject, IssueRecord, DefectItem, ISSUE_PRIORITY_LABELS, ISSUE_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
+import { ExecutionProject, ISSUE_PRIORITY_LABELS, ISSUE_STATUS_LABELS, ExecutionRole } from "../../lib/execution/types";
 import { IssueService } from "../../lib/execution/executionService";
 import { AddIssueModal, AddDefectModal } from "./ExecutionModals";
 import { canPerformExecutionAction } from "../../lib/execution/permissions";
@@ -19,7 +18,7 @@ export function ExecutionIssuesView({ project, currentRole }: IssuesViewProps) {
 
   const canVerifyDefect = canPerformExecutionAction(currentRole, "defect.verify");
 
-  const handleAddIssue = (data: any) => {
+  const handleAddIssue: React.ComponentProps<typeof AddIssueModal>["onSubmit"] = (data) => {
     IssueService.addIssue(
       project.id,
       {
@@ -35,7 +34,7 @@ export function ExecutionIssuesView({ project, currentRole }: IssuesViewProps) {
     );
   };
 
-  const handleAddDefect = (data: any) => {
+  const handleAddDefect: React.ComponentProps<typeof AddDefectModal>["onSubmit"] = (data) => {
     IssueService.addDefect(
       project.id,
       {
