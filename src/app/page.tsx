@@ -38,7 +38,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative w-full h-[580px] sm:h-[640px] md:h-[700px] flex items-center justify-center overflow-hidden">
         <Image
-          src="/hero-house-white.jpg"
+          src="/hero-house-vibrant.jpg"
           alt="Find your next home in Rwanda"
           fill
           priority
