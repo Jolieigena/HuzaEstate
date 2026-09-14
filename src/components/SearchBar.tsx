@@ -20,33 +20,7 @@ export default function SearchBar() {
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
-      {/* Buy / Rent / Sell tabs */}
-      <div className="inline-flex bg-white/15 backdrop-blur-md rounded-full p-1 border border-white/25">
-        <button
-          type="button"
-          onClick={() => setMode("sale")}
-          className={`px-7 py-2.5 rounded-full text-sm font-bold transition-colors ${
-            mode === "sale" ? "bg-white text-slate-900 shadow" : "text-white hover:bg-white/10"
-          }`}
-        >
-          Buy
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("rent")}
-          className={`px-7 py-2.5 rounded-full text-sm font-bold transition-colors ${
-            mode === "rent" ? "bg-white text-slate-900 shadow" : "text-white hover:bg-white/10"
-          }`}
-        >
-          Rent
-        </button>
-        <Link
-          href="/sell"
-          className="px-7 py-2.5 rounded-full text-sm font-bold text-white hover:bg-white/10 transition-colors"
-        >
-          Sell
-        </Link>
-      </div>
+
 
       {/* Search bar */}
       <form
