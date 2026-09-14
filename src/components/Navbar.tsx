@@ -24,7 +24,7 @@ export default function Navbar() {
   const pathname = usePathname();
 
   return (
-    <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
+    <header className="w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200">
       {/* Brand Logo */}
       <Link href="/" aria-label="HuzaEstate Home" className="block">
         <Logo className="h-8 w-auto" />

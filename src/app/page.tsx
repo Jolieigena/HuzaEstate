@@ -10,21 +10,21 @@ import Image from "next/image";
 const QUICK_ACTIONS = [
   {
     href: "/buy",
-    image: "/hero-house-final.jpg",
+    image: "/card-luxury-african.jpg",
     title: "Buy a home",
     description: "Find your place with the most listings, verified sellers, and immersive 3D tours.",
     cta: "Browse homes for sale",
   },
   {
     href: "/rent",
-    image: "/hero-house-white.jpg",
+    image: "/card-villa-african.jpg",
     title: "Rent a home",
     description: "Explore rentals with transparent pricing, screening, and online rent payments.",
     cta: "Browse rentals",
   },
   {
     href: "/sell",
-    image: "/hero-house-ai.jpg",
+    image: "/card-homely-african.jpg",
     title: "Sell a home",
     description: "List with us and reach thousands of buyers and renters across Rwanda.",
     cta: "See your options",
@@ -38,7 +38,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative w-full h-[580px] sm:h-[640px] md:h-[700px] flex items-center justify-center overflow-hidden">
         <Image
-          src="/hero-house-vibrant.jpg"
+          src="/hero-african.jpg"
           alt="Find your next home in Rwanda"
           fill
           priority
