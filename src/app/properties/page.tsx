@@ -293,6 +293,14 @@ function PropertiesContent() {
   const [isDreamOpen, setIsDreamOpen] = useState(false);
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
 
+  // Sync state with URL parameters when navigating from other links
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type) setFilterType(type);
+    const q = searchParams.get('q');
+    if (q !== null) setSearchTerm(q);
+  }, [searchParams]);
+
   const allProperties = useAllProperties();
   const visibleProperties = useVisibleListings(allProperties);
 

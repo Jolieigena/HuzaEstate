@@ -9,25 +9,25 @@ import Image from "next/image";
 
 const QUICK_ACTIONS = [
   {
-    href: "/buy",
-    image: "/card-luxury-african.jpg",
-    title: "Buy a home",
-    description: "Find your place with the most listings, verified sellers, and immersive 3D tours.",
-    cta: "Browse homes for sale",
+    href: "/properties",
+    image: "/card-buy-v2.jpg",
+    title: "Browse properties",
+    description: "Find your perfect apartment, villa, or commercial space with immersive 3D tours.",
+    cta: "Start exploring",
   },
   {
-    href: "/rent",
-    image: "/card-villa-african.jpg",
-    title: "Rent a home",
-    description: "Explore rentals with transparent pricing, screening, and online rent payments.",
-    cta: "Browse rentals",
+    href: "/build",
+    image: "/hero-house-final.jpg",
+    title: "Design your dream home",
+    description: "From interior styling to full residential and commercial builds, bring your vision to life.",
+    cta: "Explore design & build",
   },
   {
     href: "/sell",
-    image: "/card-homely-african.jpg",
-    title: "Sell a home",
-    description: "List with us and reach thousands of buyers and renters across Rwanda.",
-    cta: "See your options",
+    image: "/hero-house-ai.jpg",
+    title: "Advertise your property",
+    description: "List your home, villa, or commercial building and reach thousands of serious buyers.",
+    cta: "List your property",
   },
 ];
 
@@ -49,10 +49,10 @@ export default function Home() {
 
         <div className="relative z-10 w-full max-w-3xl px-6 text-center">
           <h1 className="animate-fade-in-up text-4xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white tracking-tight leading-[1.1] mb-3 drop-shadow-lg">
-            Find your place in Rwanda
+            Find, tour it, own it
           </h1>
-          <p className="animate-fade-in-up text-white/90 text-base sm:text-lg font-medium mb-8 drop-shadow" style={{ animationDelay: "100ms" }}>
-            Search homes for sale, homes for rent, and list your own — all verified, all in one place.
+          <p className="animate-fade-in-up text-white/90 text-base sm:text-lg font-medium mb-8 drop-shadow max-w-2xl mx-auto" style={{ animationDelay: "100ms" }}>
+            Buy, rent, or sell apartments, villas, and commercial properties. Plus, expert interior & exterior design, and full building & renovation services.
           </p>
 
           <div className="animate-fade-in-up flex justify-center" style={{ animationDelay: "150ms" }}>
@@ -115,37 +115,27 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Curated Exclusive Properties
               </h2>
-              <p className="text-slate-500 text-lg mt-2">Handpicked listings across Kigali and beyond.</p>
+              <p className="text-slate-500 text-lg mt-2">Handpicked premium listings just for you.</p>
             </div>
             <Link
               href="/properties"
               className="inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm px-6 py-3 rounded-full transition-all hover:-translate-y-0.5 self-start sm:self-auto"
             >
-              <span>Explore All Homes</span>
+              <span>Explore All</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
             </Link>
           </Reveal>
 
           {/* Property Grid */}
-          <PublicPropertyGrid properties={mockProperties} limit={6} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" revealAnimation />
+          <PublicPropertyGrid 
+            properties={mockProperties} 
+            limit={6} 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" 
+            revealAnimation 
+            showFeaturedBadge 
+          />
 
-          {/* Trust Pills */}
-          <Reveal className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6">
-            {[
-              { icon: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4", label: "Premium Listings", value: "2,500+" },
-              { icon: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z", label: "Verified Properties", value: "100%" },
-              { icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z", label: "Fast Closings", value: "14 days" },
-              { icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z", label: "Families Helped", value: "1,200+" },
-            ].map((item, i) => (
-              <div key={item.label} className="flex flex-col items-center text-center gap-2 p-5 bg-[#f8fafc] rounded-2xl border border-slate-200/60">
-                <div className="p-2.5 bg-white border border-slate-200 rounded-xl shadow-sm">
-                  <svg className="w-5 h-5 text-[#2ec440]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon}></path></svg>
-                </div>
-                <div className="text-2xl font-extrabold text-slate-900">{item.value}</div>
-                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{item.label}</div>
-              </div>
-            ))}
-          </Reveal>
+
         </div>
       </section>
 
@@ -154,9 +144,9 @@ export default function Home() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">More than finding a home</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">More than finding a property</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">
-              HuzaEstate helps you discover property, shape new ideas and improve the spaces you already own.
+              HuzaEstate helps you discover properties, shape new ideas, and improve the spaces you already own. From interior styling to full commercial and residential builds, our team is here for you.
             </p>
           </Reveal>
 
@@ -164,9 +154,9 @@ export default function Home() {
             <Reveal className="bg-white border border-slate-200 rounded-3xl p-3 shadow-sm hover:shadow-xl transition-shadow duration-300">
               <ProcessVideoCard video={buildVideos.overview} aspectClassName="aspect-video" />
               <div className="p-5">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Design a new home</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Design & Build</h3>
                 <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
-                  Describe your ideas and requirements and explore personalised home concepts with Huza AI before you build.
+                  Describe your ideas and requirements to explore personalised property concepts with Huza AI before you build.
                 </p>
                 <Link href="/build" className="inline-flex items-center gap-2 text-[#2ec440] font-bold text-sm hover:text-[#28b039] transition-colors">
                   Explore Build

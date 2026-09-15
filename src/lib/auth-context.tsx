@@ -91,14 +91,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      // Reading the persisted prototype session requires a one-time client sync.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsLoggedIn(localStorage.getItem(STORAGE_KEY) === "true");
-      setIsApprovedSeller(localStorage.getItem(SELLER_STORAGE_KEY) === "true");
+      const isSellerStored = localStorage.getItem(SELLER_STORAGE_KEY) === "true";
+      const isAuthStored = localStorage.getItem(STORAGE_KEY) === "true";
+      
+      // Auto-repair: If they are a seller, they must be logged in.
+      const effectivelyLoggedIn = isAuthStored || isSellerStored;
+      
+      setIsLoggedIn(effectivelyLoggedIn);
+      setIsApprovedSeller(isSellerStored);
+      
+      if (isSellerStored && !isAuthStored) {
+        localStorage.setItem(STORAGE_KEY, "true");
+        if (!localStorage.getItem(ROLE_STORAGE_KEY)) {
+          localStorage.setItem(ROLE_STORAGE_KEY, "seller_manager");
+        }
+      }
+      
       const storedAccount = ALL_LOGIN_ACCOUNTS.find((item) => item.id === localStorage.getItem(ACCOUNT_STORAGE_KEY)) ?? null;
       setAccount(storedAccount);
       const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as AccountRole | null;
-      if (storedRole && storedAccount?.roles.includes(storedRole)) setActiveRole(storedRole);
+      if (storedRole && (!storedAccount || storedAccount.roles.includes(storedRole))) {
+        setActiveRole(storedRole);
+      }
     } catch {
       // localStorage unavailable, stay logged out
     } finally {
@@ -143,10 +157,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setIsLoggedIn(false);
+    setIsApprovedSeller(false);
     setAccount(null);
     setActiveRole("customer");
     try {
       localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(SELLER_STORAGE_KEY);
       localStorage.removeItem(ACCOUNT_STORAGE_KEY);
       localStorage.removeItem(ROLE_STORAGE_KEY);
     } catch {
@@ -162,9 +178,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const applyAsSeller = () => {
+    setIsLoggedIn(true);
     setIsApprovedSeller(true);
+    // If they aren't fully signed in with an account, we mock a basic role so the UI works
+    if (!account) {
+      setActiveRole("seller_manager");
+    }
     try {
+      localStorage.setItem(STORAGE_KEY, "true");
       localStorage.setItem(SELLER_STORAGE_KEY, "true");
+      if (!account) {
+        localStorage.setItem(ROLE_STORAGE_KEY, "seller_manager");
+      }
     } catch {
       // ignore
     }

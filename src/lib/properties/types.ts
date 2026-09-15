@@ -15,6 +15,7 @@ export interface Property {
   type: "sale" | "rent";
   propertyType: "house" | "apartment" | "land";
   virtualTourUrl?: string;
+  videoUrl?: string;
   lat?: number;
   lng?: number;
 }

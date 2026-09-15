@@ -81,10 +81,10 @@ export default function ManagerDashboard() {
         <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Landlord Mode</span>
+              <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Manager Portal</span>
             </div>
-            <h1 className="text-3xl font-black text-slate-900 mb-2">Rental Manager</h1>
-            <p className="text-slate-500 font-medium">Manage your listings, screen tenants, and collect rent.</p>
+            <h1 className="text-3xl font-black text-slate-900 mb-2">Property Manager</h1>
+            <p className="text-slate-500 font-medium">Manage your listings, review offers, and track property performance.</p>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/post-property" className="bg-slate-900 hover:bg-[#2ec440] text-white font-semibold py-2.5 px-6 rounded-xl transition-colors shadow-sm text-sm">

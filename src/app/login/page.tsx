@@ -167,27 +167,63 @@ function LoginFormFallback() {
   );
 }
 
+const LOGIN_IMAGES = [
+  {
+    src: "https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=1200&auto=format&fit=crop",
+    title: "Find your next perfect place to call home.",
+    desc: "Join thousands of others in discovering premium properties across the country."
+  },
+  {
+    src: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop",
+    title: "Beautiful spaces designed for living.",
+    desc: "Explore homes that match your lifestyle and aesthetic preferences."
+  },
+  {
+    src: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop",
+    title: "Start your journey today.",
+    desc: "Discover properties that are just right for you and your family."
+  }
+];
+
 export default function LoginPage() {
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % LOGIN_IMAGES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen flex bg-white">
-      {/* Left Side: Image */}
-      <div className="hidden lg:block lg:w-1/2 relative">
-        <Image
-          src="https://images.unsplash.com/photo-1682773083896-95176d8aecf8?q=80&w=1200&auto=format&fit=crop"
-          alt="Luxury Real Estate"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-        <div className="absolute bottom-12 left-12 right-12">
-          <h2 className="text-4xl font-bold text-white mb-4 leading-tight">Find your next perfect place to call home.</h2>
-          <p className="text-slate-300 text-lg">Join thousands of others in discovering premium properties across the country.</p>
-        </div>
+      {/* Left Side: Images */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-slate-900">
+        {LOGIN_IMAGES.map((img, idx) => (
+          <div 
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              idx === currentIdx ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            <Image
+              src={img.src}
+              alt="Luxury Real Estate"
+              fill
+              className="object-cover"
+              priority={idx === 0}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+            <div className="absolute bottom-12 left-12 right-12">
+              <h2 className="text-4xl font-bold text-white mb-4 leading-tight">{img.title}</h2>
+              <p className="text-slate-300 text-lg">{img.desc}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 z-20 bg-white">
         <div className="w-full max-w-[440px]">
           <Suspense fallback={<LoginFormFallback />}>
             <LoginForm />

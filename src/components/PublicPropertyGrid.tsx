@@ -13,6 +13,8 @@ interface PublicPropertyGridProps {
    * flag (not a callback) so this prop stays serializable across the
    * Server → Client boundary when a Server Component page renders this. */
   revealAnimation?: boolean;
+  /** Optionally display a 'Featured' badge on the property cards */
+  showFeaturedBadge?: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ interface PublicPropertyGridProps {
  * overlay themselves — this is the one place that filtering happens for
  * them. Markup/classNames are passed through unchanged from each caller.
  */
-export default function PublicPropertyGrid({ properties, limit, className, revealAnimation }: PublicPropertyGridProps) {
+export default function PublicPropertyGrid({ properties, limit, className, revealAnimation, showFeaturedBadge }: PublicPropertyGridProps) {
   const visible = useVisibleListings(properties);
   const shown = limit ? visible.slice(0, limit) : visible;
   return (
@@ -31,10 +33,10 @@ export default function PublicPropertyGrid({ properties, limit, className, revea
       {shown.map((property, index) =>
         revealAnimation ? (
           <Reveal key={property.id} delay={index * 120}>
-            <PropertyCard property={property} />
+            <PropertyCard property={property} isFeatured={showFeaturedBadge} />
           </Reveal>
         ) : (
-          <PropertyCard key={property.id} property={property} />
+          <PropertyCard key={property.id} property={property} isFeatured={showFeaturedBadge} />
         )
       )}
     </div>

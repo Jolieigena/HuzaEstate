@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
@@ -24,26 +23,8 @@ export default function BecomeASellerPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Side: Image */}
-      <div className="hidden lg:block lg:w-1/2 relative">
-        <Image
-          src="https://images.unsplash.com/photo-1708772565599-2c4e4b3ed9db?q=80&w=1200&auto=format&fit=crop"
-          alt="List your property with HuzaEstate"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-        <div className="absolute bottom-12 left-12 right-12">
-          <h2 className="text-4xl font-bold text-white mb-4 leading-tight">Sell or rent out your property.</h2>
-          <p className="text-slate-300 text-lg">Get approved as a HuzaEstate seller or landlord and manage every listing from one dashboard.</p>
-        </div>
-      </div>
-
-      {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 bg-slate-50">
-        <div className="w-full max-w-[480px]">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-24 px-4 sm:px-6">
+      <div className="w-full max-w-[500px]">
           <h1 className="text-3xl font-black text-slate-900 mb-2">Apply to become a seller</h1>
           <p className="text-slate-500 mb-8">Tell us a bit about yourself. Once approved, you&apos;ll get access to the Manager Portal to list and manage your properties.</p>
 
@@ -115,6 +96,5 @@ export default function BecomeASellerPage() {
           </form>
         </div>
       </div>
-    </div>
   );
 }

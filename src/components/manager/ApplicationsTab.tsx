@@ -16,17 +16,17 @@ export default function ApplicationsTab({ applications, applicationPropertyFilte
           <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'new').length}</div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <div className="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">Screening</div>
+          <div className="text-xs font-bold text-yellow-700 uppercase tracking-wide mb-1">Under Review</div>
           <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'screening').length}</div>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <div className="text-xs font-bold text-green-700 uppercase tracking-wide mb-1">Approved</div>
+          <div className="text-xs font-bold text-green-700 uppercase tracking-wide mb-1">Accepted</div>
           <div className="text-2xl font-black text-slate-900">{applications.filter((a) => a.stage === 'approved').length}</div>
         </div>
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Tenant Screening</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Offers & Applications</h2>
         <select
           value={applicationPropertyFilter}
           onChange={(e) => setApplicationPropertyFilter(e.target.value)}
@@ -47,7 +47,7 @@ export default function ApplicationsTab({ applications, applicationPropertyFilte
           const stageApplications = applications.filter(
             (a) => a.stage === stage && (applicationPropertyFilter === 'all' || a.propertyId === applicationPropertyFilter)
           );
-          const columnLabel = stage === 'new' ? 'New' : stage === 'screening' ? 'Screening' : 'Approved';
+          const columnLabel = stage === 'new' ? 'New' : stage === 'screening' ? 'Under Review' : 'Accepted';
           return (
             <div key={stage} className="bg-slate-100 rounded-2xl p-4 min-w-[280px]">
               <div className="flex items-center justify-between mb-4 px-2">

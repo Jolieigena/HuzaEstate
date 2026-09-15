@@ -118,27 +118,63 @@ function SignupFormFallback() {
   );
 }
 
+const SIGNUP_IMAGES = [
+  {
+    src: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200&auto=format&fit=crop",
+    title: "Your key to premium real estate.",
+    desc: "Create a free account to save your favorite listings, unlock exclusive 3D tours, and securely book property viewings."
+  },
+  {
+    src: "https://images.unsplash.com/photo-1600607687931-cebfad215320?q=80&w=1200&auto=format&fit=crop",
+    title: "Discover homes you'll love.",
+    desc: "Join a growing community of people finding their dream properties every day."
+  },
+  {
+    src: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?q=80&w=1200&auto=format&fit=crop",
+    title: "Design your perfect space.",
+    desc: "Use our AI tools to visualize renovations and build your dream home."
+  }
+];
+
 export default function SignupPage() {
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % SIGNUP_IMAGES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen flex bg-white">
-      {/* Left Side: Image */}
-      <div className="hidden lg:block lg:w-1/2 relative">
-        <Image
-          src="https://images.unsplash.com/photo-1779900275257-aaadab6d9285?q=80&w=1200&auto=format&fit=crop"
-          alt="Luxury Real Estate"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-        <div className="absolute bottom-12 left-12 right-12">
-          <h2 className="text-4xl font-bold text-white mb-4 leading-tight">Your key to premium real estate.</h2>
-          <p className="text-slate-300 text-lg">Create a free account to save your favorite listings, unlock exclusive 3D tours, and securely book property viewings.</p>
-        </div>
+      {/* Left Side: Images */}
+      <div className="hidden lg:block lg:w-1/2 relative bg-slate-900">
+        {SIGNUP_IMAGES.map((img, idx) => (
+          <div 
+            key={idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              idx === currentIdx ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+          >
+            <Image
+              src={img.src}
+              alt="Luxury Real Estate"
+              fill
+              className="object-cover"
+              priority={idx === 0}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+            <div className="absolute bottom-12 left-12 right-12">
+              <h2 className="text-4xl font-bold text-white mb-4 leading-tight">{img.title}</h2>
+              <p className="text-slate-300 text-lg">{img.desc}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Right Side: Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 overflow-y-auto z-20 bg-white">
         <div className="w-full max-w-[440px] py-8">
           <Suspense fallback={<SignupFormFallback />}>
             <SignupForm />

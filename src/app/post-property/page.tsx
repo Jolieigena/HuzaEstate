@@ -26,6 +26,7 @@ export default function PostPropertyPage() {
   const [sqm, setSqm] = useState('');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<CategorizedPhoto[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -35,6 +36,10 @@ export default function PostPropertyPage() {
 
     const [cityPart, ...rest] = city.split(',');
     const { imageUrl, galleryImages } = deriveImageFields(photos, FALLBACK_IMAGE);
+    
+    // In a real app we'd upload the video and get a URL back. For the demo we use a fake URL or an object URL
+    const videoUrl = videoFile ? URL.createObjectURL(videoFile) : undefined;
+
     const property = SellerListingsStoreEngine.add({
       title,
       description: description || `A ${propertyType} listed in ${location}.`,
@@ -50,6 +55,7 @@ export default function PostPropertyPage() {
       photos,
       type: listingType,
       propertyType,
+      videoUrl,
     });
 
     router.push(`/properties/${property.id}`);
@@ -57,32 +63,12 @@ export default function PostPropertyPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Hero */}
-      <section className="relative pt-28 pb-20 overflow-hidden bg-slate-900">
-        <div className="absolute inset-0 opacity-30">
-          <Image
-            src="https://images.unsplash.com/photo-1727797716658-469836019c90?q=80&w=2000&auto=format&fit=crop"
-            alt="List your property"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-6 sm:px-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-xs uppercase tracking-wide mb-6">
-            List your property
-          </div>
-          <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4 tracking-tight">
-            Reach thousands of buyers and renters across Rwanda.
-          </h1>
-          <p className="text-lg text-slate-300 max-w-2xl mx-auto font-medium">
-            Fill in a few details below and your listing goes live immediately.
-          </p>
-        </div>
-      </section>
-
       {/* Form */}
-      <section className="max-w-3xl mx-auto px-6 sm:px-10 py-16 sm:py-20">
+      <section className="max-w-3xl mx-auto px-6 sm:px-10 pt-32 pb-20">
+        <div className="mb-10">
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-3">List your property</h1>
+          <p className="text-slate-500">Fill in the details below and your listing will go live immediately.</p>
+        </div>
         <form className="space-y-8" onSubmit={handleSubmit}>
           <div>
             <h2 className="text-xl font-bold text-slate-900 mb-5">Property details</h2>
@@ -156,6 +142,24 @@ export default function PostPropertyPage() {
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
                 <CategorizedPhotoUpload photos={photos} onChange={setPhotos} />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Property Video (Optional)</label>
+                <div className="flex items-center gap-4 p-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                  <div className="flex-shrink-0 w-12 h-12 bg-[#2ec440]/10 text-[#2ec440] rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                  </div>
+                  <div className="flex-grow min-w-0">
+                    <input 
+                      type="file" 
+                      accept="video/*" 
+                      onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
+                      className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2ec440]/10 file:text-[#2ec440] hover:file:bg-[#2ec440]/20 transition-colors" 
+                    />
+                    {videoFile && <p className="text-xs text-slate-500 mt-2 truncate">Selected: {videoFile.name}</p>}
+                  </div>
+                </div>
               </div>
 
               <div>

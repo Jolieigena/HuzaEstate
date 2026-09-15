@@ -5,11 +5,11 @@ import type { Listing } from './types';
 // /properties/[id] — see PropertyTourSection, which reads tours by
 // propertyId from the same shared store.
 export const LISTING_META: Record<string, Pick<Listing, 'status' | 'views' | 'saves' | 'leads' | 'trend'>> = {
-  'prop-1': { status: 'Active', views: 1875, saves: 130, leads: 19, trend: [60, 70, 68, 80, 78, 90, 95, 100, 110, 105, 120, 130] },
-  'prop-2': { status: 'Pending', views: 1420, saves: 215, leads: 8, trend: [120, 140, 135, 150, 145, 160, 158, 170, 165, 180, 190, 200] },
-  'prop-3': { status: 'Active', views: 1240, saves: 84, leads: 12, trend: [40, 55, 42, 60, 58, 70, 65, 80, 75, 90, 95, 110] },
-  'prop-4': { status: 'Active', views: 610, saves: 28, leads: 5, trend: [20, 25, 22, 30, 28, 35, 33, 40, 42, 45, 48, 52] },
-  'prop-5': { status: 'Leased', views: 940, saves: 42, leads: 0, trend: [80, 75, 70, 65, 60, 55, 50, 45, 40, 35, 30, 28] },
+  'prop-1': { status: 'Active', views: 1875, saves: 130, leads: 19, trend: [45, 62, 58, 89, 74, 95, 110, 85, 130, 115, 142, 138] }, // Volatile upward growth
+  'prop-2': { status: 'Pending', views: 1420, saves: 215, leads: 8, trend: [110, 105, 140, 125, 160, 155, 145, 185, 170, 190, 210, 195] }, // High traffic with spikes
+  'prop-3': { status: 'Active', views: 1240, saves: 84, leads: 12, trend: [30, 45, 35, 40, 65, 50, 45, 85, 70, 95, 80, 115] }, // Steady but noisy
+  'prop-4': { status: 'Active', views: 610, saves: 28, leads: 5, trend: [15, 18, 12, 25, 20, 30, 22, 28, 40, 35, 42, 38] }, // Lower volume, organic growth
+  'prop-5': { status: 'Leased', views: 940, saves: 42, leads: 0, trend: [75, 85, 90, 110, 95, 120, 80, 25, 15, 8, 12, 5] }, // Traffic spiked then died completely after it was leased
 };
 
 // Any listed property without hand-authored stats (i.e. everything outside

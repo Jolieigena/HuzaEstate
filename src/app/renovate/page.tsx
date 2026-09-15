@@ -245,12 +245,8 @@ export default function RenovatePage() {
 
   const startRenovate = () => {
     if (isNavigating) return;
-    if (isLoggedIn) {
-      setIsNavigating(true);
-      router.push(STUDIO_PATH);
-      return;
-    }
-    setAuthModalOpen(true);
+    setIsNavigating(true);
+    router.push(STUDIO_PATH);
   };
 
   return (
@@ -322,23 +318,20 @@ export default function RenovatePage() {
             </p>
           </Reveal>
 
-          <div className="flex flex-col gap-16 sm:gap-20">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {STEPS.map((step, index) => (
-              <Reveal key={step.number} delay={index * 80}>
-                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center ${index % 2 === 1 ? "lg:[&>*:first-child]:order-2" : ""}`}>
-                  <div className="lg:col-span-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center text-[#2ec440] flex-shrink-0">
-                        {step.icon}
-                      </div>
-                      <span className="text-3xl font-black text-slate-200">{String(step.number).padStart(2, "0")}</span>
-                    </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">{step.title}</h3>
-                    <p className="text-slate-600 text-[15px] leading-relaxed max-w-md">{step.description}</p>
+              <Reveal key={step.number} delay={index * 80} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+                {/* Large Background Number */}
+                <div className="absolute -top-4 -right-4 text-[120px] font-black text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
+                  {step.number}
+                </div>
+                
+                <div className="relative z-10">
+                  <div className="w-14 h-14 rounded-2xl bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center mb-6">
+                    {step.icon}
                   </div>
-                  <div className="lg:col-span-6">
-                    <ProcessVideoCard video={step.video} aspectClassName="aspect-video" />
-                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-3 pr-8">{step.title}</h3>
+                  <p className="text-slate-600 text-[15px] leading-relaxed">{step.description}</p>
                 </div>
               </Reveal>
             ))}

@@ -26,23 +26,23 @@ export default function ApplicationCard({
       {application.stage === 'screening' && (
         <div className="flex items-center gap-2 text-xs font-semibold text-yellow-600 bg-yellow-50 px-2 py-1 rounded mb-3">
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Awaiting background check
+          Awaiting verification
         </div>
       )}
 
       {application.incomeLabel && (
-        <div className="text-xs text-slate-600 mb-1">Income: <span className="font-semibold text-green-600">{application.incomeLabel}</span></div>
+        <div className="text-xs text-slate-600 mb-1">Financials: <span className="font-semibold text-green-600">{application.incomeLabel}</span></div>
       )}
       {application.creditScore && (
         <div className={`text-xs text-slate-600 ${application.stage === 'approved' ? 'mb-4' : 'mb-3'}`}>
-          Credit: <span className={`font-semibold ${application.stage === 'approved' ? 'text-green-600' : ''}`}>{application.creditScore}</span>
+          Score: <span className={`font-semibold ${application.stage === 'approved' ? 'text-green-600' : ''}`}>{application.creditScore}</span>
         </div>
       )}
 
       {application.stage === 'new' && (
         <div className="flex gap-2">
           <button onClick={() => onAdvance(application.id, 'screening')} className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">
-            Screen
+            Review
           </button>
           <button onClick={() => onReject(application.id)} className="px-3 text-slate-400 hover:text-red-600 font-semibold text-xs transition-colors">
             Reject
@@ -53,7 +53,7 @@ export default function ApplicationCard({
       {application.stage === 'screening' && (
         <div className="flex gap-2">
           <button onClick={() => onAdvance(application.id, 'approved')} className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 font-semibold py-1.5 rounded-lg text-xs transition-colors">
-            Approve
+            Accept
           </button>
           <button onClick={() => onReject(application.id)} className="px-3 text-slate-400 hover:text-red-600 font-semibold text-xs transition-colors">
             Reject
@@ -66,7 +66,7 @@ export default function ApplicationCard({
           onClick={() => onAdvance(application.id, 'leased')}
           className="w-full bg-[#2ec440] hover:bg-[#28b039] text-white font-semibold py-2 rounded-lg text-xs transition-colors shadow-sm"
         >
-          Send Lease Agreement
+          Send Agreement
         </button>
       )}
     </div>
