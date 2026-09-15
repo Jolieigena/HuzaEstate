@@ -194,8 +194,9 @@ export default function BuildPage() {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
-  const [activeExample, setActiveExample] = useState<(typeof EXAMPLES)[number] | null>(null);
+  const [activeExample, setActiveExample] = useState<(typeof EXAMPLES)[0] | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [demoStage, setDemoStage] = useState(0);
 
   const exampleTitleId = useId();
   const exampleDescId = useId();
@@ -323,16 +324,54 @@ export default function BuildPage() {
               <p className="text-slate-400 text-sm italic">Huza AI confirms your requirements before generating concepts.</p>
             </div>
 
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={startBuild}
-                disabled={isNavigating}
-                className="bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
-              >
-                Try This Prompt
-              </button>
+            <div className="mt-8 flex flex-col items-center">
+              {demoStage === 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDemoStage(1);
+                    setTimeout(() => setDemoStage(2), 2500);
+                  }}
+                  className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
+                >
+                  Try This Prompt
+                </button>
+              )}
+              {demoStage === 1 && (
+                <div className="flex items-center gap-3 text-slate-700 font-bold text-[15px] bg-slate-50 border border-slate-200 px-6 py-3 rounded-full">
+                  <div className="flex items-center gap-1">
+                    {[0,1,2].map((i) => (
+                      <span key={i} className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />
+                    ))}
+                  </div>
+                  Huza AI is generating concepts...
+                </div>
+              )}
             </div>
+
+            {demoStage === 2 && (
+              <Reveal className="mt-6 self-start max-w-4xl bg-white border border-slate-200 rounded-2xl rounded-tl-md p-6 shadow-sm">
+                <p className="text-slate-900 font-bold text-sm mb-4">Huza AI generated these concepts:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="rounded-xl overflow-hidden border border-slate-200">
+                    <div className="relative aspect-video">
+                      <Image src="/hero-house.png" alt="Option 1" fill className="object-cover" />
+                    </div>
+                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 1: Modern Two-Story</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-200">
+                    <div className="relative aspect-video">
+                      <Image src="/hero-house-final.jpg" alt="Option 2" fill className="object-cover" />
+                    </div>
+                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 2: Open Concept</div>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button onClick={() => setDemoStage(0)} className="px-5 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-100 transition-colors text-sm border border-slate-200">Reset Demo</button>
+                  <button onClick={startBuild} className="bg-[#2ec440] hover:bg-[#28b039] text-white px-5 py-2 rounded-full font-bold transition-colors text-sm shadow-sm">Start Designing →</button>
+                </div>
+              </Reveal>
+            )}
           </Reveal>
         </div>
       </section>
