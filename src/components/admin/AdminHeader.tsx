@@ -92,7 +92,7 @@ export default function AdminHeader({ adminRole, onOpenMobileSidebar }: AdminHea
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <Link href="/admin" aria-label="Go to the administration overview" className="flex items-center gap-2.5">
+        <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
           <Logo className="h-8 w-auto" />
           <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Admin</span>
         </Link>
@@ -124,7 +124,7 @@ export default function AdminHeader({ adminRole, onOpenMobileSidebar }: AdminHea
               <Link href="/admin/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Settings
               </Link>
-              <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Return to main site
               </Link>
               <button

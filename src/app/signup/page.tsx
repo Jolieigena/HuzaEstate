@@ -5,23 +5,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { sanitizeRedirect } from '@/lib/redirect';
+import { accountDestination } from '@/lib/navigation';
+import PasswordInput from '@/components/shared/PasswordInput';
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuth();
+  const { signup } = useAuth();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const redirectParam = searchParams.get('redirect');
   const loginHref = redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login';
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
+    setError('');
     setIsSubmitting(true);
-    login();
-    router.push(sanitizeRedirect(redirectParam));
+    const result = await signup({ firstName, lastName, email, password, termsAccepted });
+    if (!result.ok) {
+      setError(result.error);
+      setIsSubmitting(false);
+      return;
+    }
+    router.push(accountDestination(result.account, redirectParam));
   };
 
   return (
@@ -29,23 +42,33 @@ function SignupForm() {
       <h1 className="text-3xl font-black text-slate-900 mb-2">Create an account</h1>
       <p className="text-slate-500 mb-8">Sign up in seconds to save your favorite properties and book tours.</p>
 
+      {error && (
+        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
+          {error}
+        </p>
+      )}
+
       <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">First Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Jane"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Last Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="Doe"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
@@ -53,26 +76,37 @@ function SignupForm() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 placeholder="Enter your email"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
-              <input 
-                type="password" 
+              <PasswordInput
                 placeholder="Create a password (min. 8 characters)"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                minLength={8}
+                autoComplete="new-password"
                 required
               />
             </div>
 
             <div className="flex items-start gap-3 mt-4 mb-6">
-              <input type="checkbox" id="terms" className="accent-[#2ec440] w-4 h-4 mt-1 cursor-pointer" required />
+              <input
+                type="checkbox"
+                id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="accent-[#2ec440] w-4 h-4 mt-1 cursor-pointer"
+                required
+              />
               <label htmlFor="terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
                 I agree to HuzaEstate&apos;s <Link href="#" className="font-bold text-[#2ec440] hover:underline">Terms of Service</Link> and <Link href="#" className="font-bold text-[#2ec440] hover:underline">Privacy Policy</Link>.
               </label>
@@ -151,7 +185,7 @@ export default function SignupPage() {
       {/* Left Side: Images */}
       <div className="hidden lg:block lg:w-1/2 relative bg-slate-900">
         {SIGNUP_IMAGES.map((img, idx) => (
-          <div 
+          <div
             key={idx}
             className={`absolute inset-0 transition-opacity duration-1000 ${
               idx === currentIdx ? "opacity-100 z-10" : "opacity-0 z-0"

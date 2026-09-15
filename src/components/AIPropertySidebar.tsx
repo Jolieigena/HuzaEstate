@@ -136,20 +136,9 @@ export default function DreamHomePanel({
     }
   }, [messages, isLoading]);
 
-  // Keep match count live in the last AI message
-  useEffect(() => {
-    if (!hasActiveFilter) return;
-    setMessages((prev) => {
-      const lastIdx = [...prev]
-        .reverse()
-        .findIndex((m) => m.role === "assistant" && m.filters);
-      if (lastIdx === -1) return prev;
-      const realIdx = prev.length - 1 - lastIdx;
-      const updated = [...prev];
-      updated[realIdx] = { ...updated[realIdx], matchCount };
-      return updated;
-    });
-  }, [matchCount, hasActiveFilter]);
+  const lastFilteredIndex = messages.findLastIndex((m) => m.role === "assistant" && m.filters);
+  const displayedMessages = messages.map((message, index) =>
+    hasActiveFilter && index === lastFilteredIndex ? { ...message, matchCount } : message);
 
   async function handleSend() {
     const trimmed = input.trim();
@@ -237,7 +226,7 @@ export default function DreamHomePanel({
           </h2>
         </div>
         <p className="text-[12px] text-slate-500 leading-snug">
-          Tell us what you want — we'll find it or build it.
+          Tell us what you want — we&apos;ll find it or build it.
         </p>
 
         {hasActiveFilter && (
@@ -273,7 +262,7 @@ export default function DreamHomePanel({
 
       {/* Chat thread */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col min-h-0">
-        {messages.map((msg, i) => (
+        {displayedMessages.map((msg, i) => (
           <ChatMessage
             key={i}
             msg={msg}
@@ -294,7 +283,7 @@ export default function DreamHomePanel({
       {/* Divider + Design & Build promo (shown always at bottom) */}
       {!hasActiveFilter && (
         <div className="mx-4 mb-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 p-4 text-white">
-          <p className="font-bold text-[13px] mb-1">Can't find what you want?</p>
+          <p className="font-bold text-[13px] mb-1">Can&apos;t find what you want?</p>
           <p className="text-[12px] text-slate-300 mb-3 leading-snug">
             We design and build custom homes tailored exactly to your vision.
           </p>

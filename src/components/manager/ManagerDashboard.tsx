@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import type { Property } from '@/lib/properties/types';
 import type { Listing, ManagerTab } from '@/lib/manager/types';
@@ -13,10 +12,13 @@ import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { AdminService } from '@/lib/admin/service';
 import type { ListingModerationStatus } from '@/lib/admin/types';
 import { useTenantApplications } from '@/lib/tenantApplications/hooks';
+import { PageFrame } from '@/components/admin/ui';
 import EditPropertyModal from '@/components/EditPropertyModal';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ApplyGate from './ApplyGate';
+import ManagerHeader from './ManagerHeader';
 import ManagerSidebar from './ManagerSidebar';
+import ManagerMobileDrawer from './ManagerMobileDrawer';
 import OverviewTab from './OverviewTab';
 import ListingsTab from './ListingsTab';
 import ApplicationsTab from './ApplicationsTab';
@@ -24,6 +26,7 @@ import PaymentsTab from './PaymentsTab';
 
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<ManagerTab>('overview');
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [listingSearch, setListingSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<Listing['status'] | 'all'>('all');
   const [applicationPropertyFilter, setApplicationPropertyFilter] = useState('all');
@@ -74,38 +77,30 @@ export default function ManagerDashboard() {
   const topListings = [...LISTINGS].sort((a, b) => b.views - a.views).slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10">
-      <div className="max-w-7xl mx-auto px-6 sm:px-10">
+    <div className="min-h-full bg-slate-50 flex flex-col">
+      <ManagerHeader onOpenMobileSidebar={() => setMobileOpen(true)} />
+      <div className="flex flex-grow min-w-0">
+        <ManagerSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          listingCount={LISTINGS.length}
+          applicationCount={activeApplications.length}
+        />
+        <ManagerMobileDrawer
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          listingCount={LISTINGS.length}
+          applicationCount={activeApplications.length}
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+        />
 
-        {/* Dashboard Header */}
-        <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md">Manager Portal</span>
-            </div>
-            <h1 className="text-3xl font-black text-slate-900 mb-2">Property Manager</h1>
-            <p className="text-slate-500 font-medium">Manage your listings, review offers, and track property performance.</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/post-property" className="bg-slate-900 hover:bg-[#2ec440] text-white font-semibold py-2.5 px-6 rounded-xl transition-colors shadow-sm text-sm">
-              + Add Property
-            </Link>
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-10">
-
-          {/* Sidebar Navigation */}
-          <ManagerSidebar
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            listingCount={LISTINGS.length}
-            applicationCount={activeApplications.length}
-          />
-
-          {/* Main Content Area */}
-          <main className="flex-grow min-w-0">
-
+        {/* Main Content Area */}
+        <main className="flex-grow min-w-0">
+          <PageFrame
+            title="Property Manager"
+            description="Manage your listings, review offers, and track property performance."
+          >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
               <OverviewTab LISTINGS={LISTINGS} statusCounts={statusCounts} topListings={topListings} />
@@ -145,9 +140,8 @@ export default function ManagerDashboard() {
             {activeTab === 'payments' && (
               <PaymentsTab />
             )}
-
-          </main>
-        </div>
+          </PageFrame>
+        </main>
       </div>
 
       <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />

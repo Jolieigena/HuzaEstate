@@ -15,15 +15,21 @@ import { useAuth } from "@/lib/auth-context";
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, isAuthReady } = useAuth();
+  const { isLoggedIn, isAuthReady, account } = useAuth();
+  const mustChangePassword = account?.mustChangePassword === true;
 
   useEffect(() => {
-    if (isAuthReady && !isLoggedIn) {
+    if (!isAuthReady) return;
+    if (!isLoggedIn) {
       router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      return;
     }
-  }, [isAuthReady, isLoggedIn, router, pathname]);
+    if (mustChangePassword && pathname !== "/change-password") {
+      router.replace(`/change-password?redirect=${encodeURIComponent(pathname)}`);
+    }
+  }, [isAuthReady, isLoggedIn, mustChangePassword, router, pathname]);
 
-  if (!isAuthReady || !isLoggedIn) {
+  if (!isAuthReady || !isLoggedIn || (mustChangePassword && pathname !== "/change-password")) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-3 text-slate-400">

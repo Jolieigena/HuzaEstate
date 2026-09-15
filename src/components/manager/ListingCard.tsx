@@ -41,7 +41,25 @@ export default function ListingCard({
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
       <Link href={`/properties/${listing.id}`} className={`block relative w-full h-36 hover:opacity-90 transition-opacity ${isLeased || isOffMarket ? 'opacity-50 grayscale' : ''}`}>
-        <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+        {listing.property.videoUrl ? (
+          <video
+            src={listing.property.videoUrl}
+            muted
+            playsInline
+            preload="metadata"
+            aria-label={`Video walkthrough of ${listing.title}`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+        )}
+        {listing.property.videoUrl && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-lg">
+              <svg className="ml-0.5 h-4 w-4 text-slate-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            </span>
+          </div>
+        )}
         <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
           {listing.status}
         </span>

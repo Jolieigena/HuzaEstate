@@ -47,11 +47,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
     });
   };
 
-  // The Administration Portal supplies 100% of its own chrome (see
-  // AdminShell) — no public Navbar, no dashboard AppHeader/Sidebar. This
-  // check runs before the account-shell/Navbar branches below so `/admin`
-  // never gets either, and every other route's branch is unaffected.
-  if (shell === "admin") {
+  // The Administration Portal and Manager Portal each supply 100% of their own chrome
+  // (see AdminShell / ManagerDashboard's own header+sidebar) — no public Navbar, no
+  // dashboard AppHeader/Sidebar. This runs before the account-shell/Navbar branches
+  // below so `/admin` and `/manager` never get either, and every other route is unaffected.
+  if (shell === "admin" || shell === "manager") {
     return <>{children}</>;
   }
 

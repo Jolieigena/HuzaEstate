@@ -27,7 +27,11 @@ const LOAD_TIMEOUT_MS = 90_000;
  * stays as a lighter-weight 360° preview/fallback — see
  * PropertyTourSection, which prefers this whenever spzUrl is available.
  */
-export default function SplatViewer({ spzUrl, className = '' }: SplatViewerProps) {
+export default function SplatViewer(props: SplatViewerProps) {
+  return <SplatViewerContent key={props.spzUrl} {...props} />;
+}
+
+function SplatViewerContent({ spzUrl, className = '' }: SplatViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [progress, setProgress] = useState(0);
@@ -38,8 +42,6 @@ export default function SplatViewer({ spzUrl, className = '' }: SplatViewerProps
 
     let cancelled = false;
     let animationRunning = true;
-    setStatus('loading');
-    setProgress(0);
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, 1, 0.01, 1000);
@@ -89,7 +91,8 @@ export default function SplatViewer({ spzUrl, className = '' }: SplatViewerProps
       scene.add(splatMesh);
     } catch {
       window.clearTimeout(timeoutId);
-      setStatus('error');
+      // Report the external viewer's initialization failure after this effect completes.
+      queueMicrotask(() => { if (!cancelled) setStatus('error'); });
     }
 
     const resize = () => {
@@ -123,7 +126,6 @@ export default function SplatViewer({ spzUrl, className = '' }: SplatViewerProps
         container.removeChild(renderer.domElement);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spzUrl]);
 
   return (

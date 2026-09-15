@@ -3,6 +3,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { canAccessPath } from "@/lib/navigation";
 import { SIDEBAR_NAV_ITEMS } from "./SidebarNavItems";
 
 interface SidebarProps {
@@ -14,10 +16,15 @@ function SidebarLinks({ collapsed }: { collapsed: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const tab = searchParams.get("tab");
+  const { account } = useAuth();
+  // Only show links this account can actually open — e.g. a plain customer
+  // shouldn't see "Professional Workspace" if they hold no professional/
+  // contractor role (see src/lib/navigation.ts canAccessPath).
+  const items = SIDEBAR_NAV_ITEMS.filter((item) => canAccessPath(account, item.href));
 
   return (
     <nav aria-label="Account navigation" className="flex flex-col gap-1 px-2">
-      {SIDEBAR_NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = item.isActive(pathname, tab);
         return (
           <Link

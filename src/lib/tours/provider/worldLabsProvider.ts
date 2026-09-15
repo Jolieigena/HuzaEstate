@@ -108,9 +108,7 @@ function toWorldPrompt(input: GenerationInput) {
       return {
         type: "multi-image" as const,
         multi_image_prompt: input.images.map(({ url, azimuth }) => {
-          const item: any = { content: toImagePrompt(url) };
-          if (azimuth !== undefined) item.azimuth = azimuth;
-          return item;
+          return { content: toImagePrompt(url), ...(azimuth !== undefined ? { azimuth } : {}) };
         }),
         text_prompt: input.prompt,
         ...(input.reconstructImages ? { reconstruct_images: true } : {}),
@@ -192,19 +190,11 @@ export const worldLabsProvider: TourProvider = {
     };
     
     // Log payload for debugging (excluding image base64 data to keep it readable)
-    const logPayload = JSON.parse(JSON.stringify(payload));
-    if (logPayload.world_prompt?.multi_image_prompt) {
-      logPayload.world_prompt.multi_image_prompt.forEach((item: any) => {
-        if (item.content?.data_base64) {
-          item.content.data_base64 = "<base64_data_omitted>";
-        }
-      });
-    } else if (logPayload.world_prompt?.image_prompt?.data_base64) {
-      logPayload.world_prompt.image_prompt.data_base64 = "<base64_data_omitted>";
-    }
+    const logPayload = JSON.stringify(payload, (key, value: unknown) =>
+      key === "data_base64" ? "<base64_data_omitted>" : value, 2);
     
     console.log(`\n--- World Labs Request Payload ---`);
-    console.log(JSON.stringify(logPayload, null, 2));
+    console.log(logPayload);
 
     let res: Response;
     try {

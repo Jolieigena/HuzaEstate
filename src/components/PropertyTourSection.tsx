@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import Image from 'next/image';
+import Image from '@/components/PropertyImage';
 import { useTourForProperty } from '@/lib/tours/hooks';
 import PanoramaViewer from './PanoramaViewer';
 import SplatViewer from './SplatViewer';
@@ -55,8 +55,9 @@ export default function PropertyTourSection({ propertyId, imageUrl, virtualTourU
   const baseSpzUrl = activeScene.spzUrl || tour.spzUrl;
   const basePanoUrl = activeScene.panoUrl || tour.panoUrl;
   
-  const activeSpzUrl = baseSpzUrl ? `${baseSpzUrl}&v=${new Date(tour.updatedAt || Date.now()).getTime()}` : undefined;
-  const activePanoUrl = basePanoUrl ? `${basePanoUrl}&v=${new Date(tour.updatedAt || Date.now()).getTime()}` : undefined;
+  const version = encodeURIComponent(tour.updatedAt || 'initial');
+  const activeSpzUrl = baseSpzUrl ? `${baseSpzUrl}${baseSpzUrl.includes('?') ? '&' : '?'}v=${version}` : undefined;
+  const activePanoUrl = basePanoUrl ? `${basePanoUrl}${basePanoUrl.includes('?') ? '&' : '?'}v=${version}` : undefined;
   const activeViewerUrl = activeScene.viewerUrl || tour.viewerUrl;
 
   const activeMode = activeSpzUrl ? mode : 'pano';

@@ -34,6 +34,7 @@ export function UsersListPage() {
   const { account } = useAuth();
   useAdminState();
   const canView = useHasPermission(account?.id, "users.view");
+  const canManage = useHasPermission(account?.id, "users.manage");
   const [search, setSearch] = useState("");
   const [type, setType] = useState<"all" | AccountDirectoryType>("all");
   const [status, setStatus] = useState<"all" | AccountStatus>("all");
@@ -50,7 +51,17 @@ export function UsersListPage() {
   );
 
   return (
-    <PageFrame title="Users" description="Manage customer, seller, professional, contractor and administrator accounts across the platform.">
+    <PageFrame
+      title="Users"
+      description="Manage customer, seller, professional, contractor and administrator accounts across the platform."
+      action={
+        canManage ? (
+          <Link href="/admin/users/create" className="min-h-11 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+            + Create user
+          </Link>
+        ) : undefined
+      }
+    >
       <RequirePermission granted={canView}>
         <Card className="mb-5">
           <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr_1fr]">

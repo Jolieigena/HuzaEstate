@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Rectangle, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Rectangle, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Property } from '@/lib/properties/types';
 import Link from 'next/link';
-import Image from 'next/image';
+import Image from '@/components/PropertyImage';
 import L from 'leaflet';
 import TourWatchBadge from '@/components/TourWatchBadge';
 

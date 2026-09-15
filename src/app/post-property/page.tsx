@@ -2,63 +2,100 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
+import RequireAuth from '@/components/shared/RequireAuth';
+import ApplyGate from '@/components/manager/ApplyGate';
+import { useAuth } from '@/lib/auth-context';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
+import { uploadMedia } from '@/lib/media/upload';
 import type { Property } from '@/lib/properties/types';
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
+const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
-export default function PostPropertyPage() {
+const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
+
+function PostPropertyForm() {
   const router = useRouter();
+  const { token, isApprovedSeller } = useAuth();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const [title, setTitle] = useState('');
   const [listingType, setListingType] = useState<'' | Property['type']>('');
   const [propertyType, setPropertyType] = useState<'' | Property['propertyType']>('');
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
-  const [city, setCity] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [sqm, setSqm] = useState('');
   const [description, setDescription] = useState('');
   const [photos, setPhotos] = useState<CategorizedPhoto[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  if (!isApprovedSeller) {
+    return <ApplyGate />;
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!listingType || !propertyType) return;
+    if (!listingType || !propertyType || submitting || uploadingPhotos) return;
 
+    setError('');
     setSubmitting(true);
 
-    const [cityPart, ...rest] = city.split(',');
+    // The single "City / Location" input (e.g. "Nyarutarama, Kigali") carries both the
+    // neighborhood and the city — split it here rather than asking for two form fields.
+    const [neighborhood, ...cityParts] = location.split(',');
+    const city = cityParts.length ? cityParts.join(',').trim() : neighborhood.trim();
     const { imageUrl, galleryImages } = deriveImageFields(photos, FALLBACK_IMAGE);
-    
-    // In a real app we'd upload the video and get a URL back. For the demo we use a fake URL or an object URL
-    const videoUrl = videoFile ? URL.createObjectURL(videoFile) : undefined;
 
-    const property = SellerListingsStoreEngine.add({
-      title,
-      description: description || `A ${propertyType} listed in ${location}.`,
-      price: Number(price) || 0,
-      currency: listingType === 'rent' ? 'USD/month' : 'USD',
-      location,
-      city: rest.length ? rest.join(',').trim() : cityPart.trim(),
-      bedrooms: Number(bedrooms) || 0,
-      bathrooms: Number(bathrooms) || 0,
-      sqm: Number(sqm) || 0,
-      imageUrl,
-      galleryImages,
-      photos,
-      type: listingType,
-      propertyType,
-      videoUrl,
-    });
+    try {
+      let videoUrl: string | undefined;
+      if (videoFile) {
+        if (!SUPPORTED_VIDEO_TYPES.has(videoFile.type)) {
+          setError('Video must be MP4, WebM, or MOV.');
+          setSubmitting(false);
+          return;
+        }
+        videoUrl = await uploadMedia(videoFile, videoFile.type, token);
+      }
 
-    router.push(`/properties/${property.id}`);
+      const res = await fetch(`${PROPERTY_API_URL}/properties`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          title,
+          description: description || `A ${propertyType} listed in ${location}.`,
+          price: Number(price) || 0,
+          currency: listingType === 'rent' ? 'USD/month' : 'USD',
+          location: neighborhood.trim(),
+          city,
+          bedrooms: Number(bedrooms) || 0,
+          bathrooms: Number(bathrooms) || 0,
+          sqm: Number(sqm) || 0,
+          imageUrl,
+          galleryImages,
+          photos,
+          type: listingType,
+          propertyType,
+          videoUrl,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message || 'Could not publish your listing. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+      const data = await res.json();
+      router.push(`/properties/${data.property.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -69,6 +106,11 @@ export default function PostPropertyPage() {
           <h1 className="text-3xl font-extrabold text-slate-900 mb-3">List your property</h1>
           <p className="text-slate-500">Fill in the details below and your listing will go live immediately.</p>
         </div>
+        {error && (
+          <p className="mb-6 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
+            {error}
+          </p>
+        )}
         <form className="space-y-8" onSubmit={handleSubmit}>
           <div>
             <h2 className="text-xl font-bold text-slate-900 mb-5">Property details</h2>
@@ -80,7 +122,7 @@ export default function PostPropertyPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Luxury Villa with Pool in Nyarutarama"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
@@ -122,7 +164,7 @@ export default function PostPropertyPage() {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="e.g. 350000"
                   min="0"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
@@ -134,14 +176,14 @@ export default function PostPropertyPage() {
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g. Nyarutarama, Kigali"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
-                <CategorizedPhotoUpload photos={photos} onChange={setPhotos} />
+                <CategorizedPhotoUpload photos={photos} onChange={setPhotos} onUploadingChange={setUploadingPhotos} disabled={submitting} />
               </div>
 
               <div className="sm:col-span-2">
@@ -153,7 +195,7 @@ export default function PostPropertyPage() {
                   <div className="flex-grow min-w-0">
                     <input 
                       type="file" 
-                      accept="video/*" 
+                      accept="video/mp4,video/webm,video/quicktime"
                       onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2ec440]/10 file:text-[#2ec440] hover:file:bg-[#2ec440]/20 transition-colors" 
                     />
@@ -170,7 +212,7 @@ export default function PostPropertyPage() {
                   onChange={(e) => setBedrooms(e.target.value)}
                   min="0"
                   placeholder="e.g. 4"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 />
               </div>
 
@@ -182,7 +224,7 @@ export default function PostPropertyPage() {
                   onChange={(e) => setBathrooms(e.target.value)}
                   min="0"
                   placeholder="e.g. 3"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 />
               </div>
 
@@ -194,7 +236,7 @@ export default function PostPropertyPage() {
                   onChange={(e) => setSqm(e.target.value)}
                   min="0"
                   placeholder="e.g. 450"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 />
               </div>
 
@@ -205,14 +247,14 @@ export default function PostPropertyPage() {
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
                   placeholder="Tell buyers or renters what makes this property special..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
                 />
               </div>
             </div>
           </div>
 
-          <button type="submit" disabled={submitting} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-            {submitting ? 'Publishing…' : 'Publish Listing'}
+          <button type="submit" disabled={submitting || uploadingPhotos} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl transition-colors shadow-lg disabled:opacity-60">
+            {submitting ? 'Publishing…' : uploadingPhotos ? 'Uploading photos…' : 'Publish Listing'}
           </button>
 
           <p className="text-center text-slate-500 text-sm">
@@ -222,5 +264,13 @@ export default function PostPropertyPage() {
         </form>
       </section>
     </div>
+  );
+}
+
+export default function PostPropertyPage() {
+  return (
+    <RequireAuth>
+      <PostPropertyForm />
+    </RequireAuth>
   );
 }

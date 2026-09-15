@@ -4,8 +4,9 @@ import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, DEMO_ACCOUNTS, ADMIN_DEMO_ACCOUNTS } from '@/lib/auth-context';
-import { sanitizeRedirect } from '@/lib/redirect';
+import { useAuth } from '@/lib/auth-context';
+import { accountDestination } from '@/lib/navigation';
+import PasswordInput from '@/components/shared/PasswordInput';
 
 function LoginForm() {
   const router = useRouter();
@@ -13,33 +14,29 @@ function LoginForm() {
   const { loginWithCredentials } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const redirectParam = searchParams.get('redirect');
   const signupHref = redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : '/signup';
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
     setError('');
     setIsSubmitting(true);
-    if (!loginWithCredentials(email, password)) {
-      setError('Invalid email or password. Try one of the demo accounts below.');
+    const result = await loginWithCredentials(email, password, rememberMe);
+    if (!result.ok) {
+      setError(result.error);
       setIsSubmitting(false);
       return;
     }
-    router.push(sanitizeRedirect(redirectParam));
-  };
-
-  const selectDemoAccount = (account: (typeof DEMO_ACCOUNTS)[number]) => {
-    if (isSubmitting) return;
-    setError('');
-    setIsSubmitting(true);
-    setEmail(account.email);
-    setPassword(account.password);
-    loginWithCredentials(account.email, account.password);
-    router.push(account.path);
+    if (result.account.mustChangePassword) {
+      router.push(`/change-password?redirect=${encodeURIComponent(accountDestination(result.account, redirectParam))}`);
+      return;
+    }
+    router.push(accountDestination(result.account, redirectParam));
   };
 
   return (
@@ -61,7 +58,7 @@ function LoginForm() {
             placeholder="Enter your email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
             required
           />
         </div>
@@ -71,18 +68,23 @@ function LoginForm() {
             <label className="block text-sm font-bold text-slate-700">Password</label>
             <Link href="#" className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Forgot password?</Link>
           </div>
-          <input
-            type="password"
+          <PasswordInput
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+            autoComplete="current-password"
             required
           />
         </div>
 
         <div className="flex items-center gap-2 mt-4 mb-6">
-          <input type="checkbox" id="remember" className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+          <input
+            type="checkbox"
+            id="remember"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="accent-[#2ec440] w-4 h-4 cursor-pointer"
+          />
           <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">Remember me for 30 days</label>
         </div>
 
@@ -100,48 +102,6 @@ function LoginForm() {
           Sign in with Google
         </button>
       </form>
-
-      <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Demo accounts</p>
-        <div className="space-y-2">
-          {DEMO_ACCOUNTS.map((account) => (
-            <button
-              key={account.email}
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => selectDemoAccount(account)}
-              className="w-full flex items-center justify-between gap-3 rounded-lg bg-white border border-slate-200 hover:border-[#2ec440] px-3 py-2 text-left transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <span>
-                <span className="block text-xs font-bold text-slate-900">{account.portal}</span>
-                <span className="block text-xs text-slate-500">{account.email} / {account.password}</span>
-              </span>
-              <span className="text-xs font-bold text-[#2ec440]">Use</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <details className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <summary className="cursor-pointer text-xs font-bold text-slate-500 uppercase tracking-wide">Administration demo accounts (staff only)</summary>
-        <div className="mt-3 space-y-2">
-          {ADMIN_DEMO_ACCOUNTS.map((account) => (
-            <button
-              key={account.email}
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => selectDemoAccount(account)}
-              className="w-full flex items-center justify-between gap-3 rounded-lg bg-white border border-slate-200 hover:border-[#2ec440] px-3 py-2 text-left transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <span>
-                <span className="block text-xs font-bold text-slate-900">{account.portal}</span>
-                <span className="block text-xs text-slate-500">{account.email} / {account.password}</span>
-              </span>
-              <span className="text-xs font-bold text-[#2ec440]">Use</span>
-            </button>
-          ))}
-        </div>
-      </details>
 
       <p className="mt-8 text-center text-slate-500 text-sm">
         Don&apos;t have an account? <Link href={signupHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Sign up for free</Link>
@@ -200,7 +160,7 @@ export default function LoginPage() {
       {/* Left Side: Images */}
       <div className="hidden lg:block lg:w-1/2 relative bg-slate-900">
         {LOGIN_IMAGES.map((img, idx) => (
-          <div 
+          <div
             key={idx}
             className={`absolute inset-0 transition-opacity duration-1000 ${
               idx === currentIdx ? "opacity-100 z-10" : "opacity-0 z-0"

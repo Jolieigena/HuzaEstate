@@ -3,6 +3,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* This site has no dark theme — every page hardcodes light colors (bg-white,
+   * text-slate-900, etc), and nothing here ever reads a "dark" variant. Forces light
+   * native form-control chrome (checkboxes, date pickers, scrollbars) regardless of
+   * OS/browser preference, matching that reality. Kept as a second line of defense
+   * alongside removing the dark @media block below — see the comment there for why
+   * that block was the real cause of invisible input text. */
+  color-scheme: light;
 }
 
 @theme inline {
@@ -11,12 +18,15 @@
   --font-sans: var(--font-nunito-sans);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* There used to be an `@media (prefers-color-scheme: dark)` block here that swapped
+ * --foreground to a near-white color on dark-mode systems. That's what actually made
+ * every form input's typed text invisible sitewide (signup, login, post-property, etc):
+ * Tailwind's Preflight sets `input/textarea/select { color: inherit }`, so every one of
+ * them inherited body's near-white --foreground on a dark-preference OS/browser — no
+ * input here sets its own explicit text color, so nothing overrode it. `color-scheme:
+ * light` above only affects native browser-default chrome, not this author-set
+ * inherited color, so it alone did not fix it. Since the site has no real dark theme
+ * to switch to, --foreground/--background just stay fixed at their light values now. */
 
 body {
   background: var(--background);

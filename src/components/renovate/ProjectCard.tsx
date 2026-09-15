@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/PropertyImage";
 import { useRouter } from "next/navigation";
 import { RenovationProject, CREATION_MODE_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
 import { RenovationProjectService } from "@/lib/renovate/projectService";

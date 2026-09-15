@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from 'react';
-import { filesToCompressedDataUrls, MAX_IMAGES_PER_PROPERTY } from '@/lib/imageUpload';
+import { useAuth } from '@/lib/auth-context';
+import { filesToUploadedUrls, MAX_IMAGES_PER_PROPERTY } from '@/lib/imageUpload';
 import { PHOTO_CATEGORIES, type PhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 
 interface CategorizedPhotoUploadProps {
   photos: CategorizedPhoto[];
   onChange: (photos: CategorizedPhoto[]) => void;
+  onUploadingChange?: (uploading: boolean) => void;
+  disabled?: boolean;
 }
 
 // Shown by themselves at first, one per group, so a seller isn't faced with
@@ -24,7 +27,8 @@ const PRIMARY_CATEGORIES: PhotoCategory[] = ['exterior_front', 'living_room'];
  * of one arbitrary cover photo, while buyers still get a properly labeled
  * gallery either way.
  */
-export default function CategorizedPhotoUpload({ photos, onChange }: CategorizedPhotoUploadProps) {
+export default function CategorizedPhotoUpload({ photos, onChange, onUploadingChange, disabled = false }: CategorizedPhotoUploadProps) {
+  const { token } = useAuth();
   const [error, setError] = useState('');
   const [processingCategory, setProcessingCategory] = useState<PhotoCategory | null>(null);
   const [manuallyExpanded, setManuallyExpanded] = useState(false);
@@ -39,7 +43,7 @@ export default function CategorizedPhotoUpload({ photos, onChange }: Categorized
   const showAll = manuallyExpanded || primaryFilled || hasNonPrimaryPhoto;
 
   const handleSelect = async (category: PhotoCategory, files: File[]) => {
-    if (!files.length) return;
+    if (!files.length || processingCategory !== null || disabled) return;
 
     const remainingSlots = MAX_IMAGES_PER_PROPERTY - totalCount;
     if (remainingSlots <= 0) {
@@ -50,12 +54,14 @@ export default function CategorizedPhotoUpload({ photos, onChange }: Categorized
     const toProcess = files.slice(0, remainingSlots);
     setError(files.length > toProcess.length ? `Only ${toProcess.length} of those were added — ${MAX_IMAGES_PER_PROPERTY} photo limit reached.` : '');
     setProcessingCategory(category);
+    onUploadingChange?.(true);
     try {
-      const { dataUrls, failedCount } = await filesToCompressedDataUrls(toProcess);
-      onChange([...photos, ...dataUrls.map((url) => ({ url, category }))]);
-      if (failedCount > 0) setError(`${failedCount} photo(s) couldn't be read and were skipped.`);
+      const { urls, failedCount } = await filesToUploadedUrls(toProcess, token);
+      onChange([...photos, ...urls.map((url) => ({ url, category }))]);
+      if (failedCount > 0) setError(`${failedCount} photo(s) couldn't be uploaded and were skipped.`);
     } finally {
       setProcessingCategory(null);
+      onUploadingChange?.(false);
     }
   };
 
@@ -73,10 +79,11 @@ export default function CategorizedPhotoUpload({ photos, onChange }: Categorized
         <div className="flex flex-wrap gap-2">
           {categoryPhotos.map((photo) => (
             <div key={photo.url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 group">
-              {/* eslint-disable-next-line @next/next/no-img-element -- locally-uploaded data: URL, not a static/known-domain asset */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- MinIO-hosted URL, not a domain configured for next/image */}
               <img src={photo.url} alt={label} className="w-full h-full object-cover" />
               <button
                 type="button"
+                disabled={disabled || processingCategory !== null}
                 onClick={() => removePhoto(category, photo.url)}
                 className="absolute inset-0 bg-black/0 group-hover:bg-black/50 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
               >
@@ -93,7 +100,7 @@ export default function CategorizedPhotoUpload({ photos, onChange }: Categorized
                 type="file"
                 accept="image/*"
                 multiple
-                disabled={processing}
+                disabled={disabled || processingCategory !== null}
                 onChange={(e) => {
                   const files = Array.from(e.target.files ?? []);
                   e.target.value = '';

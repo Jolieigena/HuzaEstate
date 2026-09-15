@@ -1,11 +1,57 @@
 "use client";
 
-import React, { use } from 'react';
+import React, { use, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { getGalleryImages } from '@/lib/properties/gallery';
 import ListingVisibilityGate from '@/components/ListingVisibilityGate';
 import PropertyTourSection from '@/components/PropertyTourSection';
 import PropertyGallery from '@/components/PropertyGallery';
+
+/** Poster + a large, unmistakable play button until clicked — native video controls only
+ *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
+ *  paused video with just small native controls reads as "a photo with some odd overlay",
+ *  not obviously "click to play"; (2) forcing max-h with w-full on a <video> whose native
+ *  aspect ratio doesn't match the container letterboxes it with large black bars — this
+ *  instead fixes a 16:9 frame and crops to fill it, like every other cover image here does. */
+function PropertyVideoCover({ videoUrl, title }: { videoUrl: string; title: string }) {
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  return (
+    <div className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black">
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls={playing}
+        playsInline
+        preload="metadata"
+        aria-label={`Video walkthrough of ${title}`}
+        className="w-full h-full object-cover"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+      >
+        Your browser does not support video playback. <a href={videoUrl}>Download the video</a>.
+      </video>
+      {!playing && (
+        <button
+          type="button"
+          onClick={() => videoRef.current?.play()}
+          aria-label="Play property video"
+          className="group absolute inset-0 flex items-center justify-center bg-black/25 transition-colors hover:bg-black/35"
+        >
+          <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/95 shadow-xl transition-transform group-hover:scale-110">
+            <svg className="ml-1 h-8 w-8 text-slate-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+          <span className="absolute bottom-4 left-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+            Property video
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -46,10 +92,18 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
+      {/* Cover media — the video leads when one was uploaded (matches how most listing
+       *  sites feature video first), with the photo gallery always available right after. */}
+      {property.videoUrl && (
+        <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 mb-6">
+          <PropertyVideoCover videoUrl={property.videoUrl} title={property.title} />
+        </div>
+      )}
+
       {/* Photo Gallery */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12">
         <PropertyGallery
-          images={[property.imageUrl, ...(property.galleryImages || [])]}
+          images={getGalleryImages(property)}
           title={property.title}
           badge={`For ${property.type}`}
         />

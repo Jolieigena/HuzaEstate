@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Logo } from "./Logo";
 import { useAuth } from "@/lib/auth-context";
 import { useProfessionalProfile } from "@/lib/professional/hooks";
@@ -36,7 +35,7 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path>
           </svg>
         </button>
-        <Link href="/dashboard" aria-label="Go to your dashboard" className="block">
+        <Link href="/" aria-label="Go to HuzaEstate home" className="block">
           <Logo className="h-8 w-auto" />
         </Link>
       </div>
@@ -44,14 +43,16 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
       <div className="relative">
         <button
           onClick={() => setMenuOpen((v) => !v)}
-          className="block relative rounded-full border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
+          className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
           title="Account menu"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
         >
-          <div className="absolute inset-0 rounded-full overflow-hidden">
-            <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="User Profile" fill sizes="40px" className="object-cover rounded-full" />
-          </div>
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{(account?.name ?? "U").slice(0, 1)}</span>
+          <span className="hidden text-left sm:block">
+            <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Account"}</span>
+            <span className="block text-[11px] text-slate-500">Customer</span>
+          </span>
         </button>
 
         {menuOpen && (

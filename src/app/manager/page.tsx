@@ -1,5 +1,10 @@
+import RequireAuth from '@/components/shared/RequireAuth';
 import ManagerDashboard from '@/components/manager/ManagerDashboard';
 
 export default function ManagerPage() {
-  return <ManagerDashboard />;
+  return (
+    <RequireAuth>
+      <ManagerDashboard />
+    </RequireAuth>
+  );
 }

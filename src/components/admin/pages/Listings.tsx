@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Image from "@/components/PropertyImage";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
 import { useAdminState, useHasPermission } from "@/lib/admin/hooks";

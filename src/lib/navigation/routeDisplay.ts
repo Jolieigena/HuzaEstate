@@ -11,15 +11,16 @@ function isWithin(pathname: string, prefix: string): boolean {
 }
 
 export function getRouteDisplay(pathname: string): {
-  shell: "public" | "account" | "admin";
+  shell: "public" | "account" | "admin" | "manager";
   showFooter: boolean;
 } {
   const isAdmin = isWithin(pathname, "/admin");
+  const isManager = isWithin(pathname, "/manager");
   const isAccount = ACCOUNT_PREFIXES.some((prefix) => isWithin(pathname, prefix));
   return {
-    shell: isAdmin ? "admin" : isAccount ? "account" : "public",
+    shell: isAdmin ? "admin" : isManager ? "manager" : isAccount ? "account" : "public",
     showFooter: !(
-      isAdmin || isAccount || isWithin(pathname, "/manager") ||
+      isAdmin || isAccount || isManager ||
       isWithin(pathname, "/dev") || FOOTER_HIDDEN_EXACT.includes(pathname)
     ),
   };

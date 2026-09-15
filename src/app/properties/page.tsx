@@ -33,6 +33,10 @@ function countMatches(properties: Property[], filters: AIPropertyFilters): numbe
   }).length;
 }
 
+function titleCase(text: string) {
+  return text.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
+}
+
 function renderMd(text: string) {
   return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
@@ -91,18 +95,9 @@ function DreamHomePanel({
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading]);
 
-  // Keep last match count live as the grid filters update
-  useEffect(() => {
-    if (!hasActiveFilter) return;
-    setMessages((prev) => {
-      const idx = [...prev].reverse().findIndex((m) => m.role === 'assistant' && m.filters);
-      if (idx === -1) return prev;
-      const real = prev.length - 1 - idx;
-      const next = [...prev];
-      next[real] = { ...next[real], matchCount };
-      return next;
-    });
-  }, [matchCount, hasActiveFilter]);
+  const lastFilteredIndex = messages.findLastIndex((m) => m.role === 'assistant' && m.filters);
+  const displayedMessages = messages.map((message, index) =>
+    hasActiveFilter && index === lastFilteredIndex ? { ...message, matchCount } : message);
 
   function close() {
     setVisible(false);
@@ -188,7 +183,7 @@ function DreamHomePanel({
 
         {/* Chat thread */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col min-h-0">
-          {messages.map((msg, i) => {
+          {displayedMessages.map((msg, i) => {
             const isUser = msg.role === 'user';
             return (
               <div key={i} className={`flex w-full mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -293,13 +288,14 @@ function PropertiesContent() {
   const [isDreamOpen, setIsDreamOpen] = useState(false);
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
 
-  // Sync state with URL parameters when navigating from other links
-  useEffect(() => {
-    const type = searchParams.get('type');
-    if (type) setFilterType(type);
-    const q = searchParams.get('q');
-    if (q !== null) setSearchTerm(q);
-  }, [searchParams]);
+  // Reset URL-backed fields during navigation, before rendering stale results.
+  const query = searchParams.toString();
+  const [previousQuery, setPreviousQuery] = useState(query);
+  if (query !== previousQuery) {
+    setPreviousQuery(query);
+    setFilterType(searchParams.get('type') ?? 'all');
+    setSearchTerm(searchParams.get('q') ?? '');
+  }
 
   const allProperties = useAllProperties();
   const visibleProperties = useVisibleListings(allProperties);
@@ -455,10 +451,10 @@ function PropertiesContent() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl sm:text-[28px] font-bold text-slate-900 tracking-tight mb-1">
-              {searchTerm || 'Kigali, Rwanda'} Real Estate &amp; Homes
+              {searchTerm.trim() ? titleCase(searchTerm.trim()) : 'Kigali, Rwanda'}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
-              {filteredProperties.length} results
+              {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
           </div>

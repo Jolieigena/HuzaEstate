@@ -1,16 +1,17 @@
-// Property photos are stored as data URLs inside Property.imageUrl (this
-// prototype has no object storage / upload endpoint — everything lives in
-// localStorage). Raw camera photos can be several MB, which risks blowing
-// the ~5MB localStorage quota after just a couple of listings, so every
-// upload is downscaled and re-encoded as JPEG before it's ever stored.
+// Property photos are compressed client-side, then uploaded to MinIO (object storage) via
+// property-service's presigned-URL endpoint — see src/lib/media/upload.ts. Only the resulting
+// public URL is ever stored (in Property.imageUrl / galleryImages / photos[].url), not the
+// image bytes themselves.
+import { uploadMedia } from './media/upload';
+
 const MAX_IMAGE_DIMENSION = 1600;
 const JPEG_QUALITY = 0.82;
+const COMPRESSED_CONTENT_TYPE = 'image/jpeg';
 
-/** Soft cap on photos per listing — keeps a single property's data URLs
- *  from eating the whole ~5MB localStorage quota by itself. */
+/** Soft cap on photos per listing — matches the limit property-service enforces server-side. */
 export const MAX_IMAGES_PER_PROPERTY = 12;
 
-export function fileToCompressedDataUrl(file: File): Promise<string> {
+function compressImage(file: File): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'));
@@ -31,7 +32,7 @@ export function fileToCompressedDataUrl(file: File): Promise<string> {
           return;
         }
         ctx.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Failed to encode image'))), COMPRESSED_CONTENT_TYPE, JPEG_QUALITY);
       };
       img.src = reader.result as string;
     };
@@ -39,16 +40,21 @@ export function fileToCompressedDataUrl(file: File): Promise<string> {
   });
 }
 
-/** Converts multiple files independently, skipping (rather than aborting
- *  on) any that fail to read/decode so one bad file doesn't block the rest. */
-export async function filesToCompressedDataUrls(files: File[]): Promise<{ dataUrls: string[]; failedCount: number }> {
+export async function fileToUploadedUrl(file: File, token: string | null): Promise<string> {
+  const blob = await compressImage(file);
+  return uploadMedia(blob, COMPRESSED_CONTENT_TYPE, token);
+}
+
+/** Uploads multiple files independently, skipping (rather than aborting on) any that fail
+ *  to read/decode/upload so one bad file doesn't block the rest. */
+export async function filesToUploadedUrls(files: File[], token: string | null): Promise<{ urls: string[]; failedCount: number }> {
   const results = await Promise.all(
     files.map((file) =>
-      fileToCompressedDataUrl(file)
+      fileToUploadedUrl(file, token)
         .then((url) => ({ ok: true as const, url }))
         .catch(() => ({ ok: false as const }))
     )
   );
-  const dataUrls = results.filter((r): r is { ok: true; url: string } => r.ok).map((r) => r.url);
-  return { dataUrls, failedCount: results.length - dataUrls.length };
+  const urls = results.filter((r): r is { ok: true; url: string } => r.ok).map((r) => r.url);
+  return { urls, failedCount: results.length - urls.length };
 }

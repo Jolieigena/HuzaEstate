@@ -1,6 +1,7 @@
-import Image from 'next/image';
+import Image from '@/components/PropertyImage';
 import Link from 'next/link';
 import type { Property } from '@/lib/properties/types';
+import { getGalleryImages } from '@/lib/properties/gallery';
 import TourWatchBadge from '@/components/TourWatchBadge';
 
 interface PropertyCardProps {
@@ -12,17 +13,38 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
   return (
     <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300">
       <div className="relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
-        {/* Main Image — the only anchor in this block, so overlay badges
-         *  below stay as plain positioned siblings rather than nested <a>s. */}
+        {/* Cover media — the only anchor in this block, so overlay badges below
+         *  stay as plain positioned siblings rather than nested <a>s. When a video
+         *  was uploaded, the cover IS that <video>, showing its own first frame
+         *  (preload="metadata", no poster override) — not an unrelated uploaded
+         *  photo standing in for it. */}
         <Link href={`/properties/${property.id}`} className="absolute inset-0 block rounded-2xl overflow-hidden">
-          <Image
-            src={property.imageUrl}
-            alt={property.title}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-700"
-          />
+          {property.videoUrl ? (
+            <video
+              src={property.videoUrl}
+              muted
+              playsInline
+              preload="metadata"
+              aria-label={`Video walkthrough of ${property.title}`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+          ) : (
+            <Image
+              src={property.imageUrl}
+              alt={property.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+          )}
           <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors"></div>
+          {property.videoUrl && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                <svg className="ml-0.5 h-5 w-5 text-slate-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+              </span>
+            </div>
+          )}
         </Link>
 
         {/* Top Left Featured Badge */}
@@ -36,7 +58,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
         {/* Top Right Photo Count Pill */}
         <div className="absolute top-3 right-3 z-10 bg-slate-900/40 backdrop-blur-sm rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-sm font-semibold border border-white/30 pointer-events-none">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          {property.photos?.length ?? property.galleryImages?.length ?? (property.title.length % 15) + 5}
+          {getGalleryImages(property).length}
         </div>
 
         {/* Bottom Left: "Watch the 3D Tour" — only rendered once a tour is ready */}

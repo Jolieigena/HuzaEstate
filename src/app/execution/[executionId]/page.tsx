@@ -9,7 +9,7 @@ import { ExecutionSetupWizard } from "@/components/execution/ExecutionSetupWizar
 
 export default function CustomerExecutionOverviewPage({ params }: { params: Promise<{ executionId: string }> }) {
   const { executionId } = use(params);
-  const { account, activeRole } = useAuth();
+  const { activeRole } = useAuth();
   const { project, isLoading } = useExecutionProject(executionId);
 
   const currentRole = activeRole === "contractor" ? "contractor" : activeRole === "professional" ? "architect" : activeRole === "administrator" ? "administrator" : "customer";

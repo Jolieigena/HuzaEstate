@@ -4,11 +4,10 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type AccountRole = "customer" | "seller_manager" | "professional" | "contractor" | "administrator";
 
-export interface DemoAccount {
+export interface Account {
   id: string;
   name: string;
   email: string;
-  password: string;
   roles: AccountRole[];
   professionalProfileId?: string;
   /** Administration & Operations Portal role. Kept as a loose string (not the
@@ -17,156 +16,219 @@ export interface DemoAccount {
    * above stays untyped rather than importing professional types. */
   adminRole?: string;
   isApprovedSeller: boolean;
-  portal: string;
+  /** True for accounts created by an administrator (or the bootstrap admin account) that are
+   * still on their shared default password. The app should force a change-password step
+   * before letting the account use anything else. */
+  mustChangePassword?: boolean;
   path: string;
 }
 
+export interface SignupInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  termsAccepted: boolean;
+}
+
+export type AuthResult = { ok: true; account: Account } | { ok: false; error: string };
+
+export interface CreateUserInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+  roleType: AccountRole;
+  adminRole?: string;
+  professionalProfileId?: string;
+}
+
+export type CreateUserResult = { ok: true; temporaryPassword: string } | { ok: false; error: string };
+
+/**
+ * Fixture identities for the admin/finance prototype modules' seed data
+ * (src/lib/admin/seed.ts, src/lib/finance/accountLookup.ts) — those modules
+ * are local-only mock directories unrelated to real sign-in and just need
+ * stable id/name/role rows to seed synthetic records against. NOT used by
+ * signup/loginWithCredentials below, which authenticate against the backend.
+ */
+export const DEMO_ACCOUNTS: readonly Account[] = [
+  { id: "demo-user", name: "Jane Doe", email: "buyer@huzaestate.com", roles: ["customer"], isApprovedSeller: false, path: "/dashboard" },
+  { id: "seller-user", name: "Jane Doe", email: "seller@huzaestate.com", roles: ["customer", "seller_manager"], isApprovedSeller: true, path: "/manager" },
+  { id: "aline-user", name: "Aline Uwase", email: "architect@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-1", isApprovedSeller: false, path: "/professional" },
+  { id: "eric-user", name: "Eric Habimana", email: "structural@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-structural", isApprovedSeller: false, path: "/professional" },
+  { id: "diane-user", name: "Diane Mukamana", email: "surveyor@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-3", isApprovedSeller: false, path: "/professional" },
+  { id: "keza-user", name: "Keza Studio", email: "interior@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-interior", isApprovedSeller: false, path: "/professional" },
+  { id: "imara-user", name: "Imara Construction Ltd", email: "contractor@huzaestate.com", roles: ["customer", "contractor"], professionalProfileId: "contractor-imara", isApprovedSeller: false, path: "/professional" },
+  { id: "moses-user", name: "Moses Karenzi", email: "electrical@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-electrical-pending", isApprovedSeller: false, path: "/professional" },
+] as const;
+
+export const ADMIN_DEMO_ACCOUNTS: readonly Account[] = [
+  { id: "admin-super", name: "Sam Nkurunziza", email: "super.admin@huzaestate.com", roles: ["administrator"], adminRole: "super_admin", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-ops", name: "Grace Mutoni", email: "ops.admin@huzaestate.com", roles: ["administrator"], adminRole: "operations_admin", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-verify", name: "Patrick Ndayisenga", email: "verification@huzaestate.com", roles: ["administrator"], adminRole: "verification_officer", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-listing", name: "Claudine Iradukunda", email: "listings@huzaestate.com", roles: ["administrator"], adminRole: "listing_moderator", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-support", name: "Eric Bizimana", email: "support@huzaestate.com", roles: ["administrator"], adminRole: "support_dispute_officer", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-content", name: "Divine Ingabire", email: "content@huzaestate.com", roles: ["administrator"], adminRole: "content_manager", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-auditor", name: "Jean Paul Rugamba", email: "auditor@huzaestate.com", roles: ["administrator"], adminRole: "auditor", isApprovedSeller: false, path: "/admin" },
+  { id: "admin-analyst", name: "Aline Umutoni", email: "analyst@huzaestate.com", roles: ["administrator"], adminRole: "platform_analyst", isApprovedSeller: false, path: "/admin" },
+] as const;
+
 interface AuthContextValue {
   isLoggedIn: boolean;
-  login: () => void;
-  /** Validates email/password against the demo portal accounts (see DEMO_ACCOUNTS below).
-   * On success, logs in and sets the seller flag to match that account's portal. Returns
-   * false (without changing auth state) when the credentials don't match a demo account. */
-  loginWithCredentials: (email: string, password: string) => boolean;
+  signup: (input: SignupInput) => Promise<AuthResult>;
+  loginWithCredentials: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   logout: () => void;
   isApprovedSeller: boolean;
   applyAsSeller: () => void;
-  /** True once the stored auth state has been read (or has failed to be read). Use this to avoid
-   * gating protected content on the initial `false` value of `isLoggedIn`, which is only a default
-   * until the stored session is checked. */
+  /** True once the initial session check (validating any stored token against the
+   * backend) has finished. Use this to avoid gating protected content on the
+   * initial `false` value of `isLoggedIn`, which is only a default until then. */
   isAuthReady: boolean;
-  account: DemoAccount | null;
+  account: Account | null;
   activeRole: AccountRole;
   switchRole: (role: AccountRole) => boolean;
+  /** The current JWT, for authenticated calls to OTHER backend services (property-service,
+   * etc.) — those verify it locally against the same shared secret access-service signs
+   * with, so no extra round-trip through access-service is needed. Null when logged out. */
+  token: string | null;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
+  /** Administrator-only (backend rejects otherwise). Creates an account with the given role
+   * and a shared default password; the new account is forced to change it on first login. */
+  createUser: (input: CreateUserInput) => Promise<CreateUserResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "huzaestate_auth";
-const SELLER_STORAGE_KEY = "huzaestate_seller";
-const ACCOUNT_STORAGE_KEY = "huzaestate_account_id";
+const TOKEN_STORAGE_KEY = "huzaestate_token";
 const ROLE_STORAGE_KEY = "huzaestate_active_role";
 
-/**
- * Demo accounts for the two portals in this app: the buyer/renter Dashboard
- * (isApprovedSeller: false) and the Manager Portal for approved sellers &
- * landlords (isApprovedSeller: true). Shown to testers on the login page.
- */
-export const DEMO_ACCOUNTS: readonly DemoAccount[] = [
-  { id: "demo-user", name: "Jane Doe", email: "buyer@huzaestate.com", password: "buyer1234", roles: ["customer"], isApprovedSeller: false, portal: "Buyer, Build & Renovate", path: "/dashboard" },
-  { id: "seller-user", name: "Jane Doe", email: "seller@huzaestate.com", password: "seller1234", roles: ["customer", "seller_manager"], isApprovedSeller: true, portal: "Manager Portal", path: "/manager" },
-  { id: "aline-user", name: "Aline Uwase", email: "architect@huzaestate.com", password: "architect1234", roles: ["customer", "professional"], professionalProfileId: "pro-1", isApprovedSeller: false, portal: "Architect workspace", path: "/professional" },
-  { id: "eric-user", name: "Eric Habimana", email: "structural@huzaestate.com", password: "structural1234", roles: ["customer", "professional"], professionalProfileId: "pro-structural", isApprovedSeller: false, portal: "Structural engineer workspace", path: "/professional" },
-  { id: "diane-user", name: "Diane Mukamana", email: "surveyor@huzaestate.com", password: "surveyor1234", roles: ["customer", "professional"], professionalProfileId: "pro-3", isApprovedSeller: false, portal: "Quantity surveyor workspace", path: "/professional" },
-  { id: "keza-user", name: "Keza Studio", email: "interior@huzaestate.com", password: "interior1234", roles: ["customer", "professional"], professionalProfileId: "pro-interior", isApprovedSeller: false, portal: "Interior designer workspace", path: "/professional" },
-  { id: "imara-user", name: "Imara Construction Ltd", email: "contractor@huzaestate.com", password: "contractor1234", roles: ["customer", "contractor"], professionalProfileId: "contractor-imara", isApprovedSeller: false, portal: "Contractor workspace", path: "/professional" },
-  { id: "moses-user", name: "Moses Karenzi", email: "electrical@huzaestate.com", password: "electrical1234", roles: ["customer", "professional"], professionalProfileId: "pro-electrical-pending", isApprovedSeller: false, portal: "Electrical engineer (application pending)", path: "/professional" },
-] as const;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
-/**
- * Staff accounts for the Administration & Operations Portal (`/admin`).
- * Kept separate from DEMO_ACCOUNTS above and shown in a collapsed section on
- * the login page so the regular customer-facing demo list isn't crowded by
- * internal roles. `adminRole` is read by `src/lib/admin/permissions.ts`.
- */
-export const ADMIN_DEMO_ACCOUNTS: readonly DemoAccount[] = [
-  { id: "admin-super", name: "Sam Nkurunziza", email: "super.admin@huzaestate.com", password: "superadmin1234", roles: ["administrator"], adminRole: "super_admin", isApprovedSeller: false, portal: "Super Administrator", path: "/admin" },
-  { id: "admin-ops", name: "Grace Mutoni", email: "ops.admin@huzaestate.com", password: "opsadmin1234", roles: ["administrator"], adminRole: "operations_admin", isApprovedSeller: false, portal: "Operations Administrator", path: "/admin" },
-  { id: "admin-verify", name: "Patrick Ndayisenga", email: "verification@huzaestate.com", password: "verify1234", roles: ["administrator"], adminRole: "verification_officer", isApprovedSeller: false, portal: "Professional Verification Officer", path: "/admin" },
-  { id: "admin-listing", name: "Claudine Iradukunda", email: "listings@huzaestate.com", password: "listings1234", roles: ["administrator"], adminRole: "listing_moderator", isApprovedSeller: false, portal: "Listing Moderator", path: "/admin" },
-  { id: "admin-support", name: "Eric Bizimana", email: "support@huzaestate.com", password: "support1234", roles: ["administrator"], adminRole: "support_dispute_officer", isApprovedSeller: false, portal: "Support and Dispute Officer", path: "/admin" },
-  { id: "admin-content", name: "Divine Ingabire", email: "content@huzaestate.com", password: "content1234", roles: ["administrator"], adminRole: "content_manager", isApprovedSeller: false, portal: "Content Manager", path: "/admin" },
-  { id: "admin-auditor", name: "Jean Paul Rugamba", email: "auditor@huzaestate.com", password: "auditor1234", roles: ["administrator"], adminRole: "auditor", isApprovedSeller: false, portal: "Auditor", path: "/admin" },
-  { id: "admin-analyst", name: "Aline Umutoni", email: "analyst@huzaestate.com", password: "analyst1234", roles: ["administrator"], adminRole: "platform_analyst", isApprovedSeller: false, portal: "Platform Analyst", path: "/admin" },
-] as const;
+function deriveActiveRole(account: Account, preferred?: string | null): AccountRole {
+  if (preferred && account.roles.includes(preferred as AccountRole)) return preferred as AccountRole;
+  if (account.roles.includes("administrator")) return "administrator";
+  if (account.roles.includes("contractor")) return "contractor";
+  if (account.roles.includes("professional")) return "professional";
+  if (account.isApprovedSeller && account.roles.includes("seller_manager")) return "seller_manager";
+  return "customer";
+}
 
-const ALL_LOGIN_ACCOUNTS: readonly DemoAccount[] = [...DEMO_ACCOUNTS, ...ADMIN_DEMO_ACCOUNTS];
+async function parseErrorMessage(res: Response): Promise<string> {
+  try {
+    const data = await res.json();
+    return data?.message || data?.error || "Something went wrong. Please try again.";
+  } catch {
+    return "Something went wrong. Please try again.";
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isApprovedSeller, setIsApprovedSeller] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [account, setAccount] = useState<DemoAccount | null>(null);
+  const [account, setAccount] = useState<Account | null>(null);
   const [activeRole, setActiveRole] = useState<AccountRole>("customer");
+  const [token, setToken] = useState<string | null>(null);
+
+  const applySession = (nextToken: string, nextAccount: Account) => {
+    let preferredRole: string | null = null;
+    try { preferredRole = localStorage.getItem(ROLE_STORAGE_KEY); } catch { /* ignore */ }
+    const role = deriveActiveRole(nextAccount, preferredRole);
+    setToken(nextToken);
+    setAccount(nextAccount);
+    setIsLoggedIn(true);
+    setIsApprovedSeller(nextAccount.isApprovedSeller);
+    setActiveRole(role);
+    try {
+      localStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
+      localStorage.setItem(ROLE_STORAGE_KEY, role);
+    } catch { /* ignore */ }
+  };
+
+  const clearSession = () => {
+    setToken(null);
+    setAccount(null);
+    setIsLoggedIn(false);
+    setIsApprovedSeller(false);
+    setActiveRole("customer");
+    try {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(ROLE_STORAGE_KEY);
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
-    try {
-      const isSellerStored = localStorage.getItem(SELLER_STORAGE_KEY) === "true";
-      const isAuthStored = localStorage.getItem(STORAGE_KEY) === "true";
-      
-      // Auto-repair: If they are a seller, they must be logged in.
-      const effectivelyLoggedIn = isAuthStored || isSellerStored;
-      
-      setIsLoggedIn(effectivelyLoggedIn);
-      setIsApprovedSeller(isSellerStored);
-      
-      if (isSellerStored && !isAuthStored) {
-        localStorage.setItem(STORAGE_KEY, "true");
-        if (!localStorage.getItem(ROLE_STORAGE_KEY)) {
-          localStorage.setItem(ROLE_STORAGE_KEY, "seller_manager");
-        }
-      }
-      
-      const storedAccount = ALL_LOGIN_ACCOUNTS.find((item) => item.id === localStorage.getItem(ACCOUNT_STORAGE_KEY)) ?? null;
-      setAccount(storedAccount);
-      const storedRole = localStorage.getItem(ROLE_STORAGE_KEY) as AccountRole | null;
-      if (storedRole && (!storedAccount || storedAccount.roles.includes(storedRole))) {
-        setActiveRole(storedRole);
-      }
-    } catch {
-      // localStorage unavailable, stay logged out
-    } finally {
+    let storedToken: string | null = null;
+    try { storedToken = localStorage.getItem(TOKEN_STORAGE_KEY); } catch { /* ignore */ }
+    if (!storedToken) {
+      // No stored session to validate — reading that fact requires a one-time client sync.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAuthReady(true);
+      return;
     }
+    (async () => {
+      try {
+        // Roles/adminRole/isApprovedSeller are re-fetched live from the backend on every
+        // load instead of trusted from a cached blob — access is driven by MongoDB, not
+        // a value frozen at the moment the token was issued.
+        const res = await fetch(`${API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${storedToken}` },
+        });
+        if (!res.ok) throw new Error("unauthenticated");
+        const data = await res.json();
+        applySession(storedToken as string, data.account as Account);
+      } catch {
+        clearSession();
+      } finally {
+        setIsAuthReady(true);
+      }
+    })();
   }, []);
 
-  const login = () => {
-    setIsLoggedIn(true);
+  const signup = async (input: SignupInput): Promise<AuthResult> => {
     try {
-      localStorage.setItem(STORAGE_KEY, "true");
+      const res = await fetch(`${API_URL}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web" },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      applySession(data.token as string, nextAccount);
+      return { ok: true, account: nextAccount };
     } catch {
-      // ignore
+      return { ok: false, error: "Could not reach the server. Please try again." };
     }
   };
 
-  const loginWithCredentials = (email: string, password: string) => {
-    const account = ALL_LOGIN_ACCOUNTS.find(
-      (a) => a.email.toLowerCase() === email.trim().toLowerCase() && a.password === password
-    );
-    if (!account) return false;
-
-    setIsLoggedIn(true);
-    setIsApprovedSeller(account.isApprovedSeller);
-    setAccount(account);
-    const destinationRole: AccountRole = account.roles.includes("administrator") ? "administrator" : account.roles.includes("contractor") ? "contractor" : account.roles.includes("professional") ? "professional" : account.isApprovedSeller ? "seller_manager" : "customer";
-    setActiveRole(destinationRole);
+  const loginWithCredentials = async (email: string, password: string, rememberMe = false): Promise<AuthResult> => {
     try {
-      localStorage.setItem(STORAGE_KEY, "true");
-      localStorage.setItem(ACCOUNT_STORAGE_KEY, account.id);
-      localStorage.setItem(ROLE_STORAGE_KEY, destinationRole);
-      if (account.isApprovedSeller) {
-        localStorage.setItem(SELLER_STORAGE_KEY, "true");
-      } else {
-        localStorage.removeItem(SELLER_STORAGE_KEY);
-      }
+      const res = await fetch(`${API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web" },
+        body: JSON.stringify({ email, password, rememberMe }),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      applySession(data.token as string, nextAccount);
+      return { ok: true, account: nextAccount };
     } catch {
-      // ignore
+      return { ok: false, error: "Could not reach the server. Please try again." };
     }
-    return true;
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
-    setIsApprovedSeller(false);
-    setAccount(null);
-    setActiveRole("customer");
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(SELLER_STORAGE_KEY);
-      localStorage.removeItem(ACCOUNT_STORAGE_KEY);
-      localStorage.removeItem(ROLE_STORAGE_KEY);
-    } catch {
-      // ignore
+    const activeToken = token;
+    clearSession();
+    if (activeToken) {
+      // Best-effort: clears the httpOnly cookie server-side too. The token itself is
+      // stateless, so failure here doesn't leave the client in a logged-in state.
+      fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${activeToken}` },
+      }).catch(() => { /* ignore */ });
     }
   };
 
@@ -178,25 +240,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const applyAsSeller = () => {
-    setIsLoggedIn(true);
     setIsApprovedSeller(true);
-    // If they aren't fully signed in with an account, we mock a basic role so the UI works
-    if (!account) {
-      setActiveRole("seller_manager");
-    }
+    setAccount((prev) => (prev ? { ...prev, isApprovedSeller: true } : prev));
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
+    if (!token) return { ok: false, error: "Please sign in again." };
     try {
-      localStorage.setItem(STORAGE_KEY, "true");
-      localStorage.setItem(SELLER_STORAGE_KEY, "true");
-      if (!account) {
-        localStorage.setItem(ROLE_STORAGE_KEY, "seller_manager");
-      }
+      const res = await fetch(`${API_URL}/auth/change-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      setAccount(nextAccount);
+      return { ok: true, account: nextAccount };
     } catch {
-      // ignore
+      return { ok: false, error: "Could not reach the server. Please try again." };
+    }
+  };
+
+  const createUser = async (input: CreateUserInput): Promise<CreateUserResult> => {
+    if (!token) return { ok: false, error: "Please sign in again." };
+    try {
+      const res = await fetch(`${API_URL}/auth/admin/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      return { ok: true, temporaryPassword: data.temporaryPassword as string };
+    } catch {
+      return { ok: false, error: "Could not reach the server. Please try again." };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, loginWithCredentials, logout, isApprovedSeller, applyAsSeller, isAuthReady, account, activeRole, switchRole }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, applyAsSeller, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser }}>
       {children}
     </AuthContext.Provider>
   );

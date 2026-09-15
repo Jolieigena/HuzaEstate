@@ -1,6 +1,6 @@
 import type { ManagerTab } from '@/lib/manager/types';
 
-const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string; badge?: number; badgeTone?: 'default' | 'alert' }[] = [
+const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string }[] = [
   {
     id: 'overview',
     label: 'Overview',
@@ -15,8 +15,6 @@ const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string; badge?: numb
     id: 'applications',
     label: 'Offers & Inquiries',
     iconPath: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-    badge: 4,
-    badgeTone: 'alert',
   },
   {
     id: 'payments',
@@ -25,40 +23,57 @@ const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string; badge?: numb
   },
 ];
 
-export default function ManagerSidebar({ activeTab, setActiveTab, listingCount, applicationCount }: {
+interface ManagerNavLinksProps {
   activeTab: ManagerTab;
   setActiveTab: (tab: ManagerTab) => void;
   listingCount: number;
   applicationCount: number;
-}) {
+}
+
+/** Same nav-item structure/styling as AdminNavLinks — these are buttons switching an
+ *  internal tab (not routes, since Manager Portal doesn't have sub-pages), but they
+ *  should look identical to every other dashboard-style nav in the app. Exported
+ *  separately so the mobile drawer can reuse it, matching AdminSidebar's pattern. */
+export function ManagerNavLinks({ activeTab, setActiveTab, listingCount, applicationCount }: ManagerNavLinksProps) {
+  const countFor = (id: ManagerTab) => (id === 'listings' ? listingCount : id === 'applications' ? applicationCount : undefined);
+
   return (
-    <aside className="lg:w-64 flex-shrink-0">
-      <div className="sticky top-28 flex flex-col gap-2">
-        <nav className="flex flex-col gap-2">
-          {NAV_ITEMS.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex items-center justify-between px-4 py-3 rounded-xl font-semibold transition-all ${
-                activeTab === item.id ? 'bg-blue-600/10 text-blue-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath}></path></svg>
-                {item.label}
-              </div>
-              {(item.badge !== undefined || item.id === 'listings' || item.id === 'applications') && (
-                <span
-                  className={`text-xs font-bold px-2 py-0.5 rounded-full shadow-sm ${
-                    item.badgeTone === 'alert' ? 'bg-red-500 text-white' : 'bg-white text-slate-900 border border-slate-100'
-                  }`}
-                >
-                  {item.id === 'listings' ? listingCount : item.id === 'applications' ? applicationCount : item.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </nav>
+    <nav aria-label="Manager navigation" className="flex flex-col gap-1 px-2">
+      {NAV_ITEMS.map((item) => {
+        const active = activeTab === item.id;
+        const count = countFor(item.id);
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setActiveTab(item.id)}
+            aria-current={active ? "page" : undefined}
+            className={`flex items-center justify-between gap-3 px-3 py-3 rounded-xl font-semibold transition-all text-left ${active ? "bg-[#2ec440]/10 text-[#2ec440]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
+          >
+            <span className="flex items-center gap-3 min-w-0">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
+              </svg>
+              <span className="truncate">{item.label}</span>
+            </span>
+            {count !== undefined && (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${active ? "bg-[#2ec440] text-white" : "bg-slate-200 text-slate-600"}`}>
+                {count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+/** Desktop manager sidebar — same sticky full-height rail as AdminSidebar. */
+export default function ManagerSidebar(props: ManagerNavLinksProps) {
+  return (
+    <aside className="hidden lg:flex flex-col flex-shrink-0 border-r border-slate-100 bg-white sticky top-[65px] h-[calc(100vh-65px)] w-64">
+      <div className="flex-grow overflow-y-auto py-4">
+        <ManagerNavLinks {...props} />
       </div>
     </aside>
   );

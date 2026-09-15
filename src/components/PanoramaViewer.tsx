@@ -12,7 +12,11 @@ interface PanoramaViewerProps {
 /** Embedded, click-and-drag 360° look-around viewer for a property's
  *  panorama — served from our own domain via panoUrl, rendered with a
  *  self-hosted copy of Pannellum (no CDN dependency, see pannellumLoader). */
-export default function PanoramaViewer({ panoUrl, className = '' }: PanoramaViewerProps) {
+export default function PanoramaViewer(props: PanoramaViewerProps) {
+  return <PanoramaViewerContent key={props.panoUrl} {...props} />;
+}
+
+function PanoramaViewerContent({ panoUrl, className = '' }: PanoramaViewerProps) {
   const rawId = useId().replace(/[^a-zA-Z0-9]/g, '');
   const elementId = `pano-${rawId}`;
   const viewerRef = useRef<{ destroy: () => void } | null>(null);
@@ -20,7 +24,6 @@ export default function PanoramaViewer({ panoUrl, className = '' }: PanoramaView
 
   useEffect(() => {
     let cancelled = false;
-    setStatus('loading');
 
     loadPannellum()
       .then((pannellum) => {
@@ -43,7 +46,6 @@ export default function PanoramaViewer({ panoUrl, className = '' }: PanoramaView
       viewerRef.current?.destroy();
       viewerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elementId, panoUrl]);
 
   if (status === 'error') {

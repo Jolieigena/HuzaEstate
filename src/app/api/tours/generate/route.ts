@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getActiveTourProvider } from '@/lib/tours/provider';
 import { TourProviderUnavailableError, TourProviderRequestError, type GenerationInput } from '@/lib/tours/provider/types';
 import { buildPromptFromProperty, type PropertyPromptInput } from '@/lib/tours/promptBuilder';
-import { getAzimuthForCategory } from '@/lib/photoCategories';
+import sharp from 'sharp';
 import { upsertTourRecord } from '@/lib/tours/repository';
 import type { TourScene } from '@/lib/tours/types';
 
@@ -87,12 +87,11 @@ export async function POST(request: Request) {
     return 0;
   });
 
-  let inputList: { category: string; input: GenerationInput }[] = [];
+  const inputList: { category: string; input: GenerationInput }[] = [];
   
   if (allUsablePhotos.length > 0) {
     // RECONSTRUCTION EXPERIMENT:
     const capped = allUsablePhotos.slice(0, 8);
-    const sharp = require('sharp');
     
     const processedImages = await Promise.all(capped.map(async (p) => {
       let buffer: Buffer;
@@ -147,7 +146,6 @@ export async function POST(request: Request) {
   const provider = getActiveTourProvider();
 
   try {
-    const scenes: any[] = [];
     
     // Fire all generation requests in parallel
     const promises = inputList.map(async ({ category, input }): Promise<TourScene> => {
@@ -182,7 +180,7 @@ export async function POST(request: Request) {
 
     if (propertyId) {
       await upsertTourRecord(propertyId, {
-        status: overallStatus as any,
+        status: overallStatus,
         phase: overallStatus === 'failed' ? 'failed' : 'generating',
         scenes: generatedScenes,
         providerMode: provider.mode,

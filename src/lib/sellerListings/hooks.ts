@@ -1,35 +1,44 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { SellerListingsStoreEngine } from "./store";
+import { useEffect, useState } from "react";
 import { mockProperties } from "@/lib/data";
 import type { Property } from "@/lib/properties/types";
 import { usePropertyOverrides } from "@/lib/propertyOverrides/hooks";
 import { applyOverride } from "@/lib/propertyOverrides/store";
 
-const EMPTY: Property[] = [];
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
-// getServerSnapshot is pinned to a fixed empty array (not the live
-// localStorage-backed value) for the same reason as src/lib/tours/hooks.ts:
-// there's no localStorage on the server, so SSR/hydration must see a
-// consistent "no seller listings yet" result, or React's hydration-mismatch
-// check trips the moment a visitor who has already posted a listing
-// reloads the page.
-export function useSellerListings(): Property[] {
-  return useSyncExternalStore(
-    SellerListingsStoreEngine.subscribe,
-    () => SellerListingsStoreEngine.getAll(),
-    () => EMPTY
-  );
+/** Real, backend-posted listings (property-service, MongoDB-backed) — supersedes the old
+ *  localStorage-based seller-listings store. Fetched fresh on every mount rather than
+ *  cached, so a page navigated to right after posting a new listing sees it immediately. */
+function useBackendProperties(): Property[] {
+  const [properties, setProperties] = useState<Property[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`${PROPERTY_API_URL}/properties?limit=200`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed to load properties"))))
+      .then((data) => {
+        if (!cancelled) setProperties(data.properties as Property[]);
+      })
+      .catch(() => {
+        // Network/backend unavailable — fall back to just the curated fixtures below
+        // rather than leaving the page blank.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return properties;
 }
 
-/** mockProperties plus anything a seller has posted this session/browser,
- *  with any per-property edits (see propertyOverrides) applied on top —
- *  so an edited title/price/image shows up everywhere a property is read,
- *  for both curated and seller-posted listings alike. */
+/** Real backend-posted listings plus the curated mockProperties fixtures (so the
+ *  marketplace still looks populated before many real listings exist), with any
+ *  per-property edits (see propertyOverrides) applied on top. */
 export function useAllProperties(): Property[] {
-  const sellerListings = useSellerListings();
+  const backendProperties = useBackendProperties();
   const overrides = usePropertyOverrides();
-  const base = sellerListings.length ? [...sellerListings, ...mockProperties] : mockProperties;
+  const base = [...backendProperties, ...mockProperties];
   return Object.keys(overrides).length ? base.map((p) => applyOverride(p, overrides)) : base;
 }

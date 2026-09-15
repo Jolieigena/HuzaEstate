@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 type SearchMode = "sale" | "rent";
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<SearchMode>("sale");
+  const mode: SearchMode = "sale";
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -35,7 +34,7 @@ export default function SearchBar() {
           </svg>
           <input
             type="text"
-            placeholder={mode === "rent" ? "City, neighbourhood or area…" : "City, neighbourhood or area…"}
+            placeholder="City, neighbourhood or area…"
             className="flex-grow py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent text-base font-medium"
             value={query}
             onChange={(e) => setQuery(e.target.value)}

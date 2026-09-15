@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Image from "@/components/PropertyImage";
 import { getMyProperties, MyProperty } from "@/lib/myProperties";
 import { RenovationPropertyInfo } from "@/lib/renovate/types";
 import RegisterPropertyModal from "./RegisterPropertyModal";
