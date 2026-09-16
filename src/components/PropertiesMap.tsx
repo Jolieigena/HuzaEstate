@@ -6,6 +6,9 @@ import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
 import TourWatchBadge from '@/components/TourWatchBadge';
+import { useIsFavorite } from '@/lib/favorites/hooks';
+import { FavoritesStoreEngine } from '@/lib/favorites/store';
+import { useToast } from '@/lib/toast-context';
 
 // Create custom glowing price marker
 const createPriceIcon = (price: number) => {
@@ -365,6 +368,76 @@ function CustomMapControls() {
   );
 }
 
+/** Popup content for one marker — its own component (not inlined in the .map() below)
+ *  so it can call the favorites hook per-property without breaking the rules of hooks. */
+function MapPropertyPopupCard({ property }: { property: Property }) {
+  const isSaved = useIsFavorite(property.id);
+  const { showToast } = useToast();
+
+  function toggleSaved(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const nowSaved = FavoritesStoreEngine.toggle(property.id);
+    showToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
+  }
+
+  return (
+    <div className="relative w-[340px]">
+      <TourWatchBadge propertyId={property.id} className="absolute top-5 left-5 z-10 !px-2 !py-1 !text-[10px]" />
+      <Link href={`/properties/${property.id}`} className="block w-full no-underline shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-2xl bg-white p-3 hover:-translate-y-1 transition-transform">
+      <div className="flex gap-4">
+        {/* Left: Image */}
+        <div className="relative w-28 h-28 rounded-xl overflow-hidden flex-shrink-0">
+          <Image
+            src={property.imageUrl}
+            alt={property.title}
+            fill
+            className="object-cover"
+          />
+        </div>
+
+        {/* Right: Info */}
+        <div className="flex flex-col justify-center flex-1 py-1 overflow-hidden">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#2ec440]"></div>
+              <span className="text-[11px] font-bold text-[#2ec440] capitalize">For {property.type}</span>
+            </div>
+            <button
+              onClick={toggleSaved}
+              className={`w-7 h-7 bg-white border rounded-full flex items-center justify-center shadow-sm transition-colors ${isSaved ? 'text-red-500 border-red-200' : 'text-gray-400 border-slate-100 hover:text-[#2ec440] hover:border-[#2ec440]/30'}`}
+              title={isSaved ? 'Remove from saved' : 'Save Property'}
+              aria-pressed={isSaved}
+            >
+              <svg className="w-3.5 h-3.5" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            </button>
+          </div>
+
+          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">${property.price.toLocaleString()}</div>
+
+          <div className="flex items-center gap-2 text-slate-600 text-[11px] font-bold mb-1 w-full overflow-hidden">
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+              {property.bedrooms} bed
+            </div>
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              {property.bathrooms} bath
+            </div>
+            <div className="flex items-center gap-1 whitespace-nowrap">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+              {property.sqm} sqft
+            </div>
+          </div>
+
+          <div className="text-[11px] text-slate-400 font-medium truncate mt-1">{property.location}, {property.city}</div>
+        </div>
+      </div>
+      </Link>
+    </div>
+  );
+}
+
 interface PropertiesMapProps {
   properties: Property[];
   viewMode?: 'map' | 'grid';
@@ -433,54 +506,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
             icon={createPriceIcon(property.price)}
           >
             <Popup className="property-popup">
-              <div className="relative w-[340px]">
-                <TourWatchBadge propertyId={property.id} className="absolute top-5 left-5 z-10 !px-2 !py-1 !text-[10px]" />
-                <Link href={`/properties/${property.id}`} className="block w-full no-underline shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] rounded-2xl bg-white p-3 hover:-translate-y-1 transition-transform">
-                <div className="flex gap-4">
-                  {/* Left: Image */}
-                  <div className="relative w-28 h-28 rounded-xl overflow-hidden flex-shrink-0">
-                    <Image
-                      src={property.imageUrl}
-                      alt={property.title}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-
-                  {/* Right: Info */}
-                  <div className="flex flex-col justify-center flex-1 py-1 overflow-hidden">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#2ec440]"></div>
-                        <span className="text-[11px] font-bold text-[#2ec440] capitalize">For {property.type}</span>
-                      </div>
-                      <button className="w-7 h-7 bg-white border border-slate-100 rounded-full flex items-center justify-center text-gray-400 hover:text-[#2ec440] hover:border-[#2ec440]/30 shadow-sm transition-colors">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                      </button>
-                    </div>
-                    
-                    <div className="font-black text-slate-900 text-[18px] tracking-tight mb-2">${property.price.toLocaleString()}</div>
-                    
-                    <div className="flex items-center gap-2 text-slate-600 text-[11px] font-bold mb-1 w-full overflow-hidden">
-                      <div className="flex items-center gap-1 whitespace-nowrap">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                        {property.bedrooms} bed
-                      </div>
-                      <div className="flex items-center gap-1 whitespace-nowrap">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                        {property.bathrooms} bath
-                      </div>
-                      <div className="flex items-center gap-1 whitespace-nowrap">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-                        {property.sqm} sqft
-                      </div>
-                    </div>
-                    
-                    <div className="text-[11px] text-slate-400 font-medium truncate mt-1">{property.location}, {property.city}</div>
-                  </div>
-                </div>
-                </Link>
-              </div>
+              <MapPropertyPopupCard property={property} />
             </Popup>
           </Marker>
         ))}

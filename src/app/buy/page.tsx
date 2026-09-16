@@ -21,7 +21,7 @@ export default function BuyPage() {
           />
         </div>
         <div className="relative max-w-7xl mx-auto px-6 sm:px-10 text-center">
-          <h1 className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tight">Find your <span className="text-[#2ec440]">forever</span> home.</h1>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">Find your <span className="text-[#2ec440]">forever</span> home.</h1>
           <p className="text-xl text-slate-200 max-w-2xl mx-auto mb-12 font-medium">Discover the most exclusive properties for sale across Rwanda. Start your journey here.</p>
           
           {/* Search Bar */}
@@ -57,7 +57,7 @@ export default function BuyPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8">
-              <h3 className="text-2xl font-bold text-white mb-2">Luxury Villas</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Luxury Villas</h3>
               <p className="text-slate-300 font-medium">Explore premium estates with pools and expansive gardens.</p>
             </div>
           </Link>
@@ -72,7 +72,7 @@ export default function BuyPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8">
-              <h3 className="text-2xl font-bold text-white mb-2">City Apartments</h3>
+              <h3 className="text-xl font-bold text-white mb-2">City Apartments</h3>
               <p className="text-slate-300 font-medium">Modern high-rises in the heart of Kigali's business district.</p>
             </div>
           </Link>
@@ -87,7 +87,7 @@ export default function BuyPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
             <div className="absolute bottom-8 left-8 right-8">
-              <h3 className="text-2xl font-bold text-white mb-2">Family Homes</h3>
+              <h3 className="text-xl font-bold text-white mb-2">Family Homes</h3>
               <p className="text-slate-300 font-medium">Quiet neighborhoods with great schools and spacious yards.</p>
             </div>
           </Link>
@@ -99,7 +99,7 @@ export default function BuyPage() {
       <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">Homes for sale right now</h2>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">Homes for sale right now</h2>
             <p className="text-slate-500 text-lg">A sample of what&apos;s currently listed across Rwanda.</p>
           </div>
           <Link
@@ -117,7 +117,7 @@ export default function BuyPage() {
       <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
         <div className="bg-slate-900 rounded-3xl p-10 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
-            <h3 className="text-2xl font-bold text-white mb-2">Not sure what you can afford?</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Not sure what you can afford?</h3>
             <p className="text-slate-300">Estimate your monthly payment with our mortgage calculator before you start touring homes.</p>
           </div>
           <Link

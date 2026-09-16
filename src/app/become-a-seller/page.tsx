@@ -25,7 +25,7 @@ export default function BecomeASellerPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-24 px-4 sm:px-6">
       <div className="w-full max-w-[500px]">
-          <h1 className="text-3xl font-black text-slate-900 mb-2">Apply to become a seller</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Apply to become a seller</h1>
           <p className="text-slate-500 mb-8">Tell us a bit about yourself. Once approved, you&apos;ll get access to the Manager Portal to list and manage your properties.</p>
 
           <form className="space-y-5" onSubmit={handleSubmit}>

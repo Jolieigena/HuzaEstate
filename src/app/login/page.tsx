@@ -41,7 +41,7 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="text-3xl font-black text-slate-900 mb-2">Welcome back</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
       <p className="text-slate-500 mb-8">Please enter your details to sign in.</p>
 
       {error && (
@@ -175,7 +175,7 @@ export default function LoginPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
             <div className="absolute bottom-12 left-12 right-12">
-              <h2 className="text-4xl font-bold text-white mb-4 leading-tight">{img.title}</h2>
+              <h2 className="text-3xl font-bold text-white mb-4 leading-tight">{img.title}</h2>
               <p className="text-slate-300 text-lg">{img.desc}</p>
             </div>
           </div>

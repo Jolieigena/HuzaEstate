@@ -221,7 +221,7 @@ export default function DreamHomePanel({
               <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.9 2.7L8.6 19l-2.7.9L5 22.6l-.9-2.7L1.4 19l2.7-.9L5 15zM19 15l.9 2.7 2.7.9-2.7.9L19 22.6l-.9-2.7-2.7-.9 2.7-.9L19 15z" />
             </svg>
           </span>
-          <h2 className="font-black text-slate-900 text-[16px] leading-tight">
+          <h2 className="font-bold text-slate-900 text-[16px] leading-tight">
             Describe Your<br />Dream Home
           </h2>
         </div>

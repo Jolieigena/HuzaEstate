@@ -48,7 +48,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/45" />
 
         <div className="relative z-10 w-full max-w-3xl px-6 text-center">
-          <h1 className="animate-fade-in-up text-4xl sm:text-5xl md:text-[3.75rem] font-extrabold text-white tracking-tight leading-[1.1] mb-3 drop-shadow-lg">
+          <h1 className="animate-fade-in-up text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight leading-[1.15] mb-3 drop-shadow-lg">
             Find, tour it, own it
           </h1>
           <p className="animate-fade-in-up text-white/90 text-base sm:text-lg font-medium mb-8 drop-shadow max-w-2xl mx-auto" style={{ animationDelay: "100ms" }}>
@@ -61,17 +61,17 @@ export default function Home() {
 
           <div className="animate-fade-in-up mt-10 flex items-center justify-center gap-6 sm:gap-10" style={{ animationDelay: "300ms" }}>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">2,500+</div>
+              <div className="text-lg sm:text-xl font-bold text-white drop-shadow">2,500+</div>
               <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Listings</div>
             </div>
             <div className="w-px h-8 bg-white/30"></div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">1,200+</div>
+              <div className="text-lg sm:text-xl font-bold text-white drop-shadow">1,200+</div>
               <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Families helped</div>
             </div>
             <div className="w-px h-8 bg-white/30"></div>
             <div>
-              <div className="text-xl sm:text-2xl font-extrabold text-white drop-shadow">30</div>
+              <div className="text-lg sm:text-xl font-bold text-white drop-shadow">30</div>
               <div className="text-[11px] font-semibold uppercase tracking-wide text-white/80">Districts covered</div>
             </div>
           </div>
@@ -93,7 +93,7 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/20 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <h3 className="text-2xl font-extrabold text-white mb-1.5 drop-shadow-sm">{action.title}</h3>
+                  <h3 className="text-xl font-bold text-white mb-1.5 drop-shadow-sm">{action.title}</h3>
                   <p className="text-white/80 text-[13px] leading-snug mb-4 max-w-[85%]">{action.description}</p>
                   <span className="inline-flex items-center gap-2 bg-white text-slate-900 font-bold text-sm px-5 py-2.5 rounded-full group-hover:bg-[#2ec440] group-hover:text-white transition-colors">
                     {action.cta}
@@ -112,7 +112,7 @@ export default function Home() {
           {/* Section Header */}
           <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
                 Curated Exclusive Properties
               </h2>
               <p className="text-slate-500 text-lg mt-2">Handpicked premium listings just for you.</p>
@@ -144,7 +144,7 @@ export default function Home() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">More than finding a property</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">More than finding a property</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">
               HuzaEstate helps you discover properties, shape new ideas, and improve the spaces you already own. From interior styling to full commercial and residential builds, our team is here for you.
             </p>
@@ -154,7 +154,7 @@ export default function Home() {
             <Reveal className="bg-white border border-slate-200 rounded-3xl p-3 shadow-sm hover:shadow-xl transition-shadow duration-300">
               <ProcessVideoCard video={buildVideos.overview} aspectClassName="aspect-video" />
               <div className="p-5">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Design & Build</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Design & Build</h3>
                 <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
                   Describe your ideas and requirements to explore personalised property concepts with Huza AI before you build.
                 </p>
@@ -168,7 +168,7 @@ export default function Home() {
             <Reveal delay={100} className="bg-white border border-slate-200 rounded-3xl p-3 shadow-sm hover:shadow-xl transition-shadow duration-300">
               <ProcessVideoCard video={renovateVideos.overview} aspectClassName="aspect-video" />
               <div className="p-5">
-                <h3 className="text-xl font-bold text-slate-900 mb-2">Transform your current space</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Transform your current space</h3>
                 <p className="text-slate-500 text-[15px] leading-relaxed mb-5">
                   Upload your existing property and explore renovation directions with Huza AI before committing to the work.
                 </p>

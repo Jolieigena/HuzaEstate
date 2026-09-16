@@ -18,7 +18,7 @@ export default function SellPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-6">
                 HuzaEstate Seller Network
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight mb-6 leading-[1.1]">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-6 leading-[1.1]">
                 Sell your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more.</span>
               </h1>
               <p className="text-slate-500 text-base sm:text-lg mb-10 leading-relaxed">
@@ -62,7 +62,7 @@ export default function SellPage() {
                   <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
-                  <div className="text-lg sm:text-xl font-black text-slate-900">98%</div>
+                  <div className="text-lg sm:text-xl font-bold text-slate-900">98%</div>
                   <div className="text-[11px] sm:text-xs font-semibold text-slate-500">List to Sale Price</div>
                 </div>
               </div>
@@ -77,19 +77,19 @@ export default function SellPage() {
         <div className="max-w-7xl mx-auto px-6 sm:px-10 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-slate-200/60 text-center">
             <div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">$450M+</div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">$450M+</div>
               <div className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Property Sold</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">14</div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">14</div>
               <div className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Days on Market</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">12k+</div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">12k+</div>
               <div className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Active Buyers</div>
             </div>
             <div className="hidden md:block">
-              <div className="text-2xl sm:text-3xl font-black text-slate-900 mb-1">24/7</div>
+              <div className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">24/7</div>
               <div className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wider">Agent Support</div>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function SellPage() {
       <section id="how-it-works" className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-6 sm:px-10">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-4">How it works</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-4">How it works</h2>
             <p className="text-base text-slate-500">Selling your property shouldn't be stressful. Our agents handle the marketing, negotiations, and paperwork so you can focus on your next chapter.</p>
           </div>
           
@@ -111,7 +111,7 @@ export default function SellPage() {
             {/* Step 1 */}
             <div className="text-center relative bg-slate-50 group hover:-translate-y-1 transition-transform duration-300">
               <div className="w-20 h-20 mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:shadow-md transition-shadow">
-                <span className="text-2xl font-black text-[#2ec440]">1</span>
+                <span className="text-xl font-bold text-[#2ec440]">1</span>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-3">Valuation & Prep</h3>
               <p className="text-sm text-slate-500 px-4">We analyze market data to price your property perfectly, and dispatch our professional photography team (including 3D tours).</p>
@@ -120,7 +120,7 @@ export default function SellPage() {
             {/* Step 2 */}
             <div className="text-center relative bg-slate-50 group hover:-translate-y-1 transition-transform duration-300">
               <div className="w-20 h-20 mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:shadow-md transition-shadow">
-                <span className="text-2xl font-black text-[#2ec440]">2</span>
+                <span className="text-xl font-bold text-[#2ec440]">2</span>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-3">Market Launch</h3>
               <p className="text-sm text-slate-500 px-4">Your property goes live on our platform and is instantly matched with thousands of pre-approved buyers looking in your area.</p>
@@ -129,7 +129,7 @@ export default function SellPage() {
             {/* Step 3 */}
             <div className="text-center relative bg-slate-50 group hover:-translate-y-1 transition-transform duration-300">
               <div className="w-20 h-20 mx-auto bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:shadow-md transition-shadow">
-                <span className="text-2xl font-black text-[#2ec440]">3</span>
+                <span className="text-xl font-bold text-[#2ec440]">3</span>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-3">Closing</h3>
               <p className="text-sm text-slate-500 px-4">Our agents fiercely negotiate the best offers on your behalf and guide you through a seamless, digital closing process.</p>
@@ -146,7 +146,7 @@ export default function SellPage() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-xs uppercase tracking-wide mb-6">
                 Clear & Transparent
               </div>
-              <h2 className="text-2xl md:text-3xl font-extrabold mb-5 tracking-tight">No hidden fees.<br/>Just better results.</h2>
+              <h2 className="text-xl md:text-2xl font-bold mb-5 tracking-tight">No hidden fees.<br/>Just better results.</h2>
               <p className="text-slate-300 text-base mb-8 leading-relaxed">
                 Traditional brokerages keep you in the dark. We believe in total transparency so you know exactly what you'll net at closing before you even register.
               </p>
@@ -168,7 +168,7 @@ export default function SellPage() {
             <div className="bg-white rounded-3xl p-8 sm:p-10 shadow-2xl text-slate-900 text-center relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-2 bg-[#2ec440]"></div>
               <h3 className="text-xl font-bold mb-2">HuzaEstate Fee</h3>
-              <div className="text-5xl sm:text-6xl font-black text-[#2ec440] mb-2 tracking-tighter">2.5%</div>
+              <div className="text-4xl sm:text-5xl font-bold text-[#2ec440] mb-2 tracking-tighter">2.5%</div>
               <p className="text-slate-500 text-sm font-medium mb-8">Paid at closing. Never before.</p>
               
               <Link href="/become-a-seller" className="block w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 px-6 rounded-xl transition-colors shadow-md text-base">
@@ -182,7 +182,7 @@ export default function SellPage() {
       {/* Final CTA */}
       <section className="bg-slate-50 py-20 border-t border-slate-200/60">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900 mb-5">Ready to make a move?</h2>
+          <h2 className="text-2xl font-bold text-slate-900 mb-5">Ready to make a move?</h2>
           <p className="text-base sm:text-lg text-slate-500 mb-8">Register your seller account today to unlock your dedicated listing dashboard.</p>
           <Link href="/become-a-seller" className="inline-block bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 px-8 rounded-xl transition-colors shadow-md text-base">
             Create Seller Account

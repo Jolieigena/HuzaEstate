@@ -220,7 +220,7 @@ export default function BuildPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-semibold text-xs uppercase tracking-wide mb-6">
               HuzaEstate Build
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1]">
               Describe your dream home. Watch it take shape.
             </h1>
             <p className="text-slate-600 text-lg leading-relaxed mt-6 max-w-xl">
@@ -256,7 +256,7 @@ export default function BuildPage() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-16">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">How HuzaEstate Build works</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">How HuzaEstate Build works</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">
               You&apos;re guided from your initial idea to a saved concept that can be shared with a professional — one confirmed step at a time.
             </p>
@@ -266,7 +266,7 @@ export default function BuildPage() {
             {STEPS.map((step, index) => (
               <Reveal key={step.number} delay={index * 80} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                 {/* Large Background Number */}
-                <div className="absolute -top-4 -right-4 text-[120px] font-black text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
+                <div className="absolute -top-4 -right-4 text-[120px] font-bold text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
                   {step.number}
                 </div>
                 
@@ -289,7 +289,7 @@ export default function BuildPage() {
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">See Huza AI in action</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See Huza AI in action</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4 max-w-2xl mx-auto">
               This is a public demonstration of how a conversation with Huza AI works, not the working agent.
             </p>
@@ -380,7 +380,7 @@ export default function BuildPage() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">What you can create</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">What you can create</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">Floor plans and generated visuals shown here are conceptual, not construction-ready.</p>
           </Reveal>
 
@@ -400,7 +400,7 @@ export default function BuildPage() {
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
             <div>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Design examples</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Design examples</h2>
               <p className="text-slate-500 text-lg mt-2">A sample of the directions Huza AI can explore with you.</p>
             </div>
           </Reveal>
@@ -441,7 +441,7 @@ export default function BuildPage() {
       <section className="w-full bg-slate-900 py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">From an idea to a professionally reviewed project</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">From an idea to a professionally reviewed project</h2>
             <p className="text-slate-300 text-lg leading-relaxed mt-4">
               Huza AI helps you explore and organise your requirements, but technical documents must be reviewed and prepared by qualified professionals.
             </p>
@@ -476,7 +476,7 @@ export default function BuildPage() {
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-3xl mx-auto">
           <Reveal className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Build FAQ</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Build FAQ</h2>
           </Reveal>
           <Reveal delay={100}>
             <Accordion items={FAQ_ITEMS} />
@@ -487,7 +487,7 @@ export default function BuildPage() {
       {/* Section 8: Final CTA */}
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
         <Reveal className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Your future home can begin with one idea.</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-4">Your future home can begin with one idea.</h2>
           <p className="text-slate-600 text-lg leading-relaxed mb-10">Create an account, describe what you want and start exploring your first home concept.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -532,7 +532,7 @@ export default function BuildPage() {
         {activeExample && (
           <div className="p-6 sm:p-8">
             <div className="flex items-start justify-between gap-4 mb-5">
-              <h2 id={exampleTitleId} className="text-2xl font-black text-slate-900">{activeExample.title}</h2>
+              <h2 id={exampleTitleId} className="text-xl font-bold text-slate-900">{activeExample.title}</h2>
               <button
                 type="button"
                 data-dialog-close

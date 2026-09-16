@@ -260,7 +260,7 @@ export default function RenovatePage() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-semibold text-xs uppercase tracking-wide mb-6">
               HuzaEstate Renovate
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1]">
               See what your space could become.
             </h1>
             <p className="text-slate-600 text-lg leading-relaxed mt-6 max-w-xl">
@@ -296,7 +296,7 @@ export default function RenovatePage() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-4xl mx-auto">
           <Reveal className="text-center mb-10">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">See the difference for yourself</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See the difference for yourself</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">Drag the handle, or use your keyboard&apos;s arrow keys, to compare an existing space with a renovation concept.</p>
           </Reveal>
           <Reveal delay={100}>
@@ -314,7 +314,7 @@ export default function RenovatePage() {
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-16">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">How HuzaEstate Renovate works</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">How HuzaEstate Renovate works</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">
               You&apos;re guided from your existing space to a saved renovation direction that can be shared with a contractor.
             </p>
@@ -324,7 +324,7 @@ export default function RenovatePage() {
             {STEPS.map((step, index) => (
               <Reveal key={step.number} delay={index * 80} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
                 {/* Large Background Number */}
-                <div className="absolute -top-4 -right-4 text-[120px] font-black text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
+                <div className="absolute -top-4 -right-4 text-[120px] font-bold text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
                   {step.number}
                 </div>
                 
@@ -345,7 +345,7 @@ export default function RenovatePage() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Renovation categories</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Renovation categories</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">Select a category to see what it typically needs and what you&apos;ll get back.</p>
           </Reveal>
 
@@ -373,7 +373,7 @@ export default function RenovatePage() {
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">See Huza AI in action</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See Huza AI in action</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4 max-w-2xl mx-auto">
               This is a public demonstration of how a conversation with Huza AI works, not the working agent.
             </p>
@@ -465,7 +465,7 @@ export default function RenovatePage() {
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">What you&apos;ll receive</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">What you&apos;ll receive</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4">Visual concepts help you plan. Structural or technical approval always comes from a qualified professional.</p>
           </Reveal>
 
@@ -484,7 +484,7 @@ export default function RenovatePage() {
       <section className="w-full bg-slate-900 py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-[1400px] mx-auto">
           <Reveal className="max-w-2xl mb-10">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Some changes need professional review</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Some changes need professional review</h2>
             <p className="text-slate-300 text-lg leading-relaxed mt-4">
               Changes involving the following may require inspection or approval before work begins:
             </p>
@@ -511,7 +511,7 @@ export default function RenovatePage() {
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
         <div className="max-w-3xl mx-auto">
           <Reveal className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Renovate FAQ</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Renovate FAQ</h2>
           </Reveal>
           <Reveal delay={100}>
             <Accordion items={FAQ_ITEMS} />
@@ -522,7 +522,7 @@ export default function RenovatePage() {
       {/* Section 9: Final CTA */}
       <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
         <Reveal className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">Reimagine the home you already have.</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-4">Reimagine the home you already have.</h2>
           <p className="text-slate-600 text-lg leading-relaxed mb-10">Upload your space, explain what needs to change and explore a renovation direction before committing to the work.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -571,7 +571,7 @@ export default function RenovatePage() {
                 <div className="w-10 h-10 rounded-full bg-[#2ec440]/10 flex items-center justify-center text-[#2ec440] flex-shrink-0">
                   {activeCategory.icon}
                 </div>
-                <h2 id={categoryTitleId} className="text-xl font-black text-slate-900">{activeCategory.title}</h2>
+                <h2 id={categoryTitleId} className="text-lg font-bold text-slate-900">{activeCategory.title}</h2>
               </div>
               <button
                 type="button"

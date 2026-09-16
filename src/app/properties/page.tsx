@@ -8,6 +8,19 @@ import { useVisibleListings } from '@/lib/admin/listings';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import type { Property } from '@/lib/properties/types';
+import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
+import { useSavedSearches } from '@/lib/savedSearches/hooks';
+import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
+import { useToast } from '@/lib/toast-context';
+
+type SortOption = 'default' | 'price-asc' | 'price-desc' | 'largest';
+
+const SORT_LABELS: Record<SortOption, string> = {
+  default: 'Homes for You',
+  'price-asc': 'Price: Low to High',
+  'price-desc': 'Price: High to Low',
+  largest: 'Largest',
+};
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -22,8 +35,9 @@ function countMatches(properties: Property[], filters: AIPropertyFilters): numbe
     if (filters.minSqm !== undefined && p.sqm < filters.minSqm) return false;
     if (filters.maxSqm !== undefined && p.sqm > filters.maxSqm) return false;
     if (filters.city) {
-      const c = filters.city.toLowerCase();
-      if (!p.city.toLowerCase().includes(c) && !p.location.toLowerCase().includes(c)) return false;
+      const cityTokens = filters.city.toLowerCase().split(/[\s,]+/).filter(Boolean);
+      const propText = `${p.location} ${p.city} rwanda`.toLowerCase();
+      if (!cityTokens.every((token) => propText.includes(token))) return false;
     }
     if (filters.keywords?.length) {
       const hay = `${p.title} ${p.description}`.toLowerCase();
@@ -157,7 +171,7 @@ function DreamHomePanel({
               </svg>
             </span>
             <div>
-              <h2 className="font-black text-slate-900 text-[18px] leading-tight">Describe Your<br/>Dream Home</h2>
+              <h2 className="font-bold text-slate-900 text-[18px] leading-tight">Describe Your<br/>Dream Home</h2>
               <p className="text-[12px] text-[#2ec440] font-semibold mt-0.5">Powered by HuzaEstate AI</p>
             </div>
           </div>
@@ -288,6 +302,12 @@ function PropertiesContent() {
   const [isDreamOpen, setIsDreamOpen] = useState(false);
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
 
+  const [sortBy, setSortBy] = useState<SortOption>('default');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(false);
+  const savedSearches = useSavedSearches();
+  const { showToast } = useToast();
+
   // Reset URL-backed fields during navigation, before rendering stale results.
   const query = searchParams.toString();
   const [previousQuery, setPreviousQuery] = useState(query);
@@ -301,10 +321,10 @@ function PropertiesContent() {
   const visibleProperties = useVisibleListings(allProperties);
 
   const filteredProperties = visibleProperties.filter((p) => {
-    const matchesSearch =
-      p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.city.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const propText = `${p.title} ${p.location} ${p.city} ${p.propertyType} rwanda`.toLowerCase();
+    const searchTokens = searchLower.split(/[\s,]+/).filter(Boolean);
+    const matchesSearch = searchTokens.length === 0 || searchTokens.every(token => propText.includes(token));
     const matchesType = filterType === 'all' || p.type === filterType;
     const matchesPropType = propertyTypeFilter === 'all' || p.propertyType === propertyTypeFilter.toLowerCase();
     let matchesPrice = true;
@@ -326,8 +346,9 @@ function PropertiesContent() {
       if (aiFilters.minSqm !== undefined) matchesAi = matchesAi && p.sqm >= aiFilters.minSqm;
       if (aiFilters.maxSqm !== undefined) matchesAi = matchesAi && p.sqm <= aiFilters.maxSqm;
       if (aiFilters.city) {
-        const c = aiFilters.city.toLowerCase();
-        matchesAi = matchesAi && (p.city.toLowerCase().includes(c) || p.location.toLowerCase().includes(c));
+        const cityTokens = aiFilters.city.toLowerCase().split(/[\s,]+/).filter(Boolean);
+        const propText = `${p.location} ${p.city} rwanda`.toLowerCase();
+        matchesAi = matchesAi && cityTokens.every((token) => propText.includes(token));
       }
       if (aiFilters.keywords?.length) {
         const hay = `${p.title} ${p.description}`.toLowerCase();
@@ -335,12 +356,34 @@ function PropertiesContent() {
       }
     }
     return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesSqm && matchesAi;
+  }).sort((a, b) => {
+    if (sortBy === 'price-asc') return a.price - b.price;
+    if (sortBy === 'price-desc') return b.price - a.price;
+    if (sortBy === 'largest') return b.sqm - a.sqm;
+    return 0;
   });
 
   function clearAll() {
     setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all');
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsFilter('all');
     setMinSqm(''); setMaxSqm(''); setAiFilters(null);
+  }
+
+  function handleSaveSearch() {
+    const criteria: SavedSearchCriteria = {
+      searchTerm: searchTerm.trim(),
+      filterType,
+      propertyTypeFilter,
+      minPrice: customMinPrice,
+      maxPrice: customMaxPrice,
+      bedsFilter,
+      minSqm,
+      maxSqm,
+    };
+    const res = SavedSearchesStoreEngine.save(criteria);
+    if (res === 'empty') showToast('Please enter a location or select a filter first.', 'error');
+    else if (res === 'duplicate') showToast('You already saved this search.', 'info');
+    else showToast('Search saved to your account!', 'success');
   }
 
   return (
@@ -440,7 +483,7 @@ function PropertiesContent() {
 
           {/* Save Search */}
           <div className="flex items-center w-full xl:w-auto justify-end mt-2 xl:mt-0">
-            <button className="text-[#2ec440] font-bold text-[14px] hover:bg-[#2ec440]/10 px-4 py-2 rounded-full transition-colors flex items-center gap-1">
+            <button onClick={handleSaveSearch} className="text-[#2ec440] font-bold text-[14px] hover:bg-[#2ec440]/10 px-4 py-2 rounded-full transition-colors flex items-center gap-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
               Save Search
             </button>
@@ -450,7 +493,7 @@ function PropertiesContent() {
         {/* ── Title row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl sm:text-[28px] font-bold text-slate-900 tracking-tight mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-1">
               {searchTerm.trim() ? titleCase(searchTerm.trim()) : 'Kigali, Rwanda'}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
@@ -458,9 +501,24 @@ function PropertiesContent() {
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-1 text-sm font-bold text-slate-900 cursor-pointer hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
-            Sort: <span className="text-slate-500">Homes for You</span>
-            <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+          <div className="relative">
+            <div onClick={() => setIsSortOpen(!isSortOpen)} className="hidden sm:flex items-center gap-1 text-sm font-bold text-slate-900 cursor-pointer hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors border border-slate-200 select-none">
+              Sort: <span className="text-slate-500">{SORT_LABELS[sortBy]}</span>
+              <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+            </div>
+            {isSortOpen && (
+              <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 w-48">
+                {(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => { setSortBy(opt); setIsSortOpen(false); }}
+                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors"
+                  >
+                    {SORT_LABELS[opt]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -468,7 +526,7 @@ function PropertiesContent() {
       {/* ── Property grid ─────────────────────────────────────────────────── */}
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-1 pb-12">
         {filteredProperties.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
             ))}
@@ -476,7 +534,7 @@ function PropertiesContent() {
         ) : (
           <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-4 max-w-2xl mx-auto shadow-sm">
             <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <h3 className="text-2xl font-bold text-slate-900 mb-2">No exact matches</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">
               {aiFilters ? "No listings match your dream home yet." : "Try changing or removing some of your filters."}
             </p>

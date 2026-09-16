@@ -103,7 +103,7 @@ function PostPropertyForm() {
       {/* Form */}
       <section className="max-w-3xl mx-auto px-6 sm:px-10 pt-32 pb-20">
         <div className="mb-10">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-3">List your property</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">List your property</h1>
           <p className="text-slate-500">Fill in the details below and your listing will go live immediately.</p>
         </div>
         {error && (

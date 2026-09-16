@@ -45,7 +45,7 @@ function ChangePasswordForm() {
 
   return (
     <div className="w-full max-w-[440px]">
-      <h1 className="text-3xl font-black text-slate-900 mb-2">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">
         {forced ? "Set a new password" : "Change your password"}
       </h1>
       <p className="text-slate-500 mb-8">

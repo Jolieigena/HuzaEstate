@@ -18,6 +18,29 @@
   --font-sans: var(--font-nunito-sans);
 }
 
+/* Sitewide typography is scaled down from Tailwind's defaults (line-heights are unitless
+ * ratios, so they stay proportional automatically). This lands the "too big and bold"
+ * feedback everywhere at once instead of hand-editing every className — new component
+ * code can keep using text-lg/font-bold/etc. as normal and inherit the smaller scale. */
+@theme {
+  --text-xs: 0.6875rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.125rem;
+  --text-2xl: 1.25rem;
+  --text-3xl: 1.5rem;
+  --text-4xl: 1.75rem;
+  --text-5xl: 2.125rem;
+  --text-6xl: 2.5rem;
+  --text-7xl: 3rem;
+  --text-8xl: 3.75rem;
+  --text-9xl: 5rem;
+
+  --font-weight-extrabold: 700;
+  --font-weight-black: 700;
+}
+
 /* There used to be an `@media (prefers-color-scheme: dark)` block here that swapped
  * --foreground to a near-white color on dark-mode systems. That's what actually made
  * every form input's typed text invisible sitewide (signup, login, post-property, etc):

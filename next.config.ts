@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Standalone output bundles a minimal server (.next/standalone/server.js) plus only the
+  // node_modules the built app actually needs — what the Docker image below copies and runs,
+  // instead of shipping the full node_modules tree into the runtime image.
+  output: "standalone",
   images: {
     remotePatterns: [
       {

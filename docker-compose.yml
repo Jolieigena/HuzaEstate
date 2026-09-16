@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Inlined into the client bundle at build time — see the Dockerfile comment.
+        # Defaults match .env.example; override via a .env file or --env-file .env.local
+        # (e.g. so the container can reach a backend that isn't part of this compose file).
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081/api/access-service}
+        NEXT_PUBLIC_PROPERTY_API_URL: ${NEXT_PUBLIC_PROPERTY_API_URL:-http://localhost:8081/api/property-service}
+    image: huzaestate-frontend
+    container_name: huzaestate-frontend
+    ports:
+      - "8085:8085"
+    environment:
+      NODE_ENV: production
+      PORT: "8085"
+      # Server-side-only secrets — read at runtime, never baked into the image/build cache.
+      WORLD_LABS_API_KEY: ${WORLD_LABS_API_KEY:-}
+      BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    restart: unless-stopped

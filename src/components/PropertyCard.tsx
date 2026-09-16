@@ -1,8 +1,13 @@
+"use client";
+
 import Image from '@/components/PropertyImage';
 import Link from 'next/link';
 import type { Property } from '@/lib/properties/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import TourWatchBadge from '@/components/TourWatchBadge';
+import { useIsFavorite } from '@/lib/favorites/hooks';
+import { FavoritesStoreEngine } from '@/lib/favorites/store';
+import { useToast } from '@/lib/toast-context';
 
 interface PropertyCardProps {
   property: Property;
@@ -10,6 +15,14 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property, isFeatured }: PropertyCardProps) {
+  const isSaved = useIsFavorite(property.id);
+  const { showToast } = useToast();
+
+  function toggleSaved() {
+    const nowSaved = FavoritesStoreEngine.toggle(property.id);
+    showToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
+  }
+
   return (
     <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300">
       <div className="relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
@@ -49,7 +62,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
 
         {/* Top Left Featured Badge */}
         {isFeatured && (
-          <div className="absolute top-3 left-3 z-10 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-[12px] font-extrabold shadow-sm shadow-black/20 pointer-events-none uppercase tracking-wide">
+          <div className="absolute top-3 left-3 z-10 bg-slate-900/60 backdrop-blur-md border border-white/20 rounded-xl px-2.5 py-1 flex items-center gap-1.5 text-white text-[12px] font-bold shadow-sm shadow-black/20 pointer-events-none uppercase tracking-wide">
             <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
             Featured
           </div>
@@ -72,11 +85,11 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
           <div className="flex flex-col min-w-0">
             {/* Price and Status Pill */}
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              <span className="text-xl font-bold text-slate-900 tracking-tight">
                 ${property.price.toLocaleString()}
               </span>
               {property.type === 'rent' && <span className="text-slate-500 text-sm font-medium -ml-1">/mo</span>}
-              <span className="px-2 py-0.5 rounded-md bg-[#2ec440]/10 text-[#2ec440] text-[11px] font-bold uppercase tracking-wider ml-1">
+              <span className="px-2 py-0.5 rounded-md bg-[#2ec440]/10 text-[#2ec440] text-[11px] font-bold tracking-wide whitespace-nowrap ml-1">
                 For {property.type}
               </span>
             </div>
@@ -101,8 +114,13 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
             </a>
-            <button className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440] transition-all" title="Save Property">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+            <button
+              onClick={toggleSaved}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${isSaved ? 'bg-red-50 border-red-200 text-red-500' : 'border-slate-200 text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440]'}`}
+              title={isSaved ? 'Remove from saved' : 'Save Property'}
+              aria-pressed={isSaved}
+            >
+              <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
             </button>
           </div>
         </div>

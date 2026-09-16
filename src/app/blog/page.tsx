@@ -67,7 +67,7 @@ export default function BlogPage() {
             <div className="inline-block px-4 py-1.5 bg-[#2ec440] text-white font-bold text-xs uppercase tracking-wider rounded-full mb-6">
               Featured Report
             </div>
-            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight mb-6 group-hover:text-slate-200 transition-colors">
+            <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-6 group-hover:text-slate-200 transition-colors">
               The 2026 State of African Luxury Real Estate.
             </h1>
             <p className="text-xl text-slate-300 font-medium mb-8">
@@ -89,7 +89,7 @@ export default function BlogPage() {
       {/* Masonry / Grid Posts */}
       <section className="max-w-[1400px] mx-auto px-6 sm:px-10 py-24">
         <div className="flex items-center justify-between mb-12">
-          <h2 className="text-3xl font-extrabold text-slate-900">Latest Insights</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Latest Insights</h2>
           <div className="hidden sm:flex gap-4">
             <button className="px-4 py-2 rounded-full bg-slate-900 text-white font-semibold text-sm">View All</button>
             <button className="px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-semibold text-sm transition-colors">Market Trends</button>
@@ -129,7 +129,7 @@ export default function BlogPage() {
       {/* Newsletter */}
       <section className="bg-slate-900 py-24 mt-12">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-black text-white mb-6">Stay ahead of the market.</h2>
+          <h2 className="text-3xl font-bold text-white mb-6">Stay ahead of the market.</h2>
           <p className="text-xl text-slate-400 mb-10 font-medium">Join 20,000+ subscribers receiving our weekly roundup of the finest properties and real estate insights.</p>
           
           <form className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">

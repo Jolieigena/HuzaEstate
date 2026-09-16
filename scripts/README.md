@@ -17,12 +17,3 @@ second copy. Existing property types and compatibility exports are preserved.
 
 Generated values will differ on each run. Review the fixture diff before
 keeping the output. The structural cleanup does not regenerate this data.
-
-## Historical utilities
-
-`legacy/fix.js`, `legacy/fix2.js`, `legacy/fix3.js`, and `legacy/script.py` are
-preserved historical attempts to rewrite virtual-tour links in the old data
-file. They retain their original source for reference and are not maintained
-commands; some variants produce malformed replacements. Their hardcoded
-`src/lib/data.ts` target is now a compatibility module. Use a reviewed edit to
-`src/lib/properties/fixtures.ts` for future fixture updates.

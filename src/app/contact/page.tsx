@@ -30,7 +30,7 @@ export default function ContactPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
         <div className="absolute bottom-12 left-12 right-12">
-          <h2 className="text-4xl font-bold text-white mb-4 leading-tight">We&apos;re here to help.</h2>
+          <h2 className="text-3xl font-bold text-white mb-4 leading-tight">We&apos;re here to help.</h2>
           <p className="text-slate-300 text-lg">Whether you&apos;re buying, renting, or selling, our local team can answer your questions.</p>
         </div>
       </div>
@@ -43,12 +43,12 @@ export default function ContactPage() {
               <div className="w-16 h-16 rounded-full bg-[#2ec440]/10 flex items-center justify-center text-[#2ec440] mx-auto mb-6">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
               </div>
-              <h1 className="text-2xl font-black text-slate-900 mb-2">Message sent</h1>
+              <h1 className="text-xl font-bold text-slate-900 mb-2">Message sent</h1>
               <p className="text-slate-500">Thanks for reaching out — a HuzaEstate team member will get back to you within 24 hours.</p>
             </div>
           ) : (
             <>
-              <h1 className="text-3xl font-black text-slate-900 mb-2">Get in touch</h1>
+              <h1 className="text-2xl font-bold text-slate-900 mb-2">Get in touch</h1>
               <p className="text-slate-500 mb-8">Send us a message and we&apos;ll respond as soon as we can.</p>
 
               <form className="space-y-5" onSubmit={handleSubmit}>

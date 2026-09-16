@@ -75,7 +75,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-8 pb-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
               {property.title}
             </h1>
             <div className="flex items-center gap-2 mt-2 text-slate-500 text-[15px] font-medium">
@@ -84,7 +84,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
           <div className="text-left md:text-right">
-            <div className="text-3xl sm:text-4xl font-black text-slate-900">
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900">
               ${property.price.toLocaleString()}
               {property.type === 'rent' && <span className="text-lg text-slate-400 font-medium ml-1">/mo</span>}
             </div>

@@ -37,7 +37,7 @@ export default function MortgagesPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             HuzaEstate Financing
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight">Finance your dream home.</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-6 tracking-tight">Finance your dream home.</h1>
           <p className="text-lg text-slate-300 max-w-2xl mx-auto mb-10">We partner with Rwanda's top banks to secure the best mortgage rates for you. Calculate your payments and get pre-approved today.</p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button className="bg-white hover:bg-[#2ec440] text-slate-900 hover:text-white font-semibold py-3 px-8 rounded-xl transition-all shadow-lg">
@@ -126,7 +126,7 @@ export default function MortgagesPage() {
             <div className="bg-slate-900 rounded-2xl p-8 lg:p-10 text-white sticky top-28 shadow-xl">
               <h3 className="text-lg font-semibold text-slate-300 mb-6">Estimated Monthly Payment</h3>
               
-              <div className="text-4xl font-bold text-[#2ec440] mb-8">
+              <div className="text-3xl font-bold text-[#2ec440] mb-8">
                 ${Math.round(monthlyPayment).toLocaleString()} <span className="text-lg font-medium text-slate-400">/mo</span>
               </div>
 
