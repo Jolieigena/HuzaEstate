@@ -54,14 +54,8 @@ export default function Navbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <Link 
-          href="/manager" 
-          className="hidden md:inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-semibold text-sm px-4 py-2.5 rounded-full transition-all duration-200"
-        >
-          Manager Portal
-        </Link>
-        <Link 
-          href="/properties" 
+        <Link
+          href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
         >
           Browse Properties

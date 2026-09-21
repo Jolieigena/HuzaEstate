@@ -7,6 +7,7 @@ import { getGalleryImages } from '@/lib/properties/gallery';
 import ListingVisibilityGate from '@/components/ListingVisibilityGate';
 import PropertyTourSection from '@/components/PropertyTourSection';
 import PropertyGallery from '@/components/PropertyGallery';
+import LandlordProfileCard from '@/components/LandlordProfileCard';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -177,6 +178,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
               Send us a Message
             </button>
           </div>
+
+          {property.type === 'rent' && <LandlordProfileCard />}
         </div>
       </div>
     </div>

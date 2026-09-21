@@ -21,6 +21,6 @@ export interface Listing {
   isSellerPosted: boolean;
 }
 
-export type ManagerTab = 'overview' | 'listings' | 'applications' | 'payments';
+export type ManagerTab = 'overview' | 'listings' | 'applications' | 'payments' | 'insights' | 'profile';
 export type ListingStatusFilter = Listing['status'] | 'all';
 export type ListingStatusCounts = Record<Listing['status'], number>;

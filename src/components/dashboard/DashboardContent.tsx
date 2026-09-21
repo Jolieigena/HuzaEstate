@@ -8,8 +8,10 @@ import PaymentsTab from './PaymentsTab';
 import ToursTab from './ToursTab';
 import ApplicationsTab from './ApplicationsTab';
 import CoShoppingTab from './CoShoppingTab';
+import MarketInsightsTab from './MarketInsightsTab';
+import DashboardTabs from './DashboardTabs';
 
-const VALID_TABS = ['saved', 'properties', 'payments', 'tours', 'applications', 'coshopping'];
+const VALID_TABS = ['saved', 'properties', 'insights', 'payments', 'tours', 'applications', 'coshopping'];
 
 export default function DashboardContent() {
   const router = useRouter();
@@ -39,6 +41,8 @@ export default function DashboardContent() {
         </div>
 
         <div>
+          <DashboardTabs activeTab={activeTab} goToTab={goToTab} />
+
           {/* Main Content Area */}
           <main>
 
@@ -47,6 +51,9 @@ export default function DashboardContent() {
 
             {/* MY PROPERTIES TAB */}
             {activeTab === 'properties' && <PropertiesTab goToTab={goToTab} />}
+
+            {/* MARKET INSIGHTS TAB */}
+            {activeTab === 'insights' && <MarketInsightsTab />}
 
             {/* PAYMENTS TAB — superseded by the dedicated Payments/Invoices/Contracts module, which never asks for a PIN, OTP or full card in the browser. */}
             {activeTab === 'payments' && <PaymentsTab />}

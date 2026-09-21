@@ -23,6 +23,8 @@ import OverviewTab from './OverviewTab';
 import ListingsTab from './ListingsTab';
 import ApplicationsTab from './ApplicationsTab';
 import PaymentsTab from './PaymentsTab';
+import MarketInsightsTab from './MarketInsightsTab';
+import LandlordProfileTab from './LandlordProfileTab';
 
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<ManagerTab>('overview');
@@ -139,6 +141,16 @@ export default function ManagerDashboard() {
             {/* PAYMENTS TAB */}
             {activeTab === 'payments' && (
               <PaymentsTab />
+            )}
+
+            {/* MARKET INSIGHTS TAB */}
+            {activeTab === 'insights' && (
+              <MarketInsightsTab LISTINGS={LISTINGS} />
+            )}
+
+            {/* LANDLORD PROFILE TAB */}
+            {activeTab === 'profile' && (
+              <LandlordProfileTab />
             )}
           </PageFrame>
         </main>

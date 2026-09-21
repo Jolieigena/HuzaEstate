@@ -1,13 +1,13 @@
 "use client";
 
-import React, { Suspense, useState, useRef, useEffect } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
+import AISearchCard from '@/components/AISearchCard';
 import { useVisibleListings } from '@/lib/admin/listings';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
-import type { Property } from '@/lib/properties/types';
 import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
 import { useSavedSearches } from '@/lib/savedSearches/hooks';
 import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
@@ -24,264 +24,8 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function countMatches(properties: Property[], filters: AIPropertyFilters): number {
-  return properties.filter((p) => {
-    if (filters.type && filters.type !== 'all' && p.type !== filters.type) return false;
-    if (filters.propertyType && filters.propertyType !== 'all' && p.propertyType !== filters.propertyType) return false;
-    if (filters.minBedrooms !== undefined && p.bedrooms < filters.minBedrooms) return false;
-    if (filters.maxBedrooms !== undefined && p.bedrooms > filters.maxBedrooms) return false;
-    if (filters.minPrice !== undefined && p.price < filters.minPrice) return false;
-    if (filters.maxPrice !== undefined && p.price > filters.maxPrice) return false;
-    if (filters.minSqm !== undefined && p.sqm < filters.minSqm) return false;
-    if (filters.maxSqm !== undefined && p.sqm > filters.maxSqm) return false;
-    if (filters.city) {
-      const cityTokens = filters.city.toLowerCase().split(/[\s,]+/).filter(Boolean);
-      const propText = `${p.location} ${p.city} rwanda`.toLowerCase();
-      if (!cityTokens.every((token) => propText.includes(token))) return false;
-    }
-    if (filters.keywords?.length) {
-      const hay = `${p.title} ${p.description}`.toLowerCase();
-      if (!filters.keywords.some((kw) => hay.includes(kw))) return false;
-    }
-    return true;
-  }).length;
-}
-
 function titleCase(text: string) {
   return text.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
-}
-
-function renderMd(text: string) {
-  return text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g).map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) return <strong key={i}>{part.slice(2, -2)}</strong>;
-    if (part.startsWith('*') && part.endsWith('*')) return <em key={i}>{part.slice(1, -1)}</em>;
-    return <span key={i}>{part}</span>;
-  });
-}
-
-// ─── types ───────────────────────────────────────────────────────────────────
-
-interface ChatMsg { role: 'assistant' | 'user'; content: string; filters?: AIPropertyFilters; matchCount?: number; }
-
-const GREETING: ChatMsg = {
-  role: 'assistant',
-  content: "Tell me about your dream home and I'll search our listings for you.\n\nIf we don't have it yet, we'll help you design and build it. 🏡",
-};
-
-const QUICK_PROMPTS = [
-  '3-bed house for rent in Kigali',
-  'Apartment under $200k',
-  'Land plot in Musanze',
-  'Villa with pool & garden',
-];
-
-// ─── Dream Home Side Panel (slide-in drawer) ──────────────────────────────────
-
-function DreamHomePanel({
-  onClose,
-  onFiltersChange,
-  visibleProperties,
-  matchCount,
-  hasActiveFilter,
-  onClearFilter,
-}: {
-  onClose: () => void;
-  onFiltersChange: (f: AIPropertyFilters) => void;
-  visibleProperties: Property[];
-  matchCount: number;
-  hasActiveFilter: boolean;
-  onClearFilter: () => void;
-}) {
-  const [messages, setMessages] = useState<ChatMsg[]>([GREETING]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  // Trigger slide-in on mount, focus after animation
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-    setTimeout(() => inputRef.current?.focus(), 300);
-  }, []);
-
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, loading]);
-
-  const lastFilteredIndex = messages.findLastIndex((m) => m.role === 'assistant' && m.filters);
-  const displayedMessages = messages.map((message, index) =>
-    hasActiveFilter && index === lastFilteredIndex ? { ...message, matchCount } : message);
-
-  function close() {
-    setVisible(false);
-    setTimeout(onClose, 300); // wait for slide-out animation
-  }
-
-  async function send() {
-    const trimmed = input.trim();
-    if (!trimmed || loading) return;
-    setMessages((p) => [...p, { role: 'user', content: trimmed }]);
-    setInput('');
-    setLoading(true);
-    try {
-      const res = await fetch('/api/ai-property-search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
-      });
-      if (!res.ok) throw new Error();
-      const filters: AIPropertyFilters = await res.json();
-      onFiltersChange(filters);
-      const count = countMatches(visibleProperties, filters);
-      const reply = filters.summary + '\n\n' + (
-        count > 0
-          ? `I found **${count} ${count === 1 ? 'property' : 'properties'}** that match. Browse the results!`
-          : "No current listings match — but we can design and build it for you."
-      );
-      setMessages((p) => [...p, { role: 'assistant', content: reply, filters, matchCount: count }]);
-    } catch {
-      setMessages((p) => [...p, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function onKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
-  }
-
-  return (
-    <>
-      {/* Dimmed backdrop — click to close */}
-      <div
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
-        onClick={close}
-      />
-
-      {/* Slide-in panel from the right */}
-      <div className={`fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${visible ? 'translate-x-0' : 'translate-x-full'}`}>
-
-        {/* Header */}
-        <div className="flex items-start justify-between px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
-          <div className="flex items-start gap-3">
-            <span className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center shrink-0 mt-0.5">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.9 2.7L8.6 19l-2.7.9L5 22.6l-.9-2.7L1.4 19l2.7-.9L5 15zM19 15l.9 2.7 2.7.9-2.7.9L19 22.6l-.9-2.7-2.7-.9 2.7-.9L19 15z" />
-              </svg>
-            </span>
-            <div>
-              <h2 className="font-bold text-slate-900 text-[18px] leading-tight">Describe Your<br/>Dream Home</h2>
-              <p className="text-[12px] text-[#2ec440] font-semibold mt-0.5">Powered by HuzaEstate AI</p>
-            </div>
-          </div>
-          <button onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-400 shrink-0 -mt-1 -mr-1">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-
-        {/* Quick prompts — shown before first search */}
-        {messages.length === 1 && (
-          <div className="px-6 pt-4 pb-2 flex flex-wrap gap-2 shrink-0">
-            {QUICK_PROMPTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => { setInput(p); setTimeout(() => inputRef.current?.focus(), 50); }}
-                className="text-[12px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 hover:border-slate-900 hover:text-slate-900 transition-colors"
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Chat thread */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col min-h-0">
-          {displayedMessages.map((msg, i) => {
-            const isUser = msg.role === 'user';
-            return (
-              <div key={i} className={`flex w-full mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${isUser ? 'bg-slate-900 text-white rounded-tr-sm' : 'bg-slate-50 border border-slate-100 text-slate-700 rounded-tl-sm'}`}>
-                  {msg.content.split('\n').map((line, li) => (
-                    <p key={li} className={li > 0 ? 'mt-1' : ''}>{renderMd(line)}</p>
-                  ))}
-                  {!isUser && msg.filters && msg.matchCount !== undefined && (
-                    <div className="mt-3">
-                      {msg.matchCount > 0 ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1.5 bg-[#2ec440]/10 text-[#1a9e2e] font-bold text-[12px] px-3 py-1.5 rounded-full">
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                            {msg.matchCount} {msg.matchCount === 1 ? 'match' : 'matches'} found
-                          </span>
-                          <button onClick={() => { onClearFilter(); close(); }} className="text-[12px] font-semibold text-[#2ec440] hover:text-[#28b039] transition-colors">
-                            View results →
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="rounded-xl overflow-hidden border border-amber-100 mt-1">
-                          <div className="bg-amber-50 px-3 py-2.5">
-                            <p className="text-amber-800 font-semibold text-[13px]">No listings match yet.</p>
-                            <p className="text-amber-700 text-[12px] mt-0.5">But we can design and build it for you.</p>
-                          </div>
-                          <Link href="/build" onClick={close} className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-[13px] px-4 py-3 transition-colors w-full">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                            Design &amp; Build My Dream Home
-                          </Link>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {loading && (
-            <div className="flex justify-start mb-3">
-              <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 rounded-2xl rounded-tl-sm border border-slate-100">
-                {[0,1,2].map((i) => <span key={i} className="w-2 h-2 rounded-full bg-[#2ec440] animate-bounce" style={{ animationDelay: `${i*0.15}s`, animationDuration: '0.8s' }} />)}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Design & Build promo — before any search */}
-        {messages.length <= 2 && !hasActiveFilter && (
-          <div className="mx-6 mb-4 shrink-0 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 p-4 text-white">
-            <p className="font-bold text-[13px] mb-1">Can&apos;t find what you want?</p>
-            <p className="text-[12px] text-slate-300 mb-3 leading-snug">We design and build custom homes tailored exactly to your vision.</p>
-            <Link href="/build" onClick={close} className="inline-flex items-center gap-1.5 bg-[#2ec440] hover:bg-[#28b039] text-white font-bold text-[12.5px] px-4 py-2 rounded-lg transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-              Design &amp; Build My Home
-            </Link>
-          </div>
-        )}
-
-        {/* Input bar */}
-        <div className="border-t border-slate-100 px-6 py-4 shrink-0">
-          <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 focus-within:border-slate-900 focus-within:bg-white transition-all">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={onKey}
-              placeholder="e.g. 3-bed house with a garden in Kigali…"
-              rows={2}
-              className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder:text-slate-400 outline-none resize-none min-w-0 leading-snug"
-              disabled={loading}
-            />
-            <button
-              onClick={send}
-              disabled={!input.trim() || loading}
-              className="shrink-0 w-9 h-9 rounded-full bg-slate-900 hover:bg-[#2ec440] disabled:bg-slate-200 disabled:cursor-not-allowed flex items-center justify-center transition-colors mb-0.5"
-            >
-              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-            </button>
-          </div>
-          <p className="text-center text-[11px] text-slate-400 mt-1.5">Enter to send · Shift+Enter for new line</p>
-        </div>
-      </div>
-    </>
-  );
 }
 
 // ─── main page ────────────────────────────────────────────────────────────────
@@ -299,7 +43,6 @@ function PropertiesContent() {
   const [minSqm, setMinSqm] = useState('');
   const [maxSqm, setMaxSqm] = useState('');
 
-  const [isDreamOpen, setIsDreamOpen] = useState(false);
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
 
   const [sortBy, setSortBy] = useState<SortOption>('default');
@@ -525,14 +268,37 @@ function PropertiesContent() {
 
       {/* ── Property grid ─────────────────────────────────────────────────── */}
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-1 pb-12">
-        {filteredProperties.length > 0 ? (
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProperties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-4 max-w-2xl mx-auto shadow-sm">
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          {(() => {
+            // The AI search card takes the 3rd grid slot (rightmost of the
+            // first row on the lg 3-column layout) instead of the old
+            // floating button — it IS the search interface now, not a
+            // trigger for one, so it lives right in the results. It's always
+            // rendered in this same list under one stable key (even with 0
+            // matching properties, where it's the only item) so React keeps
+            // its conversation state across result-count changes instead of
+            // remounting it and wiping the chat.
+            const aiCard = (
+              <AISearchCard
+                key="ai-search-card"
+                visibleProperties={visibleProperties}
+                onFiltersChange={(f) => setAiFilters(f)}
+                hasActiveFilter={!!aiFilters}
+                matchCount={filteredProperties.length}
+                onClearFilter={clearAll}
+              />
+            );
+            const items: React.ReactNode[] = [];
+            filteredProperties.forEach((property, i) => {
+              items.push(<PropertyCard key={property.id} property={property} />);
+              if (i === 1) items.push(aiCard);
+            });
+            if (filteredProperties.length < 2) items.push(aiCard);
+            return items;
+          })()}
+        </div>
+        {filteredProperties.length === 0 && (
+          <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-6 max-w-2xl mx-auto shadow-sm">
             <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <h3 className="text-xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">
@@ -550,36 +316,6 @@ function PropertiesContent() {
           </div>
         )}
       </div>
-
-      {/* ── Floating "Describe Your Dream Home" button (bottom-right) ─────── */}
-      <button
-        onClick={() => setIsDreamOpen(true)}
-        className={`fixed bottom-8 right-6 z-40 flex items-center gap-2 font-bold text-[14px] px-5 py-3 rounded-full shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 ${
-          aiFilters
-            ? 'bg-[#2ec440] hover:bg-[#28b039] text-white'
-            : 'bg-slate-900 hover:bg-[#2ec440] text-white'
-        }`}
-      >
-        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.9 2.7L8.6 19l-2.7.9L5 22.6l-.9-2.7L1.4 19l2.7-.9L5 15zM19 15l.9 2.7 2.7.9-2.7.9L19 22.6l-.9-2.7-2.7-.9 2.7-.9L19 15z" />
-        </svg>
-        {aiFilters ? 'AI Active — Edit' : 'Describe Your Dream Home'}
-        {aiFilters && (
-          <span className="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#2ec440] absolute -top-0.5 -right-0.5" />
-        )}
-      </button>
-
-      {/* ── Dream Home Modal ───────────────────────────────────────────────── */}
-      {isDreamOpen && (
-        <DreamHomePanel
-          onClose={() => setIsDreamOpen(false)}
-          onFiltersChange={(f) => setAiFilters(f)}
-          visibleProperties={visibleProperties}
-          matchCount={filteredProperties.length}
-          hasActiveFilter={!!aiFilters}
-          onClearFilter={clearAll}
-        />
-      )}
     </div>
   );
 }

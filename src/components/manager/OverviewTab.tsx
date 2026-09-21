@@ -1,10 +1,10 @@
 import Image from 'next/image';
 import type { Listing, ListingStatusCounts } from '@/lib/manager/types';
 import { ACTIVITY, REVENUE_TREND } from '@/lib/manager/demoData';
-import StatTile from './StatTile';
-import RevenueTrendChart from './RevenueTrendChart';
-import BarBreakdown from './BarBreakdown';
-import Sparkline from './Sparkline';
+import StatTile from '@/components/charts/StatTile';
+import TrendChart from '@/components/charts/TrendChart';
+import BarBreakdown from '@/components/charts/BarBreakdown';
+import Sparkline from '@/components/charts/Sparkline';
 
 export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
   LISTINGS: Listing[];
@@ -34,7 +34,12 @@ export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
             <h3 className="font-bold text-slate-900 text-lg">Revenue Trend</h3>
             <p className="text-sm text-slate-500">Last 6 months</p>
           </div>
-          <RevenueTrendChart />
+          <TrendChart
+            data={REVENUE_TREND.map(d => ({ label: d.month, value: d.value }))}
+            format={(v) => `$${v.toLocaleString()}`}
+            yMax={6000}
+            ariaLabel="Monthly revenue trend, last 6 months"
+          />
         </div>
 
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">

@@ -22,6 +22,16 @@ export interface MyProperty {
   floors: number;
   constructionYear: number;
   occupancy: OccupancyStatus;
+  /** District name matching src/lib/marketAnalytics's seeded districts, for
+   *  trend/valuation lookups. Optional so existing (pre-portfolio-feature)
+   *  reads of this file — e.g. Renovate's property picker — don't need it. */
+  district?: string;
+  /** What the owner paid, in the same currency as the property's district
+   *  market data (USD) — the basis a resale recommendation compares the
+   *  current estimated value against. Undefined for a rented (not owned)
+   *  entry, which has no purchase price. */
+  purchasePrice?: number;
+  purchaseDate?: string;
 }
 
 const MY_PROPERTIES: MyProperty[] = [
@@ -39,6 +49,9 @@ const MY_PROPERTIES: MyProperty[] = [
     floors: 2,
     constructionYear: 2014,
     occupancy: "occupied",
+    district: "Gacuriro",
+    purchasePrice: 285000,
+    purchaseDate: "2019-03-14",
   },
   {
     id: "myprop-downtown-penthouse",
@@ -54,6 +67,7 @@ const MY_PROPERTIES: MyProperty[] = [
     floors: 1,
     constructionYear: 2019,
     occupancy: "occupied",
+    district: "Kiyovu",
   },
   {
     id: "myprop-kiyovu-apartment",
@@ -69,6 +83,9 @@ const MY_PROPERTIES: MyProperty[] = [
     floors: 1,
     constructionYear: 2017,
     occupancy: "occupied",
+    district: "Kiyovu",
+    purchasePrice: 168000,
+    purchaseDate: "2021-08-02",
   },
 ];
 

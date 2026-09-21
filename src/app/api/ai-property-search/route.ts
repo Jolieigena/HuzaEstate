@@ -38,8 +38,8 @@ function parsePropertyRequest(input: string): AIPropertyFilters {
 
   // ── Bedrooms ──────────────────────────────────────────────────────────────
   const bedroomPatterns = [
-    /(\d+)\s*(?:\+|or more|plus)?\s*(?:bed(?:room)?s?|br|bdr)/,
-    /(\d+)\s*(?:bedroom|bed)/,
+    /(\d+)\s*-?\s*(?:\+|or more|plus)?\s*-?\s*(?:bed(?:room)?s?|br|bdr)/,
+    /(\d+)\s*-?\s*(?:bedroom|bed)/,
     /(studio)/,
   ];
   for (const pat of bedroomPatterns) {
@@ -63,7 +63,12 @@ function parsePropertyRequest(input: string): AIPropertyFilters {
 
   // ── Price ─────────────────────────────────────────────────────────────────
   // Matches patterns like "$300k", "300,000", "under $1500/mo", "between $100k and $300k"
-  const priceTokens = [...text.matchAll(/\$?([\d,]+(?:\.\d+)?)\s*k?\b/g)].map(m => {
+  // Bedroom/bath/sqm counts are numbers too — strip them first so "3-bed house"
+  // isn't misread as a $3 price cap (which returned zero results).
+  const priceText = text
+    .replace(/\d+\s*\+?\s*-?\s*(?:bed(?:room)?s?|br|bdr|bath(?:room)?s?)\b/g, ' ')
+    .replace(/\d+\s*(?:sqm|sq\.?\s*m|square\s*met(?:er|re)s?)/g, ' ');
+  const priceTokens = [...priceText.matchAll(/\$?([\d,]+(?:\.\d+)?)\s*k?\b/g)].map(m => {
     const raw = parseFloat(m[1].replace(/,/g, ''));
     // detect 'k' suffix
     return /^\$?[\d,]+k/.test(m[0]) ? raw * 1000 : raw;

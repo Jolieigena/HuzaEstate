@@ -6,8 +6,8 @@ import type { ListingModerationStatus } from '@/lib/admin/types';
 import { useListingModerationStatus } from '@/lib/admin/listings';
 import SellerTourControl from '@/components/SellerTourControl';
 import ListingActionsMenu from './ListingActionsMenu';
-import Sparkline from './Sparkline';
-import { SERIES_COLOR } from './styles';
+import Sparkline from '@/components/charts/Sparkline';
+import { SERIES_COLOR } from '@/components/charts/styles';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Active: 'bg-green-100 text-green-700',
