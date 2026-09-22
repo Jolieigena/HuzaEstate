@@ -44,6 +44,17 @@ function PropertiesContent() {
   const [maxSqm, setMaxSqm] = useState('');
 
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
+  const [isDreamOpen, setIsDreamOpen] = useState(false);
+  const [dreamVisible, setDreamVisible] = useState(false);
+
+  function openDreamPanel() {
+    setIsDreamOpen(true);
+    requestAnimationFrame(() => setDreamVisible(true));
+  }
+  function closeDreamPanel() {
+    setDreamVisible(false);
+    setTimeout(() => setIsDreamOpen(false), 300); // wait for slide-out animation
+  }
 
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -268,37 +279,14 @@ function PropertiesContent() {
 
       {/* ── Property grid ─────────────────────────────────────────────────── */}
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-1 pb-12">
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {(() => {
-            // The AI search card takes the 3rd grid slot (rightmost of the
-            // first row on the lg 3-column layout) instead of the old
-            // floating button — it IS the search interface now, not a
-            // trigger for one, so it lives right in the results. It's always
-            // rendered in this same list under one stable key (even with 0
-            // matching properties, where it's the only item) so React keeps
-            // its conversation state across result-count changes instead of
-            // remounting it and wiping the chat.
-            const aiCard = (
-              <AISearchCard
-                key="ai-search-card"
-                visibleProperties={visibleProperties}
-                onFiltersChange={(f) => setAiFilters(f)}
-                hasActiveFilter={!!aiFilters}
-                matchCount={filteredProperties.length}
-                onClearFilter={clearAll}
-              />
-            );
-            const items: React.ReactNode[] = [];
-            filteredProperties.forEach((property, i) => {
-              items.push(<PropertyCard key={property.id} property={property} />);
-              if (i === 1) items.push(aiCard);
-            });
-            if (filteredProperties.length < 2) items.push(aiCard);
-            return items;
-          })()}
-        </div>
-        {filteredProperties.length === 0 && (
-          <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-6 max-w-2xl mx-auto shadow-sm">
+        {filteredProperties.length > 0 ? (
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredProperties.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-4 max-w-2xl mx-auto shadow-sm">
             <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <h3 className="text-xl font-bold text-slate-900 mb-2">No exact matches</h3>
             <p className="text-slate-500 mb-6">
@@ -316,6 +304,40 @@ function PropertiesContent() {
           </div>
         )}
       </div>
+
+      {/* ── Floating "Describe Your Desired Property" button ─────────────── */}
+      <button
+        onClick={openDreamPanel}
+        className={`fixed bottom-8 right-6 z-40 flex items-center gap-2 font-bold text-[14px] px-5 py-3 rounded-full shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 ${
+          aiFilters ? 'bg-[#2ec440] hover:bg-[#28b039] text-white' : 'bg-slate-900 hover:bg-[#2ec440] text-white'
+        }`}
+      >
+        <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.9 2.7L8.6 19l-2.7.9L5 22.6l-.9-2.7L1.4 19l2.7-.9L5 15zM19 15l.9 2.7 2.7.9-2.7.9L19 22.6l-.9-2.7-2.7-.9 2.7-.9L19 15z" />
+        </svg>
+        {aiFilters ? 'AI Active — Edit' : 'Describe Your Desired Property'}
+        {aiFilters && <span className="w-2.5 h-2.5 rounded-full bg-white border-2 border-[#2ec440] absolute -top-0.5 -right-0.5" />}
+      </button>
+
+      {/* ── Slide-in AI search panel ──────────────────────────────────────── */}
+      {isDreamOpen && (
+        <>
+          <div
+            className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${dreamVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={closeDreamPanel}
+          />
+          <div className={`fixed top-0 right-0 bottom-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl transition-transform duration-300 ease-in-out ${dreamVisible ? 'translate-x-0' : 'translate-x-full'}`}>
+            <AISearchCard
+              visibleProperties={visibleProperties}
+              onFiltersChange={(f) => setAiFilters(f)}
+              hasActiveFilter={!!aiFilters}
+              matchCount={filteredProperties.length}
+              onClearFilter={clearAll}
+              onClose={closeDreamPanel}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

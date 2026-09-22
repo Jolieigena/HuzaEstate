@@ -17,6 +17,7 @@ const QUICK_PROMPTS = [
   'Apartment for rent',
   'House under $150k',
   'Land plot in Musanze',
+  'Villa with pool & garden',
 ];
 
 function renderMd(text: string) {
@@ -50,30 +51,36 @@ function countMatches(properties: Property[], filters: AIPropertyFilters): numbe
   }).length;
 }
 
-/** Inline AI search interface, sized and styled to sit in the property grid
- *  as one of its cards (see src/app/properties/page.tsx, which places this
- *  at the 3rd/rightmost position of the first row) — replaces the old
- *  floating "Describe Your Dream Home" button + slide-in drawer with the
- *  same underlying /api/ai-property-search flow, just embedded rather than
- *  an overlay. */
+/** Content of the "Describe Your Desired Property" slide-in panel (see
+ *  src/app/properties/page.tsx, which mounts this behind a floating button
+ *  rather than embedding it in the grid). Same /api/ai-property-search flow
+ *  throughout: quick prompts and the send button both run a search
+ *  immediately, and a zero-match result offers the Design & Build path
+ *  instead of leaving the user stuck. */
 export default function AISearchCard({
   visibleProperties,
   onFiltersChange,
   hasActiveFilter,
   matchCount,
   onClearFilter,
+  onClose,
 }: {
   visibleProperties: Property[];
   onFiltersChange: (f: AIPropertyFilters) => void;
   hasActiveFilter: boolean;
   matchCount: number;
   onClearFilter: () => void;
+  onClose: () => void;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([GREETING]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 300);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -117,33 +124,34 @@ export default function AISearchCard({
   }
 
   return (
-    <div className="bg-white rounded-[1.75rem] border border-gray-100 p-4 sm:p-5 flex flex-col h-full min-h-[420px] text-slate-900 hover:shadow-xl transition-shadow duration-300">
+    <div className="bg-white flex flex-col h-full text-slate-900">
       {/* Header */}
-      <div className="flex items-center gap-2.5 mb-3 shrink-0">
-        <span className="w-8 h-8 rounded-lg bg-[#2ec440]/10 flex items-center justify-center shrink-0">
-          <svg className="w-4 h-4 text-[#2ec440]" viewBox="0 0 24 24" fill="currentColor">
+      <div className="flex items-center gap-3 px-5 sm:px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
+        <span className="w-9 h-9 rounded-xl bg-[#2ec440]/10 flex items-center justify-center shrink-0">
+          <svg className="w-5 h-5 text-[#2ec440]" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.9 2.7L8.6 19l-2.7.9L5 22.6l-.9-2.7L1.4 19l2.7-.9L5 15zM19 15l.9 2.7 2.7.9-2.7.9L19 22.6l-.9-2.7-2.7-.9 2.7-.9L19 15z" />
           </svg>
         </span>
-        <div className="min-w-0">
-          <h3 className="font-bold text-[14px] leading-tight">Say it. We&apos;ll find it.</h3>
-        </div>
+        <h2 className="font-bold text-slate-900 text-[17px] leading-tight flex-1 min-w-0">Say it. We&apos;ll find it.</h2>
         {hasActiveFilter && (
-          <button onClick={onClearFilter} className="ml-auto text-[11px] font-semibold text-[#2ec440] hover:text-[#28b039] transition-colors shrink-0">
+          <button onClick={onClearFilter} className="text-[12px] font-semibold text-[#2ec440] hover:text-[#28b039] transition-colors shrink-0">
             Clear
           </button>
         )}
+        <button onClick={onClose} aria-label="Close" className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors text-slate-400 shrink-0">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
       </div>
 
       {/* Quick prompts — shown before first search */}
       {messages.length === 1 && (
-        <div className="flex flex-wrap gap-1.5 mb-3 shrink-0">
+        <div className="px-5 sm:px-6 pt-4 pb-1 flex flex-wrap gap-2 shrink-0">
           {QUICK_PROMPTS.map((p) => (
             <button
               key={p}
               onClick={() => send(p)}
               disabled={loading}
-              className="text-[11px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-2.5 py-1 hover:border-[#2ec440] hover:text-[#2ec440] transition-colors"
+              className="text-[12px] font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-full px-3 py-1.5 hover:border-[#2ec440] hover:text-[#2ec440] transition-colors disabled:opacity-50"
             >
               {p}
             </button>
@@ -152,26 +160,31 @@ export default function AISearchCard({
       )}
 
       {/* Chat thread */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col pr-1 -mr-1">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-6 py-4 flex flex-col">
         {displayedMessages.map((msg, i) => {
           const isUser = msg.role === 'user';
           return (
-            <div key={i} className={`flex w-full mb-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[92%] rounded-xl px-3 py-2 text-[12.5px] leading-relaxed ${isUser ? 'bg-[#2ec440] text-white rounded-tr-sm' : 'bg-slate-50 border border-slate-100 text-slate-700 rounded-tl-sm'}`}>
+            <div key={i} className={`flex w-full mb-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[88%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${isUser ? 'bg-[#2ec440] text-white rounded-tr-sm' : 'bg-slate-50 border border-slate-100 text-slate-700 rounded-tl-sm'}`}>
                 {msg.content.split('\n').map((line, li) => (
                   <p key={li} className={li > 0 ? 'mt-1' : ''}>{renderMd(line)}</p>
                 ))}
                 {!isUser && msg.filters && msg.matchCount !== undefined && (
-                  <div className="mt-2">
+                  <div className="mt-3">
                     {msg.matchCount > 0 ? (
-                      <span className="inline-flex items-center gap-1.5 bg-[#2ec440]/10 text-[#1a9e2e] font-bold text-[11px] px-2.5 py-1 rounded-full">
-                        {msg.matchCount} {msg.matchCount === 1 ? 'match' : 'matches'} below ↓
-                      </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 bg-[#2ec440]/10 text-[#1a9e2e] font-bold text-[12px] px-3 py-1.5 rounded-full">
+                          {msg.matchCount} {msg.matchCount === 1 ? 'match' : 'matches'} found
+                        </span>
+                        <button onClick={onClose} className="text-[12px] font-semibold text-[#2ec440] hover:text-[#28b039] transition-colors">
+                          View results →
+                        </button>
+                      </div>
                     ) : (
-                      <div className="rounded-lg border border-[#2ec440]/30 bg-[#2ec440]/5 p-2.5">
-                        <p className="font-bold text-[12px] text-slate-900">Can&apos;t find it? We&apos;ll design and build it.</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5 mb-2">Custom homes, made to your brief.</p>
-                        <Link href="/build" className="flex items-center justify-center gap-1.5 bg-slate-900 text-white font-bold text-[12px] px-3 py-2 rounded-lg hover:bg-[#2ec440] transition-colors">
+                      <div className="rounded-xl border border-[#2ec440]/30 bg-[#2ec440]/5 p-3">
+                        <p className="font-bold text-[13px] text-slate-900">Can&apos;t find it? We&apos;ll design and build it.</p>
+                        <p className="text-[12px] text-slate-500 mt-0.5 mb-2.5">Custom homes, made to your brief.</p>
+                        <Link href="/build" onClick={onClose} className="flex items-center justify-center gap-1.5 bg-slate-900 text-white font-bold text-[13px] px-4 py-2.5 rounded-lg hover:bg-[#2ec440] transition-colors">
                           Design &amp; Build My Home →
                         </Link>
                       </div>
@@ -183,10 +196,10 @@ export default function AISearchCard({
           );
         })}
         {loading && (
-          <div className="flex justify-start mb-2">
-            <div className="flex items-center gap-1.5 px-3 py-2 bg-slate-50 border border-slate-100 rounded-xl rounded-tl-sm">
+          <div className="flex justify-start mb-3">
+            <div className="flex items-center gap-1.5 px-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl rounded-tl-sm">
               {[0, 1, 2].map((i) => (
-                <span key={i} className="w-1.5 h-1.5 rounded-full bg-[#2ec440] animate-bounce" style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }} />
+                <span key={i} className="w-2 h-2 rounded-full bg-[#2ec440] animate-bounce" style={{ animationDelay: `${i * 0.15}s`, animationDuration: '0.8s' }} />
               ))}
             </div>
           </div>
@@ -194,26 +207,29 @@ export default function AISearchCard({
       </div>
 
       {/* Input bar */}
-      <div className="flex items-end gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mt-2 shrink-0 focus-within:border-[#2ec440] focus-within:bg-white transition-colors">
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="3 beds, garden, Kigali…"
-          rows={1}
-          className="flex-1 bg-transparent text-[12.5px] text-slate-800 placeholder:text-slate-400 outline-none resize-none min-w-0 leading-snug py-1"
-          disabled={loading}
-        />
-        <button
-          type="button"
-          onClick={() => send()}
-          disabled={!input.trim() || loading}
-          aria-label="Search with AI"
-          className="shrink-0 w-8 h-8 rounded-full bg-[#2ec440] hover:bg-[#28b039] disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-        >
-          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-        </button>
+      <div className="border-t border-slate-100 px-5 sm:px-6 py-4 shrink-0">
+        <div className="flex items-end gap-2 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 focus-within:border-[#2ec440] focus-within:bg-white transition-all">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={onKey}
+            placeholder="e.g. 3-bed house with a garden in Kigali…"
+            rows={2}
+            className="flex-1 bg-transparent text-[14px] text-slate-800 placeholder:text-slate-400 outline-none resize-none min-w-0 leading-snug"
+            disabled={loading}
+          />
+          <button
+            type="button"
+            onClick={() => send()}
+            disabled={!input.trim() || loading}
+            aria-label="Search with AI"
+            className="shrink-0 w-9 h-9 rounded-full bg-[#2ec440] hover:bg-[#28b039] disabled:bg-slate-200 disabled:cursor-not-allowed flex items-center justify-center transition-colors mb-0.5"
+          >
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+          </button>
+        </div>
+        <p className="text-center text-[11px] text-slate-400 mt-1.5">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
   );
