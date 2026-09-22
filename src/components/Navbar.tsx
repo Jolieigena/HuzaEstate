@@ -110,7 +110,7 @@ export default function Navbar() {
               href="/signup"
               className="bg-slate-900 hover:bg-[#2ec440] text-white font-medium text-sm px-6 py-2.5 rounded-full transition-all inline-block"
             >
-              Sign Up
+              Get Started
             </Link>
           </div>
         )}

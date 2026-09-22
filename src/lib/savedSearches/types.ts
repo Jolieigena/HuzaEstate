@@ -5,8 +5,11 @@ export interface SavedSearchCriteria {
   minPrice: string;
   maxPrice: string;
   bedsFilter: string;
+  bathsFilter: string;
   minSqm: string;
   maxSqm: string;
+  city: string;
+  keywords: string;
 }
 
 export interface SavedSearch {

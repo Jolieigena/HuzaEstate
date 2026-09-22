@@ -28,20 +28,55 @@ function titleCase(text: string) {
   return text.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
 }
 
+// Status/Type are free-text inputs (with a <datalist> of suggestions) rather
+// than closed <select> dropdowns, so typing something close ("renting",
+// "flat") still resolves — see the datalist options rendered alongside each
+// input for what's suggested. An unrecognized value just means "no filter"
+// rather than zeroing out the results.
+function parseStatusInput(text: string): 'all' | 'sale' | 'rent' {
+  const t = text.trim().toLowerCase();
+  if (!t) return 'all';
+  if (/rent/.test(t)) return 'rent';
+  if (/sale|buy|sell/.test(t)) return 'sale';
+  return 'all';
+}
+
+function parsePropertyTypeInput(text: string): 'all' | 'house' | 'apartment' | 'land' {
+  const t = text.trim().toLowerCase();
+  if (!t) return 'all';
+  if (/apartment|flat|condo|studio/.test(t)) return 'apartment';
+  if (/land|plot|lot|acre/.test(t)) return 'land';
+  if (/house|villa|home|bungalow|townhouse/.test(t)) return 'house';
+  return 'all';
+}
+
+function parseMinNumberInput(text: string): number | undefined {
+  const t = text.trim();
+  if (!t) return undefined;
+  const n = parseInt(t, 10);
+  return Number.isNaN(n) ? undefined : n;
+}
+
 // ─── main page ────────────────────────────────────────────────────────────────
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
-  const [filterType, setFilterType] = useState(searchParams.get('type') ?? 'all');
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
-  const [bedsFilter, setBedsFilter] = useState('all');
+  const [statusInput, setStatusInput] = useState(searchParams.get('type') === 'rent' ? 'For Rent' : searchParams.get('type') === 'sale' ? 'For Sale' : '');
+  const [propertyTypeInput, setPropertyTypeInput] = useState('');
+  const [bedsInput, setBedsInput] = useState('');
+  const [bathsInput, setBathsInput] = useState('');
   const [isPriceOpen, setIsPriceOpen] = useState(false);
   const [customMinPrice, setCustomMinPrice] = useState('');
   const [customMaxPrice, setCustomMaxPrice] = useState('');
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [minSqm, setMinSqm] = useState('');
   const [maxSqm, setMaxSqm] = useState('');
+  const [cityInput, setCityInput] = useState('');
+  const [keywordsInput, setKeywordsInput] = useState('');
+
+  const filterType = parseStatusInput(statusInput);
+  const propertyTypeFilter = parsePropertyTypeInput(propertyTypeInput);
 
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
   const [isDreamOpen, setIsDreamOpen] = useState(false);
@@ -67,7 +102,8 @@ function PropertiesContent() {
   const [previousQuery, setPreviousQuery] = useState(query);
   if (query !== previousQuery) {
     setPreviousQuery(query);
-    setFilterType(searchParams.get('type') ?? 'all');
+    const urlType = searchParams.get('type');
+    setStatusInput(urlType === 'rent' ? 'For Rent' : urlType === 'sale' ? 'For Sale' : '');
     setSearchTerm(searchParams.get('q') ?? '');
   }
 
@@ -80,15 +116,29 @@ function PropertiesContent() {
     const searchTokens = searchLower.split(/[\s,]+/).filter(Boolean);
     const matchesSearch = searchTokens.length === 0 || searchTokens.every(token => propText.includes(token));
     const matchesType = filterType === 'all' || p.type === filterType;
-    const matchesPropType = propertyTypeFilter === 'all' || p.propertyType === propertyTypeFilter.toLowerCase();
+    const matchesPropType = propertyTypeFilter === 'all' || p.propertyType === propertyTypeFilter;
     let matchesPrice = true;
     if (customMinPrice) matchesPrice = matchesPrice && p.price >= Number(customMinPrice);
     if (customMaxPrice) matchesPrice = matchesPrice && p.price <= Number(customMaxPrice);
-    let matchesBeds = true;
-    if (bedsFilter !== 'all') matchesBeds = p.bedrooms >= parseInt(bedsFilter);
+    const minBeds = parseMinNumberInput(bedsInput);
+    const matchesBeds = minBeds === undefined || p.bedrooms >= minBeds;
+    const minBaths = parseMinNumberInput(bathsInput);
+    const matchesBaths = minBaths === undefined || p.bathrooms >= minBaths;
     let matchesSqm = true;
     if (minSqm) matchesSqm = matchesSqm && p.sqm >= Number(minSqm);
     if (maxSqm) matchesSqm = matchesSqm && p.sqm <= Number(maxSqm);
+    let matchesCity = true;
+    if (cityInput.trim()) {
+      const cityTokens = cityInput.toLowerCase().split(/[\s,]+/).filter(Boolean);
+      const cityPropText = `${p.location} ${p.city} rwanda`.toLowerCase();
+      matchesCity = cityTokens.every((token) => cityPropText.includes(token));
+    }
+    let matchesKeywords = true;
+    if (keywordsInput.trim()) {
+      const kws = keywordsInput.toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+      const keywordHay = `${p.title} ${p.description}`.toLowerCase();
+      matchesKeywords = kws.length === 0 || kws.some((kw) => keywordHay.includes(kw));
+    }
     let matchesAi = true;
     if (aiFilters) {
       if (aiFilters.type && aiFilters.type !== 'all') matchesAi = matchesAi && p.type === aiFilters.type;
@@ -109,7 +159,7 @@ function PropertiesContent() {
         matchesAi = matchesAi && aiFilters.keywords.some((kw) => hay.includes(kw));
       }
     }
-    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesSqm && matchesAi;
+    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesAi;
   }).sort((a, b) => {
     if (sortBy === 'price-asc') return a.price - b.price;
     if (sortBy === 'price-desc') return b.price - a.price;
@@ -118,9 +168,9 @@ function PropertiesContent() {
   });
 
   function clearAll() {
-    setSearchTerm(''); setFilterType('all'); setPropertyTypeFilter('all');
-    setCustomMinPrice(''); setCustomMaxPrice(''); setBedsFilter('all');
-    setMinSqm(''); setMaxSqm(''); setAiFilters(null);
+    setSearchTerm(''); setStatusInput(''); setPropertyTypeInput('');
+    setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
+    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setAiFilters(null);
   }
 
   function handleSaveSearch() {
@@ -130,9 +180,12 @@ function PropertiesContent() {
       propertyTypeFilter,
       minPrice: customMinPrice,
       maxPrice: customMaxPrice,
-      bedsFilter,
+      bedsFilter: bedsInput.trim(),
+      bathsFilter: bathsInput.trim(),
       minSqm,
       maxSqm,
+      city: cityInput.trim(),
+      keywords: keywordsInput.trim(),
     };
     const res = SavedSearchesStoreEngine.save(criteria);
     if (res === 'empty') showToast('Please enter a location or select a filter first.', 'error');
@@ -158,12 +211,25 @@ function PropertiesContent() {
 
             {/* Pills */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Status */}
+              {/* Status — typeable, suggestions via datalist so "renting"/"buy" etc still resolve */}
               <div className="relative">
-                <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all">
-                  <option value="all">Any Status</option><option value="sale">For Sale</option><option value="rent">For Rent</option>
-                </select>
-                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                <input
+                  type="text"
+                  list="status-options"
+                  placeholder="Any Status"
+                  value={statusInput}
+                  onChange={(e) => setStatusInput(e.target.value)}
+                  className="w-[150px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                />
+                <datalist id="status-options">
+                  <option value="For Sale" />
+                  <option value="For Rent" />
+                </datalist>
+                {statusInput && (
+                  <button onClick={() => setStatusInput('')} aria-label="Clear status" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
               </div>
 
               {/* Price */}
@@ -195,38 +261,95 @@ function PropertiesContent() {
                 )}
               </div>
 
-              {/* Beds */}
+              {/* Beds — typeable, any number, not just the presets in the datalist */}
               <div className="relative">
-                <select value={bedsFilter} onChange={(e)=>setBedsFilter(e.target.value)} className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all">
-                  <option value="all">Any Beds</option><option value="1">1+ beds</option><option value="2">2+ beds</option><option value="3">3+ beds</option><option value="4">4+ beds</option>
-                </select>
-                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  list="beds-options"
+                  placeholder="Any Beds"
+                  value={bedsInput}
+                  onChange={(e) => setBedsInput(e.target.value.replace(/[^\d]/g, ''))}
+                  className="w-[132px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                />
+                <datalist id="beds-options">
+                  <option value="1" /><option value="2" /><option value="3" /><option value="4" /><option value="5" />
+                </datalist>
+                {bedsInput && (
+                  <button onClick={() => setBedsInput('')} aria-label="Clear beds" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
               </div>
 
-              {/* Type */}
+              {/* Baths — typeable, same pattern as Beds */}
               <div className="relative">
-                <select value={propertyTypeFilter} onChange={(e)=>setPropertyTypeFilter(e.target.value)} className="appearance-none bg-white border border-slate-200 rounded-full px-5 py-2.5 pr-10 font-medium text-[14px] text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all">
-                  <option value="all">Type</option><option value="House">Houses</option><option value="Apartment">Apartments</option><option value="Land">Land</option>
-                </select>
-                <svg className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  list="baths-options"
+                  placeholder="Any Baths"
+                  value={bathsInput}
+                  onChange={(e) => setBathsInput(e.target.value.replace(/[^\d]/g, ''))}
+                  className="w-[136px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                />
+                <datalist id="baths-options">
+                  <option value="1" /><option value="2" /><option value="3" /><option value="4" />
+                </datalist>
+                {bathsInput && (
+                  <button onClick={() => setBathsInput('')} aria-label="Clear baths" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
               </div>
 
-              {/* More */}
+              {/* Type — typeable, suggestions via datalist */}
+              <div className="relative">
+                <input
+                  type="text"
+                  list="type-options"
+                  placeholder="Any Type"
+                  value={propertyTypeInput}
+                  onChange={(e) => setPropertyTypeInput(e.target.value)}
+                  className="w-[140px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                />
+                <datalist id="type-options">
+                  <option value="House" /><option value="Apartment" /><option value="Land" />
+                </datalist>
+                {propertyTypeInput && (
+                  <button onClick={() => setPropertyTypeInput('')} aria-label="Clear type" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+
+              {/* More — everything else, all typeable: sqm range, city/district, amenities */}
               <div className="relative">
                 <button onClick={()=>setIsMoreOpen(!isMoreOpen)} className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                  {minSqm || maxSqm ? 'More (1)' : 'More'}
+                  {(() => {
+                    const n = [minSqm || maxSqm, cityInput, keywordsInput].filter(Boolean).length;
+                    return n > 0 ? `More (${n})` : 'More';
+                  })()}
                 </button>
                 {isMoreOpen && (
                   <div className="absolute top-full right-0 xl:left-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl p-5 z-50 w-72">
-                    <h3 className="font-bold text-slate-900 mb-4 text-[15px]">Square Meters (sqm)</h3>
+                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Square Meters (sqm)</h3>
                     <div className="flex items-center gap-3">
                       <input type="number" placeholder="Min sqm" value={minSqm} onChange={(e)=>setMinSqm(e.target.value)} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
                       <span className="text-slate-400 font-medium">–</span>
                       <input type="number" placeholder="Max sqm" value={maxSqm} onChange={(e)=>setMaxSqm(e.target.value)} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
                     </div>
+
+                    <h3 className="font-bold text-slate-900 mb-2 mt-5 text-[15px]">City / District</h3>
+                    <input type="text" placeholder="e.g. Kigali, Musanze" value={cityInput} onChange={(e)=>setCityInput(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
+
+                    <h3 className="font-bold text-slate-900 mb-2 mt-5 text-[15px]">Amenities / Keywords</h3>
+                    <input type="text" placeholder="e.g. pool, garden, furnished" value={keywordsInput} onChange={(e)=>setKeywordsInput(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
+                    <p className="text-[11px] text-slate-400 mt-1">Comma-separated — matches any one.</p>
+
                     <div className="mt-5 flex gap-2">
-                      <button onClick={()=>{setMinSqm('');setMaxSqm('');}} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={()=>{setMinSqm('');setMaxSqm('');setCityInput('');setKeywordsInput('');}} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
                       <button onClick={()=>setIsMoreOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
                     </div>
                   </div>

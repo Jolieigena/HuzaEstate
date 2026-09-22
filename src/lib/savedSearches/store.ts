@@ -33,9 +33,12 @@ function isEmptyCriteria(c: SavedSearchCriteria): boolean {
     c.propertyTypeFilter === "all" &&
     !c.minPrice &&
     !c.maxPrice &&
-    c.bedsFilter === "all" &&
+    !c.bedsFilter &&
+    !c.bathsFilter &&
     !c.minSqm &&
-    !c.maxSqm
+    !c.maxSqm &&
+    !c.city &&
+    !c.keywords
   );
 }
 
@@ -49,10 +52,13 @@ export function describeCriteria(c: SavedSearchCriteria): string {
   const parts: string[] = [];
   if (c.searchTerm) parts.push(c.searchTerm);
   if (c.filterType !== "all") parts.push(c.filterType === "sale" ? "For sale" : "For rent");
-  if (c.propertyTypeFilter !== "all") parts.push(c.propertyTypeFilter);
+  if (c.propertyTypeFilter !== "all") parts.push(c.propertyTypeFilter.charAt(0).toUpperCase() + c.propertyTypeFilter.slice(1));
   if (c.minPrice || c.maxPrice) parts.push(`$${c.minPrice || "0"}–$${c.maxPrice || "any"}`);
-  if (c.bedsFilter !== "all") parts.push(`${c.bedsFilter}+ beds`);
+  if (c.bedsFilter) parts.push(`${c.bedsFilter}+ beds`);
+  if (c.bathsFilter) parts.push(`${c.bathsFilter}+ baths`);
   if (c.minSqm || c.maxSqm) parts.push(`${c.minSqm || "0"}–${c.maxSqm || "any"} sqm`);
+  if (c.city) parts.push(c.city);
+  if (c.keywords) parts.push(c.keywords);
   return parts.length ? parts.join(" · ") : "All properties";
 }
 
