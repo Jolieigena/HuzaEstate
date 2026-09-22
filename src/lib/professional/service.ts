@@ -146,6 +146,25 @@ export const ProfessionalService = {
   isStorageAvailable() { try { const key = "__huza_pro_test__"; window.localStorage.setItem(key, "1"); window.localStorage.removeItem(key); return true; } catch { return false; } },
   getProfileForAccount(accountId?: string) { return ensureLoaded().profiles.find((profile) => profile.accountId === accountId); },
   getProfile(profileId?: string) { return ensureLoaded().profiles.find((profile) => profile.id === profileId); },
+  /** Public directory listing (src/app/professionals/page.tsx) — only
+   *  admin-approved profiles, same "approved" status the admin verification
+   *  workflow already gates on elsewhere in this app. */
+  getApprovedProfiles(): ProfessionalProfile[] { return ensureLoaded().profiles.filter((profile) => profile.status === "approved"); },
+  /** A cold inquiry from a visitor who found this profile in the public
+   *  directory — not tied to any existing project/request, unlike
+   *  sendMessage() above. Lands as real activity/notifications in the
+   *  professional's own dashboard, same as any other event this service
+   *  records, so it isn't a dead end. */
+  contactProfile(profileId: string, input: { name: string; email: string; message: string }): boolean {
+    const profile = this.getProfile(profileId);
+    if (!profile) return false;
+    const preview = input.message.length > 80 ? `${input.message.slice(0, 80)}…` : input.message;
+    record(profileId, "messages", "inquiry_received", `New inquiry from ${input.name} (${input.email}): "${preview}"`, "/professional/messages");
+    professionalNotification(profileId, "inquiry_received", "New inquiry", `${input.name} sent a message about your profile.`, "/professional/messages");
+    persist();
+    notify();
+    return true;
+  },
 
   saveApplication(accountId: string, values: Partial<ProfessionalProfile>) {
     return mutate((current) => {

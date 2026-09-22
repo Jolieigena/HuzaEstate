@@ -18,4 +18,8 @@ export interface Property {
   videoUrl?: string;
   lat?: number;
   lng?: number;
+  /** Country name (see src/lib/countries.ts's COUNTRY_OPTIONS) — optional
+   *  because every listing before multi-country support predates this
+   *  field; getPropertyCountry() defaults an absent value to Rwanda. */
+  country?: string;
 }

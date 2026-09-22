@@ -5,28 +5,41 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import RequireAuth from '@/components/shared/RequireAuth';
 import ApplyGate from '@/components/manager/ApplyGate';
+import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
 import type { Property } from '@/lib/properties/types';
+import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
+import { PostingPlanService } from '@/lib/postingPlans/postingPlanService';
+import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
+// Manager Portal has no per-seller ownership model — any approved seller
+// manages every listing (see ManagerDashboard.tsx's useAllProperties()) —
+// so posting-plan usage, like the landlord profile and rent payouts built
+// earlier, is tracked against this one fixture seller identity rather than
+// the real logged-in account id.
+const DEMO_SELLER_ID = 'seller-user';
+
 function PostPropertyForm() {
   const router = useRouter();
   const { token, isApprovedSeller } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [unlockTick, setUnlockTick] = useState(0);
 
   const [title, setTitle] = useState('');
   const [listingType, setListingType] = useState<'' | Property['type']>('');
   const [propertyType, setPropertyType] = useState<'' | Property['propertyType']>('');
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
+  const [country, setCountry] = useState(DEFAULT_COUNTRY.name);
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   const [sqm, setSqm] = useState('');
@@ -37,6 +50,13 @@ function PostPropertyForm() {
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
+  }
+
+  // Re-evaluated fresh on every render (not a hook) — unlockTick's only job
+  // is to force a re-render right after a purchase succeeds in the paywall.
+  void unlockTick;
+  if (!PostingPlanService.canPost(DEMO_SELLER_ID)) {
+    return <PostingPaywall accountId={DEMO_SELLER_ID} onUnlocked={() => setUnlockTick((n) => n + 1)} />;
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -82,6 +102,7 @@ function PostPropertyForm() {
           type: listingType,
           propertyType,
           videoUrl,
+          country,
         }),
       });
       if (!res.ok) {
@@ -91,6 +112,12 @@ function PostPropertyForm() {
         return;
       }
       const data = await res.json();
+      // The real backend may not persist a field it doesn't recognize yet
+      // (country), so this override guarantees it sticks regardless — the
+      // same mechanism EditPropertyModal.tsx uses for frontend-only edits
+      // layered on top of backend-sourced properties.
+      PropertyOverridesStoreEngine.set(data.property.id, { country });
+      PostingPlanService.recordPostUsed(DEMO_SELLER_ID);
       router.push(`/properties/${data.property.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
@@ -179,6 +206,19 @@ function PostPropertyForm() {
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
+                <select
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
+                >
+                  {COUNTRY_OPTIONS.map((c) => (
+                    <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="sm:col-span-2">

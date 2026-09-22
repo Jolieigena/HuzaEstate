@@ -6,6 +6,7 @@ import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 import type { Property } from '@/lib/properties/types';
+import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 
 interface EditPropertyModalProps {
   property: Property | null;
@@ -41,6 +42,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       price: Number(form.price) || property.price,
       location: form.location,
       city: form.city,
+      country: form.country,
       bedrooms: Number(form.bedrooms) || 0,
       bathrooms: Number(form.bathrooms) || 0,
       sqm: Number(form.sqm) || 0,
@@ -122,6 +124,18 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               required
             />
           </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
+            <select
+              value={form.country}
+              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
+            >
+              {COUNTRY_OPTIONS.map((c) => (
+                <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div>
@@ -192,6 +206,7 @@ function toFormState(property: Property | null) {
     price: property ? String(property.price) : '',
     location: property?.location ?? '',
     city: property?.city ?? '',
+    country: property ? getPropertyCountry(property).name : COUNTRY_OPTIONS[0].name,
     bedrooms: property ? String(property.bedrooms) : '',
     bathrooms: property ? String(property.bathrooms) : '',
     sqm: property ? String(property.sqm) : '',

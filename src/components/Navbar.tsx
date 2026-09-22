@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
+import CountrySelector from './CountrySelector';
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -54,6 +55,7 @@ export default function Navbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        <CountrySelector />
         <Link
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"

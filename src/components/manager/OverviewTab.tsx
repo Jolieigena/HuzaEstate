@@ -1,10 +1,62 @@
 import Image from 'next/image';
+import { useState } from 'react';
 import type { Listing, ListingStatusCounts } from '@/lib/manager/types';
 import { ACTIVITY, REVENUE_TREND } from '@/lib/manager/demoData';
 import StatTile from '@/components/charts/StatTile';
 import TrendChart from '@/components/charts/TrendChart';
 import BarBreakdown from '@/components/charts/BarBreakdown';
 import Sparkline from '@/components/charts/Sparkline';
+import Dialog from '@/components/Dialog';
+import PricingCards from '@/components/postingPlans/PricingCards';
+import PlanCheckout from '@/components/postingPlans/PlanCheckout';
+import { useSubscription, useMonthlyUsage } from '@/lib/postingPlans/hooks';
+import { PLAN_LABELS, PLAN_LIMITS, type PlanTier } from '@/lib/postingPlans/types';
+
+// Same fixture landlord identity used by LandlordProfileTab.tsx and
+// PaymentsTab.tsx — Manager Portal has no per-seller ownership model.
+const DEMO_SELLER_ID = 'seller-user';
+
+function PostingPlanCard() {
+  const subscription = useSubscription(DEMO_SELLER_ID);
+  const usage = useMonthlyUsage(DEMO_SELLER_ID);
+  const [open, setOpen] = useState(false);
+  const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, 'free'> | null>(null);
+
+  const limit = PLAN_LIMITS[subscription.tier];
+  const used = usage.postsUsed;
+
+  return (
+    <>
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-semibold text-slate-500">Posting Plan</div>
+          <div className="text-lg font-black text-slate-900">
+            {PLAN_LABELS[subscription.tier]} <span className="font-semibold text-slate-500 text-sm">· {used}{limit === null ? '' : `/${limit + usage.extraCredits}`} posts used this month</span>
+          </div>
+        </div>
+        <button onClick={() => setOpen(true)} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap">
+          Manage Plan
+        </button>
+      </div>
+
+      <Dialog open={open} onClose={() => { setOpen(false); setCheckoutTier(null); }} labelledBy="posting-plan-title" panelClassName="max-w-3xl p-6 sm:p-8">
+        {checkoutTier ? (
+          <PlanCheckout
+            accountId={DEMO_SELLER_ID}
+            mode={{ kind: 'subscribe', tier: checkoutTier }}
+            onClose={() => setCheckoutTier(null)}
+            onDone={() => { setCheckoutTier(null); setOpen(false); }}
+          />
+        ) : (
+          <>
+            <h2 id="posting-plan-title" className="text-xl font-bold text-slate-900 mb-6">Choose your posting plan</h2>
+            <PricingCards currentTier={subscription.tier} onSelect={(tier) => { if (tier !== 'free') setCheckoutTier(tier); }} />
+          </>
+        )}
+      </Dialog>
+    </>
+  );
+}
 
 export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
   LISTINGS: Listing[];
@@ -13,6 +65,8 @@ export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
 }) {
   return (
     <div className="flex flex-col gap-6">
+      <PostingPlanCard />
+
       {/* KPI Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <StatTile

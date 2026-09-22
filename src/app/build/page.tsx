@@ -463,11 +463,21 @@ export default function BuildPage() {
             ))}
           </Reveal>
 
-          <Reveal delay={150} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5">
+          <Reveal delay={150} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 mb-8">
             <p className="text-slate-200 text-[15px] leading-relaxed">
               <span className="font-bold text-white">Important: </span>
               AI-generated designs are conceptual and must not be used directly for construction. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.
             </p>
+          </Reveal>
+
+          <Reveal delay={200}>
+            <Link
+              href="/professionals"
+              className="inline-flex items-center gap-2 bg-[#2ec440] hover:bg-[#28b039] text-white font-bold px-6 py-3.5 rounded-full transition-colors"
+            >
+              Browse Engineers &amp; Professionals
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </Link>
           </Reveal>
         </div>
       </section>

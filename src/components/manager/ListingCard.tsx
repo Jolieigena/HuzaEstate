@@ -8,6 +8,11 @@ import SellerTourControl from '@/components/SellerTourControl';
 import ListingActionsMenu from './ListingActionsMenu';
 import Sparkline from '@/components/charts/Sparkline';
 import { SERIES_COLOR } from '@/components/charts/styles';
+import { useSubscription } from '@/lib/postingPlans/hooks';
+import { PLAN_FEATURES } from '@/lib/postingPlans/types';
+
+// Same fixture landlord identity used elsewhere in Manager Portal.
+const DEMO_SELLER_ID = 'seller-user';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Active: 'bg-green-100 text-green-700',
@@ -37,6 +42,8 @@ export default function ListingCard({
   const marketStatus = useListingModerationStatus(listing.id);
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
   const isOffMarket = marketStatus !== 'published';
+  const subscription = useSubscription(DEMO_SELLER_ID);
+  const isPriority = PLAN_FEATURES[subscription.tier].priorityPlacement;
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
@@ -63,6 +70,12 @@ export default function ListingCard({
         <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
           {listing.status}
         </span>
+        {isPriority && (
+          <span className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm bg-amber-400 text-amber-900">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+            Priority
+          </span>
+        )}
         {marketBadge && (
           <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm bg-slate-900/80 text-white">
             {marketBadge}

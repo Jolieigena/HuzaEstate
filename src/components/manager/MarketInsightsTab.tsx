@@ -1,7 +1,42 @@
+"use client";
+
+import { useState } from "react";
 import type { Listing } from "@/lib/manager/types";
 import { getDistrictTrend } from "@/lib/marketAnalytics/analyticsService";
 import { MARKET_ANALYTICS_DISCLAIMER } from "@/lib/marketAnalytics/types";
 import { Card } from "@/components/admin/ui";
+import PricingCards from "@/components/postingPlans/PricingCards";
+import PlanCheckout from "@/components/postingPlans/PlanCheckout";
+import { useSubscription } from "@/lib/postingPlans/hooks";
+import { PLAN_FEATURES, PLAN_LABELS, type PlanTier } from "@/lib/postingPlans/types";
+
+// Same fixture landlord identity used elsewhere in Manager Portal — see
+// LandlordProfileTab.tsx / PaymentsTab.tsx / OverviewTab.tsx.
+const DEMO_SELLER_ID = "seller-user";
+
+function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
+  const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, "free"> | null>(null);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-xl font-bold text-slate-900">Market Insights</h2>
+        <p className="text-sm text-slate-500 mt-1">Gold and Diamond plans include pricing comparisons against district averages.</p>
+      </div>
+      <Card className="text-center py-10">
+        <p className="font-bold text-slate-900 mb-1">Market Insights is a Gold/Diamond feature</p>
+        <p className="text-sm text-slate-500 mb-6">You&apos;re on the {PLAN_LABELS[currentTier]} plan. Upgrade to see how your listings are priced against the market.</p>
+        {checkoutTier ? (
+          <div className="max-w-sm mx-auto text-left">
+            <PlanCheckout accountId={DEMO_SELLER_ID} mode={{ kind: "subscribe", tier: checkoutTier }} onClose={() => setCheckoutTier(null)} onDone={() => setCheckoutTier(null)} />
+          </div>
+        ) : (
+          <PricingCards currentTier={currentTier} onSelect={(tier) => { if (tier !== "free") setCheckoutTier(tier); }} />
+        )}
+      </Card>
+    </div>
+  );
+}
 
 /** Manager-side tailoring of the same market data the customer Dashboard's
  *  Market Insights tab shows: instead of "should I sell", it's "how is my
@@ -11,9 +46,17 @@ import { Card } from "@/components/admin/ui";
  *  prices per m² sit on a completely different scale from a built house or
  *  apartment, so comparing a land listing's $/m² against a district average
  *  blended across property types produced wildly misleading percentages
- *  (1000%+) rather than a meaningful signal. */
+ *  (1000%+) rather than a meaningful signal.
+ *
+ *  Gated to Gold/Diamond — see src/lib/postingPlans/types.ts's PLAN_FEATURES,
+ *  the one place tier entitlements are decided. */
 export default function MarketInsightsTab({ LISTINGS }: { LISTINGS: Listing[] }) {
+  const subscription = useSubscription(DEMO_SELLER_ID);
   const saleListings = LISTINGS.filter((l) => l.property.type === "sale" && l.property.sqm > 0 && l.property.propertyType !== "land");
+
+  if (!PLAN_FEATURES[subscription.tier].marketInsights) {
+    return <UpgradeGate currentTier={subscription.tier} />;
+  }
 
   return (
     <div className="flex flex-col gap-6">
