@@ -2,15 +2,11 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import PhoneInput from '@/components/shared/PhoneInput';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [phone, setPhone] = useState('');
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const sanitized = e.target.value.replace(/[^0-9+\s]/g, '').slice(0, 16);
-    setPhone(sanitized);
-  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -74,16 +70,7 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    pattern="[0-9+\s]*"
-                    maxLength={16}
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    placeholder="+250 xxx xxx xxx"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                  />
+                  <PhoneInput value={phone} onChange={setPhone} />
                 </div>
 
                 <div>

@@ -10,7 +10,7 @@ import { useAuth } from '@/lib/auth-context';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
-import type { Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
 import { PostingPlanService } from '@/lib/postingPlans/postingPlanService';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
@@ -44,6 +44,7 @@ function PostPropertyForm() {
   const [bathrooms, setBathrooms] = useState('');
   const [sqm, setSqm] = useState('');
   const [description, setDescription] = useState('');
+  const [amenities, setAmenities] = useState<string[]>([]);
   const [photos, setPhotos] = useState<CategorizedPhoto[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -58,6 +59,10 @@ function PostPropertyForm() {
   if (!PostingPlanService.canPost(DEMO_SELLER_ID)) {
     return <PostingPaywall accountId={DEMO_SELLER_ID} onUnlocked={() => setUnlockTick((n) => n + 1)} />;
   }
+
+  const toggleAmenity = (label: string) => {
+    setAmenities((prev) => (prev.includes(label) ? prev.filter((a) => a !== label) : [...prev, label]));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -103,6 +108,7 @@ function PostPropertyForm() {
           propertyType,
           videoUrl,
           country,
+          amenities,
         }),
       });
       if (!res.ok) {
@@ -113,10 +119,10 @@ function PostPropertyForm() {
       }
       const data = await res.json();
       // The real backend may not persist a field it doesn't recognize yet
-      // (country), so this override guarantees it sticks regardless — the
-      // same mechanism EditPropertyModal.tsx uses for frontend-only edits
-      // layered on top of backend-sourced properties.
-      PropertyOverridesStoreEngine.set(data.property.id, { country });
+      // (country, amenities), so this override guarantees it sticks
+      // regardless — the same mechanism EditPropertyModal.tsx uses for
+      // frontend-only edits layered on top of backend-sourced properties.
+      PropertyOverridesStoreEngine.set(data.property.id, { country, amenities });
       PostingPlanService.recordPostUsed(DEMO_SELLER_ID);
       router.push(`/properties/${data.property.id}`);
     } catch (err) {
@@ -289,6 +295,18 @@ function PostPropertyForm() {
                   placeholder="Tell buyers or renters what makes this property special..."
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
                 />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-bold text-slate-700 mb-2">Amenities</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
+                  {AMENITY_OPTIONS.map((label) => (
+                    <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
+                      <input type="checkbox" checked={amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>

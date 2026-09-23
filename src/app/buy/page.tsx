@@ -113,18 +113,18 @@ export default function BuyPage() {
         <PublicPropertyGrid properties={forSale} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
       </section>
 
-      {/* Mortgage Cross-Sell */}
+      {/* Professionals Cross-Sell */}
       <section className="max-w-7xl mx-auto px-6 sm:px-10 pb-24">
         <div className="bg-slate-900 rounded-3xl p-10 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div>
-            <h3 className="text-xl font-bold text-white mb-2">Not sure what you can afford?</h3>
-            <p className="text-slate-300">Estimate your monthly payment with our mortgage calculator before you start touring homes.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Need a second opinion before you buy?</h3>
+            <p className="text-slate-300">Find a verified surveyor, inspector or lawyer to check a property before you sign.</p>
           </div>
           <Link
-            href="/mortgages"
+            href="/professionals"
             className="inline-flex items-center gap-2 bg-white hover:bg-[#2ec440] hover:text-white text-slate-900 font-bold px-8 py-3.5 rounded-xl transition-colors whitespace-nowrap"
           >
-            Calculate my mortgage
+            Find a professional
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </Link>
         </div>

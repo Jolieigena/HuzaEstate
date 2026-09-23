@@ -5,7 +5,7 @@ import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
-import type { Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 
 interface EditPropertyModalProps {
@@ -51,8 +51,13 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       photos: form.photos,
       type: form.type,
       propertyType: form.propertyType,
+      amenities: form.amenities,
     });
     onClose();
+  };
+
+  const toggleAmenity = (label: string) => {
+    setForm((f) => ({ ...f, amenities: f.amenities.includes(label) ? f.amenities.filter((a) => a !== label) : [...f.amenities, label] }));
   };
 
   return (
@@ -186,6 +191,18 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           />
         </div>
 
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-2">Amenities</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
+            {AMENITY_OPTIONS.map((label) => (
+              <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
+                <input type="checkbox" checked={form.amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div className="flex items-center gap-3 pt-2">
           <button type="submit" className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
             Save Changes
@@ -213,6 +230,7 @@ function toFormState(property: Property | null) {
     photos: property ? toPhotos(property) : [],
     type: (property?.type ?? 'sale') as Property['type'],
     propertyType: (property?.propertyType ?? 'house') as Property['propertyType'],
+    amenities: property?.amenities ?? [],
   };
 }
 

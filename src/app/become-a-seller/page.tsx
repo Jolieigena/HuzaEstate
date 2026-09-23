@@ -1,9 +1,11 @@
 "use client";
 
 import React, { Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import PasswordInput from '@/components/shared/PasswordInput';
+import PhoneInput from '@/components/shared/PhoneInput';
 import Dialog from '@/components/Dialog';
 import PlanCheckout from '@/components/postingPlans/PlanCheckout';
 import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
@@ -39,17 +41,13 @@ function BecomeASellerForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   // Stripe not configured server-side — fall back to the existing simulated
   // checkout instead of erroring, same "unset key = demo mode" convention as
   // WORLD_LABS_API_KEY / GEMINI_API_KEY elsewhere in this app.
   const [demoMode, setDemoMode] = useState(false);
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const sanitized = e.target.value.replace(/[^0-9+\s]/g, '').slice(0, 16);
-    setPhone(sanitized);
-  };
 
   const proceedPastAccountCreation = async (name: string, emailValue: string) => {
     if (!paidTier) {
@@ -84,6 +82,11 @@ function BecomeASellerForm() {
     e.preventDefault();
     if (submitting) return;
     setError('');
+
+    if (!termsAccepted) {
+      setError("Please agree to HuzaEstate's seller terms to continue.");
+      return;
+    }
     setSubmitting(true);
 
     if (isLoggedIn && account) {
@@ -98,7 +101,7 @@ function BecomeASellerForm() {
       return;
     }
 
-    const result = await signup({ firstName, lastName, email, password, termsAccepted: true });
+    const result = await signup({ firstName, lastName, email, password, termsAccepted });
     if (!result.ok) {
       setError(result.error);
       setSubmitting(false);
@@ -142,19 +145,16 @@ function BecomeASellerForm() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-24 px-4 sm:px-6">
       <div className="w-full max-w-[500px]">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Apply to become a seller</h1>
-        <p className="text-slate-500 mb-4">
-          {paidTier
-            ? "Tell us a bit about yourself, then you'll complete payment securely with Stripe."
-            : "Tell us a bit about yourself. Once approved, you'll get access to the Manager Portal to list and manage your properties."}
-        </p>
-
-        {selectedTier && (
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-6">
-            Selected plan: {PLAN_LABELS[selectedTier]}
-            {paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-3 flex-wrap mb-4 w-full">
+          <h1 className="text-2xl font-bold text-slate-900 leading-none">Become a seller</h1>
+          {selectedTier && (
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs leading-none">
+              Selected plan: {PLAN_LABELS[selectedTier]}
+              {paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}
+            </div>
+          )}
+        </div>
+        {paidTier && <p className="text-slate-500 mb-4">You&apos;ll complete payment securely with Stripe next.</p>}
 
         {error && (
           <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
@@ -168,7 +168,7 @@ function BecomeASellerForm() {
 
             {isLoggedIn ? (
               <p className="text-sm text-slate-600">
-                Applying as <span className="font-bold text-slate-900">{account?.name}</span> ({account?.email})
+                Continuing as <span className="font-bold text-slate-900">{account?.name}</span> ({account?.email})
               </p>
             ) : (
               <>
@@ -238,17 +238,7 @@ function BecomeASellerForm() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
-              <input
-                type="tel"
-                inputMode="tel"
-                pattern="[0-9+\s]*"
-                maxLength={16}
-                value={phone}
-                onChange={handlePhoneChange}
-                placeholder="+250 xxx xxx xxx"
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                required
-              />
+              <PhoneInput value={phone} onChange={setPhone} required />
             </div>
           </div>
 
@@ -270,14 +260,43 @@ function BecomeASellerForm() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-            {submitting ? 'Submitting…' : paidTier ? 'Continue to Payment' : 'Submit Application'}
-          </button>
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="seller-terms"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="accent-[#2ec440] w-4 h-4 mt-1 cursor-pointer"
+              required
+            />
+            <label htmlFor="seller-terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
+              I agree to HuzaEstate&apos;s <Link href="#" className="font-bold text-[#2ec440] hover:underline">Seller Terms &amp; Conditions</Link>.
+            </label>
+          </div>
 
-          <p className="text-center text-slate-500 text-sm">
-            By applying, you agree to HuzaEstate&apos;s seller terms and verification process.
-          </p>
+          {paidTier && (
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <span className="text-sm font-bold text-slate-700">{PLAN_LABELS[paidTier]} plan</span>
+              <span className="text-sm font-bold text-slate-900">{formatMoney(PLAN_PRICES[paidTier])}/month</span>
+            </div>
+          )}
+
+          <button type="submit" disabled={submitting || !termsAccepted} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
+            {submitting ? 'Submitting…' : paidTier ? 'Continue to Payment' : 'Create Seller Account'}
+          </button>
         </form>
+
+        {!isLoggedIn && (
+          <p className="mt-6 text-center text-slate-500 text-sm">
+            Already have an account?{' '}
+            <Link
+              href={`/login?redirect=${encodeURIComponent(`/become-a-seller${planParam ? `?plan=${planParam}` : ''}`)}`}
+              className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors"
+            >
+              Sign in
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

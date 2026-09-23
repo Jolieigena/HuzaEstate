@@ -8,12 +8,9 @@ import AISearchCard from '@/components/AISearchCard';
 import { useVisibleListings } from '@/lib/admin/listings';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
-import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
-import { useSavedSearches } from '@/lib/savedSearches/hooks';
-import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
-import { useToast } from '@/lib/toast-context';
 import { COUNTRY_OPTIONS, findCountry, getPropertyCountry } from '@/lib/countries';
-import { getSelectedCountryName } from '@/components/CountrySelector';
+import { getSelectedCountryName } from '@/lib/geo/useCurrentCountry';
+import { AMENITY_OPTIONS } from '@/lib/properties/types';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'largest';
 
@@ -23,6 +20,7 @@ const SORT_LABELS: Record<SortOption, string> = {
   'price-desc': 'Price: High to Low',
   largest: 'Largest',
 };
+
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -77,22 +75,31 @@ function PropertiesContent() {
   const [isPriceOpen, setIsPriceOpen] = useState(false);
   const [customMinPrice, setCustomMinPrice] = useState('');
   const [customMaxPrice, setCustomMaxPrice] = useState('');
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
-  // Price/More render as position:fixed panels (see openPanel below) instead
-  // of being absolutely positioned inside the horizontally-scrolling pills
-  // row — an absolute panel there either scrolls out of view with its
-  // trigger or gets clipped by the row's overflow-x-auto, which is exactly
-  // the cut-off/overlapping panel bug this replaces.
+  // The Price panel renders as a position:fixed panel (see openPanel below)
+  // computed from its trigger's bounding rect, rather than being absolutely
+  // positioned inline — that's what keeps it from getting clipped or
+  // drifting off-screen if the pills row wraps or the page scrolls.
   const priceButtonRef = useRef<HTMLButtonElement>(null);
-  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const [pricePanelPos, setPricePanelPos] = useState<{ top: number; left: number } | null>(null);
-  const [morePanelPos, setMorePanelPos] = useState<{ top: number; left: number } | null>(null);
+  const [isAreaOpen, setIsAreaOpen] = useState(false);
+  const areaButtonRef = useRef<HTMLButtonElement>(null);
+  const [areaPanelPos, setAreaPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const [isBedsOpen, setIsBedsOpen] = useState(false);
+  const bedsButtonRef = useRef<HTMLButtonElement>(null);
+  const [bedsPanelPos, setBedsPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const [isBathsOpen, setIsBathsOpen] = useState(false);
+  const bathsButtonRef = useRef<HTMLButtonElement>(null);
+  const [bathsPanelPos, setBathsPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const [isAmenitiesOpen, setIsAmenitiesOpen] = useState(false);
+  const amenitiesButtonRef = useRef<HTMLButtonElement>(null);
+  const [amenitiesPanelPos, setAmenitiesPanelPos] = useState<{ top: number; left: number } | null>(null);
   const [minSqm, setMinSqm] = useState('');
   const [maxSqm, setMaxSqm] = useState('');
   const [cityInput, setCityInput] = useState('');
   const [keywordsInput, setKeywordsInput] = useState('');
-  // Seeded from whatever the visitor picked in the navbar's country pill
-  // (CountrySelector.tsx) — a default only, still fully typeable below.
+  // Seeded from whatever the visitor previously picked via the (now-removed)
+  // navbar country picker, if anything — see useCurrentCountry.ts. A
+  // default only, still fully typeable below.
   // Starts at '' (matching SSR, which has no localStorage) and is filled in
   // by the effect further down — a lazy initializer here would read a real
   // value on the client's first render while the server rendered '', a
@@ -117,9 +124,6 @@ function PropertiesContent() {
 
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(false);
-  const savedSearches = useSavedSearches();
-  const { showToast } = useToast();
 
   // Reset URL-backed fields during navigation, before rendering stale results.
   const query = searchParams.toString();
@@ -137,20 +141,19 @@ function PropertiesContent() {
     if (saved) setCountryInput(saved);
   }, []);
 
-  // Fixed-position panels don't track their trigger on scroll, so close them
-  // the moment any scrolling happens (the pills row's own horizontal scroll
-  // included — that still fires a 'scroll' event window can catch in the
-  // capture phase) rather than letting them drift away from the button.
+  // A fixed-position panel doesn't track its trigger on scroll, so close it
+  // the moment any scrolling happens rather than letting it drift away from
+  // the button.
   useEffect(() => {
-    if (!isPriceOpen && !isMoreOpen) return;
-    const closeAll = () => { setIsPriceOpen(false); setIsMoreOpen(false); };
-    window.addEventListener('scroll', closeAll, true);
-    window.addEventListener('resize', closeAll);
+    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen) return;
+    const close = () => { setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
     return () => {
-      window.removeEventListener('scroll', closeAll, true);
-      window.removeEventListener('resize', closeAll);
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
     };
-  }, [isPriceOpen, isMoreOpen]);
+  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen]);
 
   function openPanel(buttonRef: React.RefObject<HTMLButtonElement | null>, panelWidth: number, setPos: (pos: { top: number; left: number }) => void, open: () => void) {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -159,6 +162,18 @@ function PropertiesContent() {
       setPos({ top: rect.bottom + 8, left });
     }
     open();
+  }
+
+  // The checkbox list and the free-text field both just read/write the same
+  // comma-separated keywordsInput string, so ticking "Pool" and typing
+  // "rooftop" combine into one filter instead of being two separate ones.
+  const selectedAmenities = keywordsInput.split(',').map((s) => s.trim()).filter(Boolean);
+  function toggleAmenity(label: string) {
+    const has = selectedAmenities.some((k) => k.toLowerCase() === label.toLowerCase());
+    const next = has
+      ? selectedAmenities.filter((k) => k.toLowerCase() !== label.toLowerCase())
+      : [...selectedAmenities, label];
+    setKeywordsInput(next.join(', '));
   }
 
   const allProperties = useAllProperties();
@@ -190,7 +205,10 @@ function PropertiesContent() {
     let matchesKeywords = true;
     if (keywordsInput.trim()) {
       const kws = keywordsInput.toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
-      const keywordHay = `${p.title} ${p.description}`.toLowerCase();
+      // Structured amenities (ticked on post-property/EditPropertyModal) plus
+      // free-text title/description, so a listing that ticked "Pool" matches
+      // even if the word never appears in its description.
+      const keywordHay = `${p.title} ${p.description} ${(p.amenities ?? []).join(' ')}`.toLowerCase();
       matchesKeywords = kws.length === 0 || kws.some((kw) => keywordHay.includes(kw));
     }
     const wantedCountry = findCountry(countryInput);
@@ -211,7 +229,7 @@ function PropertiesContent() {
         matchesAi = matchesAi && cityTokens.every((token) => propText.includes(token));
       }
       if (aiFilters.keywords?.length) {
-        const hay = `${p.title} ${p.description}`.toLowerCase();
+        const hay = `${p.title} ${p.description} ${(p.amenities ?? []).join(' ')}`.toLowerCase();
         matchesAi = matchesAi && aiFilters.keywords.some((kw) => hay.includes(kw));
       }
     }
@@ -229,48 +247,24 @@ function PropertiesContent() {
     setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setCountryInput(''); setAiFilters(null);
   }
 
-  function handleSaveSearch() {
-    const criteria: SavedSearchCriteria = {
-      searchTerm: searchTerm.trim(),
-      filterType,
-      propertyTypeFilter,
-      minPrice: customMinPrice,
-      maxPrice: customMaxPrice,
-      bedsFilter: bedsInput.trim(),
-      bathsFilter: bathsInput.trim(),
-      minSqm,
-      maxSqm,
-      city: cityInput.trim(),
-      keywords: keywordsInput.trim(),
-    };
-    const res = SavedSearchesStoreEngine.save(criteria);
-    if (res === 'empty') showToast('Please enter a location or select a filter first.', 'error');
-    else if (res === 'duplicate') showToast('You already saved this search.', 'info');
-    else showToast('Search saved to your account!', 'success');
-  }
-
   return (
     <div className="w-full bg-[#f8fafc] pt-4 pb-0 flex flex-col min-h-screen">
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-shrink-0">
 
         {/* ── Filter bar ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between pb-6 pt-2 border-b border-slate-100 mb-6 gap-4">
-          <div className="flex items-center gap-4 xl:gap-6 w-full xl:w-auto flex-1 flex-nowrap overflow-x-auto pb-1 [scrollbar-width:thin]">
-
-            {/* Search input */}
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="relative w-[220px] sm:w-[280px]">
-                <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                <input type="text" placeholder="Kigali, Rwanda" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-              </div>
+        <div className="pb-6 pt-2 border-b border-slate-100 mb-6">
+          {/* Search box and every filter share one flex-wrap flow (not nested
+              in a separate row) so wrapping fills each line to the container's
+              actual full width instead of leaving a trailing gap and wrapping
+              early. */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="relative w-full sm:w-[280px]">
+              <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input type="text" placeholder="Kigali, Rwanda" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
-            {/* Pills — one line, no wrap; the row scrolls horizontally instead of
-                wrapping onto a second line, which is also what kept the Price/More
-                dropdown panels below from getting clipped or drifting off-screen. */}
-            <div className="flex items-center gap-2 flex-nowrap shrink-0">
               {/* Status — typeable, suggestions via datalist so "renting"/"buy" etc still resolve */}
-              <div className="relative shrink-0">
+              <div className="relative">
                 <input
                   type="text"
                   list="status-options"
@@ -291,7 +285,7 @@ function PropertiesContent() {
               </div>
 
               {/* Price */}
-              <div className="relative shrink-0">
+              <div className="relative">
                 <button
                   ref={priceButtonRef}
                   onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 288, setPricePanelPos, () => setIsPriceOpen(true)))}
@@ -323,45 +317,78 @@ function PropertiesContent() {
                 )}
               </div>
 
-              {/* Beds — typeable, any number, not just the presets in the datalist */}
-              <div className="relative shrink-0">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  list="beds-options"
-                  placeholder="Any Beds"
-                  value={bedsInput}
-                  onChange={(e) => setBedsInput(e.target.value.replace(/[^\d]/g, ''))}
-                  className="w-[132px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
-                />
-                <datalist id="beds-options">
-                  <option value="1" /><option value="2" /><option value="3" /><option value="4" /><option value="5" />
-                </datalist>
-                {bedsInput && (
-                  <button onClick={() => setBedsInput('')} aria-label="Clear beds" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+              {/* Beds — dropdown with quick presets plus a custom number input the
+                  user can type any value into, same pattern as Price/Area Size. */}
+              <div className="relative">
+                <button
+                  ref={bedsButtonRef}
+                  onClick={() => (isBedsOpen ? setIsBedsOpen(false) : openPanel(bedsButtonRef, 220, setBedsPanelPos, () => setIsBedsOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {bedsInput ? `${bedsInput}+ Beds` : 'Any Beds'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isBedsOpen && bedsPanelPos && (
+                  <div style={{ position: 'fixed', top: bedsPanelPos.top, left: bedsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {['1', '2', '3', '4', '5'].map((n) => (
+                        <button key={n} onClick={() => { setBedsInput(n); setIsBedsOpen(false); }} className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${bedsInput === n ? 'bg-[#2ec440] text-white border-[#2ec440]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                          {n}+
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full h-px bg-slate-100 mb-3" />
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Custom</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Type any number"
+                      value={bedsInput}
+                      onChange={(e) => setBedsInput(e.target.value.replace(/[^\d]/g, ''))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                    />
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setBedsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={() => setIsBedsOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Baths — typeable, same pattern as Beds */}
-              <div className="relative shrink-0">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  list="baths-options"
-                  placeholder="Any Baths"
-                  value={bathsInput}
-                  onChange={(e) => setBathsInput(e.target.value.replace(/[^\d]/g, ''))}
-                  className="w-[136px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
-                />
-                <datalist id="baths-options">
-                  <option value="1" /><option value="2" /><option value="3" /><option value="4" />
-                </datalist>
-                {bathsInput && (
-                  <button onClick={() => setBathsInput('')} aria-label="Clear baths" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+              {/* Baths — same dropdown + custom-number pattern as Beds */}
+              <div className="relative">
+                <button
+                  ref={bathsButtonRef}
+                  onClick={() => (isBathsOpen ? setIsBathsOpen(false) : openPanel(bathsButtonRef, 220, setBathsPanelPos, () => setIsBathsOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {bathsInput ? `${bathsInput}+ Baths` : 'Any Baths'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isBathsOpen && bathsPanelPos && (
+                  <div style={{ position: 'fixed', top: bathsPanelPos.top, left: bathsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {['1', '2', '3', '4'].map((n) => (
+                        <button key={n} onClick={() => { setBathsInput(n); setIsBathsOpen(false); }} className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${bathsInput === n ? 'bg-[#2ec440] text-white border-[#2ec440]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+                          {n}+
+                        </button>
+                      ))}
+                    </div>
+                    <div className="w-full h-px bg-slate-100 mb-3" />
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Custom</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Type any number"
+                      value={bathsInput}
+                      onChange={(e) => setBathsInput(e.target.value.replace(/[^\d]/g, ''))}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                    />
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setBathsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={() => setIsBathsOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -369,7 +396,7 @@ function PropertiesContent() {
                   same 3 real categories the post-property form offers (house/apartment/
                   land) — see parsePropertyTypeInput above — so a listing created there
                   is always reachable by every synonym suggested here. */}
-              <div className="relative shrink-0">
+              <div className="relative">
                 <input
                   type="text"
                   list="type-options"
@@ -393,7 +420,7 @@ function PropertiesContent() {
 
               {/* Country — typeable, suggestions via datalist; any world country resolves
                   (see COUNTRY_OPTIONS), not just Rwanda's immediate neighbors */}
-              <div className="relative shrink-0">
+              <div className="relative">
                 <input
                   type="text"
                   list="country-options"
@@ -412,51 +439,94 @@ function PropertiesContent() {
                 )}
               </div>
 
-              {/* More — everything else, all typeable: sqm range, city/district, amenities */}
-              <div className="relative shrink-0">
+              {/* Area Size — a pill button matching Status/Price/Beds/etc, opening a
+                  small popover with custom min/max sqm inputs (same fixed-position
+                  pattern as Price) rather than exposing two inline number inputs. */}
+              <div className="relative">
                 <button
-                  ref={moreButtonRef}
-                  onClick={() => (isMoreOpen ? setIsMoreOpen(false) : openPanel(moreButtonRef, 288, setMorePanelPos, () => setIsMoreOpen(true)))}
+                  ref={areaButtonRef}
+                  onClick={() => (isAreaOpen ? setIsAreaOpen(false) : openPanel(areaButtonRef, 264, setAreaPanelPos, () => setIsAreaOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                  {(() => {
-                    const n = [minSqm || maxSqm, cityInput, keywordsInput].filter(Boolean).length;
-                    return n > 0 ? `More (${n})` : 'More';
-                  })()}
+                  {minSqm || maxSqm ? `${minSqm || '0'} – ${maxSqm || 'Any'} sqm` : 'Area Size'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
-                {isMoreOpen && morePanelPos && (
-                  <div style={{ position: 'fixed', top: morePanelPos.top, left: morePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-5 z-50 w-72">
-                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Square Meters (sqm)</h3>
+                {isAreaOpen && areaPanelPos && (
+                  <div style={{ position: 'fixed', top: areaPanelPos.top, left: areaPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-64">
+                    <h3 className="font-bold text-slate-900 mb-3 text-[15px]">Area Size (sqm)</h3>
                     <div className="flex items-center gap-3">
-                      <input type="number" placeholder="Min sqm" value={minSqm} onChange={(e)=>setMinSqm(e.target.value)} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
+                      <input type="number" placeholder="Min" value={minSqm} onChange={(e) => setMinSqm(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
                       <span className="text-slate-400 font-medium">–</span>
-                      <input type="number" placeholder="Max sqm" value={maxSqm} onChange={(e)=>setMaxSqm(e.target.value)} className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
+                      <input type="number" placeholder="Max" value={maxSqm} onChange={(e) => setMaxSqm(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
                     </div>
-
-                    <h3 className="font-bold text-slate-900 mb-2 mt-5 text-[15px]">City / District</h3>
-                    <input type="text" placeholder="e.g. Kigali, Musanze" value={cityInput} onChange={(e)=>setCityInput(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
-
-                    <h3 className="font-bold text-slate-900 mb-2 mt-5 text-[15px]">Amenities / Keywords</h3>
-                    <input type="text" placeholder="e.g. pool, garden, furnished" value={keywordsInput} onChange={(e)=>setKeywordsInput(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
-                    <p className="text-[11px] text-slate-400 mt-1">Comma-separated — matches any one.</p>
-
-                    <div className="mt-5 flex gap-2">
-                      <button onClick={()=>{setMinSqm('');setMaxSqm('');setCityInput('');setKeywordsInput('');}} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={()=>setIsMoreOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
+                    <div className="mt-4 flex gap-2">
+                      <button onClick={() => { setMinSqm(''); setMaxSqm(''); }} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={() => setIsAreaOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
                     </div>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* Save Search */}
-          <div className="flex items-center w-full xl:w-auto justify-end mt-2 xl:mt-0">
-            <button onClick={handleSaveSearch} className="text-[#2ec440] font-bold text-[14px] hover:bg-[#2ec440]/10 px-4 py-2 rounded-full transition-colors flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-              Save Search
-            </button>
+              {/* City / District */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="City / District"
+                  value={cityInput}
+                  onChange={(e) => setCityInput(e.target.value)}
+                  className="w-[160px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                />
+                {cityInput && (
+                  <button onClick={() => setCityInput('')} aria-label="Clear city" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
+              </div>
+
+              {/* Amenities — a checklist of common amenities (tick as many as you
+                  want) plus a free-text field for anything not in the list; both
+                  read/write the same comma-separated keywordsInput (see
+                  toggleAmenity above), matched against any one, not all. */}
+              <div className="relative">
+                <button
+                  ref={amenitiesButtonRef}
+                  onClick={() => (isAmenitiesOpen ? setIsAmenitiesOpen(false) : openPanel(amenitiesButtonRef, 288, setAmenitiesPanelPos, () => setIsAmenitiesOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {selectedAmenities.length > 0 ? `Amenities (${selectedAmenities.length})` : 'Amenities'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isAmenitiesOpen && amenitiesPanelPos && (
+                  <div style={{ position: 'fixed', top: amenitiesPanelPos.top, left: amenitiesPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Amenities</h3>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
+                      {AMENITY_OPTIONS.map((label) => {
+                        const checked = selectedAmenities.some((k) => k.toLowerCase() === label.toLowerCase());
+                        return (
+                          <label key={label} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
+                            <input type="checkbox" checked={checked} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                            {label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="w-full h-px bg-slate-100 my-3" />
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Or type your own</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. rooftop, sea view"
+                      value={keywordsInput}
+                      onChange={(e) => setKeywordsInput(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                    />
+                    <p className="text-[11px] text-slate-400 mt-1">Comma-separated — matches any one.</p>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setKeywordsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={() => setIsAmenitiesOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
+                    </div>
+                  </div>
+                )}
+              </div>
           </div>
         </div>
 

@@ -16,7 +16,7 @@ const FOOTER_LINKS = [
   {
     heading: 'Company',
     links: [
-      { href: '/mortgages', label: 'Mortgages' },
+      { href: '/professionals', label: 'Find a Professional' },
       { href: '/blog', label: 'Blog' },
       { href: '/post-property', label: 'Post a property' },
       { href: '/professionals/apply', label: 'Become a Professional' },

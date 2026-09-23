@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
-import CountrySelector from './CountrySelector';
+import CountryFlagBadge from './CountryFlagBadge';
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { href: '/sell', label: 'Sell' },
   { href: '/build', label: 'Build' },
   { href: '/renovate', label: 'Renovate' },
-  { href: '/mortgages', label: 'Mortgages' },
+  { href: '/professionals', label: 'Professionals' },
   { href: '/blog', label: 'Blog' },
 ];
 
@@ -29,8 +29,9 @@ export default function Navbar() {
   return (
     <header className="w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200">
       {/* Brand Logo */}
-      <Link href="/" aria-label="HuzaEstate Home" className="block">
+      <Link href="/" aria-label="HuzaEstate Home" className="flex items-center gap-2">
         <Logo className="h-8 w-auto" />
+        <CountryFlagBadge className="w-6 h-6" />
       </Link>
 
       {/* Center Navigation Links */}
@@ -55,7 +56,6 @@ export default function Navbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
-        <CountrySelector />
         <Link
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
@@ -74,6 +74,7 @@ export default function Navbar() {
               <div className="absolute inset-0 rounded-full overflow-hidden">
                 <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="User Profile" fill className="object-cover rounded-full" />
               </div>
+              <CountryFlagBadge className="absolute -bottom-1 -right-1 w-4 h-4" />
             </button>
             
             {profileOpen && (

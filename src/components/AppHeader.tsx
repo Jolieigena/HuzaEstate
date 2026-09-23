@@ -12,7 +12,7 @@ interface AppHeaderProps {
 
 /**
  * Slim authenticated app header shown instead of the public marketing Navbar
- * once a user is logged in — no Buy/Rent/Sell/Build/Renovate/Mortgages/Blog
+ * once a user is logged in — no Buy/Rent/Sell/Build/Renovate/Professionals/Blog
  * links, no Sign Up button. Account navigation (Saved Homes, Build Projects,
  * etc.) lives in the global Sidebar; this header just has the logo, the
  * mobile menu toggle, and the account menu.
