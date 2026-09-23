@@ -10,10 +10,6 @@ import PlanCheckout from "@/components/postingPlans/PlanCheckout";
 import { useSubscription } from "@/lib/postingPlans/hooks";
 import { PLAN_FEATURES, PLAN_LABELS, type PlanTier } from "@/lib/postingPlans/types";
 
-// Same fixture landlord identity used elsewhere in Manager Portal — see
-// LandlordProfileTab.tsx / PaymentsTab.tsx / OverviewTab.tsx.
-const DEMO_SELLER_ID = "seller-user";
-
 function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
   const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, "free"> | null>(null);
 
@@ -28,7 +24,7 @@ function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
         <p className="text-sm text-slate-500 mb-6">You&apos;re on the {PLAN_LABELS[currentTier]} plan. Upgrade to see how your listings are priced against the market.</p>
         {checkoutTier ? (
           <div className="max-w-sm mx-auto text-left">
-            <PlanCheckout accountId={DEMO_SELLER_ID} mode={{ kind: "subscribe", tier: checkoutTier }} onClose={() => setCheckoutTier(null)} onDone={() => setCheckoutTier(null)} />
+            <PlanCheckout mode={{ kind: "subscribe", tier: checkoutTier }} onClose={() => setCheckoutTier(null)} />
           </div>
         ) : (
           <PricingCards currentTier={currentTier} onSelect={(tier) => { if (tier !== "free") setCheckoutTier(tier); }} />
@@ -51,7 +47,7 @@ function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
  *  Gated to Gold/Diamond — see src/lib/postingPlans/types.ts's PLAN_FEATURES,
  *  the one place tier entitlements are decided. */
 export default function MarketInsightsTab({ LISTINGS }: { LISTINGS: Listing[] }) {
-  const subscription = useSubscription(DEMO_SELLER_ID);
+  const subscription = useSubscription();
   const saleListings = LISTINGS.filter((l) => l.property.type === "sale" && l.property.sqm > 0 && l.property.propertyType !== "land");
 
   if (!PLAN_FEATURES[subscription.tier].marketInsights) {

@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
+import { useAuth } from '@/lib/auth-context';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
+import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
+
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
 interface EditPropertyModalProps {
   property: Property | null;
@@ -14,29 +18,35 @@ interface EditPropertyModalProps {
 }
 
 /**
- * Edits any property — curated mock listings and seller-posted ones alike —
- * by writing a per-id patch to the propertyOverrides store rather than
- * mutating mockProperties (which is a static import and can't be mutated).
- * useAllProperties() applies these overrides everywhere a property is
- * read, so a changed title/price/image shows up on the buyer-facing pages
- * too, not just here.
+ * Edits any property — curated mock listings and real seller-posted ones alike. For a real,
+ * backend-posted listing this PATCHes property-service directly (the owner-or-admin check
+ * happens server-side); for a curated mock fixture (no backend record to PATCH — the request
+ * 404s) it falls back to the same per-id propertyOverrides patch as before. Either way,
+ * amenities keeps going through propertyOverrides since property-service doesn't model it yet.
  */
 export default function EditPropertyModal({ property, onClose }: EditPropertyModalProps) {
+  const { token } = useAuth();
   const [form, setForm] = useState(() => toFormState(property));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   // Reset local form state whenever a different property is opened.
   const [openedFor, setOpenedFor] = useState(property?.id);
   if (property && property.id !== openedFor) {
     setOpenedFor(property.id);
     setForm(toFormState(property));
+    setError('');
   }
 
   if (!property) return null;
 
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    setError('');
     const { imageUrl, galleryImages } = deriveImageFields(form.photos, property.imageUrl);
-    PropertyOverridesStoreEngine.set(property.id, {
+    const patch = {
       title: form.title,
       description: form.description,
       price: Number(form.price) || property.price,
@@ -51,8 +61,39 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       photos: form.photos,
       type: form.type,
       propertyType: form.propertyType,
-      amenities: form.amenities,
-    });
+    };
+
+    let persistedToBackend = false;
+    if (token) {
+      try {
+        const res = await fetch(`${PROPERTY_API_URL}/properties/${property.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(patch),
+        });
+        if (res.ok) {
+          persistedToBackend = true;
+        } else if (res.status !== 404) {
+          // 404 means this id has no backend record — it's a curated mock fixture, fall back
+          // below as before. Any other failure (403 not-your-listing, 400 invalid field, etc.)
+          // is a real error the seller should see rather than silently degrading to local-only.
+          const data = await res.json().catch(() => null);
+          setError(data?.message || 'Could not save your changes. Please try again.');
+          setSaving(false);
+          return;
+        }
+      } catch {
+        setError('Could not reach the server. Please try again.');
+        setSaving(false);
+        return;
+      }
+    }
+
+    // amenities isn't a real backend field yet, so it always stays here; the rest only needs
+    // to stay here too for the curated-fixture (persistedToBackend === false) fallback path.
+    PropertyOverridesStoreEngine.set(property.id, persistedToBackend ? { amenities: form.amenities } : { ...patch, amenities: form.amenities });
+    notifyPropertiesChanged();
+    setSaving(false);
     onClose();
   };
 
@@ -68,6 +109,10 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
+
+      {error && (
+        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{error}</p>
+      )}
 
       <form onSubmit={handleSave} className="space-y-5">
         <div>
@@ -204,8 +249,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
-            Save Changes
+          <button type="submit" disabled={saving} className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60">
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <button type="button" onClick={onClose} className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
             Cancel

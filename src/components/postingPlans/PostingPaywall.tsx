@@ -9,25 +9,19 @@ import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 
 type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "per_post" } | null;
 
-/** Shown instead of the post-property form once PostingPlanService.canPost()
- *  is false. `onUnlocked` re-checks canPost() in the caller so the real
- *  form takes back over the moment a purchase succeeds — no page reload. */
-export default function PostingPaywall({ accountId, onUnlocked }: { accountId: string; onUnlocked: () => void }) {
-  const subscription = useSubscription(accountId);
+// Shown when property-service rejects a post because the account's monthly quota is exhausted
+// (see post-property/page.tsx's handleSubmit, which attempts the post first and only shows this
+// on a 403). Real Stripe Checkout is a redirect flow, so there's no "unlocked" callback any
+// more — after payment, Stripe redirects back to the same page and the next post attempt is
+// checked fresh against the now-updated quota.
+export default function PostingPaywall({ onClose }: { onClose: () => void }) {
+  const subscription = useSubscription();
   const [checkout, setCheckout] = useState<CheckoutMode>(null);
 
   if (checkout) {
     return (
       <div className="max-w-lg mx-auto py-10">
-        <PlanCheckout
-          accountId={accountId}
-          mode={checkout}
-          onClose={() => setCheckout(null)}
-          onDone={() => {
-            setCheckout(null);
-            onUnlocked();
-          }}
-        />
+        <PlanCheckout mode={checkout} onClose={() => setCheckout(null)} />
       </div>
     );
   }
@@ -57,6 +51,12 @@ export default function PostingPaywall({ accountId, onUnlocked }: { accountId: s
             Pay {formatMoney(PER_POST_PRICE)} to post once
           </button>
         </div>
+      </div>
+
+      <div className="mt-6 text-center">
+        <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-slate-800">
+          Back to the form
+        </button>
       </div>
     </div>
   );

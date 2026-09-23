@@ -6,8 +6,7 @@ import type { Property } from '@/lib/properties/types';
 import type { Listing, ManagerTab } from '@/lib/manager/types';
 import { toListing } from '@/lib/manager/listings';
 import { TourService } from '@/lib/tours/tourService';
-import { useAllProperties } from '@/lib/sellerListings/hooks';
-import { SellerListingsStoreEngine } from '@/lib/sellerListings/store';
+import { useAllProperties, notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { AdminService } from '@/lib/admin/service';
 import type { ListingModerationStatus } from '@/lib/admin/types';
@@ -26,6 +25,8 @@ import PaymentsTab from './PaymentsTab';
 import MarketInsightsTab from './MarketInsightsTab';
 import LandlordProfileTab from './LandlordProfileTab';
 
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
+
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<ManagerTab>('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,7 +38,8 @@ export default function ManagerDashboard() {
   const [attachingProperty, setAttachingProperty] = useState<Property | null>(null);
   const [attachWorldId, setAttachWorldId] = useState('');
   const [attachError, setAttachError] = useState<string | null>(null);
-  const { isApprovedSeller, account } = useAuth();
+  const { isApprovedSeller, account, token } = useAuth();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   // Every property a seller could manage — mockProperties (all 60-80 of
   // them, not just the 5 hand-curated ones) plus anything posted this
   // session, with saved edits already merged in.
@@ -59,7 +61,7 @@ export default function ManagerDashboard() {
     AdminService.setListingStatus(property.id, status, account?.id ?? 'seller', account?.name ?? 'Seller', reason);
   };
 
-  const LISTINGS: Listing[] = allProperties.map((property) => toListing(property, applications));
+  const LISTINGS: Listing[] = allProperties.map((property) => toListing(property, applications, account?.id));
   const propertyTitleById = new Map(allProperties.map((p) => [p.id, p.title]));
   const activeApplications = applications.filter((a) => a.stage !== 'rejected' && a.stage !== 'leased');
 
@@ -160,18 +162,45 @@ export default function ManagerDashboard() {
 
       <ConfirmModal
         open={deletingProperty !== null}
-        onClose={() => setDeletingProperty(null)}
-        onConfirm={() => {
+        onClose={() => { setDeletingProperty(null); setDeleteError(null); }}
+        onConfirm={async () => {
           if (!deletingProperty) return;
-          SellerListingsStoreEngine.remove(deletingProperty.id);
+          // Real, backend-posted listings get a real DELETE; a curated mock fixture (no
+          // backend record — the request 404s) just falls back to clearing local overrides,
+          // same as before. Any other failure (403 not-your-listing, etc.) surfaces as an error
+          // instead of silently pretending the listing is gone.
+          if (token) {
+            try {
+              const res = await fetch(`${PROPERTY_API_URL}/properties/${deletingProperty.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok && res.status !== 404) {
+                const data = await res.json().catch(() => null);
+                setDeleteError(data?.message || 'Could not delete this listing. Please try again.');
+                return;
+              }
+            } catch {
+              setDeleteError('Could not reach the server. Please try again.');
+              return;
+            }
+          }
           PropertyOverridesStoreEngine.clear(deletingProperty.id);
+          notifyPropertiesChanged();
           setDeletingProperty(null);
+          setDeleteError(null);
         }}
         title="Delete this listing?"
         description={
           <>
-            <span className="font-semibold text-slate-700">{deletingProperty?.title}</span> will be removed from HuzaEstate immediately. Buyers will no
-            longer be able to view it, and this can&apos;t be undone.
+            {deleteError ? (
+              <span className="text-red-600 font-semibold">{deleteError}</span>
+            ) : (
+              <>
+                <span className="font-semibold text-slate-700">{deletingProperty?.title}</span> will be removed from HuzaEstate immediately. Buyers will no
+                longer be able to view it, and this can&apos;t be undone.
+              </>
+            )}
           </>
         }
         confirmLabel="Delete Listing"

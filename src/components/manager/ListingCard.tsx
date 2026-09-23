@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Component, type ReactNode } from 'react';
 import type { Listing } from '@/lib/manager/types';
 import type { Property } from '@/lib/properties/types';
 import type { ListingModerationStatus } from '@/lib/admin/types';
@@ -11,19 +12,49 @@ import { SERIES_COLOR } from '@/components/charts/styles';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PLAN_FEATURES } from '@/lib/postingPlans/types';
 
-// Same fixture landlord identity used elsewhere in Manager Portal.
-const DEMO_SELLER_ID = 'seller-user';
-
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Active: 'bg-green-100 text-green-700',
   Pending: 'bg-yellow-100 text-yellow-700',
   Leased: 'bg-slate-100 text-slate-500',
 };
 
+// next/image throws synchronously during render (not just a network onError) when a listing's
+// imageUrl isn't from an allowed host (see next.config.ts's remotePatterns) — one bad/stale
+// record would otherwise crash this whole list, not just its own card. A plain onError handler
+// can't catch this; only a render-phase error boundary can.
+class ImageErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed) {
+      return (
+        <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+          <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const MARKET_STATUS_BADGE: Partial<Record<ListingModerationStatus, string>> = {
   unpublished: 'Off Market',
   archived: 'Archived',
 };
+
+// Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS) —
+// absent on listings from before this field existed, and on the curated mockProperties fixtures.
+function expiryLabel(expiresAt?: string): string | null {
+  if (!expiresAt) return null;
+  const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+  if (daysLeft <= 0) return 'Expired';
+  if (daysLeft === 1) return 'Expires tomorrow';
+  return `Expires in ${daysLeft} days`;
+}
 
 export default function ListingCard({
   listing,
@@ -42,8 +73,9 @@ export default function ListingCard({
   const marketStatus = useListingModerationStatus(listing.id);
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
   const isOffMarket = marketStatus !== 'published';
-  const subscription = useSubscription(DEMO_SELLER_ID);
+  const subscription = useSubscription();
   const isPriority = PLAN_FEATURES[subscription.tier].priorityPlacement;
+  const expiry = expiryLabel(listing.property.expiresAt);
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
@@ -58,7 +90,9 @@ export default function ListingCard({
             className="w-full h-full object-cover"
           />
         ) : (
-          <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+          <ImageErrorBoundary>
+            <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+          </ImageErrorBoundary>
         )}
         {listing.property.videoUrl && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -87,6 +121,9 @@ export default function ListingCard({
         <div>
           <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
           <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}/mo</div>
+          {expiry && (
+            <div className={`text-xs mt-1 font-semibold ${expiry === 'Expired' ? 'text-red-600' : 'text-slate-400'}`}>{expiry}</div>
+          )}
         </div>
 
         <div className="flex items-center justify-between">

@@ -1,5 +1,8 @@
 export interface Property {
   id: string;
+  /** Set server-side from the poster's JWT at creation — absent on the curated mockProperties
+   *  fixtures, which have no real owner account. */
+  ownerId?: string;
   title: string;
   description: string;
   price: number;
@@ -26,6 +29,13 @@ export interface Property {
    *  restricted to it (see the Amenities filter's own free-text field) —
    *  optional because every listing before this field predates it. */
   amenities?: string[];
+  /** Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS) —
+   *  optional because listings from before this field existed have none. Public browse/search
+   *  and GET-by-id already exclude anything past this on the backend; `expired` is a
+   *  pre-computed convenience the backend derives from it so the frontend never needs its own
+   *  clock-skew-prone "is it past expiresAt" check. */
+  expiresAt?: string;
+  expired?: boolean;
 }
 
 // Shared between the /properties Amenities filter, the post-property form,

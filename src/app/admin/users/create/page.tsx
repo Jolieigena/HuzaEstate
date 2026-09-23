@@ -8,12 +8,11 @@ import { ADMIN_ROLE_LABELS } from "@/lib/admin/permissions";
 import type { AdminRole } from "@/lib/admin/types";
 import { Card, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "@/components/admin/ui";
 
-// Starting scope is 3 roles: customer (public signup only), manager and administrator
-// (admin-provisioned only — see access-service's POST /auth/admin/users). Professional/
-// contractor exist in the account model but aren't offered here yet.
-const ROLE_OPTIONS: { value: AccountRole; label: string }[] = [
-  { value: "customer", label: "Customer" },
-  { value: "seller_manager", label: "Manager (approved seller/landlord)" },
+// Administrator and Professional are the only roles created from this admin form (enforced
+// server-side too — see access-service's POST /auth/admin/users). Customer only ever comes from
+// public signup; Seller (Manager) is granted self-serve via the become-a-seller flow, never here.
+const ROLE_OPTIONS: { value: Extract<AccountRole, "administrator" | "professional">; label: string }[] = [
+  { value: "professional", label: "Professional" },
   { value: "administrator", label: "Administrator" },
 ];
 
@@ -24,11 +23,11 @@ export default function CreateUserPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleType, setRoleType] = useState<AccountRole>("customer");
+  const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional">>("professional");
   const [adminRole, setAdminRole] = useState<AdminRole>("operations_admin");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [created, setCreated] = useState<{ email: string; temporaryPassword: string } | null>(null);
+  const [created, setCreated] = useState<{ email: string; emailDelivered: boolean } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,7 +46,7 @@ export default function CreateUserPage() {
       setError(result.error);
       return;
     }
-    setCreated({ email, temporaryPassword: result.temporaryPassword });
+    setCreated({ email, emailDelivered: result.emailDelivered });
     setFirstName("");
     setLastName("");
     setEmail("");
@@ -56,7 +55,7 @@ export default function CreateUserPage() {
   return (
     <PageFrame
       title="Create user"
-      description="Create a customer, manager or administrator account. It's provisioned with a shared temporary password and the holder is forced to change it on first login."
+      description="Create an Administrator or Professional account. A randomly generated password is emailed to it, and the holder is forced to change it on first login."
       action={
         <Link href="/admin/users" className="text-sm font-bold text-slate-500 hover:text-[#219b31]">
           Back to Users
@@ -66,12 +65,18 @@ export default function CreateUserPage() {
       <RequirePermission granted={canCreate}>
         <Card className="max-w-xl">
           {created && (
-            <div className="mb-5 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm">
-              <p className="font-bold text-emerald-800">Account created for {created.email}</p>
-              <p className="mt-1 text-emerald-700">
-                Temporary password: <span className="font-mono font-bold">{created.temporaryPassword}</span>
-              </p>
-              <p className="mt-1 text-xs text-emerald-700">Share this with them directly — they&apos;ll be required to set their own password on first login.</p>
+            <div className={`mb-5 rounded-xl border p-4 text-sm ${created.emailDelivered ? "border-emerald-100 bg-emerald-50" : "border-amber-200 bg-amber-50"}`}>
+              {created.emailDelivered ? (
+                <>
+                  <p className="font-bold text-emerald-800">Account created for {created.email}</p>
+                  <p className="mt-1 text-emerald-700">Sign-in instructions with a temporary password have been emailed to them.</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-bold text-amber-800">Account created for {created.email}</p>
+                  <p className="mt-1 text-amber-700">We couldn&apos;t confirm the credentials email was delivered — check with them, or contact support to resend it.</p>
+                </>
+              )}
             </div>
           )}
 
@@ -100,7 +105,7 @@ export default function CreateUserPage() {
 
             <label className="block text-sm font-bold text-slate-700">
               Role
-              <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as AccountRole)}>
+              <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional">)}>
                 {ROLE_OPTIONS.filter(option => option.value !== "administrator" || account?.adminRole === "super_admin").map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}

@@ -12,27 +12,20 @@ import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories'
 import { uploadMedia } from '@/lib/media/upload';
 import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
-import { PostingPlanService } from '@/lib/postingPlans/postingPlanService';
 import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
+import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
-// Manager Portal has no per-seller ownership model — any approved seller
-// manages every listing (see ManagerDashboard.tsx's useAllProperties()) —
-// so posting-plan usage, like the landlord profile and rent payouts built
-// earlier, is tracked against this one fixture seller identity rather than
-// the real logged-in account id.
-const DEMO_SELLER_ID = 'seller-user';
-
 function PostPropertyForm() {
   const router = useRouter();
   const { token, isApprovedSeller } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [unlockTick, setUnlockTick] = useState(0);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const [title, setTitle] = useState('');
   const [listingType, setListingType] = useState<'' | Property['type']>('');
@@ -53,11 +46,12 @@ function PostPropertyForm() {
     return <ApplyGate />;
   }
 
-  // Re-evaluated fresh on every render (not a hook) — unlockTick's only job
-  // is to force a re-render right after a purchase succeeds in the paywall.
-  void unlockTick;
-  if (!PostingPlanService.canPost(DEMO_SELLER_ID)) {
-    return <PostingPaywall accountId={DEMO_SELLER_ID} onUnlocked={() => setUnlockTick((n) => n + 1)} />;
+  // No pre-emptive quota check here any more — property-service is the authoritative check
+  // (it calls payment-service's quota/consume immediately before creating the listing) and
+  // returns 403 if the account is over its monthly cap, which handleSubmit below catches and
+  // switches to the paywall instead of trying to predict the answer client-side.
+  if (showPaywall) {
+    return <PostingPaywall onClose={() => setShowPaywall(false)} />;
   }
 
   const toggleAmenity = (label: string) => {
@@ -112,18 +106,25 @@ function PostPropertyForm() {
         }),
       });
       if (!res.ok) {
+        if (res.status === 403) {
+          // property-service's own quota check (via payment-service) rejected this post —
+          // switch to the paywall instead of showing it as a generic form error.
+          setShowPaywall(true);
+          setSubmitting(false);
+          return;
+        }
         const data = await res.json().catch(() => null);
         setError(data?.message || 'Could not publish your listing. Please try again.');
         setSubmitting(false);
         return;
       }
       const data = await res.json();
-      // The real backend may not persist a field it doesn't recognize yet
-      // (country, amenities), so this override guarantees it sticks
-      // regardless — the same mechanism EditPropertyModal.tsx uses for
-      // frontend-only edits layered on top of backend-sourced properties.
-      PropertyOverridesStoreEngine.set(data.property.id, { country, amenities });
-      PostingPlanService.recordPostUsed(DEMO_SELLER_ID);
+      // country is now a real backend field (see property-service's model); amenities isn't
+      // yet, so this override still carries just that one frontend-only field — the same
+      // mechanism EditPropertyModal.tsx uses for frontend-only edits layered on top of
+      // backend-sourced properties.
+      PropertyOverridesStoreEngine.set(data.property.id, { amenities });
+      notifyPropertiesChanged();
       router.push(`/properties/${data.property.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');

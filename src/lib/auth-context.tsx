@@ -17,9 +17,12 @@ export interface Account {
   adminRole?: string;
   isApprovedSeller: boolean;
   /** True for accounts created by an administrator (or the bootstrap admin account) that are
-   * still on their shared default password. The app should force a change-password step
-   * before letting the account use anything else. */
+   * still on their own emailed, randomly generated password. The app should force a
+   * change-password step before letting the account use anything else. */
   mustChangePassword?: boolean;
+  /** Professional accounts only. False until the account has saved a complete public profile
+   * (see PUT /professionals/me) — the app should force that step next, same as mustChangePassword. */
+  profileCompleted?: boolean;
   path: string;
 }
 
@@ -31,18 +34,17 @@ export interface SignupInput {
   termsAccepted: boolean;
 }
 
-export type AuthResult = { ok: true; account: Account } | { ok: false; error: string };
+export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string };
 
 export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  roleType: AccountRole;
+  roleType: Extract<AccountRole, "administrator" | "professional">;
   adminRole?: string;
-  professionalProfileId?: string;
 }
 
-export type CreateUserResult = { ok: true; temporaryPassword: string } | { ok: false; error: string };
+export type CreateUserResult = { ok: true; emailDelivered: boolean } | { ok: false; error: string };
 
 /**
  * Fixture identities for the admin/finance prototype modules' seed data
@@ -79,7 +81,10 @@ interface AuthContextValue {
   loginWithCredentials: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   logout: () => void;
   isApprovedSeller: boolean;
-  applyAsSeller: () => void;
+  /** Re-fetches /auth/me and updates the local account — used after a backend-driven role/plan
+   * change the client didn't cause directly (payment-service granting seller_manager after a
+   * free-tier pick or a Stripe webhook, a professional completing their profile, etc). */
+  refreshAccount: () => Promise<void>;
   /** True once the initial session check (validating any stored token against the
    * backend) has finished. Use this to avoid gating protected content on the
    * initial `false` value of `isLoggedIn`, which is only a default until then. */
@@ -92,8 +97,8 @@ interface AuthContextValue {
    * with, so no extra round-trip through access-service is needed. Null when logged out. */
   token: string | null;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
-  /** Administrator-only (backend rejects otherwise). Creates an account with the given role
-   * and a shared default password; the new account is forced to change it on first login. */
+  /** Administrator-only (backend rejects otherwise). Creates an Administrator or Professional
+   * account with its own random password, emailed to it — never returned here. */
   createUser: (input: CreateUserInput) => Promise<CreateUserResult>;
 }
 
@@ -196,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       const nextAccount = data.account as Account;
       applySession(data.token as string, nextAccount);
-      return { ok: true, account: nextAccount };
+      return { ok: true, account: nextAccount, token: data.token as string };
     } catch {
       return { ok: false, error: "Could not reach the server. Please try again." };
     }
@@ -213,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       const nextAccount = data.account as Account;
       applySession(data.token as string, nextAccount);
-      return { ok: true, account: nextAccount };
+      return { ok: true, account: nextAccount, token: data.token as string };
     } catch {
       return { ok: false, error: "Could not reach the server. Please try again." };
     }
@@ -239,9 +244,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const applyAsSeller = () => {
-    setIsApprovedSeller(true);
-    setAccount((prev) => (prev ? { ...prev, isApprovedSeller: true } : prev));
+  const refreshAccount = async (): Promise<void> => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      setAccount(nextAccount);
+      setIsApprovedSeller(nextAccount.isApprovedSeller);
+    } catch {
+      /* best-effort — caller's UI already has a fallback for a stale account view */
+    }
   };
 
   const changePassword = async (currentPassword: string, newPassword: string): Promise<AuthResult> => {
@@ -256,7 +270,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
       const nextAccount = data.account as Account;
       setAccount(nextAccount);
-      return { ok: true, account: nextAccount };
+      return { ok: true, account: nextAccount, token };
     } catch {
       return { ok: false, error: "Could not reach the server. Please try again." };
     }
@@ -272,14 +286,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
       const data = await res.json();
-      return { ok: true, temporaryPassword: data.temporaryPassword as string };
+      return { ok: true, emailDelivered: data.emailDelivered === true };
     } catch {
       return { ok: false, error: "Could not reach the server. Please try again." };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, applyAsSeller, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser }}>
       {children}
     </AuthContext.Provider>
   );

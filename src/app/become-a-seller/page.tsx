@@ -7,13 +7,9 @@ import { useAuth } from '@/lib/auth-context';
 import PasswordInput from '@/components/shared/PasswordInput';
 import PhoneInput from '@/components/shared/PhoneInput';
 import Dialog from '@/components/Dialog';
-import PlanCheckout from '@/components/postingPlans/PlanCheckout';
 import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
+import { createSellerFreeCheckout, createSubscribeCheckout } from '@/lib/postingPlans/api';
 import { formatMoney } from '@/lib/finance/money';
-
-// Same fixture seller identity used throughout Manager Portal — see
-// LandlordProfileTab.tsx / OverviewTab.tsx for the same convention.
-const DEMO_SELLER_ID = "seller-user";
 
 function isPlanTier(value: string | null): value is PlanTier {
   return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
@@ -26,7 +22,7 @@ function isPaidTier(value: PlanTier | null): value is Exclude<PlanTier, 'free'> 
 function BecomeASellerForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { applyAsSeller, signup, isLoggedIn, isAuthReady, account } = useAuth();
+  const { token, refreshAccount, signup, isLoggedIn, isAuthReady, account } = useAuth();
   const planParam = searchParams.get('plan');
   // Only set when a plan was actually passed in (e.g. from /sell) — a visitor
   // reaching this page some other way (ListPropertyModal's "become a seller"
@@ -49,33 +45,32 @@ function BecomeASellerForm() {
   // WORLD_LABS_API_KEY / GEMINI_API_KEY elsewhere in this app.
   const [demoMode, setDemoMode] = useState(false);
 
-  const proceedPastAccountCreation = async (name: string, emailValue: string) => {
+  const proceedPastAccountCreation = async (freshToken: string) => {
     if (!paidTier) {
-      router.push('/manager');
-      return;
-    }
-    try {
-      const res = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: paidTier, name, email: emailValue, phone }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-        return;
-      }
-      if (data.demo) {
-        setDemoMode(true);
+      // Free tier is fully self-serve, no Stripe involved — grants seller_manager immediately.
+      const result = await createSellerFreeCheckout(freshToken);
+      if (!result.ok) {
+        setError(result.error);
         setSubmitting(false);
         return;
       }
-      setError(data.error || 'Could not start checkout. Please try again.');
-      setSubmitting(false);
-    } catch {
-      setError('Could not reach the server. Please try again.');
-      setSubmitting(false);
+      await refreshAccount();
+      router.push('/manager');
+      return;
     }
+    const redirectBase = `${window.location.origin}/sell/success`;
+    const result = await createSubscribeCheckout(freshToken, paidTier, redirectBase, `${window.location.origin}/sell?canceled=true`);
+    if (!result.ok) {
+      setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+    if ('demo' in result) {
+      setDemoMode(true);
+      setSubmitting(false);
+      return;
+    }
+    window.location.href = result.url;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -89,9 +84,8 @@ function BecomeASellerForm() {
     }
     setSubmitting(true);
 
-    if (isLoggedIn && account) {
-      applyAsSeller();
-      await proceedPastAccountCreation(account.name, account.email);
+    if (isLoggedIn && account && token) {
+      await proceedPastAccountCreation(token);
       return;
     }
 
@@ -107,8 +101,7 @@ function BecomeASellerForm() {
       setSubmitting(false);
       return;
     }
-    applyAsSeller();
-    await proceedPastAccountCreation(`${firstName} ${lastName}`.trim(), email);
+    await proceedPastAccountCreation(result.token);
   };
 
   if (!isAuthReady) {
@@ -128,16 +121,13 @@ function BecomeASellerForm() {
   if (demoMode && paidTier) {
     return (
       <Dialog open onClose={() => router.push('/manager')} labelledBy="demo-checkout-title" panelClassName="max-w-lg p-6 sm:p-8">
-        <h2 id="demo-checkout-title" className="sr-only">Demo checkout for {PLAN_LABELS[paidTier]}</h2>
+        <h2 id="demo-checkout-title" className="text-lg font-black text-slate-900 mb-3">Payments aren&apos;t configured yet</h2>
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Stripe isn&apos;t configured yet, so this is a demonstration checkout — no real charge will be made.
+          Checkout for the {PLAN_LABELS[paidTier]} plan isn&apos;t available in this environment yet — no charge was made. Your account was created; an administrator can upgrade your plan manually in the meantime.
         </div>
-        <PlanCheckout
-          accountId={DEMO_SELLER_ID}
-          mode={{ kind: 'subscribe', tier: paidTier }}
-          onClose={() => router.push('/manager')}
-          onDone={() => router.push('/manager')}
-        />
+        <button onClick={() => router.push('/manager')} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors">
+          Go to Manager Portal
+        </button>
       </Dialog>
     );
   }

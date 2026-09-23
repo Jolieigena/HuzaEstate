@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { ProfessionalService } from "@/lib/professional/service";
 import { ProfessionalProfile } from "@/lib/professional/types";
+import { adaptRealProfile, fetchProfessionalsDirectory } from "@/lib/professional/api";
 
 const AVAILABILITY_STYLE: Record<string, string> = {
   available: "bg-[#2ec440]/10 text-[#219b31]",
@@ -46,8 +47,19 @@ function getProfileImage(profile: ProfessionalProfile, index: number) {
 }
 
 export default function ProfessionalsDirectoryPage() {
-  const allProfiles = ProfessionalService.getApprovedProfiles();
-  
+  const mockProfiles = ProfessionalService.getApprovedProfiles();
+  const [realProfiles, setRealProfiles] = useState<ProfessionalProfile[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchProfessionalsDirectory().then((profiles) => {
+      if (!cancelled) setRealProfiles(profiles.map(adaptRealProfile));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const allProfiles = useMemo(() => [...realProfiles, ...mockProfiles], [realProfiles, mockProfiles]);
+
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
   const [specialization, setSpecialization] = useState("");

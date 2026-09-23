@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { ProfessionalService } from "@/lib/professional/service";
+import { adaptRealProfile, fetchProfessionalProfile, submitProfessionalContact } from "@/lib/professional/api";
 import { useToast } from "@/lib/toast-context";
 
 const AVAILABILITY_STYLE: Record<string, string> = {
@@ -17,7 +18,7 @@ const AVAILABILITY_LABEL: Record<string, string> = {
   unavailable: "Not accepting work",
 };
 
-function ContactCard({ profileId, profileName }: { profileId: string; profileName: string }) {
+function ContactCard({ profileId, profileName, isReal }: { profileId: string; profileName: string; isReal: boolean }) {
   const { showToast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,11 +26,15 @@ function ContactCard({ profileId, profileName }: { profileId: string; profileNam
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !email.trim() || !message.trim() || sending) return;
     setSending(true);
-    const ok = ProfessionalService.contactProfile(profileId, { name: name.trim(), email: email.trim(), message: message.trim() });
+    // Real profiles (accountId-keyed) are emailed via communication-service; mock/demo profiles
+    // (fixture ids like "pro-1") keep landing as activity/notifications in the local workspace.
+    const ok = isReal
+      ? (await submitProfessionalContact(profileId, { name: name.trim(), email: email.trim(), message: message.trim() })).ok
+      : ProfessionalService.contactProfile(profileId, { name: name.trim(), email: email.trim(), message: message.trim() });
     setSending(false);
     if (ok) {
       setSent(true);
@@ -78,7 +83,27 @@ function ContactCard({ profileId, profileName }: { profileId: string; profileNam
 
 export default function ProfessionalProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const profile = ProfessionalService.getProfile(id);
+  const mockProfile = ProfessionalService.getProfile(id);
+  const [realProfile, setRealProfile] = useState<ReturnType<typeof adaptRealProfile> | null>(null);
+  const [realChecked, setRealChecked] = useState(false);
+
+  useEffect(() => {
+    if (mockProfile) return; // mock id matched — no need to also check the real backend
+    let cancelled = false;
+    fetchProfessionalProfile(id).then((profile) => {
+      if (cancelled) return;
+      if (profile) setRealProfile(adaptRealProfile(profile));
+      setRealChecked(true);
+    });
+    return () => { cancelled = true; };
+  }, [id, mockProfile]);
+
+  const profile = mockProfile ?? realProfile;
+  const isReal = !mockProfile;
+
+  if (!mockProfile && !realChecked) {
+    return <div className="min-h-screen flex items-center justify-center text-sm font-semibold text-slate-500">Loading…</div>;
+  }
 
   if (!profile || profile.status !== "approved") {
     return (
@@ -163,7 +188,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
 
           <div className="lg:col-span-1">
             <div className="sticky top-28">
-              <ContactCard profileId={profile.id} profileName={profile.displayName} />
+              <ContactCard profileId={profile.id} profileName={profile.displayName} isReal={isReal} />
             </div>
           </div>
         </div>

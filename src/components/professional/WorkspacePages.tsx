@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
 import { useProfessionalProfile, useProfessionalState } from "@/lib/professional/hooks";
 import { ProfessionalService } from "@/lib/professional/service";
+import { fetchMyProfessionalProfile, saveMyProfessionalProfile } from "@/lib/professional/api";
 import { useToast } from "@/lib/toast-context";
 import { Card, EmptyState, PageFrame, PrimaryButton, PrimaryLink, SecondaryButton, StatusPill, fieldClass, formatDate } from "./ui";
 
@@ -41,7 +42,87 @@ export function CalendarPage() { const { profile, state, requests } = useWorkspa
 
 export function DocumentsPage() { const { profile, state, requests } = useWorkspace(); const { showToast } = useToast(); if (!profile) return null; const own = state.files.filter((file) => file.ownerProfileId === profile.id); const shared = requests.flatMap((request) => request.documentIds.map((documentId) => ({ documentId, request }))); return <PageFrame title="Professional documents" description="Customer-owned files remain read-only. Professional drafts and submissions keep explicit access labels." action={<label className="inline-flex min-h-11 cursor-pointer items-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white hover:bg-[#2ec440]">Add working file<input className="sr-only" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; ProfessionalService.addFile(profile.id, { name: file.name, mimeType: file.type, size: file.size, category: "working", access: "professional_private", submitted: false }); showToast("Working file added locally."); e.currentTarget.value = ""; }} /></label>}><div className="space-y-6"><Card><h3 className="text-lg font-black text-slate-900">Shared customer documents</h3><div className="mt-4 divide-y divide-slate-100">{shared.map(({ documentId, request }) => <div key={`${request.id}-${documentId}`} className="flex items-center justify-between gap-3 py-3"><div><p className="text-sm font-bold text-slate-800">Shared document {documentId.slice(0, 10)}</p><p className="text-xs text-slate-500">{request.projectName} · Customer owned · Read only</p></div><SecondaryButton onClick={() => showToast("Prototype preview opened. Original file was not changed.", "info")}>Preview</SecondaryButton></div>)}{!shared.length && <p className="text-sm text-slate-500">No customer documents have been shared.</p>}</div></Card><Card><h3 className="text-lg font-black text-slate-900">Your files</h3><div className="mt-4 divide-y divide-slate-100">{own.map((file) => <div key={file.id} className="flex items-center justify-between gap-3 py-3"><div><p className="text-sm font-bold text-slate-800">{file.name}</p><p className="text-xs text-slate-500">{file.category} · {file.access.replace(/_/g, " ")}</p></div>{!file.submitted && <SecondaryButton onClick={() => ProfessionalService.removeOwnDraftFile(profile.id, file.id)}>Delete draft</SecondaryButton>}</div>)}{!own.length && <p className="text-sm text-slate-500">No professional files yet.</p>}</div></Card></div></PageFrame>; }
 
-export function ProfilePage() { const { profile } = useWorkspace(); const { showToast } = useToast(); const [bio, setBio] = useState(profile?.biography ?? ""); if (!profile) return null; return <PageFrame title="Professional profile" description="Edit your service profile and preview the information customers can see. Verification documents are never public."><div className="grid gap-6 xl:grid-cols-[1fr_.8fr]"><Card><h3 className="text-lg font-black text-slate-900">Profile details</h3><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-sm font-bold text-slate-700">Display name<input className={`${fieldClass} mt-2`} defaultValue={profile.displayName} /></label><label className="text-sm font-bold text-slate-700">Primary specialisation<input className={`${fieldClass} mt-2`} value={profile.primarySpecialisation} readOnly /></label><label className="text-sm font-bold text-slate-700 sm:col-span-2">Professional biography<textarea className={`${fieldClass} mt-2 min-h-32`} value={bio} onChange={(e) => setBio(e.target.value)} /></label></div><PrimaryButton className="mt-5" onClick={() => { ProfessionalService.updateProfile(profile.id, { biography: bio }); showToast("Profile updated."); }}>Save profile</PrimaryButton><p className="mt-4 text-xs text-slate-500">Changing verified registration or identity information requires a new review and does not retain an unreviewed claim’s badge.</p></Card><Card><p className="text-xs font-black uppercase text-[#219b31]">Public profile preview</p><div className="mt-4 flex items-start justify-between gap-3"><div><h3 className="text-2xl font-black text-slate-900">{profile.displayName}</h3><p className="mt-1 text-sm text-slate-500">{profile.primarySpecialisation} · {profile.city}</p></div><StatusPill status={profile.verificationLabel} /></div><p className="mt-5 text-sm leading-6 text-slate-600">{profile.biography}</p><dl className="mt-5 grid grid-cols-2 gap-4 text-sm"><div><dt className="text-slate-400">Experience</dt><dd className="font-bold text-slate-800">{profile.yearsExperience} years</dd></div><div><dt className="text-slate-400">Response time</dt><dd className="font-bold text-slate-800">{profile.responseTime}</dd></div><div><dt className="text-slate-400">Languages</dt><dd className="font-bold text-slate-800">{profile.languages.join(", ")}</dd></div><div><dt className="text-slate-400">Availability</dt><dd className="font-bold text-slate-800">{profile.availability}</dd></div></dl><h4 className="mt-6 font-black text-slate-900">Services</h4><ul className="mt-3 space-y-2">{profile.services.map((service) => <li key={service.id} className="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">{service.name}</li>)}</ul></Card></div></PageFrame>; }
+// Real professional accounts (created via POST /auth/admin/users) have no row in the local mock
+// workspace — DEMO_PROFILES is fixture data for the demo accounts only — so they fall through to
+// this real, backend-wired form instead of the mock one below. Saving here calls the real
+// PUT /professionals/me (access-service), which is also what clears account.profileCompleted and
+// makes the profile visible on the public /professionals directory.
+function RealProfilePage() {
+  const { account, token, refreshAccount } = useAuth();
+  const { showToast } = useToast();
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [displayName, setDisplayName] = useState(account?.name ?? "");
+  const [bio, setBio] = useState("");
+  const [specialisation, setSpecialisation] = useState("");
+  const [yearsExperience, setYearsExperience] = useState("");
+  const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
+  const [phone, setPhone] = useState("");
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    fetchMyProfessionalProfile(token).then((profile) => {
+      if (cancelled || !profile) return;
+      setDisplayName(profile.displayName);
+      setBio(profile.bio);
+      setSpecialisation(profile.specialisation);
+      setYearsExperience(profile.yearsExperience !== undefined ? String(profile.yearsExperience) : "");
+      setCity(profile.city);
+      setCountry(profile.country);
+      setPhone(profile.phone);
+    }).finally(() => { if (!cancelled) setLoaded(true); });
+    return () => { cancelled = true; };
+  }, [token]);
+
+  const handleSave = async () => {
+    if (!token || saving) return;
+    setSaving(true);
+    setError("");
+    const result = await saveMyProfessionalProfile(token, {
+      displayName, bio, specialisation, city, country, phone,
+      yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
+      portfolio: [],
+    });
+    setSaving(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    await refreshAccount();
+    showToast("Profile updated.");
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <PageFrame title="Professional profile" description="This is what clients see on your public profile and in the professionals directory.">
+      <Card>
+        {account?.profileCompleted === false && (
+          <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Fill in every field below and save to complete your profile — it isn&apos;t visible to clients until you do.
+          </div>
+        )}
+        {error && <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{error}</p>}
+        <h3 className="text-lg font-black text-slate-900">Profile details</h3>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <label className="text-sm font-bold text-slate-700">Display name<input className={`${fieldClass} mt-2`} value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></label>
+          <label className="text-sm font-bold text-slate-700">Specialisation<input className={`${fieldClass} mt-2`} value={specialisation} onChange={(e) => setSpecialisation(e.target.value)} placeholder="e.g. Structural Engineer" /></label>
+          <label className="text-sm font-bold text-slate-700">Years of experience<input type="number" min={0} max={80} className={`${fieldClass} mt-2`} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} /></label>
+          <label className="text-sm font-bold text-slate-700">Phone<input className={`${fieldClass} mt-2`} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
+          <label className="text-sm font-bold text-slate-700">City<input className={`${fieldClass} mt-2`} value={city} onChange={(e) => setCity(e.target.value)} /></label>
+          <label className="text-sm font-bold text-slate-700">Country<input className={`${fieldClass} mt-2`} value={country} onChange={(e) => setCountry(e.target.value)} /></label>
+          <label className="text-sm font-bold text-slate-700 sm:col-span-2">Professional biography<textarea className={`${fieldClass} mt-2 min-h-32`} value={bio} onChange={(e) => setBio(e.target.value)} /></label>
+        </div>
+        <PrimaryButton className="mt-5" disabled={saving} onClick={handleSave}>{saving ? "Saving…" : "Save profile"}</PrimaryButton>
+      </Card>
+    </PageFrame>
+  );
+}
+
+export function ProfilePage() { const { profile } = useWorkspace(); const { showToast } = useToast(); const [bio, setBio] = useState(profile?.biography ?? ""); if (!profile) return <RealProfilePage />; return <PageFrame title="Professional profile" description="Edit your service profile and preview the information customers can see. Verification documents are never public."><div className="grid gap-6 xl:grid-cols-[1fr_.8fr]"><Card><h3 className="text-lg font-black text-slate-900">Profile details</h3><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-sm font-bold text-slate-700">Display name<input className={`${fieldClass} mt-2`} defaultValue={profile.displayName} /></label><label className="text-sm font-bold text-slate-700">Primary specialisation<input className={`${fieldClass} mt-2`} value={profile.primarySpecialisation} readOnly /></label><label className="text-sm font-bold text-slate-700 sm:col-span-2">Professional biography<textarea className={`${fieldClass} mt-2 min-h-32`} value={bio} onChange={(e) => setBio(e.target.value)} /></label></div><PrimaryButton className="mt-5" onClick={() => { ProfessionalService.updateProfile(profile.id, { biography: bio }); showToast("Profile updated."); }}>Save profile</PrimaryButton><p className="mt-4 text-xs text-slate-500">Changing verified registration or identity information requires a new review and does not retain an unreviewed claim’s badge.</p></Card><Card><p className="text-xs font-black uppercase text-[#219b31]">Public profile preview</p><div className="mt-4 flex items-start justify-between gap-3"><div><h3 className="text-2xl font-black text-slate-900">{profile.displayName}</h3><p className="mt-1 text-sm text-slate-500">{profile.primarySpecialisation} · {profile.city}</p></div><StatusPill status={profile.verificationLabel} /></div><p className="mt-5 text-sm leading-6 text-slate-600">{profile.biography}</p><dl className="mt-5 grid grid-cols-2 gap-4 text-sm"><div><dt className="text-slate-400">Experience</dt><dd className="font-bold text-slate-800">{profile.yearsExperience} years</dd></div><div><dt className="text-slate-400">Response time</dt><dd className="font-bold text-slate-800">{profile.responseTime}</dd></div><div><dt className="text-slate-400">Languages</dt><dd className="font-bold text-slate-800">{profile.languages.join(", ")}</dd></div><div><dt className="text-slate-400">Availability</dt><dd className="font-bold text-slate-800">{profile.availability}</dd></div></dl><h4 className="mt-6 font-black text-slate-900">Services</h4><ul className="mt-3 space-y-2">{profile.services.map((service) => <li key={service.id} className="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">{service.name}</li>)}</ul></Card></div></PageFrame>; }
 
 export function SettingsPage() { const { profile, state } = useWorkspace(); const { showToast } = useToast(); if (!profile) return null; const saved = state.settings[profile.id] ?? {}; const options = [["inApp", "In-app notifications"], ["email", "Email notifications (prototype preference only)"], ["newRequests", "New request alerts"], ["messages", "Message alerts"], ["deadlines", "Deadline reminders"], ["quotations", "Quotation alerts"], ["profileVisible", "Public profile visibility"]]; return <PageFrame title="Settings" description="Control workspace notifications, availability, privacy, role preference and local prototype data."><Card className="max-w-3xl"><h3 className="text-lg font-black text-slate-900">Notification and privacy preferences</h3><div className="mt-4 divide-y divide-slate-100">{options.map(([key, name]) => <label key={key} className="flex cursor-pointer items-center justify-between gap-4 py-4 text-sm font-semibold text-slate-700"><span>{name}</span><input type="checkbox" className="h-5 w-5 accent-[#2ec440]" defaultChecked={saved[key] !== false} onChange={(e) => ProfessionalService.updateSettings(profile.id, { [key]: e.target.checked })} /></label>)}</div><PrimaryButton className="mt-5" onClick={() => showToast("Prototype preferences saved.")}>Save preferences</PrimaryButton><p className="mt-3 text-xs text-slate-500">Email settings are stored locally; no email provider is connected.</p></Card></PageFrame>; }
 

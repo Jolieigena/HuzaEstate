@@ -1,25 +1,45 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { PostingPlansStoreEngine } from "./store";
-import { DEFAULT_SUBSCRIPTION, DEFAULT_USAGE } from "./seed";
-import type { Subscription, MonthlyUsage } from "./types";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { fetchMySubscription, type RemoteSubscription } from "./api";
+import { PLAN_LIMITS } from "./types";
 
-// getServerSnapshot pinned to a fixed "free, unused" default (never the live
-// localStorage-backed value) — SSR has no localStorage, matching every
-// other hooks.ts in this app.
-export function useSubscription(accountId: string): Subscription {
-  return useSyncExternalStore(
-    PostingPlansStoreEngine.subscribe,
-    () => PostingPlansStoreEngine.getSubscription(accountId),
-    () => DEFAULT_SUBSCRIPTION(accountId)
-  );
-}
+// Shown while loading or logged out — same "Free, unused" shape the old localStorage mock
+// defaulted to, so every existing consumer's render logic is unaffected either way.
+const DEFAULT_SUBSCRIPTION: RemoteSubscription = {
+  tier: "free",
+  label: "Free",
+  status: "active",
+  renewsOn: null,
+  postsUsed: 0,
+  postsLimit: PLAN_LIMITS.free,
+  postsRemaining: PLAN_LIMITS.free,
+  extraCredits: 0,
+  expiryDays: 14,
+};
 
-export function useMonthlyUsage(accountId: string): MonthlyUsage {
-  return useSyncExternalStore(
-    PostingPlansStoreEngine.subscribe,
-    () => PostingPlansStoreEngine.getUsage(accountId),
-    () => DEFAULT_USAGE(accountId)
-  );
+/** Real payment-service data now (this used to read a per-browser localStorage mock). Backed by
+ *  GET /subscriptions/me, which is self-scoped from the caller's own token — there's no
+ *  accountId parameter any more. */
+export function useSubscription(): RemoteSubscription {
+  const { token } = useAuth();
+  const [subscription, setSubscription] = useState<RemoteSubscription>(DEFAULT_SUBSCRIPTION);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Resolve on a microtask either way (never setState synchronously in the effect body
+    // itself) — mirrors how the fetch branch below already only ever updates state from
+    // inside a .then() callback.
+    Promise.resolve()
+      .then(() => (token ? fetchMySubscription(token) : DEFAULT_SUBSCRIPTION))
+      .then((data) => {
+        if (!cancelled) setSubscription(data ?? DEFAULT_SUBSCRIPTION);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  return subscription;
 }

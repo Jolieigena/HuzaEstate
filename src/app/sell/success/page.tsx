@@ -1,44 +1,48 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { PostingPlanService } from "@/lib/postingPlans/postingPlanService";
+import { useAuth } from "@/lib/auth-context";
+import { fetchMySubscription } from "@/lib/postingPlans/api";
 import { PLAN_LABELS, type PlanTier } from "@/lib/postingPlans/types";
-
-const DEMO_SELLER_ID = "seller-user";
 
 type Status = "checking" | "success" | "error";
 
+// Stripe redirects here once checkout completes, but the actual tier change only happens once
+// payment-service's webhook processes the session — which can lag slightly behind the redirect.
+// Poll subscriptions/me a few times rather than trusting it's already reflected on first load.
+const POLL_ATTEMPTS = 6;
+const POLL_DELAY_MS = 1500;
+
 function SellSuccessContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id");
-  // Derived synchronously from the URL (searchParams is SSR-safe, unlike
-  // localStorage/window elsewhere in this app) rather than set from inside
-  // the effect below, so there's no extra render for the "no session_id"
-  // case.
-  const [status, setStatus] = useState<Status>(() => (sessionId ? "checking" : "error"));
+  const { token, isAuthReady } = useAuth();
+  const [status, setStatus] = useState<Status>("checking");
   const [tier, setTier] = useState<PlanTier | null>(null);
 
   useEffect(() => {
-    if (!sessionId) return;
-    fetch(`/api/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.paid && data.tier) {
-          // Real payment confirmed server-side (Stripe secret key) — the
-          // *tier bookkeeping* still lives in this app's existing local
-          // posting-plans module, same as every other account entitlement
-          // in this prototype.
-          PostingPlanService.subscribe(DEMO_SELLER_ID, data.tier as PlanTier);
-          setTier(data.tier as PlanTier);
+    if (!isAuthReady) return;
+    let cancelled = false;
+    (async () => {
+      if (!token) {
+        if (!cancelled) setStatus("error");
+        return;
+      }
+      for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
+        const subscription = await fetchMySubscription(token);
+        if (cancelled) return;
+        if (subscription && subscription.tier !== "free") {
+          setTier(subscription.tier);
           setStatus("success");
-        } else {
-          setStatus("error");
+          return;
         }
-      })
-      .catch(() => setStatus("error"));
-  }, [sessionId]);
+        await new Promise((resolve) => setTimeout(resolve, POLL_DELAY_MS));
+      }
+      if (!cancelled) setStatus("error");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, isAuthReady]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">
@@ -59,10 +63,10 @@ function SellSuccessContent() {
 
       {status === "error" && (
         <>
-          <h1 className="text-2xl font-bold text-slate-900">We couldn&apos;t confirm your payment</h1>
-          <p className="text-slate-500 max-w-md">If you were charged, contact support. Otherwise, please try again.</p>
-          <Link href="/sell" className="mt-2 font-bold text-[#2ec440] hover:text-[#28b039]">
-            Back to Sell
+          <h1 className="text-2xl font-bold text-slate-900">We couldn&apos;t confirm your payment yet</h1>
+          <p className="text-slate-500 max-w-md">If you were charged, this can take a minute to reflect — check Manager Portal shortly, or contact support if it doesn&apos;t update.</p>
+          <Link href="/manager" className="mt-2 font-bold text-[#2ec440] hover:text-[#28b039]">
+            Go to Manager Portal
           </Link>
         </>
       )}
