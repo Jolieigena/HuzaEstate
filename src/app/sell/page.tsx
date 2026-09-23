@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import PricingCards from '@/components/postingPlans/PricingCards';
@@ -31,12 +30,12 @@ export default function SellPage() {
                 Join thousands of owners who trust our elite network to seamlessly list, market, and sell their properties at peak market value.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/become-a-seller"
+                <a
+                  href="#plans"
                   className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-base"
                 >
                   Register as a Seller
-                </Link>
+                </a>
               </div>
             </div>
 
@@ -73,7 +72,7 @@ export default function SellPage() {
       </section>
 
       {/* Plans */}
-      <section className="py-16 sm:py-20 bg-slate-50 border-t border-slate-100">
+      <section id="plans" className="py-16 sm:py-20 bg-slate-50 border-t border-slate-100 scroll-mt-20">
         <div className="max-w-6xl mx-auto px-6 sm:px-10">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Choose your plan</h2>
@@ -81,7 +80,6 @@ export default function SellPage() {
           </div>
 
           <PricingCards
-            currentTier="free"
             onSelect={(tier) => {
               if (tier === 'free') {
                 router.push('/become-a-seller');

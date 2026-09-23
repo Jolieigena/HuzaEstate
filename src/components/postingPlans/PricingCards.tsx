@@ -15,18 +15,20 @@ const RECOMMENDED: PlanTier = "gold";
 
 /** Claude-pricing-page shaped: a card per tier, a short feature checklist,
  *  one tier visually highlighted, and the current plan shown as disabled
- *  rather than clickable. */
+ *  rather than clickable. `currentTier` is optional — omit it entirely on a
+ *  pre-account page like /sell, where the visitor has no plan yet and every
+ *  card (including Free) should be a live choice, not just the paid ones. */
 export default function PricingCards({
   currentTier,
   onSelect,
 }: {
-  currentTier: PlanTier;
+  currentTier?: PlanTier;
   onSelect: (tier: PlanTier) => void;
 }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {TIERS.map((tier) => {
-        const isCurrent = tier === currentTier;
+        const isCurrent = currentTier !== undefined && tier === currentTier;
         const isRecommended = tier === RECOMMENDED;
         const price = tier === "free" ? null : PLAN_PRICES[tier];
 
@@ -70,7 +72,7 @@ export default function PricingCards({
                   : "bg-slate-900 hover:bg-[#2ec440] text-white"
               }`}
             >
-              {isCurrent ? "Current Plan" : tier === "free" ? "Downgrade" : `Choose ${PLAN_LABELS[tier]}`}
+              {isCurrent ? "Current Plan" : tier === "free" ? (currentTier ? "Downgrade" : "Get Started Free") : `Choose ${PLAN_LABELS[tier]}`}
             </button>
 
             <p className="text-[11px] text-slate-400 mt-2">{PLAN_LIMITS[tier] === null ? "No monthly cap" : `Up to ${PLAN_LIMITS[tier]}/month`}</p>
