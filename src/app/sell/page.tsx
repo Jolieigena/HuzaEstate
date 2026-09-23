@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import PricingCards from '@/components/postingPlans/PricingCards';
-import GetStartedModal from '@/components/sell/GetStartedModal';
-import type { PlanTier } from '@/lib/postingPlans/types';
 
 export default function SellPage() {
   const router = useRouter();
-  const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, 'free'> | null>(null);
 
   return (
     <div className="min-h-screen bg-white">
@@ -81,17 +78,11 @@ export default function SellPage() {
 
           <PricingCards
             onSelect={(tier) => {
-              if (tier === 'free') {
-                router.push('/become-a-seller');
-                return;
-              }
-              setCheckoutTier(tier);
+              router.push(tier === 'free' ? '/become-a-seller' : `/become-a-seller?plan=${tier}`);
             }}
           />
         </div>
       </section>
-
-      {checkoutTier && <GetStartedModal tier={checkoutTier} onClose={() => setCheckoutTier(null)} />}
     </div>
   );
 }
