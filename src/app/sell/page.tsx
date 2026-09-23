@@ -78,7 +78,7 @@ export default function SellPage() {
 
           <PricingCards
             onSelect={(tier) => {
-              router.push(tier === 'free' ? '/become-a-seller' : `/become-a-seller?plan=${tier}`);
+              router.push(`/become-a-seller?plan=${tier}`);
             }}
           />
         </div>

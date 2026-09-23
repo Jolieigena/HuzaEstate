@@ -6,13 +6,18 @@ import { useAuth } from '@/lib/auth-context';
 import PasswordInput from '@/components/shared/PasswordInput';
 import Dialog from '@/components/Dialog';
 import PlanCheckout from '@/components/postingPlans/PlanCheckout';
-import { PLAN_LABELS, type PlanTier } from '@/lib/postingPlans/types';
+import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
+import { formatMoney } from '@/lib/finance/money';
 
 // Same fixture seller identity used throughout Manager Portal — see
 // LandlordProfileTab.tsx / OverviewTab.tsx for the same convention.
 const DEMO_SELLER_ID = "seller-user";
 
-function isPaidTier(value: string | null): value is Exclude<PlanTier, 'free'> {
+function isPlanTier(value: string | null): value is PlanTier {
+  return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
+}
+
+function isPaidTier(value: PlanTier | null): value is Exclude<PlanTier, 'free'> {
   return value === 'silver' || value === 'gold' || value === 'diamond';
 }
 
@@ -20,12 +25,19 @@ function BecomeASellerForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { applyAsSeller, signup, isLoggedIn, isAuthReady, account } = useAuth();
-  const paidTier = isPaidTier(searchParams.get('plan')) ? (searchParams.get('plan') as Exclude<PlanTier, 'free'>) : null;
+  const planParam = searchParams.get('plan');
+  // Only set when a plan was actually passed in (e.g. from /sell) — a visitor
+  // reaching this page some other way (ListPropertyModal's "become a seller"
+  // prompt) gets no plan badge and the original unconditional /manager
+  // redirect, same as before /sell started passing ?plan=.
+  const selectedTier = isPlanTier(planParam) ? planParam : null;
+  const paidTier = isPaidTier(selectedTier) ? selectedTier : null;
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +92,12 @@ function BecomeASellerForm() {
       return;
     }
 
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
+      setSubmitting(false);
+      return;
+    }
+
     const result = await signup({ firstName, lastName, email, password, termsAccepted: true });
     if (!result.ok) {
       setError(result.error);
@@ -124,14 +142,19 @@ function BecomeASellerForm() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-24 px-4 sm:px-6">
       <div className="w-full max-w-[500px]">
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">
-          {paidTier ? `Apply to become a seller — ${PLAN_LABELS[paidTier]} plan` : 'Apply to become a seller'}
-        </h1>
-        <p className="text-slate-500 mb-8">
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Apply to become a seller</h1>
+        <p className="text-slate-500 mb-4">
           {paidTier
             ? "Tell us a bit about yourself, then you'll complete payment securely with Stripe."
             : "Tell us a bit about yourself. Once approved, you'll get access to the Manager Portal to list and manage your properties."}
         </p>
+
+        {selectedTier && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-6">
+            Selected plan: {PLAN_LABELS[selectedTier]}
+            {paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}
+          </div>
+        )}
 
         {error && (
           <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
@@ -186,16 +209,29 @@ function BecomeASellerForm() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
-                  <PasswordInput
-                    placeholder="Create a password (min. 8 characters)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    minLength={8}
-                    autoComplete="new-password"
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                    <PasswordInput
+                      placeholder="Min. 8 characters"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      minLength={8}
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
+                    <PasswordInput
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      minLength={8}
+                      autoComplete="new-password"
+                      required
+                    />
+                  </div>
                 </div>
               </>
             )}
