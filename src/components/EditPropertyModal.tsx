@@ -132,7 +132,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
             >
               {COUNTRY_OPTIONS.map((c) => (
-                <option key={c.code} value={c.name}>{c.flag} {c.name}</option>
+                <option key={c.code} value={c.name}>{c.name}</option>
               ))}
             </select>
           </div>
