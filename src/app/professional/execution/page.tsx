@@ -7,9 +7,11 @@ import { useExecutionProjects, filterExecutionProjects } from "@/lib/execution/h
 import { ExecutionProjectCard } from "@/components/execution/ExecutionProjectCard";
 
 export default function ProfessionalExecutionDashboardPage() {
-  const { account, activeRole } = useAuth();
+  const { account } = useAuth();
   const userId = account?.id || "imara-user";
-  const currentRole = activeRole === "contractor" ? "contractor" : "architect";
+  // 'contractor' is no longer a real account role (see lib/auth-context.tsx) — this page's
+  // "execution role" concept still supports it as a display mode, just nothing can trigger it now.
+  const currentRole = "architect";
   const { projects, isLoading } = useExecutionProjects(userId, currentRole);
   const [filter, setFilter] = useState<"all" | "active" | "at_risk" | "handover" | "completed">("active");
 

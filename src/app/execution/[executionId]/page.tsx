@@ -12,7 +12,7 @@ export default function CustomerExecutionOverviewPage({ params }: { params: Prom
   const { activeRole } = useAuth();
   const { project, isLoading } = useExecutionProject(executionId);
 
-  const currentRole = activeRole === "contractor" ? "contractor" : activeRole === "professional" ? "architect" : activeRole === "administrator" ? "administrator" : "customer";
+  const currentRole = activeRole === "professional" ? "architect" : activeRole === "administrator" ? "administrator" : "customer";
 
   if (isLoading) return <div className="p-8 text-center text-slate-400">Loading execution project...</div>;
   if (!project) return <div className="p-8 text-center text-slate-600 font-bold">Execution Project Not Found</div>;

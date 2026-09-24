@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { mockProperties } from "@/lib/data";
+import { useAllProperties } from "@/lib/sellerListings/hooks";
 import { useAuth } from "@/lib/auth-context";
 import { hasPermission } from "@/lib/admin/permissions";
 import type { AdminRole } from "@/lib/admin/types";
@@ -14,20 +14,21 @@ export function PropertiesListPage() {
   const adminRole = account?.adminRole as AdminRole | undefined;
   const canView = adminRole && hasPermission(adminRole, "listings.view");
 
+  const allProperties = useAllProperties();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<"all" | "sale" | "rent">("all");
 
   const filteredProperties = useMemo(() => {
-    return mockProperties.filter((p) => {
+    return allProperties.filter((p) => {
       const matchesSearch = !search.trim() || `${p.title} ${p.location} ${p.city}`.toLowerCase().includes(search.toLowerCase());
       const matchesType = filterType === "all" || p.type === filterType;
       return matchesSearch && matchesType;
     });
-  }, [search, filterType]);
+  }, [allProperties, search, filterType]);
 
-  const activeCount = mockProperties.length; // Simplified for this view
-  const saleCount = mockProperties.filter(p => p.type === 'sale').length;
-  const rentCount = mockProperties.filter(p => p.type === 'rent').length;
+  const activeCount = allProperties.length;
+  const saleCount = allProperties.filter(p => p.type === 'sale').length;
+  const rentCount = allProperties.filter(p => p.type === 'rent').length;
 
   if (!canView) {
     return (

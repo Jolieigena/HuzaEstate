@@ -1,12 +1,8 @@
-export type AdminRole =
-  | "super_admin"
-  | "operations_admin"
-  | "verification_officer"
-  | "listing_moderator"
-  | "support_dispute_officer"
-  | "content_manager"
-  | "auditor"
-  | "platform_analyst";
+// Only 2 values with any real authorization logic behind them in access-service (see
+// requireAdmin/createUserByAdmin) — the other 6 this used to have were an unimplemented
+// finer-grained permission scheme with no matching backend checks. Trimmed for consistency;
+// revisit if/when that permission system is actually built.
+export type AdminRole = "super_admin" | "operations_admin";
 
 export type Permission =
   | "users.view" | "users.manage" | "users.suspend"
@@ -32,7 +28,10 @@ export interface AdminRoleAssignment {
   expiresAt?: string;
 }
 
-export type AccountDirectoryType = "customer" | "seller_manager" | "professional" | "contractor" | "administrator";
+// 'contractor' removed — nothing anywhere creates one (dead scaffolding in the original account
+// model, matching access-service's accountRoles). 'customer' stays: it's the real default role
+// every public signup gets.
+export type AccountDirectoryType = "customer" | "seller_manager" | "professional" | "administrator";
 export type AccountStatus = "active" | "pending" | "restricted" | "suspended" | "closed";
 
 export type AccountRestrictionKind =

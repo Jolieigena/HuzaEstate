@@ -46,7 +46,9 @@ export default function ProfessionalInvoicesPage() {
     );
   }
 
-  const role: PartyRole = account.roles.includes("contractor") ? "contractor" : "professional";
+  // 'contractor' is no longer a real account role (see lib/auth-context.tsx) — PartyRole (a
+  // finance-domain concept) still supports it, just nothing can select it here now.
+  const role: PartyRole = "professional";
 
   return (
     <PageFrame title="Invoices" description="Create and track invoices for milestones, professional services and change orders." action={<PrimaryButton onClick={() => setCreateOpen(true)}>Create Invoice</PrimaryButton>}>

@@ -3,6 +3,7 @@
 // ./service.ts (requests, quotations, reviews, consultations, messaging), which stays mock.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
 export interface PortfolioItemInput {
   title: string;
@@ -11,9 +12,18 @@ export interface PortfolioItemInput {
   year?: number;
 }
 
+export interface ServiceOfferingInput {
+  name: string;
+  description?: string;
+}
+
+export type ProfessionalKind = "individual" | "firm";
+
 export interface RealProfessionalProfile {
   accountId: string;
+  kind: ProfessionalKind;
   displayName: string;
+  photoUrl?: string;
   bio: string;
   specialisation: string;
   yearsExperience?: number;
@@ -21,7 +31,27 @@ export interface RealProfessionalProfile {
   country: string;
   phone: string;
   portfolio: PortfolioItemInput[];
+  services: ServiceOfferingInput[];
   completedAt: string | null;
+}
+
+// Uploads a professional's photo (profile picture or a portfolio project image) via
+// property-service's shared MinIO presign endpoint — same flow as src/lib/media/upload.ts uses
+// for property photos, just under the "professionals" storage folder instead of "properties".
+export async function uploadProfessionalImage(file: Blob, contentType: string, token: string): Promise<string> {
+  const presignRes = await fetch(`${PROPERTY_API_URL}/media/upload-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ contentType, folder: "professionals" }),
+  });
+  if (!presignRes.ok) {
+    const data = await presignRes.json().catch(() => null);
+    throw new Error(data?.message || "Could not prepare the upload.");
+  }
+  const { uploadUrl, publicUrl } = await presignRes.json();
+  const putRes = await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": contentType }, body: file });
+  if (!putRes.ok) throw new Error("Upload failed. Please try again.");
+  return publicUrl as string;
 }
 
 export async function fetchMyProfessionalProfile(token: string): Promise<RealProfessionalProfile | null> {
@@ -35,7 +65,9 @@ export async function fetchMyProfessionalProfile(token: string): Promise<RealPro
   }
 }
 
-export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt">;
+// kind is deliberately excluded — it's chosen by the administrator at account creation and
+// the backend ignores it in this request even if sent (see access-service's upsertMyProfile).
+export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt" | "kind">;
 
 export type SaveProfileResult = { ok: true } | { ok: false; error: string };
 
@@ -108,10 +140,11 @@ export function adaptRealProfile(real: RealProfessionalProfile) {
   return {
     id: real.accountId,
     accountId: real.accountId,
-    kind: "individual_professional" as const,
+    kind: real.kind === "firm" ? ("professional_firm" as const) : ("individual_professional" as const),
     status: "approved" as const,
     displayName: real.displayName,
     legalName: real.displayName,
+    photoUrl: real.photoUrl,
     email: "",
     phone: real.phone,
     country: real.country,
@@ -122,7 +155,15 @@ export function adaptRealProfile(real: RealProfessionalProfile) {
     languages: [] as string[],
     primarySpecialisation: real.specialisation,
     secondarySpecialisations: [] as string[],
-    services: [] as { id: string; name: string; description: string; deliveryTime: string; deliveryMode: "remote" | "onsite" | "both"; priceAfterAssessment: boolean; requiredInformation: string }[],
+    services: real.services.map((service, index) => ({
+      id: `${real.accountId}-service-${index}`,
+      name: service.name,
+      description: service.description ?? "",
+      deliveryTime: "",
+      deliveryMode: "both" as const,
+      priceAfterAssessment: true,
+      requiredInformation: "",
+    })),
     serviceAreas: [] as string[],
     travelRadiusKm: 0,
     remoteAvailable: true,

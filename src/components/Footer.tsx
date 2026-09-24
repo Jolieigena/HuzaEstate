@@ -19,7 +19,6 @@ const FOOTER_LINKS = [
       { href: '/professionals', label: 'Find a Professional' },
       { href: '/blog', label: 'Blog' },
       { href: '/post-property', label: 'Post a property' },
-      { href: '/professionals/apply', label: 'Become a Professional' },
     ],
   },
   {

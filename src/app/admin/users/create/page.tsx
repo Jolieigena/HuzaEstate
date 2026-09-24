@@ -25,6 +25,7 @@ export default function CreateUserPage() {
   const [email, setEmail] = useState("");
   const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional">>("professional");
   const [adminRole, setAdminRole] = useState<AdminRole>("operations_admin");
+  const [professionalKind, setProfessionalKind] = useState<"individual" | "firm">("individual");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState<{ email: string; emailDelivered: boolean } | null>(null);
@@ -40,6 +41,7 @@ export default function CreateUserPage() {
       email,
       roleType,
       adminRole: roleType === "administrator" ? adminRole : undefined,
+      professionalKind: roleType === "professional" ? professionalKind : undefined,
     });
     setIsSubmitting(false);
     if (!result.ok) {
@@ -123,6 +125,16 @@ export default function CreateUserPage() {
                       {label}
                     </option>
                   ))}
+                </select>
+              </label>
+            )}
+
+            {roleType === "professional" && (
+              <label className="block text-sm font-bold text-slate-700">
+                Professional type
+                <select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
+                  <option value="individual">Individual professional</option>
+                  <option value="firm">Firm / company</option>
                 </select>
               </label>
             )}

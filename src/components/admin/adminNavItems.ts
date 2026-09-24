@@ -19,6 +19,7 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   { key: "requests", label: "Requests", href: "/admin/requests", iconPath: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2", permission: "reviews.view" },
   { key: "quotations", label: "Quotations", href: "/admin/quotations", iconPath: "M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z", permission: "quotations.view" },
   { key: "finance", label: "Finance", href: "/admin/finance", iconPath: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z", permission: "finance.view" },
+  { key: "payments", label: "Seller Payments", href: "/admin/payments", iconPath: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", permission: "finance.view" },
   { key: "support", label: "Support", href: "/admin/support", iconPath: "M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M5.636 5.636l3.172 3.172m0 5.656l-3.172 3.172M12 15a3 3 0 100-6 3 3 0 000 6z", permission: "support.manage" },
   { key: "disputes", label: "Disputes", href: "/admin/disputes", iconPath: "M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z", permission: "disputes.manage" },
   { key: "ai", label: "AI Operations", href: "/admin/ai", iconPath: "M13 10V3L4 14h7v7l9-11h-7z", permission: "ai.view_usage" },

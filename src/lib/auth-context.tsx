@@ -2,7 +2,9 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-export type AccountRole = "customer" | "seller_manager" | "professional" | "contractor" | "administrator";
+// 'contractor' removed — nothing anywhere creates one (dead scaffolding in the original account
+// model, matching access-service's accountRoles). Revisit if/when contractor work is scoped.
+export type AccountRole = "customer" | "seller_manager" | "professional" | "administrator";
 
 export interface Account {
   id: string;
@@ -42,38 +44,13 @@ export interface CreateUserInput {
   email: string;
   roleType: Extract<AccountRole, "administrator" | "professional">;
   adminRole?: string;
+  /** Required when roleType is "professional" — chosen once at creation, not editable by the
+   * professional themselves afterwards (see access-service's professionals module). */
+  professionalKind?: "individual" | "firm";
 }
 
 export type CreateUserResult = { ok: true; emailDelivered: boolean } | { ok: false; error: string };
 
-/**
- * Fixture identities for the admin/finance prototype modules' seed data
- * (src/lib/admin/seed.ts, src/lib/finance/accountLookup.ts) — those modules
- * are local-only mock directories unrelated to real sign-in and just need
- * stable id/name/role rows to seed synthetic records against. NOT used by
- * signup/loginWithCredentials below, which authenticate against the backend.
- */
-export const DEMO_ACCOUNTS: readonly Account[] = [
-  { id: "demo-user", name: "Jane Doe", email: "buyer@huzaestate.com", roles: ["customer"], isApprovedSeller: false, path: "/dashboard" },
-  { id: "seller-user", name: "Jane Doe", email: "seller@huzaestate.com", roles: ["customer", "seller_manager"], isApprovedSeller: true, path: "/manager" },
-  { id: "aline-user", name: "Aline Uwase", email: "architect@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-1", isApprovedSeller: false, path: "/professional" },
-  { id: "eric-user", name: "Eric Habimana", email: "structural@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-structural", isApprovedSeller: false, path: "/professional" },
-  { id: "diane-user", name: "Diane Mukamana", email: "surveyor@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-3", isApprovedSeller: false, path: "/professional" },
-  { id: "keza-user", name: "Keza Studio", email: "interior@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-interior", isApprovedSeller: false, path: "/professional" },
-  { id: "imara-user", name: "Imara Construction Ltd", email: "contractor@huzaestate.com", roles: ["customer", "contractor"], professionalProfileId: "contractor-imara", isApprovedSeller: false, path: "/professional" },
-  { id: "moses-user", name: "Moses Karenzi", email: "electrical@huzaestate.com", roles: ["customer", "professional"], professionalProfileId: "pro-electrical-pending", isApprovedSeller: false, path: "/professional" },
-] as const;
-
-export const ADMIN_DEMO_ACCOUNTS: readonly Account[] = [
-  { id: "admin-super", name: "Sam Nkurunziza", email: "super.admin@huzaestate.com", roles: ["administrator"], adminRole: "super_admin", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-ops", name: "Grace Mutoni", email: "ops.admin@huzaestate.com", roles: ["administrator"], adminRole: "operations_admin", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-verify", name: "Patrick Ndayisenga", email: "verification@huzaestate.com", roles: ["administrator"], adminRole: "verification_officer", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-listing", name: "Claudine Iradukunda", email: "listings@huzaestate.com", roles: ["administrator"], adminRole: "listing_moderator", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-support", name: "Eric Bizimana", email: "support@huzaestate.com", roles: ["administrator"], adminRole: "support_dispute_officer", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-content", name: "Divine Ingabire", email: "content@huzaestate.com", roles: ["administrator"], adminRole: "content_manager", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-auditor", name: "Jean Paul Rugamba", email: "auditor@huzaestate.com", roles: ["administrator"], adminRole: "auditor", isApprovedSeller: false, path: "/admin" },
-  { id: "admin-analyst", name: "Aline Umutoni", email: "analyst@huzaestate.com", roles: ["administrator"], adminRole: "platform_analyst", isApprovedSeller: false, path: "/admin" },
-] as const;
 
 interface AuthContextValue {
   isLoggedIn: boolean;
@@ -112,7 +89,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/ac
 function deriveActiveRole(account: Account, preferred?: string | null): AccountRole {
   if (preferred && account.roles.includes(preferred as AccountRole)) return preferred as AccountRole;
   if (account.roles.includes("administrator")) return "administrator";
-  if (account.roles.includes("contractor")) return "contractor";
   if (account.roles.includes("professional")) return "professional";
   if (account.isApprovedSeller && account.roles.includes("seller_manager")) return "seller_manager";
   return "customer";

@@ -97,14 +97,21 @@ function PropertiesContent() {
   const [maxSqm, setMaxSqm] = useState('');
   const [cityInput, setCityInput] = useState('');
   const [keywordsInput, setKeywordsInput] = useState('');
+  // Multiple countries can be picked at once (see the checklist panel below)
+  // instead of the old single free-text field, which silently matched
+  // nothing when someone typed a city ("london") instead of a country name.
   // Seeded from whatever the visitor previously picked via the (now-removed)
-  // navbar country picker, if anything — see useCurrentCountry.ts. A
-  // default only, still fully typeable below.
-  // Starts at '' (matching SSR, which has no localStorage) and is filled in
-  // by the effect further down — a lazy initializer here would read a real
-  // value on the client's first render while the server rendered '', a
-  // genuine hydration mismatch on this controlled input's value.
-  const [countryInput, setCountryInput] = useState('');
+  // navbar country picker, if anything — see useCurrentCountry.ts.
+  // Starts empty (matching SSR, which has no localStorage) and is filled in
+  // by the effect further down.
+  const [selectedCountryCodes, setSelectedCountryCodes] = useState<string[]>([]);
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const countryButtonRef = useRef<HTMLButtonElement>(null);
+  const [countryPanelPos, setCountryPanelPos] = useState<{ top: number; left: number } | null>(null);
+  const [countrySearch, setCountrySearch] = useState('');
+  function toggleCountry(code: string) {
+    setSelectedCountryCodes((prev) => prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]);
+  }
 
   const filterType = parseStatusInput(statusInput);
   const propertyTypeFilter = parsePropertyTypeInput(propertyTypeInput);
@@ -137,23 +144,24 @@ function PropertiesContent() {
 
   useEffect(() => {
     const saved = getSelectedCountryName();
+    const code = saved ? findCountry(saved)?.code : undefined;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved) setCountryInput(saved);
+    if (code) setSelectedCountryCodes([code]);
   }, []);
 
   // A fixed-position panel doesn't track its trigger on scroll, so close it
   // the moment any scrolling happens rather than letting it drift away from
   // the button.
   useEffect(() => {
-    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen) return;
-    const close = () => { setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); };
+    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen) return;
+    const close = () => { setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); setIsCountryOpen(false); };
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     return () => {
       window.removeEventListener('scroll', close, true);
       window.removeEventListener('resize', close);
     };
-  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen]);
+  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen, isCountryOpen]);
 
   function openPanel(buttonRef: React.RefObject<HTMLButtonElement | null>, panelWidth: number, setPos: (pos: { top: number; left: number }) => void, open: () => void) {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -180,8 +188,9 @@ function PropertiesContent() {
   const visibleProperties = useVisibleListings(allProperties);
 
   const filteredProperties = visibleProperties.filter((p) => {
+    const propCountryName = getPropertyCountry(p).name;
     const searchLower = searchTerm.toLowerCase();
-    const propText = `${p.title} ${p.location} ${p.city} ${p.propertyType} rwanda`.toLowerCase();
+    const propText = `${p.title} ${p.location} ${p.city} ${p.propertyType} ${propCountryName}`.toLowerCase();
     const searchTokens = searchLower.split(/[\s,]+/).filter(Boolean);
     const matchesSearch = searchTokens.length === 0 || searchTokens.every(token => propText.includes(token));
     const matchesType = filterType === 'all' || p.type === filterType;
@@ -199,7 +208,7 @@ function PropertiesContent() {
     let matchesCity = true;
     if (cityInput.trim()) {
       const cityTokens = cityInput.toLowerCase().split(/[\s,]+/).filter(Boolean);
-      const cityPropText = `${p.location} ${p.city} rwanda`.toLowerCase();
+      const cityPropText = `${p.location} ${p.city} ${propCountryName}`.toLowerCase();
       matchesCity = cityTokens.every((token) => cityPropText.includes(token));
     }
     let matchesKeywords = true;
@@ -211,8 +220,7 @@ function PropertiesContent() {
       const keywordHay = `${p.title} ${p.description} ${(p.amenities ?? []).join(' ')}`.toLowerCase();
       matchesKeywords = kws.length === 0 || kws.some((kw) => keywordHay.includes(kw));
     }
-    const wantedCountry = findCountry(countryInput);
-    const matchesCountry = !wantedCountry || getPropertyCountry(p).code === wantedCountry.code;
+    const matchesCountry = selectedCountryCodes.length === 0 || selectedCountryCodes.includes(getPropertyCountry(p).code);
     let matchesAi = true;
     if (aiFilters) {
       if (aiFilters.type && aiFilters.type !== 'all') matchesAi = matchesAi && p.type === aiFilters.type;
@@ -225,8 +233,8 @@ function PropertiesContent() {
       if (aiFilters.maxSqm !== undefined) matchesAi = matchesAi && p.sqm <= aiFilters.maxSqm;
       if (aiFilters.city) {
         const cityTokens = aiFilters.city.toLowerCase().split(/[\s,]+/).filter(Boolean);
-        const propText = `${p.location} ${p.city} rwanda`.toLowerCase();
-        matchesAi = matchesAi && cityTokens.every((token) => propText.includes(token));
+        const aiPropText = `${p.location} ${p.city} ${propCountryName}`.toLowerCase();
+        matchesAi = matchesAi && cityTokens.every((token) => aiPropText.includes(token));
       }
       if (aiFilters.keywords?.length) {
         const hay = `${p.title} ${p.description} ${(p.amenities ?? []).join(' ')}`.toLowerCase();
@@ -244,7 +252,7 @@ function PropertiesContent() {
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setPropertyTypeInput('');
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
-    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setCountryInput(''); setAiFilters(null);
+    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setSelectedCountryCodes([]); setAiFilters(null);
   }
 
   return (
@@ -418,24 +426,48 @@ function PropertiesContent() {
                 )}
               </div>
 
-              {/* Country — typeable, suggestions via datalist; any world country resolves
-                  (see COUNTRY_OPTIONS), not just Rwanda's immediate neighbors */}
+              {/* Country — checklist panel supporting multiple selections at once
+                  (see COUNTRY_OPTIONS), rather than a single free-text field that
+                  silently matched nothing if you typed a city instead of a country. */}
               <div className="relative">
-                <input
-                  type="text"
-                  list="country-options"
-                  placeholder="Any Country"
-                  value={countryInput}
-                  onChange={(e) => setCountryInput(e.target.value)}
-                  className="w-[150px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
-                />
-                <datalist id="country-options">
-                  {COUNTRY_OPTIONS.map((c) => <option key={c.code} value={c.name} />)}
-                </datalist>
-                {countryInput && (
-                  <button onClick={() => setCountryInput('')} aria-label="Clear country" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+                <button
+                  ref={countryButtonRef}
+                  onClick={() => (isCountryOpen ? setIsCountryOpen(false) : openPanel(countryButtonRef, 288, setCountryPanelPos, () => setIsCountryOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {selectedCountryCodes.length === 0
+                    ? 'Any Country'
+                    : selectedCountryCodes.length === 1
+                    ? COUNTRY_OPTIONS.find((c) => c.code === selectedCountryCodes[0])?.name ?? 'Country'
+                    : `Countries (${selectedCountryCodes.length})`}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isCountryOpen && countryPanelPos && (
+                  <div style={{ position: 'fixed', top: countryPanelPos.top, left: countryPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Countries</h3>
+                    <input
+                      type="text"
+                      placeholder="Search countries…"
+                      value={countrySearch}
+                      onChange={(e) => setCountrySearch(e.target.value)}
+                      className="w-full mb-2 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
+                    />
+                    <div className="grid grid-cols-1 gap-1 max-h-56 overflow-y-auto pr-1">
+                      {COUNTRY_OPTIONS.filter((c) => c.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).map((c) => {
+                        const checked = selectedCountryCodes.includes(c.code);
+                        return (
+                          <label key={c.code} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
+                            <input type="checkbox" checked={checked} onChange={() => toggleCountry(c.code)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                            {c.name}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => setSelectedCountryCodes([])} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
+                      <button onClick={() => setIsCountryOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
+                    </div>
+                  </div>
                 )}
               </div>
 

@@ -106,9 +106,6 @@ function LoginForm() {
       <p className="mt-8 text-center text-slate-500 text-sm">
         Don&apos;t have an account? <Link href={signupHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Sign up for free</Link>
       </p>
-      <p className="mt-3 text-center text-sm">
-        <Link href="/professionals/apply" className="font-bold text-slate-600 hover:text-[#2ec440]">Become a Professional</Link>
-      </p>
     </>
   );
 }

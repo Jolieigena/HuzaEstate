@@ -31,7 +31,7 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
         </button>
         <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
           <Logo className="h-8 w-auto" />
-          <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Manager</span>
+          <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Owner</span>
         </Link>
       </div>
 
@@ -50,7 +50,7 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{(account?.name ?? "M").slice(0, 1)}</span>
             <span className="hidden text-left sm:block">
               <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Manager"}</span>
-              <span className="block text-[11px] text-slate-500">Manager Portal</span>
+              <span className="block text-[11px] text-slate-500">Owner Portal</span>
             </span>
           </button>
 

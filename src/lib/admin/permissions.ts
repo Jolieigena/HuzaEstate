@@ -1,25 +1,19 @@
 import type { AdminRole, Permission } from "./types";
 
+// Was 8 roles; 6 of them (verification officer, listing moderator, support/dispute officer,
+// content manager, auditor, platform analyst) had no matching authorization logic anywhere in
+// access-service — a permission scheme this app never actually finished wiring up. Trimmed to
+// the 2 that are real, with their permissions folded into operations_admin below so nothing
+// that used to be reachable becomes permanently unreachable. Revisit if/when a real
+// finer-grained staff permission system is built.
 export const ADMIN_ROLE_LABELS: Record<AdminRole, string> = {
   super_admin: "Super Administrator",
   operations_admin: "Operations Administrator",
-  verification_officer: "Professional Verification Officer",
-  listing_moderator: "Listing Moderator",
-  support_dispute_officer: "Support and Dispute Officer",
-  content_manager: "Content Manager",
-  auditor: "Auditor",
-  platform_analyst: "Platform Analyst",
 };
 
 export const ADMIN_ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
   super_admin: "Manages administrative users, roles and platform-wide settings. Full access to every module.",
-  operations_admin: "Monitors users, projects and requests, and manages support cases and operational reports.",
-  verification_officer: "Reviews professional applications and verification documents, and approves, rejects or suspends verification.",
-  listing_moderator: "Reviews submitted property listings, handles reported listings, and approves or rejects them.",
-  support_dispute_officer: "Manages support tickets and customer-professional disputes, and recommends account restrictions.",
-  content_manager: "Manages public FAQs, examples, demo-video metadata and announcements. No private project access by default.",
-  auditor: "Views audit logs, status histories and reports. Cannot modify operational data.",
-  platform_analyst: "Views aggregated dashboards, reports and anonymised AI usage. No unnecessary private data access.",
+  operations_admin: "Handles day-to-day operations: users, professional verification, listing moderation, support cases and disputes, content, reports and audit.",
 };
 
 export const ALL_PERMISSIONS: Permission[] = [
@@ -56,20 +50,22 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   super_admin: ALL_PERMISSIONS,
+  // Everything the 6 removed specialist roles used to cover (professional verification, listing
+  // moderation, support/disputes, content, audit export, AI usage view) is folded in here — see
+  // the trim note above ADMIN_ROLE_LABELS. Still excludes the most sensitive, platform-wide
+  // actions (roles.assign, settings.manage, feature_flags.manage, ai.manage_configuration,
+  // finance.privileged_access), which stay super_admin-only.
   operations_admin: [
     "users.view", "users.manage", "users.suspend",
-    "professionals.view", "listings.view",
-    "projects.view_metadata", "reviews.view", "quotations.view",
+    "professionals.view", "professionals.verify", "professionals.suspend",
+    "listings.view", "listings.moderate",
+    "projects.view_metadata", "projects.view_private", "reviews.view", "quotations.view",
     "support.manage", "disputes.manage",
-    "reports.view", "reports.export", "audit.view",
-    "finance.view", "finance.configure", "finance.refunds_review", "finance.reconciliation", "finance.export",
+    "content.manage",
+    "ai.view_usage",
+    "reports.view", "reports.export", "audit.view", "audit.export",
+    "finance.view", "finance.configure", "finance.refunds_review", "finance.reconciliation", "finance.export", "finance.disputes",
   ],
-  verification_officer: ["professionals.view", "professionals.verify", "professionals.suspend", "users.view", "audit.view"],
-  listing_moderator: ["listings.view", "listings.moderate", "users.view", "audit.view"],
-  support_dispute_officer: ["support.manage", "disputes.manage", "users.view", "projects.view_metadata", "projects.view_private", "reviews.view", "quotations.view", "audit.view", "finance.view", "finance.disputes"],
-  content_manager: ["content.manage", "reports.view"],
-  auditor: ["audit.view", "audit.export", "reports.view", "users.view", "professionals.view", "listings.view", "projects.view_metadata", "finance.view", "finance.export"],
-  platform_analyst: ["reports.view", "reports.export", "ai.view_usage"],
 };
 
 export function hasPermission(role: AdminRole | null | undefined, permission: Permission): boolean {

@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { useAuth } from "@/lib/auth-context";
-import { useProfessionalProfile } from "@/lib/professional/hooks";
 
 interface AppHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -17,10 +16,16 @@ interface AppHeaderProps {
  * etc.) lives in the global Sidebar; this header just has the logo, the
  * mobile menu toggle, and the account menu.
  */
+const ROLE_LABELS: Record<string, string> = {
+  administrator: "Administrator",
+  professional: "Professional",
+  seller_manager: "Owner",
+  customer: "Customer",
+};
+
 export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { logout, account } = useAuth();
-  const professionalProfile = useProfessionalProfile(account?.id);
+  const { logout, account, activeRole } = useAuth();
 
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
@@ -51,7 +56,7 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{(account?.name ?? "U").slice(0, 1)}</span>
           <span className="hidden text-left sm:block">
             <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Account"}</span>
-            <span className="block text-[11px] text-slate-500">Customer</span>
+            <span className="block text-[11px] text-slate-500">{ROLE_LABELS[activeRole] ?? "Account"}</span>
           </span>
         </button>
 
@@ -64,9 +69,11 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             <Link href="/properties" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
               Browse Properties
             </Link>
-            <Link href={professionalProfile ? "/professional" : "/professionals/apply"} onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              {professionalProfile ? "Professional Portal" : "Become a Professional"}
-            </Link>
+            {account?.roles.includes("professional") && (
+              <Link href="/professional" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                Professional Portal
+              </Link>
+            )}
             <button
               onClick={() => {
                 setMenuOpen(false);

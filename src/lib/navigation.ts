@@ -4,12 +4,12 @@ import { hasPermission, ROLE_PERMISSIONS } from './admin/permissions';
 import { ADMIN_NAV_ITEMS } from '../components/admin/adminNavItems';
 
 export const ROLE_LABELS: Record<AccountRole, string> = {
-  customer: 'Customer Dashboard', seller_manager: 'Manager Portal', professional: 'Professional Workspace',
-  contractor: 'Contractor Workspace', administrator: 'Administration Portal',
+  customer: 'Customer Dashboard', seller_manager: 'Owner Portal', professional: 'Professional Workspace',
+  administrator: 'Administration Portal',
 };
 export function roleHome(role: AccountRole): string {
   return role === 'administrator' ? '/admin' : role === 'seller_manager' ? '/manager' :
-    role === 'professional' || role === 'contractor' ? '/professional' : '/dashboard';
+    role === 'professional' ? '/professional' : '/dashboard';
 }
 export function availableRoles(account: Account | null): AccountRole[] {
   return account?.roles.filter(role => role !== 'seller_manager' || account.isApprovedSeller) || [];
@@ -28,7 +28,7 @@ export function canAccessPath(account: Account | null, path: string): boolean {
   const roles = availableRoles(account);
   const under = (prefix: string) => pathname === prefix || pathname.startsWith(prefix + '/');
   if (under('/admin')) return roles.includes('administrator') && canAccessAdminPath(account.adminRole, pathname);
-  if (under('/professional') && !under('/professional/application')) return roles.includes('professional') || roles.includes('contractor');
+  if (under('/professional')) return roles.includes('professional');
   if (under('/manager') || under('/post-property')) return roles.includes('seller_manager');
   if (['/dashboard', '/studio', '/execution', '/payments', '/invoices', '/contracts'].some(under)) return roles.includes('customer');
   return true;

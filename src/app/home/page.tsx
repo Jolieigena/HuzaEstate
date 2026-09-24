@@ -1,9 +1,11 @@
+"use client";
+
 import PublicPropertyGrid from "@/components/PublicPropertyGrid";
 import SearchBar from "@/components/SearchBar";
 import Reveal from "@/components/Reveal";
 import { ProcessVideoCard } from "@/components/ProcessVideo";
 import { buildVideos, renovateVideos } from "@/lib/videos";
-import { mockProperties } from "@/lib/data";
+import { useAllProperties } from "@/lib/sellerListings/hooks";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -32,6 +34,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function Home() {
+  const allProperties = useAllProperties();
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -128,7 +131,7 @@ export default function Home() {
 
           {/* Property Grid */}
           <PublicPropertyGrid
-            properties={mockProperties}
+            properties={allProperties}
             limit={6}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
             revealAnimation

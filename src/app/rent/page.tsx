@@ -1,11 +1,14 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicPropertyGrid from '@/components/PublicPropertyGrid';
-import { mockProperties } from '@/lib/data';
+import { useAllProperties } from '@/lib/sellerListings/hooks';
 
 export default function RentPage() {
-  const featuredRentals = mockProperties.filter(property => property.type === 'rent');
+  const allProperties = useAllProperties();
+  const featuredRentals = allProperties.filter(property => property.type === 'rent');
 
   return (
     <div className="min-h-screen bg-white">

@@ -1,11 +1,14 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicPropertyGrid from '@/components/PublicPropertyGrid';
-import { mockProperties } from '@/lib/data';
+import { useAllProperties } from '@/lib/sellerListings/hooks';
 
 export default function BuyPage() {
-  const forSale = mockProperties.filter(property => property.type === 'sale');
+  const allProperties = useAllProperties();
+  const forSale = allProperties.filter(property => property.type === 'sale');
 
   return (
     <div className="min-h-screen bg-white">

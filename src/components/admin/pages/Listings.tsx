@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useAdminState, useHasPermission } from "@/lib/admin/hooks";
 import { AdminService } from "@/lib/admin/service";
 import type { ListingModerationStatus } from "@/lib/admin/types";
-import { mockProperties } from "@/lib/data";
+import { useAllProperties } from "@/lib/sellerListings/hooks";
 import { useToast } from "@/lib/toast-context";
 import ReasonFormModal from "../ReasonFormModal";
 import { Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime } from "../ui";
@@ -23,6 +23,7 @@ function useActor() {
 export function ListingsListPage() {
   const { account } = useAuth();
   const state = useAdminState();
+  const allProperties = useAllProperties();
   const canView = useHasPermission(account?.id, "listings.view");
   const [status, setStatus] = useState<"all" | ListingModerationStatus>("all");
   const [saleType, setSaleType] = useState<"all" | "sale" | "rent">("all");
@@ -30,11 +31,11 @@ export function ListingsListPage() {
 
   const rows = useMemo(
     () =>
-      mockProperties.map((property) => ({
+      allProperties.map((property) => ({
         property,
         moderation: state.listingModeration[property.id],
       })),
-    [state]
+    [allProperties, state]
   );
 
   const filtered = rows.filter(({ property, moderation }) => {
@@ -122,7 +123,8 @@ export function ListingDetailPage({ listingId }: { listingId: string }) {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [approveOpen, setApproveOpen] = useState(false);
 
-  const property = mockProperties.find((item) => item.id === listingId);
+  const allProperties = useAllProperties();
+  const property = allProperties.find((item) => item.id === listingId);
 
   if (!canView) {
     return (

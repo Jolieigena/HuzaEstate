@@ -126,8 +126,13 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
         </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-start gap-6 mb-10">
-          <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-3xl flex-shrink-0">
-            {profile.displayName.charAt(0)}
+          <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-3xl flex-shrink-0 overflow-hidden">
+            {profile.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={profile.photoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              profile.displayName.charAt(0)
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">

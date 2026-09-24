@@ -35,6 +35,10 @@ export interface ProfessionalProfile {
   displayName: string;
   legalName: string;
   businessName?: string;
+  /** Real accounts only (see adaptRealProfile in lib/professional/api.ts) — the demo/mock
+   *  profiles below have no uploaded photo, so this stays undefined and pages fall back to a
+   *  letter avatar / stock photo. */
+  photoUrl?: string;
   email: string;
   phone: string;
   country: string;

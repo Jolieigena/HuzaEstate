@@ -16,8 +16,12 @@ export default function LandlordProfileCard({ ownerId = "seller-user" }: { owner
     <div className="bg-white border border-slate-200 rounded-3xl p-6 mt-6">
       <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-4">Meet your landlord</h3>
       <div className="flex items-center gap-4 mb-4">
-        <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-slate-100">
-          <Image src={profile.photoUrl} alt={profile.displayName} fill className="object-cover" />
+        <div className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 bg-slate-900 flex items-center justify-center">
+          {profile.photoUrl ? (
+            <Image src={profile.photoUrl} alt={profile.displayName} fill className="object-cover" />
+          ) : (
+            <span className="text-white font-bold text-lg">{profile.displayName.slice(0, 1)}</span>
+          )}
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { mockProperties } from "@/lib/data";
 import type { Property } from "@/lib/properties/types";
 import { usePropertyOverrides } from "@/lib/propertyOverrides/hooks";
 import { applyOverride } from "@/lib/propertyOverrides/store";
@@ -52,12 +51,10 @@ function useBackendProperties(): Property[] {
   return properties;
 }
 
-/** Real backend-posted listings plus the curated mockProperties fixtures (so the
- *  marketplace still looks populated before many real listings exist), with any
- *  per-property edits (see propertyOverrides) applied on top. */
+/** Real backend-posted listings (property-service), with any per-property edits
+ *  (see propertyOverrides) applied on top. */
 export function useAllProperties(): Property[] {
   const backendProperties = useBackendProperties();
   const overrides = usePropertyOverrides();
-  const base = [...backendProperties, ...mockProperties];
-  return Object.keys(overrides).length ? base.map((p) => applyOverride(p, overrides)) : base;
+  return Object.keys(overrides).length ? backendProperties.map((p) => applyOverride(p, overrides)) : backendProperties;
 }

@@ -1,7 +1,5 @@
 import { BuildProjectService } from "@/lib/build/projectService";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { RenovationQuotationService } from "@/lib/renovate/quotationService";
-import type { DemoContractor } from "@/lib/renovate/types";
 import { DEMO_PROFILES } from "./profiles";
 import type {
   ActivityItem, Clarification, Consultation, Message, ProfessionalProfile,
@@ -13,7 +11,6 @@ type Listener = () => void;
 const listeners = new Set<Listener>();
 let state: ProfessionalState | null = null;
 let sourceSubscriptionsReady = false;
-let seeding = false;
 
 const id = (prefix: string) => `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 const isoInDays = (days: number) => { const date = new Date(); date.setDate(date.getDate() + days); return date.toISOString(); };
@@ -71,38 +68,13 @@ function syncRequestMeta() {
   }
 }
 
+/** No-op — real professional accounts don't go through this local mock
+ *  workspace (see ProfessionalShell.tsx). Kept as a pass-through so callers
+ *  don't need to change. */
 function seedSharedCustomerRecords() {
-  if (!state || state.seeded || seeding) return;
-  seeding = true;
-  const buildProjects = BuildProjectService.getSnapshot();
-  const mainBuild = buildProjects.find((project) => project.documents.length > 0) ?? buildProjects[0];
-  if (mainBuild && !mainBuild.reviewRequests.some((request) => request.professional?.id === "pro-1" && request.status === "submitted")) {
-    BuildProjectService.requestReview(mainBuild.id, { type: "architectural", professional: { id: "pro-1", name: "Aline Uwase", profession: "Registered Architect", location: "Kigali, Rwanda", verified: true, rating: 4.8, completedReviews: 63, estimatedResponseTime: "2-3 business days" }, versionId: mainBuild.versions.find((version) => version.selected)?.id ?? mainBuild.versions[0]?.id ?? null, attachedDocumentIds: mainBuild.documents.slice(0, 3).map((document) => document.id), notes: "Please review the selected family-home concept, circulation and permit-readiness gaps.", estimatedResponseTime: "2-3 business days" });
-  }
-
-  const renovationProjects = RenovationProjectService.getSnapshot();
-  const primary = renovationProjects[0];
-  const secondary = renovationProjects[1] ?? primary;
-  if (primary && !primary.reviewRequests.some((request) => request.professional?.id === "renov-pro-1")) {
-    RenovationProjectService.requestReview(primary.id, { type: "interior_design", areasRequiringReview: primary.assessment.areas.map((area) => area.areaKey), projectVersionId: primary.versions.find((version) => version.selected)?.id ?? null, documentIds: primary.documents.slice(0, 3).map((document) => document.id), questions: "Review the selected concept, retained elements and material direction.", professional: { id: "renov-pro-1", name: "Keza Studio", profession: "Interior Designer", location: "Kigali, Rwanda", verified: true, rating: 4.8, completedProjects: 74, estimatedResponseTime: "1-2 business days" }, estimatedResponseTime: "1-2 business days" });
-  }
-  if (secondary && !secondary.reviewRequests.some((request) => request.professional?.id === "renov-pro-3")) {
-    RenovationProjectService.requestReview(secondary.id, { type: "quantity_surveying", areasRequiringReview: secondary.assessment.areas.map((area) => area.areaKey), projectVersionId: secondary.versions.find((version) => version.selected)?.id ?? null, documentIds: secondary.documents.slice(0, 3).map((document) => document.id), questions: "Review the indicative budget, scope completeness and contingency.", professional: { id: "renov-pro-3", name: "Diane Mukamana", profession: "Quantity Surveyor", location: "Kigali, Rwanda", verified: true, rating: 4.7, completedProjects: 58, estimatedResponseTime: "2 business days" }, estimatedResponseTime: "2 business days" });
-  }
-  if (primary && !primary.quotationRequest) {
-    const imara: DemoContractor = { id: "contractor-imara", companyName: "Imara Construction Ltd", location: "Kigali, Rwanda", services: ["Residential renovation", "Full property renovation"], verified: true, rating: 4.8, completedProjects: 86, estimatedResponseTime: "2 business days" };
-    const other: DemoContractor = { id: "renov-con-1", companyName: "Kigali Renovate Co.", location: "Kigali, Rwanda", services: ["Full renovations"], verified: true, rating: 4.7, completedProjects: 112, estimatedResponseTime: "2-3 business days" };
-    const target = primary.budget?.target ?? 18_000_000;
-    const quotations = RenovationQuotationService.generateQuotations({ targetBudget: target, scope: primary.scope, proposedDurationWeeks: 10, contractors: [imara, other] });
-    quotations[0].status = "requested";
-    RenovationProjectService.requestQuotations(primary.id, { scopeItemIds: primary.scope.map((item) => item.id), includedAreaKeys: primary.assessment.areas.map((area) => area.areaKey), documentIds: primary.documents.slice(0, 3).map((document) => document.id), preferredStartPeriod: "Within 6–8 weeks", propertyOccupied: primary.property.willBeOccupiedDuringRenovation, contractorIds: [imara.id, other.id], notes: "Please provide an itemised quotation for the shared scope." }, [imara, other], quotations);
-  }
+  if (!state) return;
   state.seeded = true;
   syncRequestMeta();
-  const alineRequest = state.requestMeta.find((meta) => meta.assignedProfileId === "pro-1" && meta.source === "build_review");
-  if (alineRequest && state.consultations.length === 0) state.consultations.push({ id: id("consult"), requestId: alineRequest.requestId, profileId: "pro-1", type: "Design review meeting", startsAt: isoInDays(2), durationMinutes: 45, timezone: "Africa/Kigali", method: "Demo video meeting information", purpose: "Review the customer questions and shared concept.", preparation: "Have the selected concept and room brief ready.", status: "confirmed" });
-  if (alineRequest && state.clarifications.length === 0) state.clarifications.push({ id: id("clarification"), requestId: alineRequest.requestId, profileId: "pro-1", question: "Please confirm whether the home office must remain acoustically separated from the living room.", category: "Design requirement", blocksWork: false, requestedResponseDate: isoInDays(2), createdAt: new Date().toISOString() });
-  seeding = false;
 }
 
 function ensureLoaded(): ProfessionalState {
@@ -117,7 +89,7 @@ function ensureLoaded(): ProfessionalState {
   if (!sourceSubscriptionsReady) {
     sourceSubscriptionsReady = true;
     const sourceChanged = () => {
-      if (!state || seeding) return;
+      if (!state) return;
       syncRequestMeta();
       state = { ...state, version: state.version + 1 };
       persist();
@@ -164,18 +136,6 @@ export const ProfessionalService = {
     persist();
     notify();
     return true;
-  },
-
-  saveApplication(accountId: string, values: Partial<ProfessionalProfile>) {
-    return mutate((current) => {
-      const existing = current.profiles.find((profile) => profile.accountId === accountId);
-      const base: ProfessionalProfile = existing ?? { ...DEMO_PROFILES[0], id: id("profile"), accountId, status: "draft", displayName: "New professional", legalName: "", email: "", demoVerified: false, verificationLabel: "Not verified", services: [], portfolio: [], lastUpdatedAt: new Date().toISOString() };
-      const profile = { ...base, ...values, demoVerified: existing?.demoVerified ?? false, verificationLabel: existing?.demoVerified ? existing.verificationLabel : "Not verified", lastUpdatedAt: new Date().toISOString() };
-      return { ...current, profiles: existing ? current.profiles.map((item) => item.id === existing.id ? profile : item) : [...current.profiles, profile] };
-    });
-  },
-  submitApplication(accountId: string) {
-    return mutate((current) => ({ ...current, profiles: current.profiles.map((profile) => profile.accountId === accountId ? { ...profile, status: "submitted", applicationSubmittedAt: new Date().toISOString(), demoVerified: false, verificationLabel: "Pending review" } : profile), activity: [{ id: id("activity"), profileId: current.profiles.find((profile) => profile.accountId === accountId)?.id ?? accountId, category: "profile", type: "application_submitted", description: "Professional application submitted for review. It was not automatically approved.", createdAt: new Date().toISOString(), href: "/professional/application/status" }, ...current.activity] }));
   },
 
   getRequests(profileId: string): ProfessionalRequestView[] {

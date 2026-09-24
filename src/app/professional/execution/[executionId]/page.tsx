@@ -11,7 +11,7 @@ export default function ProfessionalExecutionDetailPage({ params }: { params: Pr
   const { activeRole } = useAuth();
   const { project, isLoading } = useExecutionProject(executionId);
 
-  const currentRole = activeRole === "contractor" ? "contractor" : activeRole === "professional" ? "architect" : activeRole === "administrator" ? "administrator" : "contractor";
+  const currentRole = activeRole === "professional" ? "architect" : activeRole === "administrator" ? "administrator" : "architect";
 
   if (isLoading) return <div className="p-8 text-center text-slate-400">Loading project details...</div>;
   if (!project) return <div className="p-8 text-center font-bold text-slate-600">Project Not Found</div>;

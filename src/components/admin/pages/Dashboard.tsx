@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { mockProperties } from "@/lib/data";
+import { useAuth } from "@/lib/auth-context";
+import { AdminApi } from "@/lib/admin/api";
+import { useAllProperties } from "@/lib/sellerListings/hooks";
 import { useAllBuildProjects, useAllRenovationProjects } from "@/lib/admin/crossModule";
 import { useAdminState } from "@/lib/admin/hooks";
 import { useProfessionalState } from "@/lib/professional/hooks";
@@ -38,6 +40,7 @@ function isOverdue(expectedResponseDate: string | undefined) {
 
 export default function AdminDashboard() {
   const state = useAdminState();
+  const allProperties = useAllProperties();
   const buildProjects = useAllBuildProjects();
   const renovationProjects = useAllRenovationProjects();
   const professionalState = useProfessionalState();
@@ -55,11 +58,22 @@ export default function AdminDashboard() {
   const renovateReviewsOpen = renovationProjects.flatMap((p) => p.reviewRequests).filter((r) => OPEN_REVIEW.includes(r.status));
   const quotationsInProgress = renovationProjects.flatMap((p) => p.quotations).filter((q) => !["accepted", "declined", "expired", "withdrawn"].includes(q.status));
   const flaggedAiEvents = state.aiGenerations.filter((g) => g.safetyFlag || g.status === "failed");
-  const totalUsers = Object.keys(state.users).length;
+  const { token, isAuthReady } = useAuth();
+  const [totalUsers, setTotalUsers] = useState(0);
+  useEffect(() => {
+    if (!isAuthReady || !token) return;
+    let cancelled = false;
+    AdminApi.listUsers(token, { status: "active", limit: 1 }).then((result) => {
+      if (!cancelled && result.ok) setTotalUsers(result.data.total);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token]);
 
   const summaryCards: [string, number, string][] = [
     ["Total active users", totalUsers, "/admin/users"],
-    ["Active property listings", mockProperties.length, "/admin/listings"],
+    ["Active property listings", allProperties.length, "/admin/listings"],
     ["Professional applications awaiting review", applicationsAwaitingReview.length, "/admin/professionals"],
     ["Listings awaiting moderation", listingsAwaitingModeration.length, "/admin/listings"],
     ["Open support cases", openSupportCases.length, "/admin/support"],

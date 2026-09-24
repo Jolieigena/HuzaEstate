@@ -1,26 +1,29 @@
-import { savedProperties } from '@/lib/dashboard/demoData';
-import SavedHomeCard from './SavedHomeCard';
+import PropertyCard from '@/components/PropertyCard';
+import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { useFavoriteProperties } from '@/lib/favorites/hooks';
 
 export default function SavedHomesTab() {
+  const allProperties = useAllProperties();
+  const savedProperties = useFavoriteProperties(allProperties);
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-slate-900">Saved Homes</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-500">Sort by:</span>
-          <select className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
-            <option>Recently Added</option>
-            <option>Price (High to Low)</option>
-            <option>Price (Low to High)</option>
-          </select>
-        </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        {savedProperties.map(property => (
-          <SavedHomeCard key={property.id} property={property} />
-        ))}
-      </div>
+      {savedProperties.length === 0 ? (
+        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
+          <h3 className="text-lg font-bold text-slate-900 mb-2">No saved homes yet</h3>
+          <p className="text-slate-500 text-sm">Tap the heart icon on any listing to save it here.</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 gap-6">
+          {savedProperties.map(property => (
+            <PropertyCard key={property.id} property={property} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

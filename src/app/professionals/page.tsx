@@ -39,6 +39,7 @@ const COMPANY_IMAGES = [
 ];
 
 function getProfileImage(profile: ProfessionalProfile, index: number) {
+  if (profile.photoUrl) return profile.photoUrl;
   const isCompany = profile.kind.includes("firm") || profile.kind.includes("company");
   if (isCompany) {
     return COMPANY_IMAGES[index % COMPANY_IMAGES.length];
