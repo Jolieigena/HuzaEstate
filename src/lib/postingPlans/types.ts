@@ -1,9 +1,6 @@
 import type { Money } from "@/lib/finance/types";
 import { money } from "@/lib/finance/money";
 
-// PROTOTYPE NOTICE: matches the rest of this app's finance module —
-// subscribing/paying here is simulated, no real charge is made.
-
 export type PlanTier = "free" | "silver" | "gold" | "diamond";
 
 export const PLAN_LABELS: Record<PlanTier, string> = {

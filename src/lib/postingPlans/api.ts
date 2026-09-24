@@ -11,6 +11,9 @@ export interface RemoteSubscription {
   label: string;
   status: "active" | "canceled" | "past_due";
   renewsOn: string | null;
+  /** True once cancellation is scheduled — the plan stays active and billed until renewsOn,
+   *  then drops to Free. */
+  cancelAtPeriodEnd: boolean;
   postsUsed: number;
   postsLimit: number | null;
   postsRemaining: number | null;
@@ -39,7 +42,10 @@ export async function fetchMySubscription(token: string): Promise<RemoteSubscrip
   }
 }
 
-export type CheckoutResult = { ok: true; url: string } | { ok: true; demo: true } | { ok: false; error: string };
+// A first subscription redirects to Stripe Checkout (`url`); switching between paid tiers while
+// already subscribed updates the existing Stripe subscription in place — no redirect, applied
+// immediately (`updated`).
+export type CheckoutResult = { ok: true; url: string } | { ok: true; updated: true; tier: PlanTier } | { ok: true; demo: true } | { ok: false; error: string };
 
 export async function createSubscribeCheckout(token: string, tier: Exclude<PlanTier, "free">, successUrl: string, cancelUrl: string): Promise<CheckoutResult> {
   try {
@@ -51,7 +57,27 @@ export async function createSubscribeCheckout(token: string, tier: Exclude<PlanT
     if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
     const data = await res.json();
     if (data.demo) return { ok: true, demo: true };
+    if (data.updated) return { ok: true, updated: true, tier: data.tier as PlanTier };
     return { ok: true, url: data.url as string };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+export type CancelResult = { ok: true; effectiveDate: string } | { ok: false; error: string };
+
+/** Schedules cancellation at the current billing period's end — the seller keeps their plan and
+ *  posting quota until then and is not billed again; the tier drops to Free once the period
+ *  actually ends. */
+export async function cancelSubscription(token: string): Promise<CancelResult> {
+  try {
+    const res = await fetch(`${PAYMENT_API_URL}/subscriptions/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+    const data = await res.json();
+    return { ok: true, effectiveDate: data.effectiveDate as string };
   } catch {
     return { ok: false, error: "Could not reach the server. Please try again." };
   }

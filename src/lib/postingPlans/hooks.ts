@@ -12,6 +12,7 @@ const DEFAULT_SUBSCRIPTION: RemoteSubscription = {
   label: "Free",
   status: "active",
   renewsOn: null,
+  cancelAtPeriodEnd: false,
   postsUsed: 0,
   postsLimit: PLAN_LIMITS.free,
   postsRemaining: PLAN_LIMITS.free,
@@ -19,12 +20,30 @@ const DEFAULT_SUBSCRIPTION: RemoteSubscription = {
   expiryDays: 14,
 };
 
+const listeners = new Set<() => void>();
+
+/** Call after an in-place plan change or a cancellation (anything that changes the plan without
+ *  a Stripe redirect, so there's no page reload to pick up the new state naturally) so every
+ *  mounted useSubscription() refetches. */
+export function notifySubscriptionChanged() {
+  listeners.forEach((listener) => listener());
+}
+
 /** Real payment-service data now (this used to read a per-browser localStorage mock). Backed by
  *  GET /subscriptions/me, which is self-scoped from the caller's own token — there's no
  *  accountId parameter any more. */
 export function useSubscription(): RemoteSubscription {
   const { token } = useAuth();
   const [subscription, setSubscription] = useState<RemoteSubscription>(DEFAULT_SUBSCRIPTION);
+  const [version, setVersion] = useState(0);
+
+  useEffect(() => {
+    const listener = () => setVersion((v) => v + 1);
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,7 +58,7 @@ export function useSubscription(): RemoteSubscription {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, version]);
 
   return subscription;
 }

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { formatMoney } from "@/lib/finance/money";
 import { PLAN_LABELS, PLAN_PRICES, PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { createPerPostCheckout, createSubscribeCheckout } from "@/lib/postingPlans/api";
+import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/finance/ui";
 
 type Mode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "per_post" };
@@ -14,10 +15,15 @@ type Mode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "pe
 // done. There's no in-app "payment succeeded" step any more: the account's tier/quota only
 // actually changes once payment-service's webhook processes the completed session, so the next
 // post attempt (or a reload of this page) is what reflects it, not a callback fired from here.
+//
+// Switching between two paid tiers while already subscribed is different: payment-service
+// applies that in place (no Stripe redirect) and reports it back immediately via `updated`, so
+// that case shows an inline success message instead of navigating away.
 export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: () => void }) {
   const { token } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [updatedTier, setUpdatedTier] = useState<PlanTier | null>(null);
 
   const amount = mode.kind === "subscribe" ? PLAN_PRICES[mode.tier] : PER_POST_PRICE;
   const title = mode.kind === "subscribe" ? `Subscribe to ${PLAN_LABELS[mode.tier]}` : "Pay for one extra post";
@@ -41,8 +47,29 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
       setBusy(false);
       return;
     }
+    if ("updated" in result) {
+      notifySubscriptionChanged();
+      setUpdatedTier(result.tier);
+      setBusy(false);
+      return;
+    }
     window.location.href = result.url;
   };
+
+  if (updatedTier) {
+    return (
+      <Card className="border-2 border-slate-900/5">
+        <h3 className="text-lg font-black text-slate-900 mb-4">Plan updated</h3>
+        <p className="text-sm text-slate-600 mb-6">
+          You&apos;re now on the <span className="font-bold text-slate-900">{PLAN_LABELS[updatedTier]}</span> plan. The change applied immediately — any price
+          difference is prorated on your next Stripe invoice.
+        </p>
+        <div className="flex justify-end">
+          <PrimaryButton onClick={onClose}>Done</PrimaryButton>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-2 border-slate-900/5">

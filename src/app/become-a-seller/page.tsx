@@ -69,6 +69,14 @@ function BecomeASellerForm() {
       setSubmitting(false);
       return;
     }
+    if ('updated' in result) {
+      // Only reachable if this account already had a live paid subscription (e.g. a past
+      // seller who canceled and is re-subscribing to a different tier) — applied in place with
+      // no Stripe redirect, so just pick up the new role like the free-tier path does.
+      await refreshAccount();
+      router.push('/manager');
+      return;
+    }
     window.location.href = result.url;
   };
 

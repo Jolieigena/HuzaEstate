@@ -7,16 +7,77 @@ import BarBreakdown from '@/components/charts/BarBreakdown';
 import Dialog from '@/components/Dialog';
 import PricingCards from '@/components/postingPlans/PricingCards';
 import PlanCheckout from '@/components/postingPlans/PlanCheckout';
-import { useSubscription } from '@/lib/postingPlans/hooks';
+import { useAuth } from '@/lib/auth-context';
+import { useSubscription, notifySubscriptionChanged } from '@/lib/postingPlans/hooks';
+import { cancelSubscription } from '@/lib/postingPlans/api';
 import { PLAN_LABELS, PLAN_LIMITS, type PlanTier } from '@/lib/postingPlans/types';
+import { PrimaryButton, SecondaryButton } from '@/components/finance/ui';
+
+function CancelPlanConfirm({ tier, renewsOn, onClose }: { tier: PlanTier; renewsOn: string | null; onClose: () => void }) {
+  const { token } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
+
+  const handleCancel = async () => {
+    if (!token || busy) return;
+    setBusy(true);
+    setError('');
+    const result = await cancelSubscription(token);
+    if (!result.ok) {
+      setError(result.error);
+      setBusy(false);
+      return;
+    }
+    notifySubscriptionChanged();
+    setEffectiveDate(result.effectiveDate);
+    setBusy(false);
+  };
+
+  if (effectiveDate) {
+    return (
+      <>
+        <h3 className="text-lg font-black text-slate-900 mb-4">Cancellation scheduled</h3>
+        <p className="text-sm text-slate-600 mb-6">
+          Your {PLAN_LABELS[tier]} plan stays active until <span className="font-bold text-slate-900">{new Date(effectiveDate).toLocaleDateString()}</span>, then moves to Free.
+          You won&apos;t be billed again.
+        </p>
+        <div className="flex justify-end">
+          <PrimaryButton onClick={onClose}>Done</PrimaryButton>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <h3 className="text-lg font-black text-slate-900 mb-4">Cancel your {PLAN_LABELS[tier]} plan?</h3>
+      <p className="text-sm text-slate-600 mb-6">
+        You&apos;ll keep {PLAN_LABELS[tier]} access{renewsOn ? ` until ${new Date(renewsOn).toLocaleDateString()}` : ''}, then move to the Free plan. You won&apos;t be billed again.
+      </p>
+      {error && <p className="rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3 mb-4">{error}</p>}
+      <div className="flex justify-end gap-3">
+        <SecondaryButton onClick={onClose}>Keep my plan</SecondaryButton>
+        <PrimaryButton onClick={handleCancel} disabled={busy}>{busy ? 'Cancelling…' : 'Cancel plan'}</PrimaryButton>
+      </div>
+    </>
+  );
+}
 
 function PostingPlanCard() {
   const subscription = useSubscription();
   const [open, setOpen] = useState(false);
   const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, 'free'> | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   const limit = PLAN_LIMITS[subscription.tier];
   const used = subscription.postsUsed;
+
+  const closeDialog = () => {
+    setOpen(false);
+    setCheckoutTier(null);
+    setCancelling(false);
+  };
 
   return (
     <>
@@ -26,22 +87,36 @@ function PostingPlanCard() {
           <div className="text-lg font-black text-slate-900">
             {PLAN_LABELS[subscription.tier]} <span className="font-semibold text-slate-500 text-sm">· {used}{limit === null ? '' : `/${limit + subscription.extraCredits}`} posts used this month</span>
           </div>
+          {subscription.cancelAtPeriodEnd && subscription.renewsOn && (
+            <div className="text-sm font-semibold text-amber-600 mt-1">Won&apos;t renew — ends {new Date(subscription.renewsOn).toLocaleDateString()}</div>
+          )}
         </div>
         <button onClick={() => setOpen(true)} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap">
           Manage Plan
         </button>
       </div>
 
-      <Dialog open={open} onClose={() => { setOpen(false); setCheckoutTier(null); }} labelledBy="posting-plan-title" panelClassName="max-w-3xl p-6 sm:p-8">
+      <Dialog open={open} onClose={closeDialog} labelledBy="posting-plan-title" panelClassName="max-w-3xl p-6 sm:p-8">
         {checkoutTier ? (
           <PlanCheckout
             mode={{ kind: 'subscribe', tier: checkoutTier }}
-            onClose={() => setCheckoutTier(null)}
+            onClose={closeDialog}
           />
+        ) : cancelling ? (
+          <CancelPlanConfirm tier={subscription.tier} renewsOn={subscription.renewsOn} onClose={closeDialog} />
         ) : (
           <>
             <h2 id="posting-plan-title" className="text-xl font-bold text-slate-900 mb-6">Choose your posting plan</h2>
-            <PricingCards currentTier={subscription.tier} onSelect={(tier) => { if (tier !== 'free') setCheckoutTier(tier); }} />
+            <PricingCards
+              currentTier={subscription.tier}
+              onSelect={(tier) => {
+                if (tier === 'free') {
+                  if (subscription.tier !== 'free' && !subscription.cancelAtPeriodEnd) setCancelling(true);
+                } else {
+                  setCheckoutTier(tier);
+                }
+              }}
+            />
           </>
         )}
       </Dialog>
