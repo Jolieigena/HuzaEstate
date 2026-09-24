@@ -1,11 +1,5 @@
 const TABS: { id: string; label: string }[] = [
   { id: 'saved', label: 'Saved Homes' },
-  { id: 'properties', label: 'Portfolio' },
-  { id: 'insights', label: 'Market Insights' },
-  { id: 'payments', label: 'Payments' },
-  { id: 'tours', label: 'Tours' },
-  { id: 'applications', label: 'Applications' },
-  { id: 'coshopping', label: 'Co-Shopping' },
 ];
 
 /** The dashboard had no visible tab switcher at all — DashboardContent.tsx

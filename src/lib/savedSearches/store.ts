@@ -1,5 +1,5 @@
 // Singleton store engine for a buyer's saved property searches, mirroring
-// src/lib/favorites/store.ts and src/lib/propertyOverrides/store.ts.
+// src/lib/tours/store.ts.
 
 import { SavedSearchesStorageService } from "./storage";
 import type { SavedSearch, SavedSearchCriteria } from "./types";

@@ -64,7 +64,7 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
           <div role="menu" className="absolute right-0 mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl py-2">
             <div className="px-4 py-2 border-b border-slate-50 mb-1">
               <div className="text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate account"}</div>
-              <div className="text-xs text-slate-500">{account?.email ?? "Prototype account"}</div>
+              <div className="text-xs text-slate-500">{account?.email ?? ""}</div>
             </div>
             <Link href="/properties" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
               Browse Properties

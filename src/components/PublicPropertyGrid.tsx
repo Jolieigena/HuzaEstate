@@ -2,7 +2,6 @@
 
 import PropertyCard from "@/components/PropertyCard";
 import Reveal from "@/components/Reveal";
-import { useVisibleListings } from "@/lib/admin/listings";
 import type { Property } from "@/lib/properties/types";
 
 interface PublicPropertyGridProps {
@@ -17,17 +16,9 @@ interface PublicPropertyGridProps {
   showFeaturedBadge?: boolean;
 }
 
-/**
- * Thin client boundary around the existing property-grid markup on public
- * pages, so listings an administrator has unpublished (or that are still
- * awaiting moderation) drop out of public discovery. `buy`/`rent`/`page.tsx`
- * (the home page) are Server Components and can't read the moderation
- * overlay themselves — this is the one place that filtering happens for
- * them. Markup/classNames are passed through unchanged from each caller.
- */
+/** Public property grid: the listings passed in are already the published, non-expired browse set. */
 export default function PublicPropertyGrid({ properties, limit, className, revealAnimation, showFeaturedBadge }: PublicPropertyGridProps) {
-  const visible = useVisibleListings(properties);
-  const shown = limit ? visible.slice(0, limit) : visible;
+  const shown = limit ? properties.slice(0, limit) : properties;
   return (
     <div className={className}>
       {shown.map((property, index) =>

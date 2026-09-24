@@ -12,11 +12,6 @@ export interface Account {
   email: string;
   roles: AccountRole[];
   professionalProfileId?: string;
-  /** Administration & Operations Portal role. Kept as a loose string (not the
-   * admin module's `AdminRole` type) so this core auth file doesn't import
-   * from the admin feature module — matches how `professionalProfileId`
-   * above stays untyped rather than importing professional types. */
-  adminRole?: string;
   isApprovedSeller: boolean;
   /** True for accounts created by an administrator (or the bootstrap admin account) that are
    * still on their own emailed, randomly generated password. The app should force a
@@ -43,7 +38,6 @@ export interface CreateUserInput {
   lastName: string;
   email: string;
   roleType: Extract<AccountRole, "administrator" | "professional">;
-  adminRole?: string;
   /** Required when roleType is "professional" — chosen once at creation, not editable by the
    * professional themselves afterwards (see access-service's professionals module). */
   professionalKind?: "individual" | "firm";
@@ -149,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     (async () => {
       try {
-        // Roles/adminRole/isApprovedSeller are re-fetched live from the backend on every
+        // Roles/isApprovedSeller are re-fetched live from the backend on every
         // load instead of trusted from a cached blob — access is driven by MongoDB, not
         // a value frozen at the moment the token was issued.
         const res = await fetch(`${API_URL}/auth/me`, {

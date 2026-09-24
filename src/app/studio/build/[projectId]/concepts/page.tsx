@@ -4,7 +4,6 @@ import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
-import { checkGenerationAllowed } from "@/lib/admin/featureFlags";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { Concept, HOME_STYLE_LABELS } from "@/lib/build/types";
 import { collectBriefWarnings } from "@/lib/build/briefValidation";
@@ -24,7 +23,7 @@ function GenerateConceptsModal({ open, onClose, onConfirm }: { open: boolean; on
   const bedrooms = project.brief.household.rooms.find((r) => r.key === "bedrooms")?.quantity ?? 0;
   const warnings = collectBriefWarnings(project.brief);
   const requirementsCount = project.brief.household.rooms.length + project.brief.sustainability.items.filter((i) => i.priority).length + project.brief.accessibility.items.filter((i) => i.priority).length;
-  const generationAllowed = open ? checkGenerationAllowed("build") : { allowed: true, message: "" };
+  const generationAllowed = { allowed: true, message: "" };
 
   return (
     <Dialog open={open} onClose={onClose} labelledBy={titleId} panelClassName="max-w-lg">

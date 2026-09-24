@@ -3,9 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth, type AccountRole } from "@/lib/auth-context";
-import { useHasPermission } from "@/lib/admin/hooks";
-import { ADMIN_ROLE_LABELS } from "@/lib/admin/permissions";
-import type { AdminRole } from "@/lib/admin/types";
+import { useIsAdministrator } from "@/lib/admin/hooks";
 import { Card, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "@/components/admin/ui";
 
 // Administrator and Professional are the only roles created from this admin form (enforced
@@ -17,14 +15,13 @@ const ROLE_OPTIONS: { value: Extract<AccountRole, "administrator" | "professiona
 ];
 
 export default function CreateUserPage() {
-  const { account, createUser } = useAuth();
-  const canCreate = useHasPermission(account?.id, "users.manage");
+  const { createUser } = useAuth();
+  const canCreate = useIsAdministrator();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional">>("professional");
-  const [adminRole, setAdminRole] = useState<AdminRole>("operations_admin");
   const [professionalKind, setProfessionalKind] = useState<"individual" | "firm">("individual");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -40,7 +37,6 @@ export default function CreateUserPage() {
       lastName,
       email,
       roleType,
-      adminRole: roleType === "administrator" ? adminRole : undefined,
       professionalKind: roleType === "professional" ? professionalKind : undefined,
     });
     setIsSubmitting(false);
@@ -108,26 +104,13 @@ export default function CreateUserPage() {
             <label className="block text-sm font-bold text-slate-700">
               Role
               <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional">)}>
-                {ROLE_OPTIONS.filter(option => option.value !== "administrator" || account?.adminRole === "super_admin").map((opt) => (
+                {ROLE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </select>
             </label>
-
-            {roleType === "administrator" && (
-              <label className="block text-sm font-bold text-slate-700">
-                Administrative role
-                <select className={`${fieldClass} mt-2`} value={adminRole} onChange={(e) => setAdminRole(e.target.value as AdminRole)}>
-                  {Object.entries(ADMIN_ROLE_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
 
             {roleType === "professional" && (
               <label className="block text-sm font-bold text-slate-700">

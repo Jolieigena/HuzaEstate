@@ -1,30 +1,22 @@
-// Singleton store engine for a buyer's saved/favorited properties, mirroring
-// src/lib/propertyOverrides/store.ts, src/lib/tours/store.ts and src/lib/sellerListings/store.ts.
+// A signed-in user's saved listings, kept on the server (property-service /favorites) so they
+// follow the account across devices. This module only holds the in-memory copy and talks to
+// the API; hooks.ts wires it to the current session.
 
-import { FavoritesStorageService, type FavoriteIds } from "./storage";
+const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
 type Listener = () => void;
 
-let ids: FavoriteIds | null = null;
+let ids: string[] = [];
+let loadedFor: string | null = null;
 const listeners = new Set<Listener>();
 
-function notifyListeners() {
+function notify() {
   listeners.forEach((l) => l());
 }
 
-function ensureLoaded(): FavoriteIds {
-  if (ids !== null) return ids;
-  ids = FavoritesStorageService.load();
-  return ids;
-}
-
-function persist() {
-  if (ids) FavoritesStorageService.save(ids);
-}
-
 export const FavoritesStoreEngine = {
-  getAll(): FavoriteIds {
-    return ensureLoaded();
+  getAll(): string[] {
+    return ids;
   },
 
   subscribe(listener: Listener): () => void {
@@ -32,25 +24,45 @@ export const FavoritesStoreEngine = {
     return () => listeners.delete(listener);
   },
 
-  isSaved(propertyId: string): boolean {
-    return ensureLoaded().includes(propertyId);
+  /** Loads (or clears, when signed out) the saved ids for the current session. */
+  async sync(token: string | null): Promise<void> {
+    if (!token) {
+      if (ids.length || loadedFor) {
+        ids = [];
+        loadedFor = null;
+        notify();
+      }
+      return;
+    }
+    if (loadedFor === token) return;
+    loadedFor = token;
+    try {
+      const res = await fetch(`${PROPERTY_API_URL}/favorites`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok && loadedFor === token) {
+        ids = ((await res.json()).propertyIds as string[]) ?? [];
+        notify();
+      }
+    } catch {
+      loadedFor = null;
+    }
   },
 
-  /** Toggles a property's saved state and returns the new state. */
-  toggle(propertyId: string): boolean {
-    const current = ensureLoaded();
-    const wasSaved = current.includes(propertyId);
-    ids = wasSaved ? current.filter((id) => id !== propertyId) : [...current, propertyId];
-    persist();
-    notifyListeners();
-    return !wasSaved;
-  },
-
-  remove(propertyId: string): void {
-    const current = ensureLoaded();
-    if (!current.includes(propertyId)) return;
-    ids = current.filter((id) => id !== propertyId);
-    persist();
-    notifyListeners();
+  /** Saves or unsaves, updating the UI immediately and rolling back if the server refuses. */
+  async toggle(token: string, propertyId: string): Promise<{ ok: true; saved: boolean } | { ok: false; error: string }> {
+    const wasSaved = ids.includes(propertyId);
+    ids = wasSaved ? ids.filter((id) => id !== propertyId) : [propertyId, ...ids];
+    notify();
+    try {
+      const res = await fetch(`${PROPERTY_API_URL}/favorites/${encodeURIComponent(propertyId)}`, {
+        method: wasSaved ? "DELETE" : "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("rejected");
+      return { ok: true, saved: !wasSaved };
+    } catch {
+      ids = wasSaved ? [propertyId, ...ids] : ids.filter((id) => id !== propertyId);
+      notify();
+      return { ok: false, error: "Could not update your saved homes. Please try again." };
+    }
   },
 };

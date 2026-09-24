@@ -1,7 +1,7 @@
 import type { ExecutionProject } from "./types";
 
-const PROJECTS_KEY = "huzaestate_execution_projects_v1";
-const SEEDED_FLAG_KEY = "huzaestate_execution_seeded_v1";
+const PROJECTS_KEY = "huzaestate_execution_projects_v2";
+const SEEDED_FLAG_KEY = "huzaestate_execution_seeded_v2";
 
 /**
  * Defensive localStorage wrapper for Execution projects. Frontend prototype

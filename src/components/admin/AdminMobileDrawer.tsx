@@ -3,18 +3,16 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
-import type { AdminRole } from "@/lib/admin/types";
 import { AdminNavLinks } from "./AdminSidebar";
 
 interface AdminMobileDrawerProps {
-  adminRole: AdminRole;
   open: boolean;
   onClose: () => void;
 }
 
 /** Off-canvas admin nav for small screens, mirroring MobileSidebarDrawer's
  * behavior (backdrop click, Escape, scroll lock, close on route change). */
-export default function AdminMobileDrawer({ adminRole, open, onClose }: AdminMobileDrawerProps) {
+export default function AdminMobileDrawer({ open, onClose }: AdminMobileDrawerProps) {
   const pathname = usePathname();
   const [lastPathname, setLastPathname] = useState(pathname);
 
@@ -55,7 +53,7 @@ export default function AdminMobileDrawer({ adminRole, open, onClose }: AdminMob
           </button>
         </div>
         <div className="flex-grow overflow-y-auto py-4">
-          <AdminNavLinks adminRole={adminRole} />
+          <AdminNavLinks />
         </div>
       </div>
     </div>

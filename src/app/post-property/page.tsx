@@ -12,7 +12,6 @@ import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories'
 import { uploadMedia } from '@/lib/media/upload';
 import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
-import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
@@ -119,11 +118,6 @@ function PostPropertyForm() {
         return;
       }
       const data = await res.json();
-      // country is now a real backend field (see property-service's model); amenities isn't
-      // yet, so this override still carries just that one frontend-only field — the same
-      // mechanism EditPropertyModal.tsx uses for frontend-only edits layered on top of
-      // backend-sourced properties.
-      PropertyOverridesStoreEngine.set(data.property.id, { amenities });
       notifyPropertiesChanged();
       router.push(`/properties/${data.property.id}`);
     } catch (err) {

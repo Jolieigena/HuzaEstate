@@ -23,7 +23,7 @@ function installStorage() {
 test("project storage recovers corrupt data and preserves existing session keys", () => {
   const values = installStorage();
   for (const [feature, service] of [["build", BuildStorageService], ["renovate", RenovationStorageService]]) {
-    const key = `huzaestate_${feature}_projects_v1`;
+    const key = `huzaestate_${feature}_projects_v2`;
     values.set(key, "invalid json");
     assert.deepEqual(service.loadProjects(), []);
     values.set(key, '{"unexpected":"object"}');
@@ -34,7 +34,7 @@ test("project storage recovers corrupt data and preserves existing session keys"
     assert.deepEqual(JSON.parse(values.get(key)), projects);
     assert.equal(service.hasSeeded(), false);
     service.markSeeded();
-    assert.equal(values.get(`huzaestate_${feature}_seeded_v1`), "true");
+    assert.equal(values.get(`huzaestate_${feature}_seeded_v2`), "true");
   }
 });
 
@@ -55,7 +55,7 @@ test("unavailable storage fails safely without reseeding or throwing", () => {
 
 test("quota errors do not replace the previous saved value", () => {
   const values = installStorage();
-  const key = "huzaestate_finance_v1";
+  const key = "huzaestate_finance_v2";
   const existing = { payments: [{ id: "payment-1" }] };
   values.set(key, JSON.stringify(existing));
   window.localStorage.setItem = () => { throw new Error("Quota exceeded"); };

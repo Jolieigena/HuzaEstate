@@ -92,7 +92,7 @@ export function AccessDeniedNote({ children }: { children: React.ReactNode }) {
 }
 
 export function RequirePermission({ granted, children }: { granted: boolean; children: React.ReactNode }) { 
-  if (!granted) return <AccessDeniedNote>You do not have permission to view this section. Contact a Super Administrator if you believe this is a mistake.</AccessDeniedNote>; 
+  if (!granted) return <AccessDeniedNote>You do not have permission to view this section. Contact another administrator if you believe this is a mistake.</AccessDeniedNote>; 
   return <>{children}</>; 
 }
 

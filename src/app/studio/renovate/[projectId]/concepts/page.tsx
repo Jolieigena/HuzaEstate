@@ -4,7 +4,6 @@ import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
-import { checkGenerationAllowed } from "@/lib/admin/featureFlags";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { RenovationConcept, RENOVATION_STYLE_LABELS, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
 import { formatCompactRwf } from "@/lib/renovate/format";
@@ -21,7 +20,7 @@ function GenerateConceptsModal({ open, onClose, onConfirm }: { open: boolean; on
   const project = useRenovationProjectContext();
   const titleId = useId();
   const safetyFlags = (Object.entries(project.assessment.safety.concerns) as [SafetyConcernKey, string][]).filter(([, v]) => v === "yes" || v === "unknown");
-  const generationAllowed = open ? checkGenerationAllowed("renovate") : { allowed: true, message: "" };
+  const generationAllowed = { allowed: true, message: "" };
 
   return (
     <Dialog open={open} onClose={onClose} labelledBy={titleId} panelClassName="max-w-lg">

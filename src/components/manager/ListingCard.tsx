@@ -3,19 +3,17 @@ import Image from 'next/image';
 import { Component, type ReactNode } from 'react';
 import type { Listing } from '@/lib/manager/types';
 import type { Property } from '@/lib/properties/types';
-import type { ListingModerationStatus } from '@/lib/admin/types';
-import { useListingModerationStatus } from '@/lib/admin/listings';
+import type { PropertyStatus } from '@/lib/properties/types';
 import SellerTourControl from '@/components/SellerTourControl';
 import ListingActionsMenu from './ListingActionsMenu';
-import Sparkline from '@/components/charts/Sparkline';
-import { SERIES_COLOR } from '@/components/charts/styles';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PLAN_FEATURES } from '@/lib/postingPlans/types';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
-  Active: 'bg-green-100 text-green-700',
-  Pending: 'bg-yellow-100 text-yellow-700',
-  Leased: 'bg-slate-100 text-slate-500',
+  Live: 'bg-green-100 text-green-700',
+  'Off market': 'bg-slate-100 text-slate-500',
+  'Needs attention': 'bg-red-100 text-red-700',
+  Expired: 'bg-yellow-100 text-yellow-700',
 };
 
 // next/image throws synchronously during render (not just a network onError) when a listing's
@@ -41,13 +39,14 @@ class ImageErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
   }
 }
 
-const MARKET_STATUS_BADGE: Partial<Record<ListingModerationStatus, string>> = {
+const MARKET_STATUS_BADGE: Partial<Record<PropertyStatus, string>> = {
   unpublished: 'Off Market',
   archived: 'Archived',
+  changes_requested: 'Changes Requested',
+  rejected: 'Rejected',
 };
 
-// Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS) —
-// absent on listings from before this field existed, and on the curated mockProperties fixtures.
+// Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS).
 function expiryLabel(expiresAt?: string): string | null {
   if (!expiresAt) return null;
   const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
@@ -66,13 +65,14 @@ export default function ListingCard({
   listing: Listing;
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
-  onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+  onSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
 }) {
-  const isLeased = listing.status === 'Leased';
-  const marketStatus = useListingModerationStatus(listing.id);
+  const isLeased = listing.status === 'Off market';
+  const marketStatus: PropertyStatus = listing.property.status ?? 'published';
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
   const isOffMarket = marketStatus !== 'published';
+  const reason = listing.property.statusReason;
   const subscription = useSubscription();
   const isPriority = PLAN_FEATURES[subscription.tier].priorityPlacement;
   const expiry = expiryLabel(listing.property.expiresAt);
@@ -120,7 +120,10 @@ export default function ListingCard({
       <div className="p-5 flex flex-col gap-4">
         <div>
           <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
-          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}/mo</div>
+          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}{listing.property.type === 'rent' ? '/mo' : ''}</div>
+          {reason && marketStatus !== 'published' && (
+            <div className="text-xs mt-1 font-semibold text-red-600">{reason}</div>
+          )}
           {expiry && (
             <div className={`text-xs mt-1 font-semibold ${expiry === 'Expired' ? 'text-red-600' : 'text-slate-400'}`}>{expiry}</div>
           )}
@@ -141,7 +144,6 @@ export default function ListingCard({
               <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Leads</div>
             </div>
           </div>
-          <Sparkline data={listing.trend} color={isLeased ? '#94a3b8' : SERIES_COLOR} />
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">

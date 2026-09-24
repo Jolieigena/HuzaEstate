@@ -91,7 +91,7 @@ export default function PropertyGallery({ images, title, badge }: PropertyGaller
         open={lightboxIndex !== null}
         onClose={() => setLightboxIndex(null)}
         labelledBy="property-gallery-lightbox-title"
-        panelClassName="max-w-5xl w-full p-4 sm:p-6 bg-slate-950"
+        panelClassName="max-w-5xl w-full p-4 sm:p-6 bg-slate-950!"
       >
         {lightboxIndex !== null && (
           <div>
@@ -99,7 +99,7 @@ export default function PropertyGallery({ images, title, badge }: PropertyGaller
               <h2 id="property-gallery-lightbox-title" className="text-white font-bold text-sm">
                 {lightboxIndex + 1} / {images.length}
               </h2>
-              <button onClick={() => setLightboxIndex(null)} data-dialog-close className="text-white/70 hover:text-white transition-colors" aria-label="Close">
+              <button onClick={() => setLightboxIndex(null)} data-dialog-close className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/30" aria-label="Close">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
               </button>
             </div>

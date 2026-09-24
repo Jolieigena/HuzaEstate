@@ -78,7 +78,7 @@ const COVER_PRIORITY: PhotoCategory[] = [
 ];
 
 /** Derives the flat imageUrl/galleryImages fields every existing consumer
- *  (PropertyCard, PropertyGallery, propertyOverrides, and tour
+ *  (PropertyCard, PropertyGallery, and tour
  *  generation's plain single-image fallback) reads, from the categorized
  *  photo list — so none of them need to know categories exist. imageUrl is
  *  the "best" cover shot by category priority, not just whichever was

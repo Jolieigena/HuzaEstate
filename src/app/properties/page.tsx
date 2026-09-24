@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
 import AISearchCard from '@/components/AISearchCard';
-import { useVisibleListings } from '@/lib/admin/listings';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, findCountry, getPropertyCountry } from '@/lib/countries';
@@ -184,8 +183,7 @@ function PropertiesContent() {
     setKeywordsInput(next.join(', '));
   }
 
-  const allProperties = useAllProperties();
-  const visibleProperties = useVisibleListings(allProperties);
+  const visibleProperties = useAllProperties();
 
   const filteredProperties = visibleProperties.filter((p) => {
     const propCountryName = getPropertyCountry(p).name;
@@ -249,6 +247,14 @@ function PropertiesContent() {
     return 0;
   });
 
+  // The heading follows whatever the visitor is looking for instead of a fixed place name.
+  const selectedCountryNames = COUNTRY_OPTIONS.filter((c) => selectedCountryCodes.includes(c.code)).map((c) => c.name);
+  const countryLabel = selectedCountryNames.length === 1 ? selectedCountryNames[0] : selectedCountryNames.length > 1 ? `${selectedCountryNames.length} countries` : '';
+  const placeParts = [searchTerm.trim() ? titleCase(searchTerm.trim()) : titleCase(cityInput.trim()), countryLabel].filter(Boolean);
+  const heading = placeParts.length
+    ? placeParts.join(', ')
+    : filterType === 'sale' ? 'Homes for sale' : filterType === 'rent' ? 'Homes for rent' : 'All properties';
+
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setPropertyTypeInput('');
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
@@ -268,7 +274,7 @@ function PropertiesContent() {
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative w-full sm:w-[280px]">
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input type="text" placeholder="Kigali, Rwanda" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <input type="text" placeholder="City, district or country" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
               {/* Status — typeable, suggestions via datalist so "renting"/"buy" etc still resolve */}
@@ -566,7 +572,7 @@ function PropertiesContent() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-1">
-              {searchTerm.trim() ? titleCase(searchTerm.trim()) : 'Kigali, Rwanda'}
+              {heading}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
               {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}

@@ -5,10 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
-import { useHasPermission } from "@/lib/admin/hooks";
-import { ADMIN_ROLE_LABELS } from "@/lib/admin/permissions";
+import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminSubscription, type AdminUser, type AdminUserList, type UserAccountType, type UserStatus } from "@/lib/admin/api";
-import type { AdminRole } from "@/lib/admin/types";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime } from "../ui";
 
@@ -25,9 +23,9 @@ const PAGE_SIZE = 20;
 type ListState = { key: string; data?: AdminUserList; error?: string };
 
 export function UsersListPage() {
-  const { account, token, isAuthReady } = useAuth();
-  const canView = useHasPermission(account?.id, "users.view");
-  const canManage = useHasPermission(account?.id, "users.manage");
+  const { token, isAuthReady } = useAuth();
+  const canView = useIsAdministrator();
+  const canManage = useIsAdministrator();
   const [type, setType] = useState<"all" | UserAccountType>("all");
   const [status, setStatus] = useState<"all" | UserStatus>("all");
   const [searchInput, setSearchInput] = useState("");
@@ -146,7 +144,6 @@ export function UsersListPage() {
                       </div>
                       <p className="text-sm font-semibold text-slate-600">
                         {TYPE_LABELS[user.accountType]}
-                        {user.adminRole && <span className="block text-xs font-medium text-slate-400">{ADMIN_ROLE_LABELS[user.adminRole as AdminRole]}</span>}
                       </p>
                       <p className="text-xs text-slate-500">Joined {formatDate(user.createdAt)}</p>
                       <StatusPill status={user.status} />
@@ -192,10 +189,9 @@ export function UserDetailPage({ userId }: { userId: string }) {
   const router = useRouter();
   const { account, token, isAuthReady } = useAuth();
   const { showToast } = useToast();
-  const canView = useHasPermission(account?.id, "users.view");
-  const canManage = useHasPermission(account?.id, "users.manage");
-  const canSuspend = useHasPermission(account?.id, "users.suspend");
-  const viewerIsSuper = account?.adminRole === "super_admin";
+  const canView = useIsAdministrator();
+  const canManage = useIsAdministrator();
+  const canSuspend = useIsAdministrator();
 
   const [detail, setDetail] = useState<DetailState | null>(null);
   const [subscription, setSubscription] = useState<{ id: string; sub: AdminSubscription | null } | null>(null);
@@ -256,8 +252,6 @@ export function UserDetailPage({ userId }: { userId: string }) {
   }
 
   const isSelf = account?.id === user.id;
-  const targetIsAdmin = user.roles.includes("administrator");
-  const lockedByRole = targetIsAdmin && !isSelf && !viewerIsSuper;
   const formValues = form?.id === user.id ? form : { id: user.id, firstName: user.firstName, lastName: user.lastName, email: user.email };
   const dirty = formValues.firstName !== user.firstName || formValues.lastName !== user.lastName || formValues.email !== user.email;
   const nextStatus: UserStatus = user.status === "active" ? "suspended" : "active";
@@ -272,15 +266,6 @@ export function UserDetailPage({ userId }: { userId: string }) {
       applyUser(result.data);
       setForm(null);
       showToast("Account updated.");
-    } else showToast(result.error, "error");
-  }
-
-  async function changeAdminRole(role: "super_admin" | "operations_admin") {
-    if (!token || !user) return;
-    const result = await AdminApi.updateUser(token, user.id, { adminRole: role });
-    if (result.ok) {
-      applyUser(result.data);
-      showToast("Administrator role updated.");
     } else showToast(result.error, "error");
   }
 
@@ -339,17 +324,17 @@ export function UserDetailPage({ userId }: { userId: string }) {
             <form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={saveProfile}>
               <label className="text-sm font-bold text-slate-700">
                 First name
-                <input className={`${fieldClass} mt-1`} value={formValues.firstName} disabled={!canManage || lockedByRole} onChange={(e) => setForm({ ...formValues, firstName: e.target.value })} />
+                <input className={`${fieldClass} mt-1`} value={formValues.firstName} disabled={!canManage} onChange={(e) => setForm({ ...formValues, firstName: e.target.value })} />
               </label>
               <label className="text-sm font-bold text-slate-700">
                 Last name
-                <input className={`${fieldClass} mt-1`} value={formValues.lastName} disabled={!canManage || lockedByRole} onChange={(e) => setForm({ ...formValues, lastName: e.target.value })} />
+                <input className={`${fieldClass} mt-1`} value={formValues.lastName} disabled={!canManage} onChange={(e) => setForm({ ...formValues, lastName: e.target.value })} />
               </label>
               <label className="text-sm font-bold text-slate-700 sm:col-span-2">
                 Email
-                <input type="email" className={`${fieldClass} mt-1`} value={formValues.email} disabled={!canManage || lockedByRole} onChange={(e) => setForm({ ...formValues, email: e.target.value })} />
+                <input type="email" className={`${fieldClass} mt-1`} value={formValues.email} disabled={!canManage} onChange={(e) => setForm({ ...formValues, email: e.target.value })} />
               </label>
-              {canManage && !lockedByRole && (
+              {canManage && (
                 <div className="sm:col-span-2 flex gap-2">
                   <PrimaryButton type="submit" disabled={!dirty || saving}>
                     {saving ? "Saving…" : "Save changes"}
@@ -361,7 +346,6 @@ export function UserDetailPage({ userId }: { userId: string }) {
                   )}
                 </div>
               )}
-              {lockedByRole && <p className="sm:col-span-2 text-xs text-slate-500">Only a Super Administrator can modify another administrator.</p>}
             </form>
           </Card>
 
@@ -387,36 +371,17 @@ export function UserDetailPage({ userId }: { userId: string }) {
         </div>
 
         <div className="space-y-6">
-          {targetIsAdmin && (
-            <Card>
-              <h3 className="text-lg font-black text-slate-900">Administrator role</h3>
-              <select
-                className={`${fieldClass} mt-4`}
-                value={user.adminRole ?? "operations_admin"}
-                disabled={!viewerIsSuper || isSelf}
-                onChange={(e) => changeAdminRole(e.target.value as "super_admin" | "operations_admin")}
-              >
-                {(Object.keys(ADMIN_ROLE_LABELS) as AdminRole[]).map((role) => (
-                  <option key={role} value={role}>
-                    {ADMIN_ROLE_LABELS[role]}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-2 text-xs text-slate-500">{isSelf ? "You can't change your own role." : viewerIsSuper ? "Takes effect on their next request." : "Only a Super Administrator can change roles."}</p>
-            </Card>
-          )}
-
           {(canSuspend || canManage) && (
             <Card>
               <h3 className="text-lg font-black text-slate-900">Actions</h3>
               <div className="mt-4 flex flex-col gap-2">
                 {canSuspend && (
-                  <SecondaryButton disabled={isSelf || lockedByRole} onClick={() => setStatusOpen(true)}>
+                  <SecondaryButton disabled={isSelf} onClick={() => setStatusOpen(true)}>
                     {user.status === "active" ? "Suspend account" : "Restore account"}
                   </SecondaryButton>
                 )}
                 {canManage && (
-                  <DestructiveButton disabled={isSelf || lockedByRole} onClick={() => setDeleteOpen(true)}>
+                  <DestructiveButton disabled={isSelf} onClick={() => setDeleteOpen(true)}>
                     Delete account
                   </DestructiveButton>
                 )}

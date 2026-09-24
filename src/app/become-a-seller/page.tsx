@@ -25,8 +25,7 @@ function BecomeASellerForm() {
   const { token, refreshAccount, signup, isLoggedIn, isAuthReady, account } = useAuth();
   const planParam = searchParams.get('plan');
   // Only set when a plan was actually passed in (e.g. from /sell) — a visitor
-  // reaching this page some other way (ListPropertyModal's "become a seller"
-  // prompt) gets no plan badge and the original unconditional /manager
+  // reaching this page some other way  gets no plan badge and the original unconditional /manager
   // redirect, same as before /sell started passing ?plan=.
   const selectedTier = isPlanTier(planParam) ? planParam : null;
   const paidTier = isPaidTier(selectedTier) ? selectedTier : null;

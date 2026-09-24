@@ -1,2 +1,5 @@
-import { ProfilePage } from "@/components/professional/WorkspacePages";
-export default function Page() { return <ProfilePage />; }
+import ProfessionalProfileForm from "@/components/professional/ProfessionalProfileForm";
+
+export default function Page() {
+  return <ProfessionalProfileForm />;
+}

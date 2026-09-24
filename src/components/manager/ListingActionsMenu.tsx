@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Listing } from '@/lib/manager/types';
 import type { Property } from '@/lib/properties/types';
-import type { ListingModerationStatus } from '@/lib/admin/types';
+import type { PropertyStatus } from '@/lib/properties/types';
 import { useTourForProperty } from '@/lib/tours/hooks';
 import { TourService } from '@/lib/tours/tourService';
 
@@ -14,10 +14,10 @@ export default function ListingActionsMenu({
   onAttachExistingWorld,
 }: {
   listing: Listing;
-  marketStatus: ListingModerationStatus;
+  marketStatus: PropertyStatus;
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
-  onSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+  onSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -35,6 +35,7 @@ export default function ListingActionsMenu({
   }, [open]);
 
   const isUnpublished = marketStatus === 'unpublished';
+  const isRejected = marketStatus === 'rejected';
   const isArchived = marketStatus === 'archived';
 
   const item = (label: string, onClick: () => void, tone: 'default' | 'danger' = 'default', disabled: boolean = false) => (
@@ -67,7 +68,7 @@ export default function ListingActionsMenu({
 
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg py-1.5 z-20">
-          {item(listing.status === 'Leased' ? 'Relist' : 'Edit', () => onEdit(listing.property))}
+          {item('Edit', () => onEdit(listing.property))}
           
           {tour && (tour.status === 'ready' || tour.status === 'failed') && (
             item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })
@@ -76,13 +77,11 @@ export default function ListingActionsMenu({
             item('Attach Existing World ID', () => onAttachExistingWorld(listing.property))
           )}
 
-          {item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
-          {item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
-          {listing.isSellerPosted && (
-            <div className="border-t border-slate-50 mt-1 pt-1">
-              {item('Delete', () => onDelete(listing.property), 'danger')}
-            </div>
-          )}
+          {!isRejected && item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
+          {!isRejected && item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
+          <div className="border-t border-slate-50 mt-1 pt-1">
+            {item('Delete', () => onDelete(listing.property), 'danger')}
+          </div>
         </div>
       )}
     </div>

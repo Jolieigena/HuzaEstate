@@ -2,12 +2,12 @@
 
 import React, { use, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { useProperty } from '@/lib/sellerListings/hooks';
 import { getGalleryImages } from '@/lib/properties/gallery';
-import ListingVisibilityGate from '@/components/ListingVisibilityGate';
 import PropertyTourSection from '@/components/PropertyTourSection';
 import PropertyGallery from '@/components/PropertyGallery';
 import LandlordProfileCard from '@/components/LandlordProfileCard';
+import InquiryForm from '@/components/InquiryForm';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -56,8 +56,11 @@ function PropertyVideoCover({ videoUrl, title }: { videoUrl: string; title: stri
 
 export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const properties = useAllProperties();
-  const property = properties.find(p => p.id === id);
+  const { property, loading } = useProperty(id);
+
+  if (loading) {
+    return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">Loading listing…</div>;
+  }
 
   if (!property) {
     return (
@@ -69,9 +72,23 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
     );
   }
 
+  const notPublic = property.status && property.status !== 'published' ? property.status : property.expired ? 'expired' : null;
+  const NOT_PUBLIC_LABEL: Record<string, string> = {
+    unpublished: 'This listing is off the market and only you can see it.',
+    archived: 'This listing is archived and only you can see it.',
+    changes_requested: 'An administrator asked for changes before this listing can be public.',
+    rejected: 'An administrator rejected this listing.',
+    expired: 'This listing has expired and is no longer public.',
+  };
+
   return (
-    <ListingVisibilityGate propertyId={property.id} propertyTitle={property.title}>
     <div className="w-full bg-white min-h-screen pb-24">
+      {notPublic && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-3 text-center text-sm font-semibold text-amber-800">
+          {NOT_PUBLIC_LABEL[notPublic]}
+          {property.statusReason ? <span className="font-normal"> Reason: {property.statusReason}</span> : null}
+        </div>
+      )}
       {/* Title Section (Above Grid) */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-8 pb-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -165,24 +182,19 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
         <div className="lg:col-span-4">
           <div className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-8 sticky top-28">
             <h3 className="text-xl font-bold text-slate-900 mb-2">Interested in this property?</h3>
-            <p className="text-slate-500 text-[15px] mb-8 leading-relaxed">
-              Contact our team at HuzaEstate to schedule a viewing or get more information.
+            <p className="text-slate-500 text-[15px] mb-6 leading-relaxed">
+              Message the owner to ask a question or arrange a viewing.
             </p>
-
-            <button className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors mb-4 shadow-sm">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-              Book a Tour
-            </button>
-            <button className="w-full bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              Send us a Message
-            </button>
+            {notPublic ? (
+              <p className="text-sm text-slate-500">This listing isn&apos;t public, so it can&apos;t receive messages.</p>
+            ) : (
+              <InquiryForm property={property} />
+            )}
           </div>
 
-          {property.type === 'rent' && <LandlordProfileCard />}
+          {property.type === 'rent' && <LandlordProfileCard ownerId={property.ownerId} />}
         </div>
       </div>
     </div>
-    </ListingVisibilityGate>
   );
 }

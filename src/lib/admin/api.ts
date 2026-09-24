@@ -15,7 +15,6 @@ export interface AdminUser {
   email: string;
   roles: UserAccountType[];
   accountType: UserAccountType;
-  adminRole?: "super_admin" | "operations_admin";
   status: UserStatus;
   isApprovedSeller: boolean;
   mustChangePassword: boolean;
@@ -109,7 +108,7 @@ export const AdminApi = {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token);
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },
-  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status" | "adminRole">>) => {
+  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status">>) => {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "PATCH", body: changes });
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },

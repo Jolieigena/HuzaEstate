@@ -1,8 +1,8 @@
 import type { FinanceStore } from "./types";
 import { canUseBrowserStorage, readBrowserFlag, readBrowserJson, writeBrowserFlag, writeBrowserJson } from "@/lib/storage/browserStorage";
 
-const STORE_KEY = "huzaestate_finance_v1";
-const SEEDED_FLAG_KEY = "huzaestate_finance_seeded_v1";
+const STORE_KEY = "huzaestate_finance_v2";
+const SEEDED_FLAG_KEY = "huzaestate_finance_seeded_v2";
 
 /**
  * Defensive localStorage wrapper for the Finance module, matching the

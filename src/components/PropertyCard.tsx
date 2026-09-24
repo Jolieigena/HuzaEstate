@@ -5,8 +5,7 @@ import Link from 'next/link';
 import type { Property } from '@/lib/properties/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import TourWatchBadge from '@/components/TourWatchBadge';
-import { useIsFavorite } from '@/lib/favorites/hooks';
-import { FavoritesStoreEngine } from '@/lib/favorites/store';
+import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 
 interface PropertyCardProps {
@@ -18,9 +17,13 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
   const isSaved = useIsFavorite(property.id);
   const { showToast } = useToast();
 
-  function toggleSaved() {
-    const nowSaved = FavoritesStoreEngine.toggle(property.id);
-    showToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
+  const toggleFavorite = useToggleFavorite();
+
+  async function toggleSaved() {
+    const result = await toggleFavorite(property.id);
+    if (result === 'signin') showToast('Sign in to save homes to your account.', 'error');
+    else if (!result.ok) showToast(result.error, 'error');
+    else showToast(result.saved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
   }
 
   return (

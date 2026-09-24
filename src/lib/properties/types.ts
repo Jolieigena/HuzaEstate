@@ -1,8 +1,11 @@
+/** Only "published" listings appear in public search. */
+export type PropertyStatus = "published" | "unpublished" | "archived" | "changes_requested" | "rejected";
+
 export interface Property {
   id: string;
-  /** Set server-side from the poster's JWT at creation — absent on the curated mockProperties
-   *  fixtures, which have no real owner account. */
+  /** Set server-side from the poster's JWT at creation. */
   ownerId?: string;
+  ownerName?: string;
   title: string;
   description: string;
   price: number;
@@ -36,6 +39,9 @@ export interface Property {
    *  clock-skew-prone "is it past expiresAt" check. */
   expiresAt?: string;
   expired?: boolean;
+  status?: PropertyStatus;
+  /** Why an administrator took the listing down or asked for changes. */
+  statusReason?: string;
 }
 
 // Shared between the /properties Amenities filter, the post-property form,

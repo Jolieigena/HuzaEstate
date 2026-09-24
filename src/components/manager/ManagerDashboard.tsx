@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import type { Property } from '@/lib/properties/types';
+import type { Property, PropertyStatus } from '@/lib/properties/types';
+import { PropertyApi, type Inquiry } from '@/lib/properties/api';
 import type { Listing, ManagerTab } from '@/lib/manager/types';
+import { useToast } from '@/lib/toast-context';
 import { toListing } from '@/lib/manager/listings';
 import { TourService } from '@/lib/tours/tourService';
-import { useAllProperties, notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
-import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
-import { AdminService } from '@/lib/admin/service';
-import type { ListingModerationStatus } from '@/lib/admin/types';
-import { useTenantApplications } from '@/lib/tenantApplications/hooks';
+import { useMyProperties, notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { PageFrame } from '@/components/admin/ui';
 import EditPropertyModal from '@/components/EditPropertyModal';
 import ConfirmModal from '@/components/shared/ConfirmModal';
@@ -20,8 +18,7 @@ import ManagerSidebar from './ManagerSidebar';
 import ManagerMobileDrawer from './ManagerMobileDrawer';
 import OverviewTab from './OverviewTab';
 import ListingsTab from './ListingsTab';
-import ApplicationsTab from './ApplicationsTab';
-import PaymentsTab from './PaymentsTab';
+import InquiriesTab from './InquiriesTab';
 import MarketInsightsTab from './MarketInsightsTab';
 import LandlordProfileTab from './LandlordProfileTab';
 
@@ -32,38 +29,51 @@ export default function ManagerDashboard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [listingSearch, setListingSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<Listing['status'] | 'all'>('all');
-  const [applicationPropertyFilter, setApplicationPropertyFilter] = useState('all');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
   const [attachingProperty, setAttachingProperty] = useState<Property | null>(null);
   const [attachWorldId, setAttachWorldId] = useState('');
   const [attachError, setAttachError] = useState<string | null>(null);
-  const { isApprovedSeller, account, token } = useAuth();
+  const { isApprovedSeller, token } = useAuth();
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  // Every property a seller could manage — mockProperties (all 60-80 of
-  // them, not just the 5 hand-curated ones) plus anything posted this
-  // session, with saved edits already merged in.
-  const allProperties = useAllProperties();
-  const applications = useTenantApplications();
+  const { showToast } = useToast();
+  const { properties: myProperties } = useMyProperties();
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [inquiryVersion, setInquiryVersion] = useState(0);
+
+  useEffect(() => {
+    if (!token || !isApprovedSeller) return;
+    let cancelled = false;
+    PropertyApi.myInquiries(token).then((result) => {
+      if (!cancelled && result.ok) setInquiries(result.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, isApprovedSeller, inquiryVersion]);
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
   }
 
-  // "Remove from Market" / "Archive" reuse the same admin moderation
-  // overlay an administrator's Listings tool writes to (see
-  // src/lib/admin/listings.ts) — a listing is either visible to buyers or
-  // it isn't, regardless of who took it down, so this keeps one source of
-  // truth instead of a second, seller-only visibility flag.
-  const handleSetMarketStatus = (property: Property, status: ListingModerationStatus) => {
-    const reason =
-      status === 'unpublished' ? 'Removed from market by owner' : status === 'archived' ? 'Archived by owner' : 'Relisted by owner';
-    AdminService.setListingStatus(property.id, status, account?.id ?? 'seller', account?.name ?? 'Seller', reason);
+  // Visibility changes go to property-service, so buyers see them immediately and an
+  // administrator's decisions can't be undone from another browser.
+  const handleSetMarketStatus = async (property: Property, status: PropertyStatus) => {
+    if (!token) return;
+    const result = await PropertyApi.setStatus(token, property.id, status);
+    if (result.ok) {
+      notifyPropertiesChanged();
+      showToast(status === 'published' ? 'Listing is live again.' : status === 'archived' ? 'Listing archived.' : 'Listing removed from the market.');
+    } else {
+      showToast(result.error, 'error');
+    }
   };
 
-  const LISTINGS: Listing[] = allProperties.map((property) => toListing(property, applications, account?.id));
-  const propertyTitleById = new Map(allProperties.map((p) => [p.id, p.title]));
-  const activeApplications = applications.filter((a) => a.stage !== 'rejected' && a.stage !== 'leased');
+  const openInquiries = inquiries.filter((inquiry) => inquiry.status !== 'closed');
+  const leadsByProperty = new Map<string, number>();
+  for (const inquiry of inquiries) leadsByProperty.set(inquiry.propertyId, (leadsByProperty.get(inquiry.propertyId) ?? 0) + 1);
+
+  const LISTINGS: Listing[] = myProperties.map((property) => ({ ...toListing(property), leads: leadsByProperty.get(property.id) ?? 0 }));
 
   const filteredListings = LISTINGS.filter((l) => {
     const matchesStatus = statusFilter === 'all' || l.status === statusFilter;
@@ -73,12 +83,13 @@ export default function ManagerDashboard() {
   });
 
   const statusCounts = {
-    Active: LISTINGS.filter(l => l.status === 'Active').length,
-    Pending: LISTINGS.filter(l => l.status === 'Pending').length,
-    Leased: LISTINGS.filter(l => l.status === 'Leased').length,
+    Live: LISTINGS.filter(l => l.status === 'Live').length,
+    'Off market': LISTINGS.filter(l => l.status === 'Off market').length,
+    'Needs attention': LISTINGS.filter(l => l.status === 'Needs attention').length,
+    Expired: LISTINGS.filter(l => l.status === 'Expired').length,
   };
 
-  const topListings = [...LISTINGS].sort((a, b) => b.views - a.views).slice(0, 4);
+  const topListings = [...LISTINGS].sort((a, b) => b.leads - a.leads).slice(0, 4);
 
   return (
     <div className="min-h-full bg-slate-50 flex flex-col">
@@ -88,13 +99,13 @@ export default function ManagerDashboard() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           listingCount={LISTINGS.length}
-          applicationCount={activeApplications.length}
+          inquiryCount={openInquiries.length}
         />
         <ManagerMobileDrawer
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           listingCount={LISTINGS.length}
-          applicationCount={activeApplications.length}
+          inquiryCount={openInquiries.length}
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
         />
@@ -103,7 +114,7 @@ export default function ManagerDashboard() {
         <main className="flex-grow min-w-0">
           <PageFrame
             title="Property Manager"
-            description="Manage your listings, review offers, and track property performance."
+            description="Manage your listings and answer buyer and renter inquiries."
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
@@ -130,19 +141,9 @@ export default function ManagerDashboard() {
               />
             )}
 
-            {/* APPLICATIONS TAB */}
-            {activeTab === 'applications' && (
-              <ApplicationsTab
-                applications={applications}
-                applicationPropertyFilter={applicationPropertyFilter}
-                setApplicationPropertyFilter={setApplicationPropertyFilter}
-                propertyTitleById={propertyTitleById}
-              />
-            )}
-
-            {/* PAYMENTS TAB */}
-            {activeTab === 'payments' && (
-              <PaymentsTab />
+            {/* INQUIRIES TAB */}
+            {activeTab === 'inquiries' && (
+              <InquiriesTab inquiries={inquiries} onChanged={() => setInquiryVersion((v) => v + 1)} />
             )}
 
             {/* MARKET INSIGHTS TAB */}
@@ -165,17 +166,13 @@ export default function ManagerDashboard() {
         onClose={() => { setDeletingProperty(null); setDeleteError(null); }}
         onConfirm={async () => {
           if (!deletingProperty) return;
-          // Real, backend-posted listings get a real DELETE; a curated mock fixture (no
-          // backend record — the request 404s) just falls back to clearing local overrides,
-          // same as before. Any other failure (403 not-your-listing, etc.) surfaces as an error
-          // instead of silently pretending the listing is gone.
           if (token) {
             try {
               const res = await fetch(`${PROPERTY_API_URL}/properties/${deletingProperty.id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${token}` },
               });
-              if (!res.ok && res.status !== 404) {
+              if (!res.ok) {
                 const data = await res.json().catch(() => null);
                 setDeleteError(data?.message || 'Could not delete this listing. Please try again.');
                 return;
@@ -185,7 +182,6 @@ export default function ManagerDashboard() {
               return;
             }
           }
-          PropertyOverridesStoreEngine.clear(deletingProperty.id);
           notifyPropertiesChanged();
           setDeletingProperty(null);
           setDeleteError(null);

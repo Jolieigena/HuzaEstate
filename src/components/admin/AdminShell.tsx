@@ -4,7 +4,6 @@ import { ReactNode, useState } from "react";
 import Link from "next/link";
 import RequireAuth from "@/components/shared/RequireAuth";
 import { useAuth } from "@/lib/auth-context";
-import type { AdminRole } from "@/lib/admin/types";
 import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
 import AdminMobileDrawer from "./AdminMobileDrawer";
@@ -19,7 +18,7 @@ function AccessDenied({ homePath }: { homePath: string }) {
           </svg>
         </div>
         <h1 className="text-xl font-black text-slate-900">You do not have permission to access the Administration Portal.</h1>
-        <p className="mt-2 text-sm leading-relaxed text-slate-500">This area is reserved for HuzaEstate staff accounts. If you believe this is a mistake, contact a Super Administrator.</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">This area is reserved for HuzaEstate staff accounts. If you believe this is a mistake, contact an administrator.</p>
         <Link href={homePath} className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
           Return to your dashboard
         </Link>
@@ -40,18 +39,18 @@ function AccessDenied({ homePath }: { homePath: string }) {
 export default function AdminShell({ children }: { children: ReactNode }) {
   const { account, isAuthReady } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const adminRole = account?.adminRole as AdminRole | undefined;
+  const isAdministrator = account?.roles.includes("administrator") ?? false;
 
   return (
     <RequireAuth>
-      {!isAuthReady || !account ? null : !adminRole ? (
+      {!isAuthReady || !account ? null : !isAdministrator ? (
         <AccessDenied homePath={account.path || "/dashboard"} />
       ) : (
         <div className="min-h-full bg-slate-50">
-          <AdminHeader adminRole={adminRole} onOpenMobileSidebar={() => setMobileOpen(true)} />
+          <AdminHeader onOpenMobileSidebar={() => setMobileOpen(true)} />
           <div className="flex min-h-[calc(100vh-65px)]">
-            <AdminSidebar adminRole={adminRole} />
-            <AdminMobileDrawer adminRole={adminRole} open={mobileOpen} onClose={() => setMobileOpen(false)} />
+            <AdminSidebar />
+            <AdminMobileDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
             <main className="flex-grow min-w-0">{children}</main>
           </div>
         </div>

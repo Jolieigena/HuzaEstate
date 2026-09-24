@@ -1,6 +1,5 @@
-import type { Property } from '@/lib/properties/types';
+import type { Property, PropertyStatus } from '@/lib/properties/types';
 import type { Listing, ListingStatusCounts, ListingStatusFilter } from '@/lib/manager/types';
-import type { ListingModerationStatus } from '@/lib/admin/types';
 import ListingCard from './ListingCard';
 
 export default function ListingsTab({ statusCounts, statusFilter, setStatusFilter, listingSearch, setListingSearch, filteredListings, setEditingProperty, setDeletingProperty, handleSetMarketStatus, onAttachExistingWorld }: {
@@ -12,16 +11,17 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
   filteredListings: Listing[];
   setEditingProperty: (property: Property) => void;
   setDeletingProperty: (property: Property) => void;
-  handleSetMarketStatus: (property: Property, status: ListingModerationStatus) => void;
+  handleSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
 }) {
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {([
-          { status: 'Active' as const, label: 'Active', count: statusCounts.Active, labelColor: 'text-green-700', ring: 'ring-green-500/30' },
-          { status: 'Pending' as const, label: 'Pending', count: statusCounts.Pending, labelColor: 'text-yellow-700', ring: 'ring-yellow-500/30' },
-          { status: 'Leased' as const, label: 'Leased', count: statusCounts.Leased, labelColor: 'text-slate-500', ring: 'ring-slate-400/30' },
+          { status: 'Live' as const, label: 'Live', count: statusCounts.Live, labelColor: 'text-green-700', ring: 'ring-green-500/30' },
+          { status: 'Off market' as const, label: 'Off market', count: statusCounts['Off market'], labelColor: 'text-slate-500', ring: 'ring-slate-400/30' },
+          { status: 'Needs attention' as const, label: 'Needs attention', count: statusCounts['Needs attention'], labelColor: 'text-red-700', ring: 'ring-red-500/30' },
+          { status: 'Expired' as const, label: 'Expired', count: statusCounts.Expired, labelColor: 'text-yellow-700', ring: 'ring-yellow-500/30' },
         ]).map((tile) => {
           const isActive = statusFilter === tile.status;
           return (
@@ -80,7 +80,7 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm py-16 px-6 text-center text-slate-400 text-sm">
-          No listings match &ldquo;{listingSearch}&rdquo;.
+          {listingSearch.trim() || statusFilter !== 'all' ? <>No listings match your filters.</> : <>You haven&apos;t posted any listings yet.</>}
         </div>
       )}
     </div>

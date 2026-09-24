@@ -3,7 +3,7 @@ import type { SavedSearch } from "./types";
 const STORE_KEY = "huzaestate_saved_searches_v1";
 
 /** Defensive localStorage wrapper for a buyer's saved property searches,
- *  matching the Favorites/PropertyOverrides/Tours storage.ts convention. */
+ *  matching the Tours storage.ts convention. */
 export const SavedSearchesStorageService = {
   isAvailable(): boolean {
     try {

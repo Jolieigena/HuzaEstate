@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import { useAuth } from '@/lib/auth-context';
-import { PropertyOverridesStoreEngine } from '@/lib/propertyOverrides/store';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
@@ -17,13 +16,7 @@ interface EditPropertyModalProps {
   onClose: () => void;
 }
 
-/**
- * Edits any property — curated mock listings and real seller-posted ones alike. For a real,
- * backend-posted listing this PATCHes property-service directly (the owner-or-admin check
- * happens server-side); for a curated mock fixture (no backend record to PATCH — the request
- * 404s) it falls back to the same per-id propertyOverrides patch as before. Either way,
- * amenities keeps going through propertyOverrides since property-service doesn't model it yet.
- */
+/** Edits a listing by PATCHing property-service; the owner-or-administrator check happens server-side. */
 export default function EditPropertyModal({ property, onClose }: EditPropertyModalProps) {
   const { token } = useAuth();
   const [form, setForm] = useState(() => toFormState(property));
@@ -59,39 +52,34 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       imageUrl,
       galleryImages,
       photos: form.photos,
+      amenities: form.amenities,
       type: form.type,
       propertyType: form.propertyType,
     };
 
-    let persistedToBackend = false;
-    if (token) {
-      try {
-        const res = await fetch(`${PROPERTY_API_URL}/properties/${property.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(patch),
-        });
-        if (res.ok) {
-          persistedToBackend = true;
-        } else if (res.status !== 404) {
-          // 404 means this id has no backend record — it's a curated mock fixture, fall back
-          // below as before. Any other failure (403 not-your-listing, 400 invalid field, etc.)
-          // is a real error the seller should see rather than silently degrading to local-only.
-          const data = await res.json().catch(() => null);
-          setError(data?.message || 'Could not save your changes. Please try again.');
-          setSaving(false);
-          return;
-        }
-      } catch {
-        setError('Could not reach the server. Please try again.');
+    if (!token) {
+      setError('Please sign in again.');
+      setSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${PROPERTY_API_URL}/properties/${property.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message || 'Could not save your changes. Please try again.');
         setSaving(false);
         return;
       }
+    } catch {
+      setError('Could not reach the server. Please try again.');
+      setSaving(false);
+      return;
     }
 
-    // amenities isn't a real backend field yet, so it always stays here; the rest only needs
-    // to stay here too for the curated-fixture (persistedToBackend === false) fallback path.
-    PropertyOverridesStoreEngine.set(property.id, persistedToBackend ? { amenities: form.amenities } : { ...patch, amenities: form.amenities });
     notifyPropertiesChanged();
     setSaving(false);
     onClose();

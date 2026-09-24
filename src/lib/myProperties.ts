@@ -1,10 +1,7 @@
 import type { OccupancyStatus, PropertyType } from "./renovate/types";
 
-// A small prototype "My Properties" data source shared by the customer
-// dashboard's "Owned & Rented Properties" tab and the Renovate module's
-// property-selection step. There is no real backend, so this is a static,
-// per-owner list — not tied to `mockProperties` in `data.ts`, which models
-// public marketplace listings with no ownership concept.
+// "My Properties" data source shared by the customer dashboard's "Owned & Rented Properties"
+// tab and the Renovate module's property-selection step.
 
 export type MyPropertyOwnership = "owned" | "rented" | "unconfirmed";
 
@@ -22,10 +19,6 @@ export interface MyProperty {
   floors: number;
   constructionYear: number;
   occupancy: OccupancyStatus;
-  /** District name matching src/lib/marketAnalytics's seeded districts, for
-   *  trend/valuation lookups. Optional so existing (pre-portfolio-feature)
-   *  reads of this file — e.g. Renovate's property picker — don't need it. */
-  district?: string;
   /** What the owner paid, in the same currency as the property's district
    *  market data (USD) — the basis a resale recommendation compares the
    *  current estimated value against. Undefined for a rented (not owned)
@@ -34,60 +27,8 @@ export interface MyProperty {
   purchaseDate?: string;
 }
 
-const MY_PROPERTIES: MyProperty[] = [
-  {
-    id: "myprop-gacuriro-villa",
-    ownerId: "demo-user",
-    name: "Gacuriro Family Villa",
-    imageUrl: "/hero-house.jpg",
-    location: "Gacuriro, Kigali",
-    propertyType: "villa",
-    ownershipStatus: "owned",
-    bedrooms: 4,
-    bathrooms: 3,
-    areaSqm: 320,
-    floors: 2,
-    constructionYear: 2014,
-    occupancy: "occupied",
-    district: "Gacuriro",
-    purchasePrice: 285000,
-    purchaseDate: "2019-03-14",
-  },
-  {
-    id: "myprop-downtown-penthouse",
-    ownerId: "demo-user",
-    name: "Downtown Penthouse Suite",
-    imageUrl: "/hero-house-white.jpg",
-    location: "Kiyovu, Kigali",
-    propertyType: "apartment",
-    ownershipStatus: "rented",
-    bedrooms: 2,
-    bathrooms: 2,
-    areaSqm: 110,
-    floors: 1,
-    constructionYear: 2019,
-    occupancy: "occupied",
-    district: "Kiyovu",
-  },
-  {
-    id: "myprop-kiyovu-apartment",
-    ownerId: "demo-user",
-    name: "Kiyovu Apartment",
-    imageUrl: "/hero-house-final.jpg",
-    location: "Kiyovu, Kigali",
-    propertyType: "apartment",
-    ownershipStatus: "owned",
-    bedrooms: 3,
-    bathrooms: 2,
-    areaSqm: 145,
-    floors: 1,
-    constructionYear: 2017,
-    occupancy: "occupied",
-    district: "Kiyovu",
-    purchasePrice: 168000,
-    purchaseDate: "2021-08-02",
-  },
-];
+// No backend tracks a customer's owned/rented properties yet, so this starts empty.
+const MY_PROPERTIES: MyProperty[] = [];
 
 export function getMyProperties(ownerId: string = "demo-user"): MyProperty[] {
   return MY_PROPERTIES.filter((p) => p.ownerId === ownerId);

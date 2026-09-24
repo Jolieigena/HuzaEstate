@@ -10,7 +10,7 @@ interface ManagerMobileDrawerProps {
   activeTab: ManagerTab;
   setActiveTab: (tab: ManagerTab) => void;
   listingCount: number;
-  applicationCount: number;
+  inquiryCount: number;
   open: boolean;
   onClose: () => void;
 }

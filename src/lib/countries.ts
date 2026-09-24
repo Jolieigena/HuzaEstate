@@ -237,10 +237,8 @@ export function countryFlagUrl(code: string): string {
   return `https://flagcdn.com/${code.toLowerCase()}.svg`;
 }
 
-/** Every existing listing (mockProperties + everything the real backend has
- *  served so far) predates the `country` field, so this is the single place
- *  that decides what "no country on record" means — Rwanda, since that's
- *  what every listing in this app has been until now. */
+/** A listing without a country on record (posted before multi-country support) counts as Rwanda,
+ *  since that is where every listing was until then. */
 export function getPropertyCountry(property: Pick<Property, "country">): CountryOption {
   if (property.country) {
     return findCountry(property.country) ?? DEFAULT_COUNTRY;

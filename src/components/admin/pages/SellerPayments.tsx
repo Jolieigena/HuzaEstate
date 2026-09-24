@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { useHasPermission } from "@/lib/admin/hooks";
+import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminSubscriptionList, type AdminUser } from "@/lib/admin/api";
 import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "../ui";
 
@@ -12,8 +12,8 @@ type Tier = "paid" | "all" | "free" | "silver" | "gold" | "diamond";
 type Loaded = { key: string; data?: AdminSubscriptionList; error?: string };
 
 export function SellerPaymentsPage() {
-  const { account, token, isAuthReady } = useAuth();
-  const canView = useHasPermission(account?.id, "finance.view");
+  const { token, isAuthReady } = useAuth();
+  const canView = useIsAdministrator();
   const [tier, setTier] = useState<Tier>("paid");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);

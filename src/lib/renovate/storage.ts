@@ -1,8 +1,8 @@
 import type { RenovationProject } from "./types";
 import { canUseBrowserStorage, readBrowserFlag, readBrowserJson, writeBrowserFlag, writeBrowserJson } from "@/lib/storage/browserStorage";
 
-const PROJECTS_KEY = "huzaestate_renovate_projects_v1";
-const SEEDED_FLAG_KEY = "huzaestate_renovate_seeded_v1";
+const PROJECTS_KEY = "huzaestate_renovate_projects_v2";
+const SEEDED_FLAG_KEY = "huzaestate_renovate_seeded_v2";
 
 /**
  * Thin, defensive localStorage wrapper for Renovation projects. This is a

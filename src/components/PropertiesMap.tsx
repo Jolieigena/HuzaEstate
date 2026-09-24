@@ -6,8 +6,7 @@ import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
 import TourWatchBadge from '@/components/TourWatchBadge';
-import { useIsFavorite } from '@/lib/favorites/hooks';
-import { FavoritesStoreEngine } from '@/lib/favorites/store';
+import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 
 // Create custom glowing price marker
@@ -374,11 +373,15 @@ function MapPropertyPopupCard({ property }: { property: Property }) {
   const isSaved = useIsFavorite(property.id);
   const { showToast } = useToast();
 
-  function toggleSaved(e: React.MouseEvent) {
+  const toggleFavorite = useToggleFavorite();
+
+  async function toggleSaved(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    const nowSaved = FavoritesStoreEngine.toggle(property.id);
-    showToast(nowSaved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
+    const result = await toggleFavorite(property.id);
+    if (result === 'signin') showToast('Sign in to save homes to your account.', 'error');
+    else if (!result.ok) showToast(result.error, 'error');
+    else showToast(result.saved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
   }
 
   return (

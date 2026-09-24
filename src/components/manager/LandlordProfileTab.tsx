@@ -1,60 +1,96 @@
 "use client";
 
-import { useState } from "react";
-import { useLandlordProfile } from "@/lib/landlordProfile/hooks";
-import { LandlordProfileStoreEngine } from "@/lib/landlordProfile/store";
-import type { LandlordProfile } from "@/lib/landlordProfile/types";
-import { Card, fieldClass, PrimaryButton } from "@/components/admin/ui";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@/lib/auth-context";
+import { fetchMyLandlordProfile, saveMyLandlordProfile, type SaveLandlordInput } from "@/lib/landlords/api";
+import { uploadProfessionalImage } from "@/lib/professional/api";
+import { useToast } from "@/lib/toast-context";
+import { Card, fieldClass, PrimaryButton, SecondaryButton } from "@/components/admin/ui";
 
-// Manager Portal has no per-seller ownership model today — any approved
-// seller manages every listing (see ManagerDashboard.tsx's useAllProperties()) —
-// so there's one fixture landlord identity, matching LandlordProfileCard's
-// default and src/lib/landlordProfile/seed.ts, not the real logged-in account id.
-const DEMO_LANDLORD_ID = "seller-user";
+const EMPTY: SaveLandlordInput = { displayName: "", photoUrl: "", bio: "", phone: "", responseTime: "", yearsHosting: undefined };
 
-/** Edits the same profile record LandlordProfileCard shows publicly on the
- *  property detail page for rental listings. rating/reviewCount/verified
- *  aren't editable here — those come from real tenant reviews and admin
- *  verification, not something a landlord sets about themselves. */
+/** Edits the landlord profile buyers and renters see on this seller's rental listings. Saved
+ *  to the seller's account (access-service), so it shows for everyone on every device. */
 export default function LandlordProfileTab() {
-  const ownerId = DEMO_LANDLORD_ID;
-  const profile = useLandlordProfile(ownerId);
-  const [form, setForm] = useState<LandlordProfile>(profile);
-  const [saved, setSaved] = useState(false);
+  const { account, token, isAuthReady } = useAuth();
+  const { showToast } = useToast();
+  const [form, setForm] = useState<SaveLandlordInput>(EMPTY);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const update = (patch: Partial<LandlordProfile>) => {
-    setForm((f) => ({ ...f, ...patch }));
-    setSaved(false);
-  };
+  useEffect(() => {
+    if (!isAuthReady || !token) return;
+    let cancelled = false;
+    fetchMyLandlordProfile(token).then((profile) => {
+      if (cancelled) return;
+      setForm(profile ? { displayName: profile.displayName, photoUrl: profile.photoUrl ?? "", bio: profile.bio ?? "", phone: profile.phone ?? "", responseTime: profile.responseTime ?? "", yearsHosting: profile.yearsHosting } : { ...EMPTY, displayName: account?.name ?? "" });
+      setLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token, account?.name]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const update = (patch: Partial<SaveLandlordInput>) => setForm((f) => ({ ...f, ...patch }));
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    LandlordProfileStoreEngine.update(ownerId, form);
-    setSaved(true);
-  };
+    if (!token) return;
+    setSaving(true);
+    const result = await saveMyLandlordProfile(token, form);
+    setSaving(false);
+    if (result.ok) showToast("Landlord profile saved.");
+    else showToast(result.error, "error");
+  }
+
+  async function handlePhoto(file: File | undefined) {
+    if (!file || !token) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose an image file.", "error");
+      return;
+    }
+    setUploading(true);
+    try {
+      update({ photoUrl: await uploadProfessionalImage(file, file.type, token) });
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Upload failed. Please try again.", "error");
+    }
+    setUploading(false);
+  }
+
+  if (!loaded) return <p className="py-10 text-sm font-semibold text-slate-400">Loading your profile…</p>;
 
   return (
     <div className="max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900">Landlord Profile</h2>
-          <p className="text-sm text-slate-500 mt-1">Shown to buyers and renters on your rental listings.</p>
-        </div>
-        {profile.verified && (
-          <span className="bg-[#2ec440]/10 text-[#219b31] text-xs font-black px-2.5 py-1 rounded-lg">Verified</span>
-        )}
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-slate-900">Landlord Profile</h2>
+        <p className="text-sm text-slate-500 mt-1">Shown to buyers and renters on your rental listings.</p>
       </div>
 
       <Card>
         <form className="flex flex-col gap-5" onSubmit={handleSave}>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Display name</label>
-            <input className={fieldClass} value={form.displayName} onChange={(e) => update({ displayName: e.target.value })} required />
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold">
+              {form.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.photoUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (form.displayName || "?").charAt(0)
+              )}
+            </div>
+            <div>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handlePhoto(e.target.files?.[0])} />
+              <SecondaryButton type="button" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? "Uploading…" : form.photoUrl ? "Change photo" : "Upload photo"}
+              </SecondaryButton>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1.5">Photo URL</label>
-            <input className={fieldClass} value={form.photoUrl} onChange={(e) => update({ photoUrl: e.target.value })} />
+            <label className="block text-sm font-bold text-slate-700 mb-1.5">Display name</label>
+            <input className={fieldClass} value={form.displayName} onChange={(e) => update({ displayName: e.target.value })} required />
           </div>
 
           <div>
@@ -69,36 +105,22 @@ export default function LandlordProfileTab() {
             </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-1.5">Years hosting</label>
-              <input
-                type="number"
-                min={0}
-                className={fieldClass}
-                value={form.yearsHosting}
-                onChange={(e) => update({ yearsHosting: Number(e.target.value) || 0 })}
-              />
+              <input type="number" min={0} className={fieldClass} value={form.yearsHosting ?? ""} onChange={(e) => update({ yearsHosting: e.target.value === "" ? undefined : Number(e.target.value) })} />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">Response time</label>
-            <input
-              className={fieldClass}
-              value={form.responseTimeLabel}
-              placeholder="e.g. Usually responds within an hour"
-              onChange={(e) => update({ responseTimeLabel: e.target.value })}
-            />
+            <input className={fieldClass} value={form.responseTime} placeholder="e.g. Usually responds within a day" onChange={(e) => update({ responseTime: e.target.value })} />
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
-            <PrimaryButton type="submit">Save changes</PrimaryButton>
-            {saved && <span className="text-sm font-semibold text-[#2ec440]">Saved</span>}
+          <div className="pt-2">
+            <PrimaryButton type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </PrimaryButton>
           </div>
         </form>
       </Card>
-
-      <p className="text-xs text-slate-400 mt-4">
-        {profile.rating.toFixed(1)} ★ average from {profile.reviewCount} reviews — earned, not editable here.
-      </p>
     </div>
   );
 }
