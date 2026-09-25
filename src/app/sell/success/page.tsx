@@ -2,20 +2,24 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { fetchMySubscription } from "@/lib/postingPlans/api";
+import { fetchMySubscription, reconcileCheckout } from "@/lib/postingPlans/api";
 import { PLAN_LABELS, type PlanTier } from "@/lib/postingPlans/types";
 
 type Status = "checking" | "success" | "error";
 
-// Stripe redirects here once checkout completes, but the actual tier change only happens once
-// payment-service's webhook processes the session — which can lag slightly behind the redirect.
-// Poll subscriptions/me a few times rather than trusting it's already reflected on first load.
+// Stripe redirects here once checkout completes carrying ?session_id=... (see
+// withSessionIdPlaceholder on the backend) — reconcile directly with Stripe first rather than
+// only trusting the webhook already landed, since that's what previously left a paying seller
+// looking stuck on Free whenever webhook delivery lagged or dropped. The poll loop below stays
+// as a fallback for the rare case reconcile itself sees the session not yet marked paid.
 const POLL_ATTEMPTS = 6;
 const POLL_DELAY_MS = 1500;
 
 function SellSuccessContent() {
   const { token, isAuthReady } = useAuth();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<Status>("checking");
   const [tier, setTier] = useState<PlanTier | null>(null);
 
@@ -26,6 +30,16 @@ function SellSuccessContent() {
       if (!token) {
         if (!cancelled) setStatus("error");
         return;
+      }
+      const sessionId = searchParams.get("session_id");
+      if (sessionId) {
+        const reconciled = await reconcileCheckout(token, sessionId);
+        if (cancelled) return;
+        if (reconciled && reconciled.tier !== "free") {
+          setTier(reconciled.tier);
+          setStatus("success");
+          return;
+        }
       }
       for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
         const subscription = await fetchMySubscription(token);
@@ -42,7 +56,7 @@ function SellSuccessContent() {
     return () => {
       cancelled = true;
     };
-  }, [token, isAuthReady]);
+  }, [token, isAuthReady, searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center">

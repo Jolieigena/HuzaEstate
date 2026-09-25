@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { fetchMySubscription, type RemoteSubscription } from "./api";
+import { fetchMySubscription, reconcileCheckout, type RemoteSubscription } from "./api";
 import { PLAN_LIMITS } from "./types";
 
 // Shown while loading or logged out — same "Free, unused" shape the old localStorage mock
@@ -59,6 +59,26 @@ export function useSubscription(): RemoteSubscription {
       cancelled = true;
     };
   }, [token, version]);
+
+  // Stripe redirects back here with ?session_id=... right after a successful Checkout (see
+  // withSessionIdPlaceholder on the backend) — reconcile directly with Stripe instead of only
+  // trusting the webhook already landed, so a slow/dropped webhook delivery doesn't leave the
+  // seller looking stuck on their old plan. Strips the param immediately (before the async call)
+  // so a second useSubscription() instance mounted on the same page — e.g. OverviewTab renders
+  // it both directly and inside PostingPlanCard — doesn't also fire it.
+  useEffect(() => {
+    if (!token || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (!sessionId) return;
+    params.delete("session_id");
+    const nextSearch = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (nextSearch ? `?${nextSearch}` : "") + window.location.hash);
+    reconcileCheckout(token, sessionId).then((data) => {
+      if (data) setSubscription(data);
+      notifySubscriptionChanged();
+    });
+  }, [token]);
 
   return subscription;
 }

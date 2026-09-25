@@ -83,6 +83,25 @@ export async function cancelSubscription(token: string): Promise<CancelResult> {
   }
 }
 
+// Called right when Stripe redirects the browser back to successUrl (which now carries
+// ?session_id=...) — confirms the payment directly with Stripe instead of only trusting that the
+// webhook already landed, which is what left a paying seller stuck looking like they're still on
+// Free if that webhook delivery was slow or dropped. Best-effort/silent: the webhook is still the
+// real source of truth and will (re-)apply the same state on its own if this fails.
+export async function reconcileCheckout(token: string, sessionId: string): Promise<RemoteSubscription | null> {
+  try {
+    const res = await fetch(`${PAYMENT_API_URL}/checkout/reconcile`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ sessionId }),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as RemoteSubscription;
+  } catch {
+    return null;
+  }
+}
+
 export async function createPerPostCheckout(token: string, successUrl: string, cancelUrl: string): Promise<CheckoutResult> {
   try {
     const res = await fetch(`${PAYMENT_API_URL}/checkout/per-post`, {
