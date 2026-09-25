@@ -9,6 +9,7 @@ services:
         # (e.g. so the container can reach a backend that isn't part of this compose file).
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081/api/access-service}
         NEXT_PUBLIC_PROPERTY_API_URL: ${NEXT_PUBLIC_PROPERTY_API_URL:-http://localhost:8081/api/property-service}
+        NEXT_PUBLIC_PAYMENT_API_URL: ${NEXT_PUBLIC_PAYMENT_API_URL:-http://localhost:8081/api/payment-service}
     image: huzaestate-frontend
     container_name: huzaestate-frontend
     ports:
@@ -17,8 +18,9 @@ services:
       NODE_ENV: production
       PORT: "8085"
       # Server-side-only secrets — read at runtime, never baked into the image/build cache.
+      # Stripe itself is never called from the frontend (payment-service owns checkout/webhooks
+      # entirely) — no STRIPE_SECRET_KEY here.
       WORLD_LABS_API_KEY: ${WORLD_LABS_API_KEY:-}
       BLOB_READ_WRITE_TOKEN: ${BLOB_READ_WRITE_TOKEN:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     restart: unless-stopped
