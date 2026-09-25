@@ -11,34 +11,27 @@ export default function SellPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Landing Page Split Hero */}
-      <section className="relative pt-24 pb-16 lg:pt-32 lg:pb-24 overflow-hidden">
+      {/* Kept compact so the plans below are visible without scrolling. */}
+      <section className="relative pt-8 pb-10 md:pt-10 md:pb-12 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 sm:px-10">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
 
-            {/* Left: Copy & CTA */}
+            {/* Left: Copy */}
             <div className="max-w-2xl relative z-10">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-5">
                 HuzaEstate Seller Network
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-6 leading-[1.1]">
-                Sell your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more.</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-5 leading-[1.1]">
+                Sell/Rent your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more</span>
               </h1>
-              <p className="text-slate-500 text-base sm:text-lg mb-10 leading-relaxed">
+              <p className="text-slate-500 text-base sm:text-lg leading-relaxed">
                 Join thousands of owners who trust our elite network to seamlessly list, market, and sell their properties at peak market value.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="#plans"
-                  className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-base"
-                >
-                  Register as a Seller
-                </a>
-              </div>
             </div>
 
             {/* Right: Visual */}
-            <div className="relative w-full max-w-lg mx-auto lg:max-w-none lg:ml-auto mt-8 lg:mt-0">
-              <div className="aspect-[4/3] rounded-[2rem] overflow-hidden shadow-2xl relative z-10 border-4 border-white">
+            <div className="relative w-full max-w-lg mx-auto md:max-w-none md:ml-auto">
+              <div className="aspect-[16/10] max-h-[320px] w-full rounded-[2rem] overflow-hidden shadow-2xl relative z-10 border-4 border-white">
                 <Image
                   src="/card-sell-v2.jpg"
                   alt="Premium real estate"
@@ -69,10 +62,10 @@ export default function SellPage() {
       </section>
 
       {/* Plans */}
-      <section id="plans" className="py-16 sm:py-20 bg-slate-50 border-t border-slate-100 scroll-mt-20">
+      <section id="plans" className="py-10 sm:py-12 bg-slate-50 border-t border-slate-100 scroll-mt-20">
         <div className="max-w-6xl mx-auto px-6 sm:px-10">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Choose your plan</h2>
+          <div className="text-center max-w-2xl mx-auto mb-8">
+            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Choose your selling plan</h2>
             <p className="text-base text-slate-500">Start free, or subscribe to post more and get priority placement.</p>
           </div>
 

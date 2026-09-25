@@ -27,10 +27,9 @@ function titleCase(text: string) {
   return text.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
 }
 
-// Status/Type are free-text inputs (with a <datalist> of suggestions) rather
+// Status/Type are free-text inputs (with a SuggestInput list of suggestions) rather
 // than closed <select> dropdowns, so typing something close ("renting",
-// "flat") still resolves — see the datalist options rendered alongside each
-// input for what's suggested. An unrecognized value just means "no filter"
+// "flat") still resolves — see STATUS_OPTIONS / TYPE_OPTIONS for what's suggested. An unrecognized value just means "no filter"
 // rather than zeroing out the results.
 function parseStatusInput(text: string): 'all' | 'sale' | 'rent' {
   const t = text.trim().toLowerCase();
@@ -61,6 +60,59 @@ function parseMinNumberInput(text: string): number | undefined {
   const n = parseInt(t, 10);
   return Number.isNaN(n) ? undefined : n;
 }
+
+// Free-text pill input with a white suggestion list. Replaces a native
+// <datalist>, whose popup is browser-rendered (dark on some platforms) and
+// can't be styled to match the other filter panels.
+function SuggestInput({ value, onChange, options, placeholder, widthClass, clearLabel }: {
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+  widthClass: string;
+  clearLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const q = value.trim().toLowerCase();
+  const exact = options.some((o) => o.toLowerCase() === q);
+  const matches = !q || exact ? options : options.filter((o) => o.toLowerCase().includes(q));
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
+        className={`${widthClass} bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all`}
+      />
+      {value && (
+        <button onClick={() => onChange('')} aria-label={clearLabel} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      )}
+      {open && matches.length > 0 && (
+        <div className="absolute left-0 top-full mt-2 min-w-full w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 max-h-64 overflow-y-auto">
+          {matches.map((o) => (
+            <button
+              key={o}
+              // mousedown (not click) so the input's blur doesn't close the list first
+              onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 rounded-lg font-medium text-[14px] transition-colors ${o.toLowerCase() === q ? 'bg-slate-50 text-[#2ec440]' : 'text-slate-700 hover:bg-slate-50'}`}
+            >
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const STATUS_OPTIONS = ['For Sale', 'For Rent'];
+const TYPE_OPTIONS = ['House', 'Apartment', 'Land', 'Villa', 'Condo', 'Townhouse', 'Studio', 'Duplex', 'Bungalow', 'Commercial'];
 
 // ─── main page ────────────────────────────────────────────────────────────────
 
@@ -150,10 +202,13 @@ function PropertiesContent() {
 
   // A fixed-position panel doesn't track its trigger on scroll, so close it
   // the moment any scrolling happens rather than letting it drift away from
-  // the button.
+  // the button. Scrolls that happen *inside* a panel (e.g. the country list)
+  // are ignored so the panel's own content stays scrollable.
   useEffect(() => {
     if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen) return;
-    const close = () => { setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); setIsCountryOpen(false); };
+    const close = (e: Event) => {
+      if (e.target instanceof Element && e.target.closest('[data-filter-panel]')) return;
+      setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); setIsCountryOpen(false); };
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     return () => {
@@ -277,26 +332,8 @@ function PropertiesContent() {
               <input type="text" placeholder="City, district or country" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
-              {/* Status — typeable, suggestions via datalist so "renting"/"buy" etc still resolve */}
-              <div className="relative">
-                <input
-                  type="text"
-                  list="status-options"
-                  placeholder="Any Status"
-                  value={statusInput}
-                  onChange={(e) => setStatusInput(e.target.value)}
-                  className="w-[150px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
-                />
-                <datalist id="status-options">
-                  <option value="For Sale" />
-                  <option value="For Rent" />
-                </datalist>
-                {statusInput && (
-                  <button onClick={() => setStatusInput('')} aria-label="Clear status" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </div>
+              {/* Status — typeable, with suggestions so "renting"/"buy" etc still resolve */}
+              <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" />
 
               {/* Price */}
               <div className="relative">
@@ -309,7 +346,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isPriceOpen && pricePanelPos && (
-                  <div style={{ position: 'fixed', top: pricePanelPos.top, left: pricePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                  <div data-filter-panel style={{ position: 'fixed', top: pricePanelPos.top, left: pricePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
                     <h3 className="font-bold text-slate-900 mb-2 px-2 text-[15px]">Price Range</h3>
                     <div className="flex flex-col gap-0.5 mb-4">
                       {[['Any Price','',''],['Under $100k','','100000'],['$100k – $300k','100000','300000'],['$300k – $500k','300000','500000'],['Over $500k','500000','']].map(([l,mn,mx])=>(
@@ -343,7 +380,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isBedsOpen && bedsPanelPos && (
-                  <div style={{ position: 'fixed', top: bedsPanelPos.top, left: bedsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
+                  <div data-filter-panel style={{ position: 'fixed', top: bedsPanelPos.top, left: bedsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {['1', '2', '3', '4', '5'].map((n) => (
                         <button key={n} onClick={() => { setBedsInput(n); setIsBedsOpen(false); }} className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${bedsInput === n ? 'bg-[#2ec440] text-white border-[#2ec440]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
@@ -380,7 +417,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isBathsOpen && bathsPanelPos && (
-                  <div style={{ position: 'fixed', top: bathsPanelPos.top, left: bathsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
+                  <div data-filter-panel style={{ position: 'fixed', top: bathsPanelPos.top, left: bathsPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-56">
                     <div className="flex flex-wrap gap-1.5 mb-3">
                       {['1', '2', '3', '4'].map((n) => (
                         <button key={n} onClick={() => { setBathsInput(n); setIsBathsOpen(false); }} className={`px-3 py-1.5 rounded-lg text-[13px] font-semibold border transition-colors ${bathsInput === n ? 'bg-[#2ec440] text-white border-[#2ec440]' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
@@ -406,31 +443,11 @@ function PropertiesContent() {
                 )}
               </div>
 
-              {/* Type — typeable, suggestions via datalist. These resolve down to the
+              {/* Type — typeable, with suggestions. These resolve down to the
                   same 3 real categories the post-property form offers (house/apartment/
                   land) — see parsePropertyTypeInput above — so a listing created there
                   is always reachable by every synonym suggested here. */}
-              <div className="relative">
-                <input
-                  type="text"
-                  list="type-options"
-                  placeholder="Any Type"
-                  value={propertyTypeInput}
-                  onChange={(e) => setPropertyTypeInput(e.target.value)}
-                  className="w-[140px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
-                />
-                <datalist id="type-options">
-                  <option value="House" /><option value="Apartment" /><option value="Land" />
-                  <option value="Villa" /><option value="Condo" /><option value="Townhouse" />
-                  <option value="Studio" /><option value="Duplex" /><option value="Bungalow" />
-                  <option value="Commercial" />
-                </datalist>
-                {propertyTypeInput && (
-                  <button onClick={() => setPropertyTypeInput('')} aria-label="Clear type" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
-                )}
-              </div>
+              <SuggestInput value={propertyTypeInput} onChange={setPropertyTypeInput} options={TYPE_OPTIONS} placeholder="Any Type" widthClass="w-[140px]" clearLabel="Clear type" />
 
               {/* Country — checklist panel supporting multiple selections at once
                   (see COUNTRY_OPTIONS), rather than a single free-text field that
@@ -449,7 +466,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isCountryOpen && countryPanelPos && (
-                  <div style={{ position: 'fixed', top: countryPanelPos.top, left: countryPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                  <div data-filter-panel style={{ position: 'fixed', top: countryPanelPos.top, left: countryPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
                     <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Countries</h3>
                     <input
                       type="text"
@@ -490,7 +507,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isAreaOpen && areaPanelPos && (
-                  <div style={{ position: 'fixed', top: areaPanelPos.top, left: areaPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-64">
+                  <div data-filter-panel style={{ position: 'fixed', top: areaPanelPos.top, left: areaPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-64">
                     <h3 className="font-bold text-slate-900 mb-3 text-[15px]">Area Size (sqm)</h3>
                     <div className="flex items-center gap-3">
                       <input type="number" placeholder="Min" value={minSqm} onChange={(e) => setMinSqm(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
@@ -535,7 +552,7 @@ function PropertiesContent() {
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isAmenitiesOpen && amenitiesPanelPos && (
-                  <div style={{ position: 'fixed', top: amenitiesPanelPos.top, left: amenitiesPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                  <div data-filter-panel style={{ position: 'fixed', top: amenitiesPanelPos.top, left: amenitiesPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
                     <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Amenities</h3>
                     <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
                       {AMENITY_OPTIONS.map((label) => {
