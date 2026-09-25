@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
 import { fetchMyProfessionalProfile, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput } from "@/lib/professional/api";
+import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
 import { Card, EmptyState, PageFrame, PrimaryButton, PrimaryLink, SecondaryButton, StatusPill, fieldClass, formatDate } from "./ui";
 
@@ -121,6 +122,7 @@ export default function ProfessionalProfileForm() {
       return;
     }
     await refreshAccount();
+    notifyProfilePhotoChanged();
     showToast("Profile updated.");
   };
 

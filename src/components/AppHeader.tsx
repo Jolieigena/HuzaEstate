@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "./Logo";
 import { useAuth } from "@/lib/auth-context";
+import { useMyProfilePhoto } from "@/lib/profilePhoto";
 
 interface AppHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -26,6 +27,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { logout, account, activeRole } = useAuth();
+  const photoUrl = useMyProfilePhoto();
 
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
@@ -53,7 +55,14 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
           aria-haspopup="menu"
           aria-expanded={menuOpen}
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{(account?.name ?? "U").slice(0, 1)}</span>
+          <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xs font-bold text-white">
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              (account?.name ?? "U").slice(0, 1)
+            )}
+          </span>
           <span className="hidden text-left sm:block">
             <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Account"}</span>
             <span className="block text-[11px] text-slate-500">{ROLE_LABELS[activeRole] ?? "Account"}</span>

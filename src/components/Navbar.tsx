@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
+import { useMyProfilePhoto } from '@/lib/profilePhoto';
 import CountryFlagBadge from './CountryFlagBadge';
 
 const NAV_LINKS = [
@@ -23,6 +24,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { isLoggedIn, logout, account } = useAuth();
+  const photoUrl = useMyProfilePhoto();
   const pathname = usePathname();
   const dashboardHref = account?.path || '/dashboard';
 
@@ -71,8 +73,12 @@ export default function Navbar() {
               className="block relative rounded-full border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
               title="Profile Menu"
             >
-              <div className="absolute inset-0 rounded-full overflow-hidden">
-                <Image src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="User Profile" fill className="object-cover rounded-full" />
+              <div className="absolute inset-0 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center">
+                {photoUrl ? (
+                  <Image src={photoUrl} alt="" fill className="object-cover rounded-full" />
+                ) : (
+                  <span className="text-xs font-bold text-white">{(account?.name ?? "U").slice(0, 1)}</span>
+                )}
               </div>
               <CountryFlagBadge className="absolute -bottom-1 -right-1 w-4 h-4" />
             </button>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { fetchMyLandlordProfile, saveMyLandlordProfile, type SaveLandlordInput } from "@/lib/landlords/api";
 import { uploadProfessionalImage } from "@/lib/professional/api";
+import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
 import { Card, fieldClass, PrimaryButton, SecondaryButton } from "@/components/admin/ui";
 
@@ -41,8 +42,12 @@ export default function LandlordProfileTab() {
     setSaving(true);
     const result = await saveMyLandlordProfile(token, form);
     setSaving(false);
-    if (result.ok) showToast("Landlord profile saved.");
-    else showToast(result.error, "error");
+    if (result.ok) {
+      showToast("Landlord profile saved.");
+      notifyProfilePhotoChanged();
+    } else {
+      showToast(result.error, "error");
+    }
   }
 
   async function handlePhoto(file: File | undefined) {
