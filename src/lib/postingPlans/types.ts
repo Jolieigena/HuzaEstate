@@ -26,6 +26,16 @@ export const PLAN_PRICES: Record<Exclude<PlanTier, "free">, Money> = {
   diamond: money(69, "USD"),
 };
 
+/** How long a listing posted under each tier stays live before it disappears — must track
+ *  payment-service's own PLAN_EXPIRY_DAYS (services/payment-service/src/modules/subscriptions/
+ *  plans.ts), which is the actual source of truth used when a listing's expiresAt is computed. */
+export const PLAN_EXPIRY_DAYS: Record<PlanTier, number> = {
+  free: 14,
+  silver: 30,
+  gold: 42,
+  diamond: 90,
+};
+
 /** One-time price to publish a single extra listing without subscribing —
  *  not specified by the source pricing, set to match Silver's own
  *  effective per-post rate ($15 / 3 posts = $5/post) so it's consistent
