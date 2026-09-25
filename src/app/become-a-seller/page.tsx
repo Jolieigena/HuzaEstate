@@ -22,7 +22,7 @@ function isPaidTier(value: PlanTier | null): value is Exclude<PlanTier, 'free'> 
 function BecomeASellerForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, refreshAccount, signup, isLoggedIn, isAuthReady, account } = useAuth();
+  const { token, signup, logout, isLoggedIn, isAuthReady, account } = useAuth();
   const planParam = searchParams.get('plan');
   // Only set when a plan was actually passed in (e.g. from /sell) — a visitor
   // reaching this page some other way  gets no plan badge and the original unconditional /manager
@@ -44,6 +44,13 @@ function BecomeASellerForm() {
   // WORLD_LABS_API_KEY / GEMINI_API_KEY elsewhere in this app.
   const [demoMode, setDemoMode] = useState(false);
 
+  // After subscribing, the seller signs in again and lands on Manager Portal
+  // with their new seller role loaded fresh.
+  const goToLogin = () => {
+    logout();
+    router.replace(`/login?redirect=${encodeURIComponent('/manager')}`);
+  };
+
   const proceedPastAccountCreation = async (freshToken: string) => {
     if (!paidTier) {
       // Free tier is fully self-serve, no Stripe involved — grants seller_manager immediately.
@@ -53,8 +60,7 @@ function BecomeASellerForm() {
         setSubmitting(false);
         return;
       }
-      await refreshAccount();
-      router.push('/manager');
+      goToLogin();
       return;
     }
     const redirectBase = `${window.location.origin}/sell/success`;
@@ -73,8 +79,7 @@ function BecomeASellerForm() {
       // Only reachable if this account already had a live paid subscription (e.g. a past
       // seller who canceled and is re-subscribing to a different tier) — applied in place with
       // no Stripe redirect, so just pick up the new role like the free-tier path does.
-      await refreshAccount();
-      router.push('/manager');
+      goToLogin();
       return;
     }
     window.location.href = result.url;
@@ -127,13 +132,13 @@ function BecomeASellerForm() {
 
   if (demoMode && paidTier) {
     return (
-      <Dialog open onClose={() => router.push('/manager')} labelledBy="demo-checkout-title" panelClassName="max-w-lg p-6 sm:p-8">
+      <Dialog open onClose={goToLogin} labelledBy="demo-checkout-title" panelClassName="max-w-lg p-6 sm:p-8">
         <h2 id="demo-checkout-title" className="text-lg font-black text-slate-900 mb-3">Payments aren&apos;t configured yet</h2>
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Checkout for the {PLAN_LABELS[paidTier]} plan isn&apos;t available in this environment yet — no charge was made. Your account was created; an administrator can upgrade your plan manually in the meantime.
         </div>
-        <button onClick={() => router.push('/manager')} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors">
-          Go to Manager Portal
+        <button onClick={goToLogin} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors">
+          Continue to Sign In
         </button>
       </Dialog>
     );

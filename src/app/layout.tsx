@@ -24,8 +24,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      {/* Browser extensions (e.g. Grammarly's data-gr-* attributes) modify <body>
+          before hydration; this only silences attribute mismatches on <body> itself. */}
       <body
         className={`${nunitoSans.variable} font-sans antialiased min-h-screen flex flex-col`}
+        suppressHydrationWarning
       >
         <AuthProvider>
           <ToastProvider>
