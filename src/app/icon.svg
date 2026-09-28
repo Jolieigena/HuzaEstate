@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 0.5 29 38">
+  <!-- Same three-bar mark as components/Logo.tsx, redrawn with a plain stroke
+       color instead of Tailwind classes — this file is served directly as
+       the browser tab icon, outside the app's own CSS. -->
+  <line x1="9.5" y1="6" x2="9.5" y2="33" stroke="#2ec440" stroke-width="5"/>
+  <line x1="27.5" y1="6" x2="27.5" y2="26" stroke="#2ec440" stroke-width="5"/>
+  <line x1="27.5" y1="28" x2="27.5" y2="33" stroke="#2ec440" stroke-width="5"/>
+  <line x1="18.5" y1="13" x2="18.5" y2="23" stroke="#2ec440" stroke-width="5"/>
+</svg>
