@@ -7,8 +7,8 @@ import PropertyCard from '@/components/PropertyCard';
 import AISearchCard from '@/components/AISearchCard';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
-import { COUNTRY_OPTIONS, findCountry, getPropertyCountry } from '@/lib/countries';
-import { getSelectedCountryName } from '@/lib/geo/useCurrentCountry';
+import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
+import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS } from '@/lib/properties/types';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'largest';
@@ -193,12 +193,16 @@ function PropertiesContent() {
     setSearchTerm(searchParams.get('q') ?? '');
   }
 
+  // Defaults the Country filter to the visitor's own country (previously
+  // picked, or geo-detected — see useCurrentCountry) instead of leaving it
+  // on "Any Country". Only fires while nothing's selected yet, so it won't
+  // stomp on a country the visitor has since picked or cleared themselves.
+  const currentCountry = useCurrentCountry();
   useEffect(() => {
-    const saved = getSelectedCountryName();
-    const code = saved ? findCountry(saved)?.code : undefined;
+    if (!currentCountry) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (code) setSelectedCountryCodes([code]);
-  }, []);
+    setSelectedCountryCodes((prev) => (prev.length === 0 ? [currentCountry.code] : prev));
+  }, [currentCountry]);
 
   // A fixed-position panel doesn't track its trigger on scroll, so close it
   // the moment any scrolling happens rather than letting it drift away from

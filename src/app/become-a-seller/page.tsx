@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import PasswordInput from '@/components/shared/PasswordInput';
 import PhoneInput from '@/components/shared/PhoneInput';
+import AddressInput from '@/components/shared/AddressInput';
 import Dialog from '@/components/Dialog';
 import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
 import { createSellerFreeCheckout, createSubscribeCheckout } from '@/lib/postingPlans/api';
@@ -33,6 +34,7 @@ function BecomeASellerForm() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -107,7 +109,7 @@ function BecomeASellerForm() {
       return;
     }
 
-    const result = await signup({ firstName, lastName, email, password, termsAccepted });
+    const result = await signup({ firstName, lastName, email, address, password, termsAccepted });
     if (!result.ok) {
       setError(result.error);
       setSubmitting(false);
@@ -209,6 +211,11 @@ function BecomeASellerForm() {
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Address</label>
+                  <AddressInput value={address} onChange={setAddress} required />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

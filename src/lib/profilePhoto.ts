@@ -31,13 +31,17 @@ export function useMyProfilePhoto(): string | undefined {
 
   useEffect(() => {
     let cancelled = false;
-    if (!token || !account) {
-      setPhotoUrl(undefined);
-      return;
-    }
-    const isProfessional = account.roles.includes("professional");
-    const isLandlord = account.roles.includes("seller_manager");
-    const fetchProfile = isProfessional ? fetchMyProfessionalProfile(token) : isLandlord ? fetchMyLandlordProfile(token) : Promise.resolve(null);
+    // Routed through the same .then() callback as the success case below —
+    // including the logged-out case, rather than calling setPhotoUrl
+    // synchronously in the effect body — so this never triggers a
+    // cascading render (react-hooks/set-state-in-effect).
+    const isProfessional = !!account?.roles.includes("professional");
+    const isLandlord = !!account?.roles.includes("seller_manager");
+    const fetchProfile = !token || !account
+      ? Promise.resolve(null)
+      : isProfessional ? fetchMyProfessionalProfile(token)
+      : isLandlord ? fetchMyLandlordProfile(token)
+      : Promise.resolve(null);
     fetchProfile.then((profile) => {
       if (!cancelled) setPhotoUrl(profile?.photoUrl || undefined);
     });

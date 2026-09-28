@@ -42,6 +42,10 @@ export interface Property {
   status?: PropertyStatus;
   /** Why an administrator took the listing down or asked for changes. */
   statusReason?: string;
+  /** When the listing was created, set server-side — optional because a
+   *  listing fetched from a backend that predates this field (or any local
+   *  override layered on top) may not carry it. */
+  createdAt?: string;
 }
 
 // Shared between the /properties Amenities filter, the post-property form,

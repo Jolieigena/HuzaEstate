@@ -1,7 +1,9 @@
 "use client";
 
+import React from 'react';
 import Image from '@/components/PropertyImage';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import type { Property } from '@/lib/properties/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import TourWatchBadge from '@/components/TourWatchBadge';
@@ -13,9 +15,14 @@ interface PropertyCardProps {
   isFeatured?: boolean;
 }
 
+const listedDateFormatter = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+
 export default function PropertyCard({ property, isFeatured }: PropertyCardProps) {
   const isSaved = useIsFavorite(property.id);
   const { showToast } = useToast();
+  const router = useRouter();
+  const listedDate = property.createdAt ? new Date(property.createdAt) : null;
+  const listedLabel = listedDate && !Number.isNaN(listedDate.getTime()) ? listedDateFormatter.format(listedDate) : null;
 
   const toggleFavorite = useToggleFavorite();
 
@@ -26,8 +33,21 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
     else showToast(result.saved ? 'Saved to your favorites' : 'Removed from favorites', 'success');
   }
 
+  // The cover image already links to the detail page; this lets the rest of
+  // the card (title, specs footer, etc.) do the same without nesting a
+  // second <a> inside it — invalid HTML that breaks hydration. Clicks on an
+  // actual control inside the card (save, map, 3D tour) are left alone so
+  // they keep doing their own thing instead of also navigating away.
+  function handleCardClick(e: React.MouseEvent<HTMLDivElement>) {
+    if ((e.target as HTMLElement).closest('a, button')) return;
+    router.push(`/properties/${property.id}`);
+  }
+
   return (
-    <div className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300">
+    <div
+      onClick={handleCardClick}
+      className="bg-white rounded-[1.75rem] border border-gray-100 p-2 sm:p-2.5 pb-4 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+    >
       <div className="relative w-full h-[180px] sm:h-[200px] rounded-2xl overflow-visible mb-3 group">
         {/* Cover media — the only anchor in this block, so overlay badges below
          *  stay as plain positioned siblings rather than nested <a>s. When a video
@@ -144,6 +164,11 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
             <span><strong className="text-slate-900">{property.sqm}</strong> sqm</span>
           </div>
+          {listedLabel && (
+            <span className="ml-auto text-[12px] text-slate-400 font-medium whitespace-nowrap">
+              Listed {listedLabel}
+            </span>
+          )}
         </div>
       </div>
     </div>

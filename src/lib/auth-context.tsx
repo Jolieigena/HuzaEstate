@@ -29,6 +29,9 @@ export interface SignupInput {
   email: string;
   password: string;
   termsAccepted: boolean;
+  /** Street address / neighborhood — only collected on the become-a-seller signup form, so
+   *  optional here for the plain customer /signup form which doesn't ask for it. */
+  address?: string;
 }
 
 export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string };
