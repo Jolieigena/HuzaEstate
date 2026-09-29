@@ -27,30 +27,15 @@ function titleCase(text: string) {
   return text.replace(/\S+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1));
 }
 
-// Status/Type are free-text inputs (with a SuggestInput list of suggestions) rather
-// than closed <select> dropdowns, so typing something close ("renting",
-// "flat") still resolves — see STATUS_OPTIONS / TYPE_OPTIONS for what's suggested. An unrecognized value just means "no filter"
+// Status is a free-text input (with a SuggestInput list of suggestions) rather
+// than a closed <select> dropdown, so typing something close ("renting",
+// "flat") still resolves — see STATUS_OPTIONS for what's suggested. An unrecognized value just means "no filter"
 // rather than zeroing out the results.
 function parseStatusInput(text: string): 'all' | 'sale' | 'rent' {
   const t = text.trim().toLowerCase();
   if (!t) return 'all';
   if (/rent/.test(t)) return 'rent';
   if (/sale|buy|sell/.test(t)) return 'sale';
-  return 'all';
-}
-
-// The underlying data model only has 3 real property-type buckets (see
-// Property['propertyType']) — "Villa", "Condo" etc. aren't separate
-// categories, they're synonyms real users type that should resolve to
-// whichever bucket they actually mean, same as "renting"/"buy" already do
-// for Status above. That keeps this in sync with the post-property form's
-// Property Type select without needing a parallel taxonomy there.
-function parsePropertyTypeInput(text: string): 'all' | 'house' | 'apartment' | 'land' {
-  const t = text.trim().toLowerCase();
-  if (!t) return 'all';
-  if (/apartment|flat|condo|studio/.test(t)) return 'apartment';
-  if (/land|plot|lot|acre/.test(t)) return 'land';
-  if (/house|villa|home|bungalow|townhouse|duplex|cottage|mansion|commercial/.test(t)) return 'house';
   return 'all';
 }
 
@@ -64,13 +49,14 @@ function parseMinNumberInput(text: string): number | undefined {
 // Free-text pill input with a white suggestion list. Replaces a native
 // <datalist>, whose popup is browser-rendered (dark on some platforms) and
 // can't be styled to match the other filter panels.
-function SuggestInput({ value, onChange, options, placeholder, widthClass, clearLabel }: {
+function SuggestInput({ value, onChange, options, placeholder, widthClass, clearLabel, showChevron }: {
   value: string;
   onChange: (value: string) => void;
   options: string[];
   placeholder: string;
   widthClass: string;
   clearLabel: string;
+  showChevron?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const q = value.trim().toLowerCase();
@@ -88,11 +74,13 @@ function SuggestInput({ value, onChange, options, placeholder, widthClass, clear
         onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
         className={`${widthClass} bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all`}
       />
-      {value && (
+      {value ? (
         <button onClick={() => onChange('')} aria-label={clearLabel} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
-      )}
+      ) : showChevron ? (
+        <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+      ) : null}
       {open && matches.length > 0 && (
         <div className="absolute left-0 top-full mt-2 min-w-full w-48 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 z-50 max-h-64 overflow-y-auto">
           {matches.map((o) => (
@@ -112,7 +100,26 @@ function SuggestInput({ value, onChange, options, placeholder, widthClass, clear
 }
 
 const STATUS_OPTIONS = ['For Sale', 'For Rent'];
-const TYPE_OPTIONS = ['House', 'Apartment', 'Land', 'Villa', 'Condo', 'Townhouse', 'Studio', 'Duplex', 'Bungalow', 'Commercial'];
+// The underlying data model only has 3 real property-type buckets (see
+// Property['propertyType']) — every other label here is a synonym a buyer
+// would actually look for that resolves down to one of them, same synonyms
+// parsePropertyTypeInput used to resolve from free text. Kept as a full
+// checklist (not collapsed to just the 3 real buckets) so ticking "Villa"
+// reads as its own choice even though it shares House's bucket under the hood.
+const TYPE_OPTIONS: { label: string; bucket: 'house' | 'apartment' | 'land' }[] = [
+  { label: 'House', bucket: 'house' },
+  { label: 'Apartment', bucket: 'apartment' },
+  { label: 'Land', bucket: 'land' },
+  { label: 'Villa', bucket: 'house' },
+  { label: 'Condo', bucket: 'apartment' },
+  { label: 'Townhouse', bucket: 'house' },
+  { label: 'Studio', bucket: 'apartment' },
+  { label: 'Duplex', bucket: 'house' },
+  { label: 'Bungalow', bucket: 'house' },
+  { label: 'Cottage', bucket: 'house' },
+  { label: 'Mansion', bucket: 'house' },
+  { label: 'Commercial', bucket: 'house' },
+];
 
 // ─── main page ────────────────────────────────────────────────────────────────
 
@@ -120,7 +127,19 @@ function PropertiesContent() {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
   const [statusInput, setStatusInput] = useState(searchParams.get('type') === 'rent' ? 'For Rent' : searchParams.get('type') === 'sale' ? 'For Sale' : '');
-  const [propertyTypeInput, setPropertyTypeInput] = useState('');
+  // Checklist of labels (see TYPE_OPTIONS), not a typeable field — so a buyer
+  // can match "Villa" and "Land" at once, and multiple synonyms of the same
+  // underlying bucket (e.g. "House" and "Townhouse") stay separately tickable.
+  const [selectedTypeLabels, setSelectedTypeLabels] = useState<string[]>([]);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const typeButtonRef = useRef<HTMLButtonElement>(null);
+  const [typePanelPos, setTypePanelPos] = useState<{ top: number; left: number } | null>(null);
+  function toggleTypeLabel(label: string) {
+    setSelectedTypeLabels((prev) => prev.includes(label) ? prev.filter((v) => v !== label) : [...prev, label]);
+  }
+  const selectedTypeBuckets = new Set(
+    selectedTypeLabels.map((label) => TYPE_OPTIONS.find((o) => o.label === label)?.bucket).filter((b): b is 'house' | 'apartment' | 'land' => Boolean(b))
+  );
   const [bedsInput, setBedsInput] = useState('');
   const [bathsInput, setBathsInput] = useState('');
   const [isPriceOpen, setIsPriceOpen] = useState(false);
@@ -165,7 +184,6 @@ function PropertiesContent() {
   }
 
   const filterType = parseStatusInput(statusInput);
-  const propertyTypeFilter = parsePropertyTypeInput(propertyTypeInput);
 
   const [aiFilters, setAiFilters] = useState<AIPropertyFilters | null>(null);
   const [isDreamOpen, setIsDreamOpen] = useState(false);
@@ -204,24 +222,45 @@ function PropertiesContent() {
     setSelectedCountryCodes((prev) => (prev.length === 0 ? [currentCountry.code] : prev));
   }, [currentCountry]);
 
+  function closeAllPanels() {
+    setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false);
+    setIsAmenitiesOpen(false); setIsCountryOpen(false); setIsTypeOpen(false);
+  }
+
   // A fixed-position panel doesn't track its trigger on scroll, so close it
   // the moment any scrolling happens rather than letting it drift away from
   // the button. Scrolls that happen *inside* a panel (e.g. the country list)
   // are ignored so the panel's own content stays scrollable.
   useEffect(() => {
-    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen) return;
+    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen && !isTypeOpen) return;
     const close = (e: Event) => {
       if (e.target instanceof Element && e.target.closest('[data-filter-panel]')) return;
-      setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false); setIsAmenitiesOpen(false); setIsCountryOpen(false); };
+      closeAllPanels();
+    };
     window.addEventListener('scroll', close, true);
     window.addEventListener('resize', close);
     return () => {
       window.removeEventListener('scroll', close, true);
       window.removeEventListener('resize', close);
     };
-  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen, isCountryOpen]);
+  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen, isCountryOpen, isTypeOpen]);
+
+  // Any click that lands outside every open panel and outside the pill that
+  // triggers it closes all of them — panels no longer have their own Apply
+  // button to dismiss themselves with, since every choice inside now takes
+  // effect immediately.
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (target.closest('[data-filter-panel]') || target.closest('[data-filter-trigger]')) return;
+      closeAllPanels();
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   function openPanel(buttonRef: React.RefObject<HTMLButtonElement | null>, panelWidth: number, setPos: (pos: { top: number; left: number }) => void, open: () => void) {
+    closeAllPanels();
     const rect = buttonRef.current?.getBoundingClientRect();
     if (rect) {
       const left = Math.min(Math.max(16, rect.left), window.innerWidth - panelWidth - 16);
@@ -251,7 +290,7 @@ function PropertiesContent() {
     const searchTokens = searchLower.split(/[\s,]+/).filter(Boolean);
     const matchesSearch = searchTokens.length === 0 || searchTokens.every(token => propText.includes(token));
     const matchesType = filterType === 'all' || p.type === filterType;
-    const matchesPropType = propertyTypeFilter === 'all' || p.propertyType === propertyTypeFilter;
+    const matchesPropType = selectedTypeBuckets.size === 0 || selectedTypeBuckets.has(p.propertyType);
     let matchesPrice = true;
     if (customMinPrice) matchesPrice = matchesPrice && p.price >= Number(customMinPrice);
     if (customMaxPrice) matchesPrice = matchesPrice && p.price <= Number(customMaxPrice);
@@ -315,7 +354,7 @@ function PropertiesContent() {
     : filterType === 'sale' ? 'Homes for sale' : filterType === 'rent' ? 'Homes for rent' : 'All properties';
 
   function clearAll() {
-    setSearchTerm(''); setStatusInput(''); setPropertyTypeInput('');
+    setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
     setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setSelectedCountryCodes([]); setAiFilters(null);
   }
@@ -337,12 +376,13 @@ function PropertiesContent() {
             </div>
 
               {/* Status — typeable, with suggestions so "renting"/"buy" etc still resolve */}
-              <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" />
+              <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" showChevron />
 
               {/* Price */}
               <div className="relative">
                 <button
                   ref={priceButtonRef}
+                  data-filter-trigger
                   onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 288, setPricePanelPos, () => setIsPriceOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -364,10 +404,6 @@ function PropertiesContent() {
                       <span className="text-slate-400 font-medium">–</span>
                       <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span><input type="number" placeholder="Max" value={customMaxPrice} onChange={(e)=>setCustomMaxPrice(e.target.value)} className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
                     </div>
-                    <div className="mt-4 flex gap-2 px-2">
-                      <button onClick={()=>{setCustomMinPrice('');setCustomMaxPrice('');}} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={()=>setIsPriceOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -377,6 +413,7 @@ function PropertiesContent() {
               <div className="relative">
                 <button
                   ref={bedsButtonRef}
+                  data-filter-trigger
                   onClick={() => (isBedsOpen ? setIsBedsOpen(false) : openPanel(bedsButtonRef, 220, setBedsPanelPos, () => setIsBedsOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -402,10 +439,6 @@ function PropertiesContent() {
                       onChange={(e) => setBedsInput(e.target.value.replace(/[^\d]/g, ''))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
                     />
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => setBedsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={() => setIsBedsOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -414,6 +447,7 @@ function PropertiesContent() {
               <div className="relative">
                 <button
                   ref={bathsButtonRef}
+                  data-filter-trigger
                   onClick={() => (isBathsOpen ? setIsBathsOpen(false) : openPanel(bathsButtonRef, 220, setBathsPanelPos, () => setIsBathsOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -439,19 +473,44 @@ function PropertiesContent() {
                       onChange={(e) => setBathsInput(e.target.value.replace(/[^\d]/g, ''))}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
                     />
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => setBathsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={() => setIsBathsOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
-                    </div>
                   </div>
                 )}
               </div>
 
-              {/* Type — typeable, with suggestions. These resolve down to the
-                  same 3 real categories the post-property form offers (house/apartment/
-                  land) — see parsePropertyTypeInput above — so a listing created there
-                  is always reachable by every synonym suggested here. */}
-              <SuggestInput value={propertyTypeInput} onChange={setPropertyTypeInput} options={TYPE_OPTIONS} placeholder="Any Type" widthClass="w-[140px]" clearLabel="Clear type" />
+              {/* Type — exhaustive checklist of every type a buyer would actually look
+                  for (see TYPE_OPTIONS), not collapsed to the 3 underlying buckets —
+                  same two-column pattern as Amenities since there are as many options. */}
+              <div className="relative">
+                <button
+                  ref={typeButtonRef}
+                  data-filter-trigger
+                  onClick={() => (isTypeOpen ? setIsTypeOpen(false) : openPanel(typeButtonRef, 288, setTypePanelPos, () => setIsTypeOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {selectedTypeLabels.length === 0
+                    ? 'Any Type'
+                    : selectedTypeLabels.length === 1
+                    ? selectedTypeLabels[0]
+                    : `Types (${selectedTypeLabels.length})`}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isTypeOpen && typePanelPos && (
+                  <div data-filter-panel style={{ position: 'fixed', top: typePanelPos.top, left: typePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Property Type</h3>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
+                      {TYPE_OPTIONS.map(({ label }) => {
+                        const checked = selectedTypeLabels.includes(label);
+                        return (
+                          <label key={label} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
+                            <input type="checkbox" checked={checked} onChange={() => toggleTypeLabel(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                            {label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Country — checklist panel supporting multiple selections at once
                   (see COUNTRY_OPTIONS), rather than a single free-text field that
@@ -459,6 +518,7 @@ function PropertiesContent() {
               <div className="relative">
                 <button
                   ref={countryButtonRef}
+                  data-filter-trigger
                   onClick={() => (isCountryOpen ? setIsCountryOpen(false) : openPanel(countryButtonRef, 288, setCountryPanelPos, () => setIsCountryOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -490,10 +550,6 @@ function PropertiesContent() {
                         );
                       })}
                     </div>
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => setSelectedCountryCodes([])} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={() => setIsCountryOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
-                    </div>
                   </div>
                 )}
               </div>
@@ -504,6 +560,7 @@ function PropertiesContent() {
               <div className="relative">
                 <button
                   ref={areaButtonRef}
+                  data-filter-trigger
                   onClick={() => (isAreaOpen ? setIsAreaOpen(false) : openPanel(areaButtonRef, 264, setAreaPanelPos, () => setIsAreaOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -517,10 +574,6 @@ function PropertiesContent() {
                       <input type="number" placeholder="Min" value={minSqm} onChange={(e) => setMinSqm(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
                       <span className="text-slate-400 font-medium">–</span>
                       <input type="number" placeholder="Max" value={maxSqm} onChange={(e) => setMaxSqm(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" />
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                      <button onClick={() => { setMinSqm(''); setMaxSqm(''); }} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={() => setIsAreaOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
                     </div>
                   </div>
                 )}
@@ -549,6 +602,7 @@ function PropertiesContent() {
               <div className="relative">
                 <button
                   ref={amenitiesButtonRef}
+                  data-filter-trigger
                   onClick={() => (isAmenitiesOpen ? setIsAmenitiesOpen(false) : openPanel(amenitiesButtonRef, 288, setAmenitiesPanelPos, () => setIsAmenitiesOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
@@ -579,10 +633,6 @@ function PropertiesContent() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
                     />
                     <p className="text-[11px] text-slate-400 mt-1">Comma-separated — matches any one.</p>
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => setKeywordsInput('')} className="flex-1 py-2 font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors text-[14px] border border-slate-200">Reset</button>
-                      <button onClick={() => setIsAmenitiesOpen(false)} className="flex-1 py-2 font-semibold text-white bg-[#2ec440] hover:bg-[#28b039] rounded-lg transition-colors text-[14px]">Apply</button>
-                    </div>
                   </div>
                 )}
               </div>
