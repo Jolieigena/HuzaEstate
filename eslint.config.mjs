@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
     "public/vendor/**",
     "scripts/legacy/**",
     "pw-sidebar-*.tmp.js",
+    // The backend (NestJS) repo, cloned in-place at the project root —
+    // its own separate toolchain/lint setup, not this frontend's.
+    "huza-estate-b/**",
   ]),
   {
     files: ["tests/**/*.cjs"],

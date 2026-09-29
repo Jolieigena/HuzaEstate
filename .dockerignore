@@ -5,6 +5,7 @@ build
 coverage
 .git
 .gitignore
+huza-estate-b
 .opencode
 .tour-asset-cache
 .tour-records
