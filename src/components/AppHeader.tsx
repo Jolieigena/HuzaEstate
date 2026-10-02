@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "./Logo";
 import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 interface AppHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -21,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
   administrator: "Administrator",
   professional: "Professional",
   seller_manager: "Owner",
+  organization_admin: "Org Admin",
   customer: "Customer",
 };
 
@@ -47,7 +49,9 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
         </Link>
       </div>
 
-      <div className="relative">
+      <div className="flex items-center gap-2">
+        <NotificationBell />
+        <div className="relative">
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
@@ -78,11 +82,19 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             <Link href="/properties" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
               Browse Properties
             </Link>
+            {account?.roles.includes("customer") && (
+              <Link href="/dashboard/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                Settings
+              </Link>
+            )}
             {account?.roles.includes("professional") && (
               <Link href="/professional" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Professional Portal
               </Link>
             )}
+            <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+              Change password
+            </Link>
             <button
               onClick={() => {
                 setMenuOpen(false);
@@ -94,6 +106,7 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
             </button>
           </div>
         )}
+        </div>
       </div>
     </header>
   );

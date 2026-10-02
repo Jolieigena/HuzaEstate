@@ -115,8 +115,8 @@ export default function Navbar() {
           </div>
         ) : (
           <div className="hidden md:flex items-center gap-2 ml-2">
-            <Link 
-              href="/signup"
+            <Link
+              href="/login"
               className="bg-slate-900 hover:bg-[#2ec440] text-white font-medium text-sm px-6 py-2.5 rounded-full transition-all inline-block"
             >
               Get Started

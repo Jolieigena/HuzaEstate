@@ -20,7 +20,7 @@ export default function InvoicesPage() {
   const filtered = invoices.filter((i) => statusFilter === "all" || i.status === statusFilter).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   return (
-    <PageFrame title="Invoices" description="Every invoice issued to or by you, across contractor milestones, professional services and change orders.">
+    <PageFrame title="Invoices">
       <div className="mb-6">
         <PrototypeBanner />
       </div>

@@ -2,8 +2,10 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchProfessionalProfile, submitProfessionalContact, type RealProfessionalProfile } from "@/lib/professional/api";
+import { fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalContact, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
+import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { StarRating } from "@/components/professional/ui";
 
 function ContactCard({ profileId, profileName }: { profileId: string; profileName: string }) {
   const { showToast } = useToast();
@@ -65,6 +67,134 @@ function ContactCard({ profileId, profileName }: { profileId: string; profileNam
   );
 }
 
+function ProjectMedia({ item }: { item: RealProfessionalProfile["portfolio"][number] }) {
+  const images = item.images?.length ? item.images : item.imageUrl ? [item.imageUrl] : [];
+  const [playingVideo, setPlayingVideo] = useState(false);
+
+  if (playingVideo && item.videoUrl) {
+    return (
+      <div className="h-40 bg-black">
+        <video src={item.videoUrl} controls autoPlay playsInline className="h-full w-full object-contain" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-40 bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center overflow-hidden">
+      {images.length > 0 ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={images[0]} alt={item.title} className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-white/70 text-xs font-bold uppercase tracking-wide">Project</span>
+      )}
+      {images.length > 1 && (
+        <span className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-bold text-white">+{images.length - 1} more</span>
+      )}
+      {item.videoUrl && (
+        <button
+          type="button"
+          onClick={() => setPlayingVideo(true)}
+          aria-label="Play video"
+          className="absolute inset-0 flex items-center justify-center bg-black/10 hover:bg-black/20 transition-colors"
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/90 shadow-lg">
+            <svg className="ml-0.5 h-5 w-5 text-slate-900" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ReviewsSection({ profileId, profileName }: { profileId: string; profileName: string }) {
+  const { account, token } = useAuth();
+  const { showToast } = useToast();
+  const [data, setData] = useState<ProfessionalReviewList | null>(null);
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchProfessionalReviews(profileId).then((result) => {
+      if (!cancelled) setData(result);
+    });
+    return () => { cancelled = true; };
+  }, [profileId]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token || rating < 1) return;
+    setSubmitting(true);
+    const result = await submitProfessionalReview(token, profileId, { rating, comment: comment.trim() || undefined });
+    setSubmitting(false);
+    if (result.ok) {
+      showToast("Review submitted.", "success");
+      setRating(0);
+      setComment("");
+      fetchProfessionalReviews(profileId).then(setData);
+    } else {
+      showToast(result.error, "error");
+    }
+  }
+
+  return (
+    <div className="mt-10">
+      <h2 className="text-xl font-bold text-slate-900 mb-4">Reviews</h2>
+      {data && data.reviewCount > 0 && (
+        <div className="flex items-center gap-3 mb-5">
+          <span className="text-2xl font-black text-slate-900">{data.averageRating.toFixed(1)}</span>
+          <div>
+            <StarRating value={data.averageRating} size="md" />
+            <p className="text-xs text-slate-500">{data.reviewCount} {data.reviewCount === 1 ? "review" : "reviews"}</p>
+          </div>
+        </div>
+      )}
+
+      {data && data.reviews.length > 0 ? (
+        <div className="space-y-4 mb-6">
+          {data.reviews.map((review) => (
+            <div key={review.id} className="border border-slate-100 rounded-2xl p-4">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm font-bold text-slate-900">{review.reviewerName}</p>
+                <StarRating value={review.rating} />
+              </div>
+              {review.comment && <p className="mt-2 text-sm text-slate-600">{review.comment}</p>}
+            </div>
+          ))}
+        </div>
+      ) : (
+        data && <p className="text-sm text-slate-500 mb-6">No reviews yet.</p>
+      )}
+
+      {account ? (
+        <form onSubmit={handleSubmit} className="border border-slate-100 rounded-2xl p-4">
+          <p className="text-sm font-bold text-slate-900 mb-2">Leave a review</p>
+          <p className="text-xs text-slate-500 mb-3">Only people who&apos;ve contacted {profileName} can leave a review.</p>
+          <div className="flex items-center gap-1 mb-3" onMouseLeave={() => setHoverRating(0)}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <button key={n} type="button" onClick={() => setRating(n)} onMouseEnter={() => setHoverRating(n)} aria-label={`${n} star${n === 1 ? "" : "s"}`}>
+                <svg className={`h-6 w-6 ${n <= (hoverRating || rating) ? "text-amber-400" : "text-slate-200"}`} fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.957 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+                </svg>
+              </button>
+            ))}
+          </div>
+          <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} placeholder="Optional comment…" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none" />
+          <button type="submit" disabled={rating < 1 || submitting} className="mt-3 bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
+            {submitting ? "Submitting…" : "Submit review"}
+          </button>
+        </form>
+      ) : (
+        <p className="text-sm text-slate-500">
+          <Link href="/login" className="font-bold text-[#2ec440] hover:underline">Log in</Link> to leave a review after contacting {profileName}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function ProfessionalProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [loaded, setLoaded] = useState<{ id: string; profile: RealProfessionalProfile | null } | null>(null);
@@ -116,6 +246,12 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
             </div>
             <p className="text-[#2ec440] font-semibold mb-2">{profile.specialisation}</p>
             <p className="text-slate-500 text-sm">{[profile.city, profile.country].filter(Boolean).join(", ")}{profile.yearsExperience ? ` · ${profile.yearsExperience} years experience` : ""}</p>
+            {!!profile.reviewCount && (
+              <div className="mt-2 flex items-center gap-1.5">
+                <StarRating value={profile.averageRating ?? 0} />
+                <span className="text-xs font-semibold text-slate-500">{(profile.averageRating ?? 0).toFixed(1)} ({profile.reviewCount})</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -139,14 +275,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
               <div className="grid sm:grid-cols-2 gap-5">
                 {profile.portfolio.map((item, index) => (
                   <div key={`${item.title}-${index}`} className="border border-slate-100 rounded-2xl overflow-hidden">
-                    <div className="h-40 bg-gradient-to-br from-slate-800 to-slate-600 flex items-center justify-center overflow-hidden">
-                      {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="text-white/70 text-xs font-bold uppercase tracking-wide">Project</span>
-                      )}
-                    </div>
+                    <ProjectMedia item={item} />
                     <div className="p-4">
                       <h3 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h3>
                       <p className="text-xs text-slate-500 mb-2">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
@@ -158,6 +287,8 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
             ) : (
               <p className="text-sm text-slate-500">No example projects yet.</p>
             )}
+
+            <ReviewsSection profileId={profile.accountId} profileName={profile.displayName} />
           </div>
 
           <div className="lg:col-span-1">

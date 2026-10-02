@@ -24,7 +24,7 @@ export default function ContractsPage() {
   if (!isAuthReady || !account) return null;
 
   return (
-    <PageFrame title="Contracts" description="Contracts generated from your accepted quotations — review the scope, milestones and payment schedule and acknowledge each version.">
+    <PageFrame title="Contracts">
       <div className="mb-6">
         <PrototypeBanner />
       </div>

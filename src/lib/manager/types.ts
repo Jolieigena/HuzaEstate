@@ -1,6 +1,6 @@
 import type { Property } from '@/lib/properties/types';
 
-export type ListingStatus = 'Live' | 'Off market' | 'Needs attention' | 'Expired';
+export type ListingStatus = 'Draft' | 'Under Review' | 'Live' | 'Off market' | 'Needs attention' | 'Expired';
 
 export interface Listing {
   id: string;

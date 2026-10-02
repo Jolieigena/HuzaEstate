@@ -9,6 +9,9 @@ interface DialogProps {
   describedBy?: string;
   children: ReactNode;
   panelClassName?: string;
+  /** Overrides the default dark, blurred backdrop for callers that want something lighter —
+   *  defaults to the existing look so every other dialog is unaffected. */
+  backdropClassName?: string;
 }
 
 const FOCUSABLE_SELECTOR =
@@ -20,7 +23,7 @@ const FOCUSABLE_SELECTOR =
  * a focus trap, scroll lock, and focus restored to whatever triggered the dialog.
  * Callers supply their own header/content/footer as children.
  */
-export default function Dialog({ open, onClose, labelledBy, describedBy, children, panelClassName = "" }: DialogProps) {
+export default function Dialog({ open, onClose, labelledBy, describedBy, children, panelClassName = "", backdropClassName = "bg-slate-900/70 backdrop-blur-sm" }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
@@ -76,7 +79,7 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" aria-hidden="true" />
+      <div className={`absolute inset-0 ${backdropClassName}`} aria-hidden="true" />
       <div
         ref={dialogRef}
         role="dialog"

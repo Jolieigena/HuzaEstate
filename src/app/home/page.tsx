@@ -6,6 +6,7 @@ import Reveal from "@/components/Reveal";
 import { ProcessVideoCard } from "@/components/ProcessVideo";
 import { buildVideos, renovateVideos } from "@/lib/videos";
 import { useAllProperties } from "@/lib/sellerListings/hooks";
+import { sortPromotedFirst } from "@/lib/promotion/types";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -34,7 +35,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function Home() {
-  const allProperties = useAllProperties();
+  const allProperties = sortPromotedFirst(useAllProperties());
 
   return (
     <div className="flex flex-col items-center w-full">

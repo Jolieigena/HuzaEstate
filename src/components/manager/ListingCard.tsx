@@ -8,8 +8,12 @@ import SellerTourControl from '@/components/SellerTourControl';
 import ListingActionsMenu from './ListingActionsMenu';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PLAN_FEATURES } from '@/lib/postingPlans/types';
+import { isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
+import { getGalleryImages } from '@/lib/properties/gallery';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
+  Draft: 'bg-slate-100 text-slate-500',
+  'Under Review': 'bg-blue-100 text-blue-700',
   Live: 'bg-green-100 text-green-700',
   'Off market': 'bg-slate-100 text-slate-500',
   'Needs attention': 'bg-red-100 text-red-700',
@@ -40,11 +44,18 @@ class ImageErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
 }
 
 const MARKET_STATUS_BADGE: Partial<Record<PropertyStatus, string>> = {
+  draft: 'Draft',
+  under_review: 'Under Review',
   unpublished: 'Off Market',
   archived: 'Archived',
   changes_requested: 'Changes Requested',
   rejected: 'Rejected',
 };
+
+// Draft/under_review aren't "something's wrong" the way rejected/unpublished/archived are — a
+// draft is just unfinished, under_review is just pending. Only those latter three get the
+// dimmed/grayscale "off market" treatment below.
+const PROBLEM_STATUSES: PropertyStatus[] = ['unpublished', 'archived', 'changes_requested', 'rejected'];
 
 // Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS).
 function expiryLabel(expiresAt?: string): string | null {
@@ -61,21 +72,35 @@ export default function ListingCard({
   onDelete,
   onSetMarketStatus,
   onAttachExistingWorld,
+  onPromote,
+  onSubmitDraft,
 }: {
   listing: Listing;
   onEdit: (property: Property) => void;
   onDelete: (property: Property) => void;
   onSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
+  onPromote: (property: Property) => void;
+  onSubmitDraft: (property: Property) => void;
 }) {
   const isLeased = listing.status === 'Off market';
   const marketStatus: PropertyStatus = listing.property.status ?? 'published';
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
-  const isOffMarket = marketStatus !== 'published';
+  const isOffMarket = PROBLEM_STATUSES.includes(marketStatus);
+  const isDraft = marketStatus === 'draft';
   const reason = listing.property.statusReason;
   const subscription = useSubscription();
   const isPriority = PLAN_FEATURES[subscription.tier].priorityPlacement;
   const expiry = expiryLabel(listing.property.expiresAt);
+  const promoted = isPromotedNow(listing.property);
+  // Buyers only ever see 2 photos and no video on an unpromoted listing (enforced server-side,
+  // see property-service's capMedia) — this is the seller's own view (always the full,
+  // uncapped data), so it's the one place that can tell them what promoting would unlock.
+  const PUBLIC_PHOTO_LIMIT = 2;
+  const totalPhotos = getGalleryImages(listing.property).length;
+  const hiddenPhotos = Math.max(0, totalPhotos - PUBLIC_PHOTO_LIMIT);
+  const hasHiddenVideo = !!listing.property.videoUrl;
+  const hasHiddenMedia = !promoted && (hiddenPhotos > 0 || hasHiddenVideo);
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>
@@ -89,10 +114,16 @@ export default function ListingCard({
             aria-label={`Video walkthrough of ${listing.title}`}
             className="w-full h-full object-cover"
           />
-        ) : (
+        ) : listing.image ? (
           <ImageErrorBoundary>
             <Image src={listing.image} alt={listing.title} fill className="object-cover" />
           </ImageErrorBoundary>
+        ) : (
+          <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+            <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
         )}
         {listing.property.videoUrl && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -121,11 +152,32 @@ export default function ListingCard({
         <div>
           <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
           <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}{listing.property.type === 'rent' ? '/mo' : ''}</div>
+          {isDraft && (
+            <button type="button" onClick={() => onSubmitDraft(listing.property)} className="mt-1 text-left text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
+              Finish and submit this draft
+            </button>
+          )}
           {reason && marketStatus !== 'published' && (
             <div className="text-xs mt-1 font-semibold text-red-600">{reason}</div>
           )}
           {expiry && (
             <div className={`text-xs mt-1 font-semibold ${expiry === 'Expired' ? 'text-red-600' : 'text-slate-400'}`}>{expiry}</div>
+          )}
+          {promoted && (
+            <div className="text-xs mt-1 font-semibold text-amber-600">Promoted · {promotionDaysLeft(listing.property)}d left</div>
+          )}
+          {hasHiddenMedia && (
+            <button
+              type="button"
+              onClick={() => onPromote(listing.property)}
+              className="mt-1 text-left text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+            >
+              {hiddenPhotos > 0 && hasHiddenVideo
+                ? `Buyers see 2 of ${totalPhotos} photos, no video — promote to show it all`
+                : hiddenPhotos > 0
+                  ? `Buyers see 2 of ${totalPhotos} photos — promote to show them all`
+                  : 'Buyers can\'t see your video yet — promote to show it'}
+            </button>
           )}
         </div>
 
@@ -148,7 +200,7 @@ export default function ListingCard({
 
         <div className="flex items-center justify-between pt-3 border-t border-slate-50">
           <SellerTourControl property={listing.property} />
-          <ListingActionsMenu listing={listing} marketStatus={marketStatus} onEdit={onEdit} onDelete={onDelete} onSetMarketStatus={onSetMarketStatus} onAttachExistingWorld={onAttachExistingWorld} />
+          <ListingActionsMenu listing={listing} marketStatus={marketStatus} onEdit={onEdit} onDelete={onDelete} onSetMarketStatus={onSetMarketStatus} onAttachExistingWorld={onAttachExistingWorld} onPromote={onPromote} onSubmitDraft={onSubmitDraft} />
         </div>
       </div>
     </div>

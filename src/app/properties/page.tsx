@@ -9,7 +9,12 @@ import { useAllProperties } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
-import { AMENITY_OPTIONS } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
+import { isPromotedNow } from '@/lib/promotion/types';
+import { useSavedSearches } from '@/lib/savedSearches/hooks';
+import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
+import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
+import { useToast } from '@/lib/toast-context';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'largest';
 
@@ -100,26 +105,6 @@ function SuggestInput({ value, onChange, options, placeholder, widthClass, clear
 }
 
 const STATUS_OPTIONS = ['For Sale', 'For Rent'];
-// The underlying data model only has 3 real property-type buckets (see
-// Property['propertyType']) — every other label here is a synonym a buyer
-// would actually look for that resolves down to one of them, same synonyms
-// parsePropertyTypeInput used to resolve from free text. Kept as a full
-// checklist (not collapsed to just the 3 real buckets) so ticking "Villa"
-// reads as its own choice even though it shares House's bucket under the hood.
-const TYPE_OPTIONS: { label: string; bucket: 'house' | 'apartment' | 'land' }[] = [
-  { label: 'House', bucket: 'house' },
-  { label: 'Apartment', bucket: 'apartment' },
-  { label: 'Land', bucket: 'land' },
-  { label: 'Villa', bucket: 'house' },
-  { label: 'Condo', bucket: 'apartment' },
-  { label: 'Townhouse', bucket: 'house' },
-  { label: 'Studio', bucket: 'apartment' },
-  { label: 'Duplex', bucket: 'house' },
-  { label: 'Bungalow', bucket: 'house' },
-  { label: 'Cottage', bucket: 'house' },
-  { label: 'Mansion', bucket: 'house' },
-  { label: 'Commercial', bucket: 'house' },
-];
 
 // ─── main page ────────────────────────────────────────────────────────────────
 
@@ -200,6 +185,13 @@ function PropertiesContent() {
 
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const savedSearches = useSavedSearches();
+  const [isSavedOpen, setIsSavedOpen] = useState(false);
+  const { showToast } = useToast();
+  // Buyers already see the "Top Pick" badge on a promoted card (see PropertyCard.tsx) — this
+  // just lets them narrow the grid to only those, without ever calling them "promoted"
+  // anywhere in the UI.
+  const [topPicksOnly, setTopPicksOnly] = useState(false);
 
   // Reset URL-backed fields during navigation, before rendering stale results.
   const query = searchParams.toString();
@@ -337,8 +329,16 @@ function PropertiesContent() {
         matchesAi = matchesAi && aiFilters.keywords.some((kw) => hay.includes(kw));
       }
     }
-    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesCountry && matchesAi;
+    const matchesTopPicks = !topPicksOnly || isPromotedNow(p);
+    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesCountry && matchesAi && matchesTopPicks;
   }).sort((a, b) => {
+    // Listings a seller paid to promote (see lib/promotion) always lead the
+    // first row, the same "boosted ads always come first" convention
+    // marketplaces like Property24/Jiji/Lamudi use — the chosen sort order
+    // below only decides ranking within each of the two groups.
+    const aPromoted = isPromotedNow(a);
+    const bPromoted = isPromotedNow(b);
+    if (aPromoted !== bPromoted) return aPromoted ? -1 : 1;
     if (sortBy === 'price-asc') return a.price - b.price;
     if (sortBy === 'price-desc') return b.price - a.price;
     if (sortBy === 'largest') return b.sqm - a.sqm;
@@ -357,6 +357,45 @@ function PropertiesContent() {
     setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
     setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setSelectedCountryCodes([]); setAiFilters(null);
+    setTopPicksOnly(false);
+  }
+
+  function saveCurrentSearch() {
+    const criteria: SavedSearchCriteria = {
+      searchTerm,
+      filterType,
+      propertyTypeFilter: selectedTypeLabels.length ? selectedTypeLabels.join(', ') : 'all',
+      minPrice: customMinPrice,
+      maxPrice: customMaxPrice,
+      bedsFilter: bedsInput,
+      bathsFilter: bathsInput,
+      minSqm,
+      maxSqm,
+      city: cityInput,
+      keywords: keywordsInput,
+    };
+    const outcome = SavedSearchesStoreEngine.save(criteria);
+    if (outcome === 'saved') showToast('Search saved.');
+    else if (outcome === 'duplicate') showToast("You've already saved this search.");
+    else showToast('Add a filter first to save a search.', 'error');
+  }
+
+  // Restores every filter a saved search captured — everything saveCurrentSearch wrote above,
+  // in reverse. Country/Top Picks/sort aren't part of SavedSearchCriteria (it predates them),
+  // so a saved search doesn't touch those three; they stay whatever the visitor already has set.
+  function applySavedSearch(criteria: SavedSearchCriteria) {
+    setSearchTerm(criteria.searchTerm);
+    setStatusInput(criteria.filterType === 'rent' ? 'For Rent' : criteria.filterType === 'sale' ? 'For Sale' : '');
+    setSelectedTypeLabels(criteria.propertyTypeFilter === 'all' || !criteria.propertyTypeFilter ? [] : criteria.propertyTypeFilter.split(', ').filter(Boolean));
+    setCustomMinPrice(criteria.minPrice);
+    setCustomMaxPrice(criteria.maxPrice);
+    setBedsInput(criteria.bedsFilter);
+    setBathsInput(criteria.bathsFilter);
+    setMinSqm(criteria.minSqm);
+    setMaxSqm(criteria.maxSqm);
+    setCityInput(criteria.city);
+    setKeywordsInput(criteria.keywords);
+    setIsSavedOpen(false);
   }
 
   return (
@@ -364,7 +403,7 @@ function PropertiesContent() {
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-shrink-0">
 
         {/* ── Filter bar ─────────────────────────────────────────────────── */}
-        <div className="pb-6 pt-2 border-b border-slate-100 mb-6">
+        <div className="pb-6 pt-2 border-b border-slate-100 mb-3">
           {/* Search box and every filter share one flex-wrap flow (not nested
               in a separate row) so wrapping fills each line to the container's
               actual full width instead of leaving a trailing gap and wrapping
@@ -554,6 +593,23 @@ function PropertiesContent() {
                 )}
               </div>
 
+              {/* Top Picks — a plain toggle, not a popover (nothing to choose beyond
+                  on/off). Filters to whatever's currently showing the "Top Pick" badge
+                  (see PropertyCard.tsx) without ever naming promotion anywhere. Its own
+                  standalone pill, the next one after Country — not folded into a
+                  property-attribute filter like Type or Amenities. */}
+              <button
+                type="button"
+                onClick={() => setTopPicksOnly((v) => !v)}
+                aria-pressed={topPicksOnly}
+                className={`rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm flex items-center gap-2 transition-all border ${
+                  topPicksOnly ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <svg className="w-4 h-4" fill={topPicksOnly ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.539 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.784.57-1.838-.196-1.539-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+                Top Picks
+              </button>
+
               {/* Area Size — a pill button matching Status/Price/Beds/etc, opening a
                   small popover with custom min/max sqm inputs (same fixed-position
                   pattern as Price) rather than exposing two inline number inputs. */}
@@ -641,8 +697,8 @@ function PropertiesContent() {
 
         {/* ── Title row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-1">
+          <div className="flex items-baseline gap-1 flex-wrap">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {heading}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
@@ -650,24 +706,72 @@ function PropertiesContent() {
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
           </div>
-          <div className="relative">
-            <div onClick={() => setIsSortOpen(!isSortOpen)} className="hidden sm:flex items-center gap-1 text-sm font-bold text-slate-900 cursor-pointer hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors border border-slate-200 select-none">
-              Sort: <span className="text-slate-500">{SORT_LABELS[sortBy]}</span>
-              <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-            </div>
-            {isSortOpen && (
-              <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 w-48">
-                {(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => { setSortBy(opt); setIsSortOpen(false); }}
-                    className="w-full text-left px-4 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors"
-                  >
-                    {SORT_LABELS[opt]}
-                  </button>
-                ))}
+          <div className="flex items-center gap-1">
+            {/* Saved searches — only appears once there's at least one, so it never crowds a
+             *  first-time visitor's view. Subtle on purpose, same treatment as Save search
+             *  below: plain text/icon, no border or shadow, until hovered. */}
+            {savedSearches.length > 0 && (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => { setIsSavedOpen((v) => !v); setIsSortOpen(false); }}
+                  className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors select-none"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5 3a2 2 0 00-2 2v12l7-4 7 4V5a2 2 0 00-2-2H5z" /></svg>
+                  Saved ({savedSearches.length})
+                </button>
+                {isSavedOpen && (
+                  <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 w-72 max-h-80 overflow-y-auto">
+                    {savedSearches.map((s) => (
+                      <div key={s.id} className="flex items-center gap-1 px-2 hover:bg-slate-50">
+                        <button onClick={() => applySavedSearch(s.criteria)} className="flex-1 text-left px-2 py-2.5 text-[14px] font-medium text-slate-700 truncate">
+                          {s.label}
+                        </button>
+                        <button
+                          onClick={() => SavedSearchesStoreEngine.remove(s.id)}
+                          aria-label={`Remove saved search: ${s.label}`}
+                          className="shrink-0 p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
+
+            {/* Save search — deliberately subtle (plain text/icon, no border or background
+             *  until hovered) so it doesn't compete with the filter pills above or the Sort
+             *  control next to it; this is a quiet secondary action, not a primary one. */}
+            <button
+              type="button"
+              onClick={saveCurrentSearch}
+              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors select-none"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3a2 2 0 00-2 2v12l7-4 7 4V5a2 2 0 00-2-2H5z" /></svg>
+              Save search
+            </button>
+
+            <div className="relative">
+              <div onClick={() => { setIsSortOpen(!isSortOpen); setIsSavedOpen(false); }} className="hidden sm:flex items-center gap-1 text-sm font-bold text-slate-900 cursor-pointer hover:bg-slate-50 px-3 py-1.5 rounded-lg transition-colors border border-slate-200 select-none">
+                Sort: <span className="text-slate-500">{SORT_LABELS[sortBy]}</span>
+                <svg className="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+              {isSortOpen && (
+                <div className="absolute top-full right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl py-2 z-50 w-48">
+                  {(Object.keys(SORT_LABELS) as SortOption[]).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => { setSortBy(opt); setIsSortOpen(false); }}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 text-[14px] font-medium text-slate-700 transition-colors"
+                    >
+                      {SORT_LABELS[opt]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

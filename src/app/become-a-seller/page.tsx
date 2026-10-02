@@ -4,6 +4,7 @@ import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import PasswordInput from '@/components/shared/PasswordInput';
 import PhoneInput from '@/components/shared/PhoneInput';
 import AddressInput from '@/components/shared/AddressInput';
@@ -24,6 +25,10 @@ function BecomeASellerForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, signup, logout, isLoggedIn, isAuthReady, account } = useAuth();
+  // Best-effort, silent — never a visible field on this form. Sellers are actually scoped by
+  // their properties' country, not this (see access-service's adminUsers.ts), but there's no
+  // reason to leave it off the account when address is already being sent the same way.
+  const detectedCountry = useCurrentCountry();
   const planParam = searchParams.get('plan');
   // Only set when a plan was actually passed in (e.g. from /sell) — a visitor
   // reaching this page some other way  gets no plan badge and the original unconditional /manager
@@ -35,6 +40,8 @@ function BecomeASellerForm() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [sellerType, setSellerType] = useState<'owner' | 'agent'>('owner');
+  const [companyName, setCompanyName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
@@ -109,7 +116,7 @@ function BecomeASellerForm() {
       return;
     }
 
-    const result = await signup({ firstName, lastName, email, address, password, termsAccepted });
+    const result = await signup({ firstName, lastName, email, address, password, termsAccepted, country: detectedCountry?.name, sellerType, companyName: sellerType === 'agent' && companyName.trim() ? companyName.trim() : undefined, phone: phone.trim() || undefined });
     if (!result.ok) {
       setError(result.error);
       setSubmitting(false);
@@ -217,6 +224,41 @@ function BecomeASellerForm() {
                   <label className="block text-sm font-bold text-slate-700 mb-2">Address</label>
                   <AddressInput value={address} onChange={setAddress} required />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Are you the property owner, or a licensed agent?</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSellerType('owner')}
+                      className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${sellerType === 'owner' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                    >
+                      I&apos;m the owner
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSellerType('agent')}
+                      className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${sellerType === 'agent' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
+                    >
+                      I&apos;m an agent/realtor
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">This is what buyers and renters see when they message you about a listing.</p>
+                </div>
+
+                {sellerType === 'agent' && (
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Company / brokerage name <span className="font-medium text-slate-400">(optional)</span></label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Kigali Realty Group"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    />
+                    <p className="mt-2 text-xs text-slate-400">Shown on your listings. Add a logo later from your Manager Portal.</p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>

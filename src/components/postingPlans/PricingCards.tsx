@@ -72,7 +72,7 @@ export default function PricingCards({
                   : "bg-slate-900 hover:bg-[#2ec440] text-white"
               }`}
             >
-              {isCurrent ? "Current Plan" : tier === "free" ? (currentTier ? "Downgrade" : "Get Started Free") : `Choose ${PLAN_LABELS[tier]}`}
+              {isCurrent ? "Current Plan" : tier === "free" ? (currentTier ? "Downgrade" : "Get Started Free") : `Get Started ${PLAN_LABELS[tier]}`}
             </button>
 
             <p className="text-[11px] text-slate-400 mt-2">{PLAN_LIMITS[tier] === null ? "No monthly cap" : `Up to ${PLAN_LIMITS[tier]}/month`}</p>

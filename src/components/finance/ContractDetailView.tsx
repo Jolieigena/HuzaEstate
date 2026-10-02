@@ -32,7 +32,7 @@ export default function ContractDetailView({ contractId }: { contractId: string 
 
   if (!contract || !canViewContract(account.id, contract)) {
     return (
-      <PageFrame title="Contract" description="">
+      <PageFrame title="Contract">
         <EmptyState title="Contract not found" description="This contract doesn't exist, or you don't have access to it." />
       </PageFrame>
     );
@@ -42,7 +42,7 @@ export default function ContractDetailView({ contractId }: { contractId: string 
   const canAck = canAcknowledgeContract(account.id, contract);
 
   return (
-    <PageFrame title={contract.projectName} description={`Contract v${contract.version} · Terms ${contract.termsVersion}`} action={<FinancePill status={contract.status} />}>
+    <PageFrame title={contract.projectName} action={<FinancePill status={contract.status} />}>
       <div className="mb-6">
         <PrototypeBanner />
       </div>

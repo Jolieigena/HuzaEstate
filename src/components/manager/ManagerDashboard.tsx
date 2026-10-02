@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import type { Property, PropertyStatus } from '@/lib/properties/types';
 import { PropertyApi, type Inquiry } from '@/lib/properties/api';
@@ -9,8 +10,10 @@ import { useToast } from '@/lib/toast-context';
 import { toListing } from '@/lib/manager/listings';
 import { TourService } from '@/lib/tours/tourService';
 import { useMyProperties, notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
+import { reconcileCheckout } from '@/lib/postingPlans/api';
 import { PageFrame } from '@/components/admin/ui';
 import EditPropertyModal from '@/components/EditPropertyModal';
+import PromoteListingModal from './PromoteListingModal';
 import ConfirmModal from '@/components/shared/ConfirmModal';
 import ApplyGate from './ApplyGate';
 import ManagerHeader from './ManagerHeader';
@@ -31,6 +34,7 @@ export default function ManagerDashboard() {
   const [statusFilter, setStatusFilter] = useState<Listing['status'] | 'all'>('all');
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [deletingProperty, setDeletingProperty] = useState<Property | null>(null);
+  const [promotingProperty, setPromotingProperty] = useState<Property | null>(null);
   const [attachingProperty, setAttachingProperty] = useState<Property | null>(null);
   const [attachWorldId, setAttachWorldId] = useState('');
   const [attachError, setAttachError] = useState<string | null>(null);
@@ -40,6 +44,8 @@ export default function ManagerDashboard() {
   const { properties: myProperties } = useMyProperties();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [inquiryVersion, setInquiryVersion] = useState(0);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     if (!token || !isApprovedSeller) return;
@@ -51,6 +57,21 @@ export default function ManagerDashboard() {
       cancelled = true;
     };
   }, [token, isApprovedSeller, inquiryVersion]);
+
+  // Stripe redirects back here (?promoted=1&session_id=...) once a promote Checkout completes —
+  // see PromoteListingModal's successUrl. Reconciles directly with Stripe rather than only
+  // trusting the webhook already landed, same reasoning as /sell/success's own reconcile.
+  const reconciledRef = useRef(false);
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    if (!token || !searchParams.get('promoted') || !sessionId || reconciledRef.current) return;
+    reconciledRef.current = true;
+    reconcileCheckout(token, sessionId).then(() => {
+      notifyPropertiesChanged();
+      showToast('Listing promoted!');
+      router.replace('/manager');
+    });
+  }, [token, searchParams, router, showToast]);
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
@@ -83,6 +104,8 @@ export default function ManagerDashboard() {
   });
 
   const statusCounts = {
+    Draft: LISTINGS.filter(l => l.status === 'Draft').length,
+    'Under Review': LISTINGS.filter(l => l.status === 'Under Review').length,
     Live: LISTINGS.filter(l => l.status === 'Live').length,
     'Off market': LISTINGS.filter(l => l.status === 'Off market').length,
     'Needs attention': LISTINGS.filter(l => l.status === 'Needs attention').length,
@@ -114,7 +137,6 @@ export default function ManagerDashboard() {
         <main className="flex-grow min-w-0">
           <PageFrame
             title="Property Manager"
-            description="Manage your listings and answer buyer and renter inquiries."
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
@@ -138,6 +160,8 @@ export default function ManagerDashboard() {
                   setAttachError(null);
                   setAttachingProperty(property);
                 }}
+                onPromote={setPromotingProperty}
+                onSubmitDraft={(property) => router.push(`/post-property?edit=${property.id}`)}
               />
             )}
 
@@ -160,6 +184,7 @@ export default function ManagerDashboard() {
       </div>
 
       <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />
+      <PromoteListingModal property={promotingProperty} onClose={() => setPromotingProperty(null)} />
 
       <ConfirmModal
         open={deletingProperty !== null}

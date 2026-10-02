@@ -12,6 +12,7 @@ import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryBu
 
 const STATUS_FILTERS: { key: "all" | PropertyStatus; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "under_review", label: "Under review" },
   { key: "published", label: "Published" },
   { key: "unpublished", label: "Unpublished" },
   { key: "changes_requested", label: "Changes requested" },
@@ -74,7 +75,7 @@ export function PropertiesListPage() {
   const count = (key: "all" | PropertyStatus) => (properties ?? []).filter((p) => key === "all" || (p.status ?? "published") === key).length;
 
   return (
-    <PageFrame title="Properties" description="Every listing on the platform. Unpublish, reject or ask for changes — the owner sees your reason, and buyers stop seeing the listing immediately.">
+    <PageFrame title="Properties">
       <RequirePermission granted={canView}>
         <div role="tablist" aria-label="Listing status" className="mb-5 flex flex-wrap gap-2">
           {STATUS_FILTERS.map((item) => {

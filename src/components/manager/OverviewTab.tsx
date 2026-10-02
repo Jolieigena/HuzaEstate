@@ -96,7 +96,7 @@ function PostingPlanCard() {
         </button>
       </div>
 
-      <Dialog open={open} onClose={closeDialog} labelledBy="posting-plan-title" panelClassName="max-w-3xl p-6 sm:p-8">
+      <Dialog open={open} onClose={closeDialog} labelledBy="posting-plan-title" panelClassName="max-w-6xl p-8 sm:p-12">
         {checkoutTier ? (
           <PlanCheckout
             mode={{ kind: 'subscribe', tier: checkoutTier }}
@@ -106,7 +106,12 @@ function PostingPlanCard() {
           <CancelPlanConfirm tier={subscription.tier} renewsOn={subscription.renewsOn} onClose={closeDialog} />
         ) : (
           <>
-            <h2 id="posting-plan-title" className="text-xl font-bold text-slate-900 mb-6">Choose your posting plan</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 id="posting-plan-title" className="text-2xl font-bold text-slate-900">Choose your posting plan</h2>
+              <button onClick={closeDialog} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label="Close">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
             <PricingCards
               currentTier={subscription.tier}
               onSelect={(tier) => {

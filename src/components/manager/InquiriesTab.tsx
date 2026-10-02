@@ -26,6 +26,9 @@ export default function InquiriesTab({ inquiries, onChanged }: { inquiries: Inqu
   const { token } = useAuth();
   const { showToast } = useToast();
   const [filter, setFilter] = useState<"all" | InquiryStatus>("all");
+  const [replyOpenId, setReplyOpenId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replying, setReplying] = useState(false);
   const shown = inquiries.filter((inquiry) => filter === "all" || inquiry.status === filter);
 
   async function setStatus(inquiry: Inquiry, status: InquiryStatus) {
@@ -33,6 +36,26 @@ export default function InquiriesTab({ inquiries, onChanged }: { inquiries: Inqu
     const result = await PropertyApi.setInquiryStatus(token, inquiry.id, status);
     if (result.ok) onChanged();
     else showToast(result.error, "error");
+  }
+
+  function openReply(inquiry: Inquiry) {
+    setReplyOpenId(inquiry.id);
+    setReplyText("");
+  }
+
+  async function sendReply(inquiry: Inquiry) {
+    if (!token || !replyText.trim() || replying) return;
+    setReplying(true);
+    const result = await PropertyApi.replyToInquiry(token, inquiry.id, replyText.trim());
+    setReplying(false);
+    if (result.ok) {
+      showToast(result.delivered ? "Reply sent." : "Reply saved, but the email couldn't be delivered.", result.delivered ? "success" : "error");
+      setReplyOpenId(null);
+      setReplyText("");
+      onChanged();
+    } else {
+      showToast(result.error, "error");
+    }
   }
 
   return (
@@ -74,6 +97,55 @@ export default function InquiriesTab({ inquiries, onChanged }: { inquiries: Inqu
                 <span className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${STATUS_STYLE[inquiry.status]}`}>{inquiry.status}</span>
               </div>
               <p className="mt-3 whitespace-pre-line text-sm text-slate-700">{inquiry.message}</p>
+
+              {inquiry.adminNudges.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  {inquiry.adminNudges.map((nudge, i) => (
+                    <div key={i}>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700">Note from Huza Estate</p>
+                      <p className="mt-1 whitespace-pre-line text-sm text-amber-900">{nudge.message}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-amber-600">{dateFormat.format(new Date(nudge.createdAt))}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {inquiry.replies.length > 0 && (
+                <div className="mt-3 flex flex-col gap-2 border-l-2 border-[#2ec440]/30 pl-3">
+                  {inquiry.replies.map((reply, i) => (
+                    <div key={i}>
+                      <p className="whitespace-pre-line text-sm text-slate-700">{reply.message}</p>
+                      <p className="mt-0.5 text-[11px] font-semibold text-slate-400">You replied · {dateFormat.format(new Date(reply.createdAt))}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {replyOpenId === inquiry.id && (
+                <div className="mt-3">
+                  <textarea
+                    autoFocus
+                    rows={3}
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder={`Reply to ${inquiry.name}…`}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15"
+                  />
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button onClick={() => setReplyOpenId(null)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => sendReply(inquiry)}
+                      disabled={replying || !replyText.trim()}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-[#2ec440] disabled:opacity-50"
+                    >
+                      {replying ? "Sending…" : "Send reply"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-50 pt-3">
                 <p className="text-xs text-slate-400">
                   About{" "}
@@ -83,6 +155,11 @@ export default function InquiriesTab({ inquiries, onChanged }: { inquiries: Inqu
                   · {dateFormat.format(new Date(inquiry.createdAt))}
                 </p>
                 <div className="flex gap-2">
+                  {replyOpenId !== inquiry.id && (
+                    <button onClick={() => openReply(inquiry)} className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-[#2ec440]">
+                      Reply
+                    </button>
+                  )}
                   {inquiry.status !== "contacted" && (
                     <button onClick={() => setStatus(inquiry, "contacted")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50">
                       Mark contacted

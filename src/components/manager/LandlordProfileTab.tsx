@@ -13,13 +13,45 @@ const EMPTY: SaveLandlordInput = { displayName: "", photoUrl: "", bio: "", phone
 /** Edits the landlord profile buyers and renters see on this seller's rental listings. Saved
  *  to the seller's account (access-service), so it shows for everyone on every device. */
 export default function LandlordProfileTab() {
-  const { account, token, isAuthReady } = useAuth();
+  const { account, token, isAuthReady, updateMyCompany } = useAuth();
   const { showToast } = useToast();
   const [form, setForm] = useState<SaveLandlordInput>(EMPTY);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const isAgent = account?.sellerType === "agent";
+  const [companyName, setCompanyName] = useState(account?.companyName ?? "");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState(account?.companyLogoUrl ?? "");
+  const [companySaving, setCompanySaving] = useState(false);
+  const [companyLogoUploading, setCompanyLogoUploading] = useState(false);
+  const companyLogoRef = useRef<HTMLInputElement>(null);
+  const companyDirty = companyName !== (account?.companyName ?? "") || companyLogoUrl !== (account?.companyLogoUrl ?? "");
+
+  async function handleCompanyLogo(file: File | undefined) {
+    if (!file || !token) return;
+    if (!file.type.startsWith("image/")) {
+      showToast("Please choose an image file.", "error");
+      return;
+    }
+    setCompanyLogoUploading(true);
+    try {
+      setCompanyLogoUrl(await uploadProfessionalImage(file, file.type, token));
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Upload failed. Please try again.", "error");
+    }
+    setCompanyLogoUploading(false);
+  }
+
+  async function handleCompanySave(e: React.FormEvent) {
+    e.preventDefault();
+    setCompanySaving(true);
+    const result = await updateMyCompany({ companyName, companyLogoUrl });
+    setCompanySaving(false);
+    if (result.ok) showToast("Company branding saved.");
+    else showToast(result.error, "error");
+  }
 
   useEffect(() => {
     if (!isAuthReady || !token) return;
@@ -69,6 +101,44 @@ export default function LandlordProfileTab() {
 
   return (
     <div className="max-w-2xl">
+      {isAgent && (
+        <div className="mb-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-slate-900">Company branding</h2>
+            <p className="text-sm text-slate-500 mt-1">Your brokerage&apos;s name and logo, shown on all of your listings.</p>
+          </div>
+          <Card>
+            <form className="flex flex-col gap-5" onSubmit={handleCompanySave}>
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white flex items-center justify-center">
+                  {companyLogoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={companyLogoUrl} alt="" className="h-full w-full object-contain" />
+                  ) : (
+                    <span className="text-xs font-semibold text-slate-300">No logo</span>
+                  )}
+                </div>
+                <div>
+                  <input ref={companyLogoRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleCompanyLogo(e.target.files?.[0])} />
+                  <SecondaryButton type="button" onClick={() => companyLogoRef.current?.click()} disabled={companyLogoUploading}>
+                    {companyLogoUploading ? "Uploading…" : companyLogoUrl ? "Change logo" : "Upload logo"}
+                  </SecondaryButton>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Company / brokerage name</label>
+                <input className={fieldClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="e.g. Kigali Realty Group" />
+              </div>
+              <div className="pt-2">
+                <PrimaryButton type="submit" disabled={companySaving || !companyDirty}>
+                  {companySaving ? "Saving…" : "Save company branding"}
+                </PrimaryButton>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
+
       <div className="mb-6">
         <h2 className="text-xl font-bold text-slate-900">Landlord Profile</h2>
         <p className="text-sm text-slate-500 mt-1">Shown to buyers and renters on your rental listings.</p>

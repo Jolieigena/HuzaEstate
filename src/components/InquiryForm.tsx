@@ -7,8 +7,10 @@ import type { Property } from "@/lib/properties/types";
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-[#2ec440] focus:ring-4 focus:ring-[#2ec440]/10 placeholder:text-slate-400";
 
-/** Sends a message to the listing's owner (property-service /inquiries). It lands in the
- *  owner's Inquiries tab; anyone can send one, signed in or not. */
+/** Sends a message to the listing's poster (property-service /inquiries). It lands in their
+ *  Inquiries tab; anyone can send one, signed in or not. Copy calls them "realtor" only when
+ *  they've actually said they're a listing agent (property.ownerType) — otherwise "owner",
+ *  since most sellers here are private individuals listing their own place, not agents. */
 export default function InquiryForm({ property }: { property: Property }) {
   const { account, token } = useAuth();
   const [name, setName] = useState("");
@@ -22,11 +24,13 @@ export default function InquiryForm({ property }: { property: Property }) {
   const isOwner = !!account && account.id === property.ownerId;
   if (isOwner) return <p className="text-sm text-slate-500">This is your listing. Buyer and renter messages appear in your Inquiries tab.</p>;
 
+  const posterLabel = property.ownerType === "agent" ? "realtor" : "owner";
+
   if (sent) {
     return (
       <div className="rounded-2xl bg-[#2ec440]/10 p-5 text-sm text-[#219b31]">
         <p className="font-bold">Message sent.</p>
-        <p className="mt-1 text-slate-600">The owner will get back to you at {email || account?.email}.</p>
+        <p className="mt-1 text-slate-600">The {posterLabel} will get back to you at {email || account?.email}.</p>
       </div>
     );
   }
@@ -59,7 +63,7 @@ export default function InquiryForm({ property }: { property: Property }) {
       />
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button type="submit" disabled={busy} className="w-full rounded-xl bg-slate-900 py-3.5 font-bold text-white shadow-sm transition-colors hover:bg-[#2ec440] disabled:opacity-60">
-        {busy ? "Sending…" : "Message the owner"}
+        {busy ? "Sending…" : `Message the ${posterLabel}`}
       </button>
     </form>
   );

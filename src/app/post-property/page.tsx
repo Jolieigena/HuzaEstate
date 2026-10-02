@@ -1,18 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import RequireAuth from '@/components/shared/RequireAuth';
 import ApplyGate from '@/components/manager/ApplyGate';
 import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
-import { deriveImageFields, type CategorizedPhoto } from '@/lib/photoCategories';
+import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
-import { AMENITY_OPTIONS, type Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
+import { PropertyApi } from '@/lib/properties/api';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
+import { regionsForCountry } from '@/lib/regions';
+import DistrictSelect from '@/components/shared/DistrictSelect';
+import { useCurrencyOptions } from '@/lib/currencies';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
+import { useToast } from '@/lib/toast-context';
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
@@ -22,27 +27,109 @@ const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://loc
 function PostPropertyForm() {
   const router = useRouter();
   const { token, isApprovedSeller } = useAuth();
+  const { showToast } = useToast();
+  // ?edit=<id> resumes an existing draft — see ListingActionsMenu.tsx's "Submit for Review"
+  // action, which is the only place this link is generated.
+  const editId = useSearchParams().get('edit');
+  const [loadingDraft, setLoadingDraft] = useState(!!editId);
+  const [draftLoadError, setDraftLoadError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState('');
   const [showPaywall, setShowPaywall] = useState(false);
 
   const [title, setTitle] = useState('');
   const [listingType, setListingType] = useState<'' | Property['type']>('');
-  const [propertyType, setPropertyType] = useState<'' | Property['propertyType']>('');
+  // Tracks the specific label the seller picked (e.g. "Villa"), not just its
+  // underlying bucket — several labels share one bucket (see
+  // PROPERTY_TYPE_OPTIONS), so a plain <select> keyed on the bucket would
+  // lose which exact label was chosen on every re-render.
+  const [propertyTypeLabel, setPropertyTypeLabel] = useState('');
+  // Options always include 5 major currencies plus the seller's own local
+  // one (geo-detected) — see lib/currencies.ts. The selected value defaults
+  // to that local currency once detection resolves, but only if the seller
+  // hasn't already changed it themselves.
+  const { options: currencyOptions, defaultCurrency } = useCurrencyOptions();
+  const [currency, setCurrency] = useState('USD');
+  const [currencyTouched, setCurrencyTouched] = useState(false);
+  if (!currencyTouched && defaultCurrency !== currency) setCurrency(defaultCurrency);
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('');
   const [country, setCountry] = useState(DEFAULT_COUNTRY.name);
+  const [district, setDistrict] = useState('');
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
+  // Always the source of truth in sqm — matches Property.sqm and the
+  // /properties Area Size filter, which is sqm-only. sqKm is purely a
+  // display/entry convenience (useful for large land plots) layered on top;
+  // see sqmDisplayValue/handleSqmChange below.
   const [sqm, setSqm] = useState('');
+  const [sqmUnit, setSqmUnit] = useState<'sqm' | 'sqkm'>('sqm');
   const [description, setDescription] = useState('');
   const [amenities, setAmenities] = useState<string[]>([]);
   const [photos, setPhotos] = useState<CategorizedPhoto[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
+  // Resuming a draft — pre-fill everything it already has. A draft can be missing almost any
+  // field (see lib/properties/types.ts's Property comment), so every setter below falls back to
+  // this form's own empty default rather than assuming the value is present.
+  useEffect(() => {
+    if (!editId || !token) return;
+    let cancelled = false;
+    PropertyApi.byId(editId, token).then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setDraftLoadError(result.error);
+        setLoadingDraft(false);
+        return;
+      }
+      const p = result.data;
+      if (p.status !== 'draft') {
+        setDraftLoadError('This listing has already been submitted.');
+        setLoadingDraft(false);
+        return;
+      }
+      setTitle(p.title || '');
+      setListingType(p.type || '');
+      const matchedLabel = PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === p.propertyType)?.label;
+      setPropertyTypeLabel(matchedLabel || '');
+      if (p.currency) {
+        setCurrency(p.currency.replace(/\/month$/, ''));
+        setCurrencyTouched(true);
+      }
+      setPrice(p.price ? String(p.price) : '');
+      setLocation(p.location ? (p.city ? `${p.location}, ${p.city}` : p.location) : '');
+      setCountry(p.country || DEFAULT_COUNTRY.name);
+      setDistrict(p.district || '');
+      setBedrooms(p.bedrooms ? String(p.bedrooms) : '');
+      setBathrooms(p.bathrooms ? String(p.bathrooms) : '');
+      setSqm(p.sqm ? String(p.sqm) : '');
+      setDescription(p.description || '');
+      setAmenities(p.amenities || []);
+      setPhotos((p.photos || []).map((ph) => ({ url: ph.url, category: (ph.category as PhotoCategory) || 'interior_other' })));
+      setLoadingDraft(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, token]);
+
   if (!isApprovedSeller) {
     return <ApplyGate />;
+  }
+
+  if (loadingDraft) {
+    return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">Loading your draft…</div>;
+  }
+
+  if (draftLoadError) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="text-slate-600">{draftLoadError}</p>
+        <Link href="/manager" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Back to Manager Portal</Link>
+      </div>
+    );
   }
 
   // No pre-emptive quota check here any more — property-service is the authoritative check
@@ -53,56 +140,92 @@ function PostPropertyForm() {
     return <PostingPaywall onClose={() => setShowPaywall(false)} />;
   }
 
+  // Furnishing status matters most for apartment-style listings (Apartment/
+  // Condo/Studio share the "apartment" bucket) — surfaced as its own toggle
+  // there instead of leaving it to be found inside the generic Amenities
+  // checklist below. Both read/write the exact same "Furnished" amenity tag,
+  // so it stays filterable on /properties either way — no new field.
+  const isApartmentType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket === 'apartment';
+  const isFurnished = amenities.some((a) => a.toLowerCase() === 'furnished');
+
   const toggleAmenity = (label: string) => {
     setAmenities((prev) => (prev.includes(label) ? prev.filter((a) => a !== label) : [...prev, label]));
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!listingType || !propertyType || submitting || uploadingPhotos) return;
+  // 1 sq km = 1,000,000 sqm. sqm itself never changes when the unit toggle
+  // changes — only how it's displayed/typed — so switching units just
+  // reformats the same number instead of losing or corrupting it.
+  const sqmDisplayValue = sqm === '' ? '' : sqmUnit === 'sqkm' ? String(Number(sqm) / 1_000_000) : sqm;
+  function handleSqmChange(raw: string) {
+    if (raw === '') { setSqm(''); return; }
+    const n = Number(raw);
+    if (Number.isNaN(n)) return;
+    setSqm(String(sqmUnit === 'sqkm' ? n * 1_000_000 : n));
+  }
 
-    setError('');
-    setSubmitting(true);
-
+  // Shared by both the full submit and the draft save — the only differences between the two
+  // calls are which endpoint they hit and the `draft` flag (see handleSubmit/handleSaveDraft).
+  async function buildFields() {
+    const propertyType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket;
     // The single "City / Location" input (e.g. "Nyarutarama, Kigali") carries both the
     // neighborhood and the city — split it here rather than asking for two form fields.
     const [neighborhood, ...cityParts] = location.split(',');
     const city = cityParts.length ? cityParts.join(',').trim() : neighborhood.trim();
     const { imageUrl, galleryImages } = deriveImageFields(photos, FALLBACK_IMAGE);
+    let videoUrl: string | undefined;
+    if (videoFile) {
+      if (!SUPPORTED_VIDEO_TYPES.has(videoFile.type)) throw new Error('Video must be MP4, WebM, or MOV.');
+      videoUrl = await uploadMedia(videoFile, videoFile.type, token);
+    }
+    return {
+      title,
+      description: description || (propertyTypeLabel ? `A ${propertyTypeLabel.toLowerCase()} listed in ${location}.` : ''),
+      price: Number(price) || 0,
+      currency: listingType === 'rent' ? `${currency}/month` : currency,
+      location: neighborhood.trim(),
+      city,
+      bedrooms: Number(bedrooms) || 0,
+      bathrooms: Number(bathrooms) || 0,
+      sqm: Number(sqm) || 0,
+      imageUrl,
+      galleryImages,
+      photos,
+      type: listingType || undefined,
+      propertyType,
+      videoUrl,
+      country,
+      district: district || undefined,
+      amenities,
+    };
+  }
 
+  // Submits for review/publishing — either creating a brand-new listing, or, when resuming a
+  // draft (?edit=<id>), the first point its data is fully validated (see property-service's
+  // submitProperty). This is also where the seller's posting quota actually gets consumed.
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const propertyType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket;
+    if (!listingType || !propertyType || submitting || savingDraft || uploadingPhotos) return;
+
+    setError('');
+    setSubmitting(true);
     try {
-      let videoUrl: string | undefined;
-      if (videoFile) {
-        if (!SUPPORTED_VIDEO_TYPES.has(videoFile.type)) {
-          setError('Video must be MP4, WebM, or MOV.');
+      const fields = await buildFields();
+      if (editId) {
+        const result = await PropertyApi.submitDraft(token || '', editId, fields);
+        if (!result.ok) {
+          setError(result.error);
           setSubmitting(false);
           return;
         }
-        videoUrl = await uploadMedia(videoFile, videoFile.type, token);
+        notifyPropertiesChanged();
+        router.push(`/properties/${result.data.id}`);
+        return;
       }
-
       const res = await fetch(`${PROPERTY_API_URL}/properties`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          title,
-          description: description || `A ${propertyType} listed in ${location}.`,
-          price: Number(price) || 0,
-          currency: listingType === 'rent' ? 'USD/month' : 'USD',
-          location: neighborhood.trim(),
-          city,
-          bedrooms: Number(bedrooms) || 0,
-          bathrooms: Number(bathrooms) || 0,
-          sqm: Number(sqm) || 0,
-          imageUrl,
-          galleryImages,
-          photos,
-          type: listingType,
-          propertyType,
-          videoUrl,
-          country,
-          amenities,
-        }),
+        body: JSON.stringify(fields),
       });
       if (!res.ok) {
         if (res.status === 403) {
@@ -126,13 +249,64 @@ function PostPropertyForm() {
     }
   };
 
+  // Saves without submitting — only `title` is required (see parsePropertyFields in
+  // property-service), no quota consumed, never goes to review. Creates a new draft, or updates
+  // the one already being resumed.
+  const handleSaveDraft = async () => {
+    if (!title.trim()) {
+      setError('Give your draft a title before saving.');
+      return;
+    }
+    if (submitting || savingDraft || uploadingPhotos) return;
+    setError('');
+    setSavingDraft(true);
+    try {
+      const fields = await buildFields();
+      if (editId) {
+        const res = await fetch(`${PROPERTY_API_URL}/properties/${editId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(fields),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setError(data?.message || 'Could not save your draft. Please try again.');
+          setSavingDraft(false);
+          return;
+        }
+      } else {
+        const res = await fetch(`${PROPERTY_API_URL}/properties`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ...fields, draft: true }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setError(data?.message || 'Could not save your draft. Please try again.');
+          setSavingDraft(false);
+          return;
+        }
+      }
+      notifyPropertiesChanged();
+      showToast('Draft saved.');
+      router.push('/manager');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
+      setSavingDraft(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Form */}
       <section className="max-w-3xl mx-auto px-6 sm:px-10 pt-32 pb-20">
         <div className="mb-10">
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">List your property</h1>
-          <p className="text-slate-500">Fill in the details below and your listing will go live immediately.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">{editId ? 'Finish your draft' : 'List your property'}</h1>
+          <p className="text-slate-500">
+            {editId
+              ? "Fill in what's missing, then submit it for review."
+              : "Fill in the details below. Most listings are reviewed before going live — save as a draft if you're not ready to submit yet."}
+          </p>
         </div>
         {error && (
           <p className="mb-6 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
@@ -172,29 +346,67 @@ function PostPropertyForm() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Type</label>
                 <select
-                  value={propertyType}
-                  onChange={(e) => setPropertyType(e.target.value as Property['propertyType'])}
+                  value={propertyTypeLabel}
+                  onChange={(e) => setPropertyTypeLabel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                   required
                 >
                   <option value="" disabled>Select type</option>
-                  <option value="house">House</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="land">Land</option>
+                  {PROPERTY_TYPE_OPTIONS.map(({ label }) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
                 </select>
               </div>
 
+              {isApartmentType && (
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Furnishing</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => !isFurnished && toggleAmenity('Furnished')}
+                      className={`flex-1 py-3 rounded-xl border-2 font-semibold text-sm transition-colors ${
+                        isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      Fully Furnished
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => isFurnished && toggleAmenity('Furnished')}
+                      className={`flex-1 py-3 rounded-xl border-2 font-semibold text-sm transition-colors ${
+                        !isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      Unfurnished
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Price (USD)</label>
-                <input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 350000"
-                  min="0"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                  required
-                />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="e.g. 350000"
+                    min="0"
+                    className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    required
+                  />
+                  <select
+                    value={currency}
+                    onChange={(e) => { setCurrency(e.target.value); setCurrencyTouched(true); }}
+                    aria-label="Currency"
+                    className="w-24 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
+                  >
+                    {currencyOptions.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -213,7 +425,7 @@ function PostPropertyForm() {
                 <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
                 <select
                   value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                  onChange={(e) => { setCountry(e.target.value); setDistrict(''); }}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                 >
                   {COUNTRY_OPTIONS.map((c) => (
@@ -221,6 +433,13 @@ function PostPropertyForm() {
                   ))}
                 </select>
               </div>
+
+              {regionsForCountry(country) && (
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">District</label>
+                  <DistrictSelect country={country} value={district} onChange={setDistrict} />
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
@@ -270,15 +489,27 @@ function PostPropertyForm() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Size (sqm)</label>
-                <input
-                  type="number"
-                  value={sqm}
-                  onChange={(e) => setSqm(e.target.value)}
-                  min="0"
-                  placeholder="e.g. 450"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Size</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    value={sqmDisplayValue}
+                    onChange={(e) => handleSqmChange(e.target.value)}
+                    min="0"
+                    step="any"
+                    placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
+                    className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  />
+                  <select
+                    value={sqmUnit}
+                    onChange={(e) => setSqmUnit(e.target.value as 'sqm' | 'sqkm')}
+                    aria-label="Size unit"
+                    className="w-28 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
+                  >
+                    <option value="sqm">sqm</option>
+                    <option value="sqkm">sq km</option>
+                  </select>
+                </div>
               </div>
 
               <div className="sm:col-span-2">
@@ -295,7 +526,7 @@ function PostPropertyForm() {
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Amenities</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
-                  {AMENITY_OPTIONS.map((label) => (
+                  {AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished')).map((label) => (
                     <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                       <input type="checkbox" checked={amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
                       {label}
@@ -306,12 +537,22 @@ function PostPropertyForm() {
             </div>
           </div>
 
-          <button type="submit" disabled={submitting || uploadingPhotos} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-            {submitting ? 'Publishing…' : uploadingPhotos ? 'Uploading photos…' : 'Publish Listing'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={submitting || savingDraft || uploadingPhotos}
+              className="w-full sm:w-auto sm:px-8 border-2 border-slate-200 text-slate-700 font-bold py-4 rounded-xl transition-colors hover:border-slate-300 disabled:opacity-60"
+            >
+              {savingDraft ? 'Saving…' : 'Save as Draft'}
+            </button>
+            <button type="submit" disabled={submitting || savingDraft || uploadingPhotos} className="w-full flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl transition-colors shadow-lg disabled:opacity-60">
+              {submitting ? 'Submitting…' : uploadingPhotos ? 'Uploading photos…' : editId ? 'Submit for Review' : 'Publish Listing'}
+            </button>
+          </div>
 
           <p className="text-center text-slate-500 text-sm">
-            Your listing goes live immediately and appears in your{' '}
+            Submitted listings are reviewed before going live, unless auto-publish applies to your area. Track its status from your{' '}
             <Link href="/manager" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Manager Portal</Link>.
           </p>
         </form>
@@ -323,7 +564,9 @@ function PostPropertyForm() {
 export default function PostPropertyPage() {
   return (
     <RequireAuth>
-      <PostPropertyForm />
+      <Suspense fallback={null}>
+        <PostPropertyForm />
+      </Suspense>
     </RequireAuth>
   );
 }

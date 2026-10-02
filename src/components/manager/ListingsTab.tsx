@@ -2,7 +2,7 @@ import type { Property, PropertyStatus } from '@/lib/properties/types';
 import type { Listing, ListingStatusCounts, ListingStatusFilter } from '@/lib/manager/types';
 import ListingCard from './ListingCard';
 
-export default function ListingsTab({ statusCounts, statusFilter, setStatusFilter, listingSearch, setListingSearch, filteredListings, setEditingProperty, setDeletingProperty, handleSetMarketStatus, onAttachExistingWorld }: {
+export default function ListingsTab({ statusCounts, statusFilter, setStatusFilter, listingSearch, setListingSearch, filteredListings, setEditingProperty, setDeletingProperty, handleSetMarketStatus, onAttachExistingWorld, onPromote, onSubmitDraft }: {
   statusCounts: ListingStatusCounts;
   statusFilter: ListingStatusFilter;
   setStatusFilter: (status: ListingStatusFilter) => void;
@@ -13,11 +13,15 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
   setDeletingProperty: (property: Property) => void;
   handleSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
+  onPromote: (property: Property) => void;
+  onSubmitDraft: (property: Property) => void;
 }) {
   return (
     <div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         {([
+          { status: 'Draft' as const, label: 'Draft', count: statusCounts.Draft, labelColor: 'text-slate-500', ring: 'ring-slate-400/30' },
+          { status: 'Under Review' as const, label: 'Under review', count: statusCounts['Under Review'], labelColor: 'text-blue-700', ring: 'ring-blue-500/30' },
           { status: 'Live' as const, label: 'Live', count: statusCounts.Live, labelColor: 'text-green-700', ring: 'ring-green-500/30' },
           { status: 'Off market' as const, label: 'Off market', count: statusCounts['Off market'], labelColor: 'text-slate-500', ring: 'ring-slate-400/30' },
           { status: 'Needs attention' as const, label: 'Needs attention', count: statusCounts['Needs attention'], labelColor: 'text-red-700', ring: 'ring-red-500/30' },
@@ -75,6 +79,8 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
               onDelete={setDeletingProperty}
               onSetMarketStatus={handleSetMarketStatus}
               onAttachExistingWorld={onAttachExistingWorld}
+              onPromote={onPromote}
+              onSubmitDraft={onSubmitDraft}
             />
           ))}
         </div>

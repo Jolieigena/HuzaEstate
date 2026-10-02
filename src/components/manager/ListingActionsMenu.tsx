@@ -12,6 +12,8 @@ export default function ListingActionsMenu({
   onDelete,
   onSetMarketStatus,
   onAttachExistingWorld,
+  onPromote,
+  onSubmitDraft,
 }: {
   listing: Listing;
   marketStatus: PropertyStatus;
@@ -19,6 +21,8 @@ export default function ListingActionsMenu({
   onDelete: (property: Property) => void;
   onSetMarketStatus: (property: Property, status: PropertyStatus) => void;
   onAttachExistingWorld: (property: Property) => void;
+  onPromote: (property: Property) => void;
+  onSubmitDraft: (property: Property) => void;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -37,6 +41,8 @@ export default function ListingActionsMenu({
   const isUnpublished = marketStatus === 'unpublished';
   const isRejected = marketStatus === 'rejected';
   const isArchived = marketStatus === 'archived';
+  const isDraft = marketStatus === 'draft';
+  const isUnderReview = marketStatus === 'under_review';
 
   const item = (label: string, onClick: () => void, tone: 'default' | 'danger' = 'default', disabled: boolean = false) => (
     <button
@@ -68,17 +74,28 @@ export default function ListingActionsMenu({
 
       {open && (
         <div className="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl border border-slate-100 shadow-lg py-1.5 z-20">
-          {item('Edit', () => onEdit(listing.property))}
-          
-          {tour && (tour.status === 'ready' || tour.status === 'failed') && (
-            item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })
-          )}
-          {(!tour || tour.status === 'ready' || tour.status === 'failed') && (
-            item('Attach Existing World ID', () => onAttachExistingWorld(listing.property))
-          )}
+          {isDraft ? (
+            // A draft was never live and has nothing to promote/tour yet — its only real actions
+            // are finishing it (handled on /post-property, not this menu) or deleting it.
+            item('Submit for Review', () => onSubmitDraft(listing.property))
+          ) : (
+            <>
+              {item('Edit', () => onEdit(listing.property))}
+              {item('Promote listing', () => onPromote(listing.property))}
 
-          {!isRejected && item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
-          {!isRejected && item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
+              {tour && (tour.status === 'ready' || tour.status === 'failed') && (
+                item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })
+              )}
+              {(!tour || tour.status === 'ready' || tour.status === 'failed') && (
+                item('Attach Existing World ID', () => onAttachExistingWorld(listing.property))
+              )}
+
+              {isUnderReview
+                ? item('Withdraw submission', () => onSetMarketStatus(listing.property, 'unpublished'))
+                : !isRejected && item(isUnpublished ? 'Relist to Market' : 'Remove from Market', () => onSetMarketStatus(listing.property, isUnpublished ? 'published' : 'unpublished'))}
+              {!isRejected && !isUnderReview && item(isArchived ? 'Unarchive' : 'Archive', () => onSetMarketStatus(listing.property, isArchived ? 'published' : 'archived'))}
+            </>
+          )}
           <div className="border-t border-slate-50 mt-1 pt-1">
             {item('Delete', () => onDelete(listing.property), 'danger')}
           </div>

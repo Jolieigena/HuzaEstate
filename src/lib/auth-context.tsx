@@ -4,7 +4,11 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 // 'contractor' removed — nothing anywhere creates one (dead scaffolding in the original account
 // model, matching access-service's accountRoles). Revisit if/when contractor work is scoped.
-export type AccountRole = "customer" | "seller_manager" | "professional" | "administrator";
+// 'organization_admin' — full-capability staff of an admin-created Organisation (see
+// lib/admin/api.ts's AdminOrganization), scoped to that org and its countries via their own
+// portal at /org-admin; admin-provisioned only, same as professional/administrator, never from
+// public signup.
+export type AccountRole = "customer" | "seller_manager" | "professional" | "organization_admin" | "administrator";
 
 export interface Account {
   id: string;
@@ -12,6 +16,26 @@ export interface Account {
   email: string;
   roles: AccountRole[];
   professionalProfileId?: string;
+  /** organization_admin accounts only — which Organisation they belong to. */
+  organizationId?: string;
+  /** Customer accounts only — best-effort, IP-detected at signup, self-correctable via
+   *  updateMyCountry() (see the account settings page). */
+  country?: string;
+  /** seller_manager accounts only — whether they're the actual property owner or a listing
+   *  agent, chosen once on the become-a-seller form. Absent for anyone who signed up before
+   *  this field existed; treat as "owner". */
+  sellerType?: "owner" | "agent";
+  /** seller_manager accounts with sellerType "agent" only — the brokerage/company they list
+   *  under, shown on their listings. Set at become-a-seller signup or later via
+   *  updateMyCompany() (see the Manager Portal's Landlord Profile tab). */
+  companyName?: string;
+  companyLogoUrl?: string;
+  /** seller_manager accounts only — collected on the become-a-seller form, shown on their
+   *  listings alongside email as a direct contact method. Absent for anyone who signed up
+   *  before this field existed or never set one. */
+  phone?: string;
+  /** organization_admin accounts only — empty/absent means full access, see lib/orgPermissions.ts. */
+  permissions?: string[];
   isApprovedSeller: boolean;
   /** True for accounts created by an administrator (or the bootstrap admin account) that are
    * still on their own emailed, randomly generated password. The app should force a
@@ -32,6 +56,19 @@ export interface SignupInput {
   /** Street address / neighborhood — only collected on the become-a-seller signup form, so
    *  optional here for the plain customer /signup form which doesn't ask for it. */
   address?: string;
+  /** Best-effort, silently detected via useCurrentCountry() — never a visible form field on
+   *  either signup form. Lets an organization_admin's Users page scope customers by country. */
+  country?: string;
+  /** Only collected on the become-a-seller form — whether this account will be the actual
+   *  property owner or a listing agent. See Property.ownerType for where this ends up shown. */
+  sellerType?: "owner" | "agent";
+  /** Only meaningful when sellerType is "agent" — optional at signup, editable later via
+   *  updateMyCompany(). See Property.companyName/companyLogoUrl for where this ends up shown. */
+  companyName?: string;
+  companyLogoUrl?: string;
+  /** Only collected on the become-a-seller form — see Property.ownerPhone for where this ends
+   *  up shown. */
+  phone?: string;
 }
 
 export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string };
@@ -40,10 +77,31 @@ export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  roleType: Extract<AccountRole, "administrator" | "professional">;
+  roleType: Extract<AccountRole, "administrator" | "professional" | "organization_admin">;
   /** Required when roleType is "professional" — chosen once at creation, not editable by the
    * professional themselves afterwards (see access-service's professionals module). */
   professionalKind?: "individual" | "firm";
+  /** Required when roleType is "professional" — the country they operate in. Called by an
+   * organization_admin, the backend restricts this to their own organisation's countries. */
+  country?: string;
+  /** Optional, only meaningful when roleType is "professional" and `country` has real district
+   * data (lib/regions.ts — Rwanda only at launch). */
+  district?: string;
+  /** Only used/meaningful when roleType is "organization_admin"; ignored server-side if the
+   * caller is themselves an organization_admin (they can only add staff to their own org) — see
+   * access-service's createUserByAdmin. Required when a platform administrator is the caller. */
+  organizationId?: string;
+  /** Optional, only used when roleType is "organization_admin" — a cosmetic display label
+   * (e.g. "Account Manager"). */
+  title?: string;
+  /** Only meaningful when roleType is "organization_admin" and the caller is themselves an
+   * organization_admin (a platform admin provisioning an org's first staff member always gets
+   * full access, see access-service's createUserByAdmin) — omit for full access, or pass a
+   * subset from lib/orgPermissions.ts's ORG_PERMISSIONS to narrow it. */
+  permissions?: string[];
+  /** Only meaningful when roleType is "organization_admin" — a narrower scope than their org's
+   * whole countries list (lib/regions.ts). Omit for the org's full country scope. */
+  scopeDistricts?: string[];
 }
 
 export type CreateUserResult = { ok: true; emailDelivered: boolean } | { ok: false; error: string };
@@ -71,9 +129,13 @@ interface AuthContextValue {
    * with, so no extra round-trip through access-service is needed. Null when logged out. */
   token: string | null;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
-  /** Administrator-only (backend rejects otherwise). Creates an Administrator or Professional
-   * account with its own random password, emailed to it — never returned here. */
+  /** Administrator-only (backend rejects otherwise). Creates an Administrator, Professional, or
+   * Organisation Member account with its own random password, emailed to it — never returned here. */
   createUser: (input: CreateUserInput) => Promise<CreateUserResult>;
+  /** Customer accounts only (backend rejects otherwise) — lets a customer correct the
+   *  best-effort, IP-detected country captured at signup. Pass "" to clear it. */
+  updateMyCountry: (country: string) => Promise<AuthResult>;
+  updateMyCompany: (input: { companyName?: string; companyLogoUrl?: string }) => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -88,6 +150,7 @@ function deriveActiveRole(account: Account, preferred?: string | null): AccountR
   if (account.roles.includes("administrator")) return "administrator";
   if (account.roles.includes("professional")) return "professional";
   if (account.isApprovedSeller && account.roles.includes("seller_manager")) return "seller_manager";
+  if (account.roles.includes("organization_admin")) return "organization_admin";
   return "customer";
 }
 
@@ -249,6 +312,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateMyCountry = async (country: string): Promise<AuthResult> => {
+    if (!token) return { ok: false, error: "Please sign in again." };
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ country }),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      setAccount(nextAccount);
+      return { ok: true, account: nextAccount, token };
+    } catch {
+      return { ok: false, error: "Could not reach the server. Please try again." };
+    }
+  };
+
+  const updateMyCompany = async (input: { companyName?: string; companyLogoUrl?: string }): Promise<AuthResult> => {
+    if (!token) return { ok: false, error: "Please sign in again." };
+    try {
+      const res = await fetch(`${API_URL}/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(input),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      setAccount(nextAccount);
+      return { ok: true, account: nextAccount, token };
+    } catch {
+      return { ok: false, error: "Could not reach the server. Please try again." };
+    }
+  };
+
   const createUser = async (input: CreateUserInput): Promise<CreateUserResult> => {
     if (!token) return { ok: false, error: "Please sign in again." };
     try {
@@ -266,7 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
       {children}
     </AuthContext.Provider>
   );

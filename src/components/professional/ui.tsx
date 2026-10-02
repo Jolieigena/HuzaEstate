@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-export function PageFrame({ title, description, action, children }: { title: string; description: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8"><div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-2xl font-black text-slate-900 sm:text-3xl">{title}</h2><p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{description}</p></div>{action}</div>{children}</div>;
+export function PageFrame({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8"><div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-2xl font-black text-slate-900 sm:text-3xl">{title}</h2>{description && <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{description}</p>}</div>{action}</div>{children}</div>;
 }
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) { return <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>{children}</section>; }
@@ -12,4 +12,37 @@ export const PrimaryLink = ({ href, children }: { href: string; children: React.
 export function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) { return <Card className="py-14 text-center"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-500"><svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div><h3 className="font-black text-slate-900">{title}</h3><p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{description}</p>{action && <div className="mt-5">{action}</div>}</Card>; }
 export const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 export function formatDate(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium" }).format(new Date(value)); }
+export function formatDateTime(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
 export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, maximumFractionDigits: 0 }).format(value); }
+
+export function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
+  return (
+    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <table className="w-full text-left">
+        <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+          <tr>
+            {headers.map((h) => (
+              <th key={h} className="px-6 py-3.5">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100">{children}</tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Read-only star display (rounds to the nearest half star) used by the Reviews page and the
+ *  public professional profile's rating summary/composer. */
+export function StarRating({ value, size = "sm" }: { value: number; size?: "sm" | "md" }) {
+  const dims = size === "md" ? "h-5 w-5" : "h-4 w-4";
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-label={`${value.toFixed(1)} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <svg key={n} className={`${dims} ${n <= Math.round(value) ? "text-amber-400" : "text-slate-200"}`} fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.957 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+        </svg>
+      ))}
+    </span>
+  );
+}

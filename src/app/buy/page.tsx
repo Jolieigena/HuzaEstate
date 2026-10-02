@@ -5,10 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PublicPropertyGrid from '@/components/PublicPropertyGrid';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { sortPromotedFirst } from '@/lib/promotion/types';
 
 export default function BuyPage() {
   const allProperties = useAllProperties();
-  const forSale = allProperties.filter(property => property.type === 'sale');
+  const forSale = sortPromotedFirst(allProperties.filter(property => property.type === 'sale'));
 
   return (
     <div className="min-h-screen bg-white">

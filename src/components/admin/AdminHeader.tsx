@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 interface AdminHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -36,6 +37,7 @@ export default function AdminHeader({ onOpenMobileSidebar }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <NotificationBell />
         <div className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -59,6 +61,9 @@ export default function AdminHeader({ onOpenMobileSidebar }: AdminHeaderProps) {
               </div>
               <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Return to main site
+              </Link>
+              <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                Change password
               </Link>
               <button
                 onClick={() => {

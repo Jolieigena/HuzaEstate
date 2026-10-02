@@ -27,7 +27,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ paymen
 
   if (!payment || !invoice) {
     return (
-      <PageFrame title="Payment" description="">
+      <PageFrame title="Payment">
         <EmptyState title="Payment not found" description="This payment doesn't exist, or the link may be out of date." />
       </PageFrame>
     );
@@ -35,7 +35,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ paymen
 
   if (payment.payerId !== account.id && payment.recipientId !== account.id) {
     return (
-      <PageFrame title="Payment" description="">
+      <PageFrame title="Payment">
         <EmptyState title="Access denied" description="You don't have access to this payment." />
       </PageFrame>
     );
@@ -44,7 +44,7 @@ export default function PaymentDetailPage({ params }: { params: Promise<{ paymen
   const project = payment.executionProjectId ? ExecutionProjectService.getById(payment.executionProjectId) : undefined;
 
   return (
-    <PageFrame title={`Payment ${payment.providerReference ?? payment.id}`} description="Status, provider reference and receipt for this payment.">
+    <PageFrame title={`Payment ${payment.providerReference ?? payment.id}`}>
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <ReceiptView payment={payment} invoice={invoice} payerName={getAccountName(payment.payerId)} recipientName={getAccountName(payment.recipientId)} projectName={project?.name} />
         <div className="space-y-4 print:hidden">

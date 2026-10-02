@@ -1,7 +1,9 @@
 import Link from "next/link";
-import React from "react";
+import React, { useId, useState } from "react";
+import Dialog from "@/components/Dialog";
+import { regionsForCountry } from "@/lib/regions";
 
-export function PageFrame({ title, description, action, children }: { title: string; description: string; action?: React.ReactNode; children: React.ReactNode }) {
+export function PageFrame({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-10 sm:px-10 lg:px-12">
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between pb-6 border-b border-slate-200/70">
@@ -102,6 +104,56 @@ export function formatDate(value: string) { return new Intl.DateTimeFormat("en-R
 export function formatDateTime(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
 export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, maximumFractionDigits: 0 }).format(value); }
 
+/** Small "send a note to whoever's responsible" action — a button that opens a composer modal,
+ *  used on the admin/org-admin Inquiries pages (both property and professional) to nudge the
+ *  listing owner or professional. The caller supplies `onSend`, which does the actual API call
+ *  and any toast/reload; this component only owns the modal's own open/message/busy state. */
+export function NudgeAction({ label = "Nudge", onSend }: { label?: string; onSend: (message: string) => Promise<boolean> }) {
+  const titleId = useId();
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function handleSend() {
+    if (!message.trim() || sending) return;
+    setSending(true);
+    const ok = await onSend(message.trim());
+    setSending(false);
+    if (ok) {
+      setOpen(false);
+      setMessage("");
+    }
+  }
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50">
+        {label}
+      </button>
+      <Dialog open={open} onClose={() => setOpen(false)} labelledBy={titleId} panelClassName="max-w-md p-6">
+        <h2 id={titleId} className="text-lg font-bold text-slate-900">Send a note</h2>
+        <p className="mt-1 text-sm text-slate-500">Recorded on this inquiry and emailed to them directly.</p>
+        <textarea
+          autoFocus
+          rows={4}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="e.g. This buyer has been waiting a few days — please follow up."
+          className={`${fieldClass} mt-4`}
+        />
+        <div className="mt-4 flex justify-end gap-3">
+          <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={() => setOpen(false)}>
+            Cancel
+          </SecondaryButton>
+          <PrimaryButton type="button" className="min-h-10 px-4 py-2 text-sm" disabled={sending || !message.trim()} onClick={handleSend}>
+            {sending ? "Sending…" : "Send note"}
+          </PrimaryButton>
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
 export function AdminTable({ headers, children }: { headers: string[], children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200/80 bg-white shadow-[0_2px_8px_rgb(0,0,0,0.04)]">
@@ -117,6 +169,50 @@ export function AdminTable({ headers, children }: { headers: string[], children:
           {children}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** Multi-select district scope picker for an organization_admin's `scopeDistricts` — grouped by
+ *  region, cascading across every one of the given countries that has district reference data
+ *  (lib/regions.ts, Rwanda only at launch). Renders nothing when none of them do, which is how
+ *  the Scope card/modal knows to skip itself entirely for an org with no district-capable
+ *  country — same "nothing to show" treatment CountryChecklist's own empty states use elsewhere.
+ *  Empty `selected` means "this org's whole country scope" — same backward-compatible shape
+ *  PermissionsChecklist's empty-selection-means-full-access convention already uses, just for
+ *  geography instead of features. */
+export function DistrictChecklist({ countries, selected, onToggle }: { countries: string[]; selected: string[]; onToggle: (district: string) => void }) {
+  const groups = countries.map((country) => ({ country, regions: regionsForCountry(country) })).filter((g): g is { country: string; regions: NonNullable<ReturnType<typeof regionsForCountry>> } => !!g.regions);
+  if (!groups.length) return null;
+  return (
+    <div className="flex flex-col gap-4">
+      {groups.map(({ country, regions }) => (
+        <div key={country}>
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">{country}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {regions.map((r) => (
+              <div key={r.region}>
+                <p className="mb-1 text-xs font-semibold text-slate-500">{r.region}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {r.districts.map((d) => {
+                    const active = selected.includes(d);
+                    return (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => onToggle(d)}
+                        className={`rounded-full border px-2.5 py-1 text-xs font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                      >
+                        {d}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

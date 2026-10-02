@@ -5,10 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PublicPropertyGrid from '@/components/PublicPropertyGrid';
 import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { sortPromotedFirst } from '@/lib/promotion/types';
 
 export default function RentPage() {
   const allProperties = useAllProperties();
-  const featuredRentals = allProperties.filter(property => property.type === 'rent');
+  const featuredRentals = sortPromotedFirst(allProperties.filter(property => property.type === 'rent'));
 
   return (
     <div className="min-h-screen bg-white">

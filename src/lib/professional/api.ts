@@ -7,7 +7,11 @@ const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://loc
 export interface PortfolioItemInput {
   title: string;
   description?: string;
+  /** Deprecated — superseded by `images` (plural). Only ever present on a project saved before
+   *  multi-image support existed; new saves never write it. */
   imageUrl?: string;
+  images?: string[];
+  videoUrl?: string;
   year?: number;
 }
 
@@ -28,10 +32,16 @@ export interface RealProfessionalProfile {
   yearsExperience?: number;
   city: string;
   country: string;
+  /** District within `country` (see src/lib/regions.ts) — admin-assigned, same treatment as
+   *  `country`. Absent for countries with no district reference data (every country but Rwanda
+   *  at launch) or accounts created before this field. */
+  district?: string;
   phone: string;
   portfolio: PortfolioItemInput[];
   services: ServiceOfferingInput[];
   completedAt: string | null;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 // Uploads a professional's photo (profile picture or a portfolio project image) via
@@ -64,9 +74,10 @@ export async function fetchMyProfessionalProfile(token: string): Promise<RealPro
   }
 }
 
-// kind is deliberately excluded — it's chosen by the administrator at account creation and
-// the backend ignores it in this request even if sent (see access-service's upsertMyProfile).
-export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt" | "kind">;
+// kind, country, and district are deliberately excluded — all three are admin-assigned (kind at
+// account creation, country/district the scoping fields set there too) and the backend ignores
+// them in this request even if sent (see access-service's upsertMyProfile).
+export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt" | "kind" | "country" | "district">;
 
 export type SaveProfileResult = { ok: true } | { ok: false; error: string };
 
@@ -123,6 +134,149 @@ export async function submitProfessionalContact(accountId: string, input: { name
     if (!res.ok) {
       const data = await res.json().catch(() => null);
       return { ok: false, error: data?.message || data?.error || "Could not send your message. Please try again." };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+// A professional's own inbox of contact-form submissions (auth required).
+
+export interface ProfessionalInquiryReply {
+  message: string;
+  createdAt: string;
+}
+
+export interface ProfessionalInquiry {
+  id: string;
+  professionalId?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+  /** A platform/org admin's note about this inquiry — see nudgeProfessionalInquiry. */
+  adminNudges: ProfessionalInquiryReply[];
+}
+
+/** Platform-admin/org-admin listing only — adds who the inquiry was sent to. */
+export interface AdminProfessionalInquiry extends ProfessionalInquiry {
+  professionalName?: string;
+  professionalEmail?: string;
+}
+
+export async function fetchMyProfessionalInquiries(token: string): Promise<ProfessionalInquiry[]> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/me/inquiries`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.inquiries as ProfessionalInquiry[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function markProfessionalInquiryRead(token: string, id: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/me/inquiries/${encodeURIComponent(id)}/read`, {
+      method: "PATCH",
+      headers: { "x-huza-client": "web", Authorization: `Bearer ${token}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Administrators only: every professional-contact-form inquiry on the platform, unscoped. */
+export async function fetchAllProfessionalInquiries(token: string): Promise<AdminProfessionalInquiry[]> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/inquiries/all`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.inquiries as AdminProfessionalInquiry[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** organization_admin only: every inquiry against a professional whose own country is in the
+ *  caller's organisation's countries. */
+export async function fetchOrgProfessionalInquiries(token: string): Promise<AdminProfessionalInquiry[]> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/inquiries/org`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.inquiries as AdminProfessionalInquiry[]) ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export type NudgeResult = { ok: true; delivered: boolean } | { ok: false; error: string };
+
+/** Platform admin, or org admin (in-scope country) — a note to the professional, recorded on the
+ *  inquiry and emailed to them. */
+export async function nudgeProfessionalInquiry(token: string, id: string, message: string): Promise<NudgeResult> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/inquiries/${encodeURIComponent(id)}/nudge`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ message }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return { ok: false, error: data?.message || data?.error || "Could not send that note. Please try again." };
+    }
+    const data = await res.json();
+    return { ok: true, delivered: data.delivered === true };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+// Reviews — public read, authenticated write (must have a prior inquiry on record, enforced
+// server-side — see access-service's submitReview).
+
+export interface ProfessionalReview {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
+}
+
+export interface ProfessionalReviewList {
+  reviews: ProfessionalReview[];
+  averageRating: number;
+  reviewCount: number;
+}
+
+export async function fetchProfessionalReviews(accountId: string): Promise<ProfessionalReviewList> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}/reviews`);
+    if (!res.ok) return { reviews: [], averageRating: 0, reviewCount: 0 };
+    const data = await res.json();
+    return { reviews: data.reviews ?? [], averageRating: data.averageRating ?? 0, reviewCount: data.reviewCount ?? 0 };
+  } catch {
+    return { reviews: [], averageRating: 0, reviewCount: 0 };
+  }
+}
+
+export type SubmitReviewResult = { ok: true } | { ok: false; error: string };
+
+export async function submitProfessionalReview(token: string, accountId: string, input: { rating: number; comment?: string }): Promise<SubmitReviewResult> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}/reviews`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      return { ok: false, error: data?.message || data?.error || "Could not submit your review. Please try again." };
     }
     return { ok: true };
   } catch {

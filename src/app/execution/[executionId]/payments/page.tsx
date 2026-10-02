@@ -47,14 +47,14 @@ export default function ExecutionPaymentsPage({ params }: { params: Promise<{ ex
   if (isLoading) return <div className="p-8 text-center text-slate-400">Loading…</div>;
   if (!project) {
     return (
-      <PageFrame title="Milestone Payments" description="">
+      <PageFrame title="Milestone Payments">
         <EmptyState title="Project not found" description="This execution project doesn't exist or you don't have access to it." />
       </PageFrame>
     );
   }
   if (project.customerId !== account.id && project.contractorId !== account.id) {
     return (
-      <PageFrame title="Milestone Payments" description="">
+      <PageFrame title="Milestone Payments">
         <EmptyState title="Access denied" description="You don't have access to this project's payments." />
       </PageFrame>
     );
@@ -63,7 +63,7 @@ export default function ExecutionPaymentsPage({ params }: { params: Promise<{ ex
   const isCustomer = project.customerId === account.id;
 
   return (
-    <PageFrame title={`${project.name} — Milestone Payments`} description="Funding, release and settlement status for each milestone, driven by the Mock provider until a licensed provider is configured.">
+    <PageFrame title={`${project.name} — Milestone Payments`}>
       <div className="mb-6">
         <PrototypeBanner />
       </div>

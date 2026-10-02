@@ -1,36 +1,79 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAuth, type AccountRole } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
-import { Card, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "@/components/admin/ui";
+import { AdminApi, type AdminOrganization } from "@/lib/admin/api";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { regionsForCountry } from "@/lib/regions";
+import { Card, DistrictChecklist, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "@/components/admin/ui";
+import DistrictSelect from "@/components/shared/DistrictSelect";
 
-// Administrator and Professional are the only roles created from this admin form (enforced
-// server-side too — see access-service's POST /auth/admin/users). Customer only ever comes from
-// public signup; Seller (Manager) is granted self-serve via the become-a-seller flow, never here.
-const ROLE_OPTIONS: { value: Extract<AccountRole, "administrator" | "professional">; label: string }[] = [
+// The only roles created from this admin form (enforced server-side too — see access-service's
+// POST /auth/admin/users). Customer only ever comes from public signup; Seller (Manager) is
+// granted self-serve via the become-a-seller flow, never here.
+const ROLE_OPTIONS: { value: Extract<AccountRole, "administrator" | "professional" | "organization_admin">; label: string }[] = [
   { value: "professional", label: "Professional" },
+  { value: "organization_admin", label: "Organisation Admin" },
   { value: "administrator", label: "Administrator" },
 ];
 
+// useSearchParams (for the ?organizationId= entry point from an organisation's own page) needs a
+// Suspense boundary around it, or `next build` fails on this static page — see
+// node_modules/next/dist/docs/01-app/03-api-reference/04-functions/use-search-params.md.
 export default function CreateUserPage() {
-  const { createUser } = useAuth();
+  return (
+    <Suspense fallback={null}>
+      <CreateUserForm />
+    </Suspense>
+  );
+}
+
+function CreateUserForm() {
+  const { createUser, token } = useAuth();
   const canCreate = useIsAdministrator();
+  // Arriving from an organisation's own page (Organizations.tsx's "+ Add staff member") — staff
+  // belong to organisations, so that's the entry point we steer admins toward, rather than
+  // making them pick the org back out of a generic dropdown here.
+  const fromOrganizationId = useSearchParams().get("organizationId") || "";
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional">>("professional");
+  const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional" | "organization_admin">>(fromOrganizationId ? "organization_admin" : "professional");
   const [professionalKind, setProfessionalKind] = useState<"individual" | "firm">("individual");
+  const [country, setCountry] = useState("");
+  const [district, setDistrict] = useState("");
+  const [organizations, setOrganizations] = useState<AdminOrganization[] | null>(null);
+  const [organizationId, setOrganizationId] = useState(fromOrganizationId);
+  const [scopeDistricts, setScopeDistricts] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState<{ email: string; emailDelivered: boolean } | null>(null);
+
+  // Only fetched once the admin actually picks "Organisation Admin" — no point loading the
+  // list for the common case of creating a Professional or Administrator.
+  useEffect(() => {
+    if (roleType !== "organization_admin" || !token || organizations !== null) return;
+    AdminApi.listOrganizations(token).then((result) => {
+      if (result.ok) setOrganizations(result.data);
+    });
+  }, [roleType, token, organizations]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isSubmitting) return;
     setError("");
+    if (roleType === "organization_admin" && !organizationId) {
+      setError("Please choose an organisation.");
+      return;
+    }
+    if (roleType === "professional" && !country) {
+      setError("Please choose a country.");
+      return;
+    }
     setIsSubmitting(true);
     const result = await createUser({
       firstName,
@@ -38,6 +81,10 @@ export default function CreateUserPage() {
       email,
       roleType,
       professionalKind: roleType === "professional" ? professionalKind : undefined,
+      country: roleType === "professional" ? country : undefined,
+      district: roleType === "professional" ? (district || undefined) : undefined,
+      organizationId: roleType === "organization_admin" ? organizationId : undefined,
+      scopeDistricts: roleType === "organization_admin" && scopeDistricts.length ? scopeDistricts : undefined,
     });
     setIsSubmitting(false);
     if (!result.ok) {
@@ -48,15 +95,19 @@ export default function CreateUserPage() {
     setFirstName("");
     setLastName("");
     setEmail("");
+    setDistrict("");
+    setScopeDistricts([]);
   };
+
+  const orgName = organizations?.find((o) => o.id === fromOrganizationId)?.name;
+  const selectedOrg = organizations?.find((o) => o.id === organizationId);
 
   return (
     <PageFrame
-      title="Create user"
-      description="Create an Administrator or Professional account. A randomly generated password is emailed to it, and the holder is forced to change it on first login."
+      title={fromOrganizationId ? "Add staff member" : "Create user"}
       action={
-        <Link href="/admin/users" className="text-sm font-bold text-slate-500 hover:text-[#219b31]">
-          Back to Users
+        <Link href={fromOrganizationId ? `/admin/organizations/${fromOrganizationId}` : "/admin/users"} className="text-sm font-bold text-slate-500 hover:text-[#219b31]">
+          {fromOrganizationId ? "Back to organisation" : "Back to Users"}
         </Link>
       }
     >
@@ -101,25 +152,87 @@ export default function CreateUserPage() {
               <input type="email" className={`${fieldClass} mt-2`} value={email} onChange={(e) => setEmail(e.target.value)} required />
             </label>
 
-            <label className="block text-sm font-bold text-slate-700">
-              Role
-              <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional">)}>
-                {ROLE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            {roleType === "professional" && (
+            {!fromOrganizationId && (
               <label className="block text-sm font-bold text-slate-700">
-                Professional type
-                <select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
-                  <option value="individual">Individual professional</option>
-                  <option value="firm">Firm / company</option>
+                Role
+                <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional" | "organization_admin">)}>
+                  {ROLE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </label>
+            )}
+
+            {roleType === "professional" && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-bold text-slate-700">
+                  Professional type
+                  <select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
+                    <option value="individual">Individual professional</option>
+                    <option value="firm">Firm / company</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-bold text-slate-700">
+                  Country
+                  <select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required>
+                    <option value="" disabled>Select a country</option>
+                    {COUNTRY_OPTIONS.map((c) => (
+                      <option key={c.code} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </label>
+                {regionsForCountry(country) && (
+                  <label className="block text-sm font-bold text-slate-700">
+                    District
+                    <DistrictSelect country={country} value={district} onChange={setDistrict} className="mt-2" />
+                  </label>
+                )}
+              </div>
+            )}
+
+            {roleType === "organization_admin" && fromOrganizationId ? (
+              <label className="block text-sm font-bold text-slate-700">
+                Organisation
+                <p className={`${fieldClass} mt-2 bg-slate-50 text-slate-600`}>{orgName ?? "Loading…"}</p>
+              </label>
+            ) : roleType === "organization_admin" ? (
+              <label className="block text-sm font-bold text-slate-700">
+                Organisation
+                {organizations === null ? (
+                  <p className="mt-2 text-sm font-medium text-slate-400">Loading organisations…</p>
+                ) : organizations.length === 0 ? (
+                  <p className="mt-2 text-sm font-medium text-slate-500">
+                    No organisations yet —{" "}
+                    <Link href="/admin/organizations/create" className="font-bold text-[#219b31] underline">
+                      create one first
+                    </Link>
+                    .
+                  </p>
+                ) : (
+                  <select className={`${fieldClass} mt-2`} value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} required>
+                    <option value="" disabled>Select an organisation</option>
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                  </select>
+                )}
+              </label>
+            ) : null}
+
+            {roleType === "organization_admin" && selectedOrg && selectedOrg.countries.some((c) => regionsForCountry(c)) && (
+              <div>
+                <p className="text-sm font-bold text-slate-700">Scope</p>
+                <p className="mt-1 text-xs text-slate-500">Leave unselected for this organisation&apos;s full country-wide scope, or narrow this account to specific districts.</p>
+                <div className="mt-2">
+                  <DistrictChecklist
+                    countries={selectedOrg.countries}
+                    selected={scopeDistricts}
+                    onToggle={(d) => setScopeDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))}
+                  />
+                </div>
+              </div>
             )}
 
             <PrimaryButton type="submit" disabled={isSubmitting} className="w-full">

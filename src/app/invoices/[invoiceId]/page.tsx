@@ -8,7 +8,6 @@ import { InvoiceService } from "@/lib/finance/invoiceService";
 import { canCancelInvoice, canPayInvoice, canViewInvoice } from "@/lib/finance/permissions";
 import { formatMoney } from "@/lib/finance/money";
 import { formatDate, formatDateTime, PROTOTYPE_DOCUMENT_LABEL } from "@/lib/finance/format";
-import { getAccountName } from "@/lib/finance/accountLookup";
 import { useToast } from "@/lib/toast-context";
 import CheckoutFlow from "@/components/finance/CheckoutFlow";
 import ReasonModal from "@/components/finance/modals/ReasonModal";
@@ -32,7 +31,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
 
   if (!invoice || !canViewInvoice(account.id, invoice)) {
     return (
-      <PageFrame title="Invoice" description="">
+      <PageFrame title="Invoice">
         <EmptyState title="Invoice not found" description="This invoice doesn't exist, or you don't have access to it." />
       </PageFrame>
     );
@@ -44,7 +43,6 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ invoic
   return (
     <PageFrame
       title={invoice.reference}
-      description={`${isRecipient ? "Owed to" : "Issued to"} ${isRecipient ? getAccountName(invoice.issuerId) : getAccountName(invoice.recipientId)}`}
       action={<FinancePill status={invoice.status} />}
     >
       <div className="mb-6">

@@ -6,12 +6,16 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { accountDestination } from '@/lib/navigation';
+import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import PasswordInput from '@/components/shared/PasswordInput';
 
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
+  // Best-effort, silent — never a visible field on this form. Lets an org admin's Users page
+  // scope customer accounts by country later (see access-service's signup()).
+  const detectedCountry = useCurrentCountry();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +32,7 @@ function SignupForm() {
     if (isSubmitting) return;
     setError('');
     setIsSubmitting(true);
-    const result = await signup({ firstName, lastName, email, password, termsAccepted });
+    const result = await signup({ firstName, lastName, email, password, termsAccepted, country: detectedCountry?.name });
     if (!result.ok) {
       setError(result.error);
       setIsSubmitting(false);

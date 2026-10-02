@@ -35,7 +35,7 @@ export default function PaymentsPage() {
   if (!isAuthReady || !account) return null;
 
   return (
-    <PageFrame title="Payments" description="Track amounts due, payments in progress, completed payments, refunds and disputes across every project." action={<PrimaryLink href="/invoices">View Invoices</PrimaryLink>}>
+    <PageFrame title="Payments" action={<PrimaryLink href="/invoices">View Invoices</PrimaryLink>}>
       <div className="mb-6">
         <PrototypeBanner />
       </div>

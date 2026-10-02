@@ -189,8 +189,18 @@ export default function ProfessionalsDirectoryPage() {
                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-[#2ec440] transition-colors mb-1 inline-flex items-center gap-1.5 justify-center">
                       {profile.displayName}
                     </h3>
-                    <p className="text-sm font-bold text-[#2ec440] mb-3">{profile.specialisation}</p>
-                    
+                    <p className="text-sm font-bold text-[#2ec440] mb-3">
+                      {profile.specialisation}
+                      {!!profile.reviewCount && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600">
+                          <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.957 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+                          </svg>
+                          {(profile.averageRating ?? 0).toFixed(1)}
+                        </span>
+                      )}
+                    </p>
+
                     <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 mb-4 font-semibold bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                       {profile.city} &bull; {profile.yearsExperience ?? 0} yrs exp.

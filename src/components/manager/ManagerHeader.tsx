@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
+import NotificationBell from "@/components/shared/NotificationBell";
 
 interface ManagerHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -41,6 +42,7 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
         <Link href="/post-property" className="hidden sm:inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">
           + Add Property
         </Link>
+        <NotificationBell />
         <div className="relative">
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -74,6 +76,9 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
               </Link>
               <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Return to main site
+              </Link>
+              <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                Change password
               </Link>
               <button
                 onClick={() => {

@@ -4,12 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
-import { AdminApi, type AdminSubscriptionList, type AdminUser } from "@/lib/admin/api";
-import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "../ui";
+import { AdminApi, type AdminPaymentList, type AdminSubscriptionList, type AdminUser, type PaymentKind } from "@/lib/admin/api";
+import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime, formatMoney } from "../ui";
 
 const PAGE_SIZE = 25;
 type Tier = "paid" | "all" | "free" | "silver" | "gold" | "diamond";
 type Loaded = { key: string; data?: AdminSubscriptionList; error?: string };
+
+const PAYMENT_KIND_LABELS: Record<PaymentKind, string> = { subscribe: "Plan", per_post: "Per-post", promote: "Promotion" };
+type PaymentsLoaded = { key: string; data?: AdminPaymentList; error?: string };
 
 export function SellerPaymentsPage() {
   const { token, isAuthReady } = useAuth();
@@ -21,30 +24,60 @@ export function SellerPaymentsPage() {
   const [sellers, setSellers] = useState<Record<string, AdminUser>>({});
   const [reload, setReload] = useState(0);
 
+  const [paymentKind, setPaymentKind] = useState<"all" | PaymentKind>("all");
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [paymentsLoaded, setPaymentsLoaded] = useState<PaymentsLoaded | null>(null);
+  const [paymentsReload, setPaymentsReload] = useState(0);
+
+  useEffect(() => {
+    if (!isAuthReady || !token || !canView) return;
+    let cancelled = false;
+    AdminApi.listUsers(token, { role: "seller_manager", limit: 200 }).then((users) => {
+      if (!cancelled && users.ok) setSellers(Object.fromEntries(users.data.users.map((u) => [u.id, u])));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token, canView]);
+
   const key = `${tier}|${status}|${page}|${reload}`;
   useEffect(() => {
     if (!isAuthReady || !token || !canView) return;
     let cancelled = false;
-    Promise.all([
-      AdminApi.listSubscriptions(token, { tier: tier === "all" ? undefined : tier, status: status === "all" ? undefined : status, page, limit: PAGE_SIZE }),
-      AdminApi.listUsers(token, { role: "seller_manager", limit: 200 }),
-    ]).then(([subs, users]) => {
+    AdminApi.listSubscriptions(token, { tier: tier === "all" ? undefined : tier, status: status === "all" ? undefined : status, page, limit: PAGE_SIZE }).then((subs) => {
       if (cancelled) return;
       setLoaded(subs.ok ? { key, data: subs.data } : { key, error: subs.error });
-      if (users.ok) setSellers(Object.fromEntries(users.data.users.map((u) => [u.id, u])));
     });
     return () => {
       cancelled = true;
     };
   }, [isAuthReady, token, canView, tier, status, page, key]);
 
+  const paymentsKey = `${paymentKind}|${paymentsPage}|${paymentsReload}`;
+  useEffect(() => {
+    if (!isAuthReady || !token || !canView) return;
+    let cancelled = false;
+    AdminApi.listPayments(token, { kind: paymentKind === "all" ? undefined : paymentKind, page: paymentsPage, limit: PAGE_SIZE }).then((result) => {
+      if (cancelled) return;
+      setPaymentsLoaded(result.ok ? { key: paymentsKey, data: result.data } : { key: paymentsKey, error: result.error });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token, canView, paymentKind, paymentsPage, paymentsKey]);
+
   const loading = !loaded || loaded.key !== key;
   const data = loaded?.data;
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   const summary = data?.summary;
 
+  const paymentsLoading = !paymentsLoaded || paymentsLoaded.key !== paymentsKey;
+  const paymentsData = paymentsLoaded?.data;
+  const paymentsTotalPages = paymentsData ? Math.max(1, Math.ceil(paymentsData.total / paymentsData.limit)) : 1;
+  const paymentsSummary = paymentsData?.summary;
+
   return (
-    <PageFrame title="Seller Payments" description="Every seller's posting plan, what they pay, and how much of this month's quota they've used.">
+    <PageFrame title="Seller Payments">
       <RequirePermission granted={canView}>
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Tile label="Subscribed sellers" value={summary ? String(summary.paidActive) : "–"} hint="Active paid plans" />
@@ -145,6 +178,97 @@ export function SellerPaymentsPage() {
           </>
         ) : (
           <EmptyState title={tier === "paid" ? "No subscribed sellers yet" : "No payment records match"} description={tier === "paid" ? "Sellers appear here once they subscribe to Silver, Gold or Diamond." : "Try a different plan or status filter."} />
+        )}
+
+        <div className="mt-10 mb-6">
+          <h2 className="text-xl font-black text-slate-900">One-time payments</h2>
+          <p className="mt-1 text-sm text-slate-500">Promotions and single extra-post purchases — the payments a plan subscription alone doesn&apos;t cover.</p>
+        </div>
+
+        <div className="mb-6 grid gap-4 sm:grid-cols-2">
+          <Tile label="Total one-time revenue" value={paymentsSummary ? formatMoney(paymentsSummary.totalCents / 100, "USD") : "–"} hint="Per-post + promotion payments" />
+          <Tile label="Promotions sold" value={paymentsSummary ? String(paymentsSummary.byKind.promote ?? 0) : "–"} hint={`Per-post: ${paymentsSummary?.byKind.per_post ?? "–"} · Plan checkouts: ${paymentsSummary?.byKind.subscribe ?? "–"}`} />
+        </div>
+
+        <Card className="mb-5">
+          <label className="text-sm font-bold text-slate-700">
+            Type
+            <select
+              className={`${fieldClass} mt-1`}
+              value={paymentKind}
+              onChange={(e) => {
+                setPaymentKind(e.target.value as "all" | PaymentKind);
+                setPaymentsPage(1);
+              }}
+            >
+              <option value="all">All types</option>
+              <option value="promote">Promotion</option>
+              <option value="per_post">Per-post</option>
+              <option value="subscribe">Plan</option>
+            </select>
+          </label>
+        </Card>
+
+        {paymentsLoaded?.error ? (
+          <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">
+            {paymentsLoaded.error}{" "}
+            <button className="font-bold underline" onClick={() => setPaymentsReload((n) => n + 1)}>
+              Retry
+            </button>
+          </Card>
+        ) : paymentsLoading && !paymentsData ? (
+          <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading payments…</p>
+        ) : paymentsData && paymentsData.payments.length ? (
+          <>
+            <AdminTable headers={["Seller", "Type", "Amount", "Details", "Date"]}>
+              {paymentsData.payments.map((payment) => {
+                const seller = sellers[payment.accountId];
+                return (
+                  <tr key={payment.id} className="transition-colors hover:bg-slate-50/50">
+                    <td className="px-6 py-4">
+                      <Link href={`/admin/users/${payment.accountId}`} className="font-bold text-slate-900 hover:text-[#219b31]">
+                        {seller?.name ?? "Unknown account"}
+                      </Link>
+                      <p className="text-xs text-slate-500">{seller?.email ?? payment.accountId}</p>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-700">{PAYMENT_KIND_LABELS[payment.kind]}</td>
+                    <td className="px-6 py-4 text-sm text-slate-700">{formatMoney(payment.amountCents / 100, payment.currency?.toUpperCase() || "USD")}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {payment.kind === "promote" ? (
+                        payment.propertyId ? (
+                          <Link href={`/properties/${payment.propertyId}`} target="_blank" className="font-semibold text-slate-700 hover:text-[#219b31]">
+                            {payment.propertyTitle ?? "Listing"} · {payment.days}d
+                          </Link>
+                        ) : (
+                          `${payment.propertyTitle ?? "Listing"} · ${payment.days}d`
+                        )
+                      ) : payment.kind === "subscribe" ? (
+                        payment.tier ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) : "—"
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-500">{formatDateTime(payment.createdAt)}</td>
+                  </tr>
+                );
+              })}
+            </AdminTable>
+            {paymentsTotalPages > 1 && (
+              <div className="mt-6 flex items-center justify-between">
+                <SecondaryButton disabled={paymentsPage <= 1} onClick={() => setPaymentsPage((p) => p - 1)}>
+                  Previous
+                </SecondaryButton>
+                <span className="text-sm font-semibold text-slate-500">
+                  Page {paymentsPage} of {paymentsTotalPages}
+                </span>
+                <SecondaryButton disabled={paymentsPage >= paymentsTotalPages} onClick={() => setPaymentsPage((p) => p + 1)}>
+                  Next
+                </SecondaryButton>
+              </div>
+            )}
+          </>
+        ) : (
+          <EmptyState title="No one-time payments yet" description="Promotion and per-post purchases will appear here once a seller buys one." />
         )}
       </RequirePermission>
     </PageFrame>

@@ -74,6 +74,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
 
   const notPublic = property.status && property.status !== 'published' ? property.status : property.expired ? 'expired' : null;
   const NOT_PUBLIC_LABEL: Record<string, string> = {
+    draft: 'This is a draft — only you can see it. Finish and submit it from your Manager Portal to go live.',
+    under_review: 'This listing is awaiting review before it can go live. Only you can see it.',
     unpublished: 'This listing is off the market and only you can see it.',
     archived: 'This listing is archived and only you can see it.',
     changes_requested: 'An administrator asked for changes before this listing can be public.',
@@ -161,6 +163,18 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Square Meters</div>
               </div>
             </div>
+
+            {property.amenities?.some((a) => a.toLowerCase() === 'furnished') && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center text-slate-700">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 5h18v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>
+                </div>
+                <div>
+                  <div className="text-xl font-bold text-slate-900">Yes</div>
+                  <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-0.5">Furnished</div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -168,6 +182,25 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           <p className="text-lg text-slate-600 leading-relaxed mb-10">
             {property.description}
           </p>
+
+          {/* Amenities — every tag the seller ticked on posting/editing (see
+           *  AMENITY_OPTIONS), so a buyer sees the full picture here, not
+           *  just what happened to be filterable on /properties. */}
+          {property.amenities && property.amenities.length > 0 && (
+            <div className="mb-10">
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Amenities</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                {property.amenities.map((amenity) => (
+                  <div key={amenity} className="flex items-center gap-2.5 text-slate-700 font-medium">
+                    <svg className="w-5 h-5 text-[#2ec440] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    {amenity}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* AI-Generated 3D Tour (World Labs Marble) */}
           <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} virtualTourUrl={property.virtualTourUrl} />
@@ -181,10 +214,41 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
         {/* Right Column: Contact Info */}
         <div className="lg:col-span-4">
           <div className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-8 sticky top-28">
+            {property.companyLogoUrl && (
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-11 w-11 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={property.companyLogoUrl} alt={property.companyName ?? ""} className="h-full w-full object-contain p-1" />
+                </div>
+                {property.companyName && <span className="font-bold text-slate-900 text-sm">{property.companyName}</span>}
+              </div>
+            )}
             <h3 className="text-xl font-bold text-slate-900 mb-2">Interested in this property?</h3>
             <p className="text-slate-500 text-[15px] mb-6 leading-relaxed">
-              Message the owner to ask a question or arrange a viewing.
+              Message the {property.ownerType === "agent" ? "realtor" : "owner"} to ask a question or arrange a viewing.
             </p>
+            {(property.ownerName || property.ownerPhone || property.ownerEmail) && (
+              <div className="flex flex-col gap-2 mb-6 pb-6 border-b border-slate-200">
+                {property.ownerName && (
+                  <span className="font-bold text-slate-900 text-sm">
+                    {property.ownerName}
+                    <span className="font-normal text-slate-500"> · {property.ownerType === "agent" ? "Realtor" : "Owner"}</span>
+                  </span>
+                )}
+                {property.ownerPhone && (
+                  <a href={`tel:${property.ownerPhone}`} className="flex items-center gap-2 text-slate-600 hover:text-[#2ec440] text-sm font-medium transition-colors">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    {property.ownerPhone}
+                  </a>
+                )}
+                {property.ownerEmail && (
+                  <a href={`mailto:${property.ownerEmail}`} className="flex items-center gap-2 text-slate-600 hover:text-[#2ec440] text-sm font-medium transition-colors">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    {property.ownerEmail}
+                  </a>
+                )}
+              </div>
+            )}
             {notPublic ? (
               <p className="text-sm text-slate-500">This listing isn&apos;t public, so it can&apos;t receive messages.</p>
             ) : (
