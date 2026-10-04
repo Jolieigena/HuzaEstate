@@ -8,6 +8,7 @@ import PropertyTourSection from '@/components/PropertyTourSection';
 import PropertyGallery from '@/components/PropertyGallery';
 import LandlordProfileCard from '@/components/LandlordProfileCard';
 import InquiryForm from '@/components/InquiryForm';
+import BackLink from '@/components/BackLink';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -93,6 +94,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
       )}
       {/* Title Section (Above Grid) */}
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-8 pb-6">
+        <BackLink className="mb-4 text-sm">Back</BackLink>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
@@ -205,10 +207,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           {/* AI-Generated 3D Tour (World Labs Marble) */}
           <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} virtualTourUrl={property.virtualTourUrl} />
 
-          <Link href="/properties" className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-bold transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16l-4-4m0 0l4-4m-4 4h18"></path></svg>
-            Back to properties
-          </Link>
+          <BackLink>Back</BackLink>
         </div>
 
         {/* Right Column: Contact Info */}

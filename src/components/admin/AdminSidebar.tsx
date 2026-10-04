@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNavBadges } from "@/lib/admin/useNavBadges";
+import NavBadge from "@/components/admin/NavBadge";
 import { ADMIN_NAV_ITEMS } from "./adminNavItems";
 
 export function AdminNavLinks() {
   const pathname = usePathname();
+  const badges = useNavBadges("admin");
   const items = ADMIN_NAV_ITEMS;
 
   return (
@@ -23,6 +26,7 @@ export function AdminNavLinks() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
             </svg>
             <span className="truncate">{item.label}</span>
+            <NavBadge count={badges[item.key]} />
           </Link>
         );
       })}

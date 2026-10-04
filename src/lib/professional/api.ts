@@ -28,6 +28,9 @@ export interface RealProfessionalProfile {
   displayName: string;
   photoUrl?: string;
   bio: string;
+  /** What the professional practises, picked from lib/professional/specialisations.ts (or typed in). */
+  specialisations: string[];
+  /** The same values joined with ", " — kept for older readers. Read `specialisations` instead. */
   specialisation: string;
   yearsExperience?: number;
   city: string;
@@ -77,7 +80,7 @@ export async function fetchMyProfessionalProfile(token: string): Promise<RealPro
 // kind, country, and district are deliberately excluded — all three are admin-assigned (kind at
 // account creation, country/district the scoping fields set there too) and the backend ignores
 // them in this request even if sent (see access-service's upsertMyProfile).
-export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt" | "kind" | "country" | "district">;
+export type SaveProfileInput = Omit<RealProfessionalProfile, "accountId" | "completedAt" | "kind" | "country" | "district" | "specialisation">;
 
 export type SaveProfileResult = { ok: true } | { ok: false; error: string };
 

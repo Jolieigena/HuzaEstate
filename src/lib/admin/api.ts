@@ -17,6 +17,9 @@ export interface AdminUser {
   accountType: UserAccountType;
   status: UserStatus;
   isApprovedSeller: boolean;
+  /** seller accounts only — per-seller bypass of listing review. true = publish immediately,
+   *  false = always review, absent = inherit the country's organisation / platform default. */
+  autoPublish?: boolean;
   mustChangePassword: boolean;
   profileCompleted: boolean;
   /** organization_admin accounts only. */
@@ -188,7 +191,7 @@ export const AdminApi = {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token);
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },
-  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status" | "permissions" | "scopeDistricts">>) => {
+  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status" | "permissions" | "scopeDistricts">> & { autoPublish?: boolean | null }) => {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "PATCH", body: changes });
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },

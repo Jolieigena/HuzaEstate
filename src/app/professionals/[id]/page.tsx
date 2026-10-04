@@ -244,7 +244,13 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">{profile.displayName}</h1>
             </div>
-            <p className="text-[#2ec440] font-semibold mb-2">{profile.specialisation}</p>
+            {profile.specialisations.length > 0 && (
+              <div className="mb-3 flex flex-wrap gap-1.5">
+                {profile.specialisations.map((item) => (
+                  <span key={item} className="rounded-full bg-[#2ec440]/10 px-3 py-1 text-sm font-semibold text-[#219b31]">{item}</span>
+                ))}
+              </div>
+            )}
             <p className="text-slate-500 text-sm">{[profile.city, profile.country].filter(Boolean).join(", ")}{profile.yearsExperience ? ` · ${profile.yearsExperience} years experience` : ""}</p>
             {!!profile.reviewCount && (
               <div className="mt-2 flex items-center gap-1.5">

@@ -3,6 +3,7 @@ import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import ConditionalFooter from "@/components/ConditionalFooter";
+import NavigationTracker from "@/components/NavigationTracker";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
 
@@ -30,6 +31,7 @@ export default function RootLayout({
         className={`${nunitoSans.variable} font-sans antialiased min-h-screen flex flex-col`}
         suppressHydrationWarning
       >
+        <NavigationTracker />
         <AuthProvider>
           <ToastProvider>
             <AppShell>{children}</AppShell>

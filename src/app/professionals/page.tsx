@@ -23,14 +23,14 @@ export default function ProfessionalsDirectoryPage() {
   const [kindFilter, setKindFilter] = useState<"all" | "individual" | "firm">("all");
 
   // Extract unique options
-  const specializations = useMemo(() => Array.from(new Set(allProfiles.map(p => p.specialisation))).sort(), [allProfiles]);
+  const specializations = useMemo(() => Array.from(new Set(allProfiles.flatMap(p => p.specialisations))).sort(), [allProfiles]);
   const locations = useMemo(() => Array.from(new Set(allProfiles.map(p => p.city))).sort(), [allProfiles]);
 
   const filteredProfiles = useMemo(() => {
     return allProfiles.filter(profile => {
       const matchesSearch = profile.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             profile.bio.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesSpec = specialization ? profile.specialisation === specialization : true;
+      const matchesSpec = specialization ? profile.specialisations.includes(specialization) : true;
       const matchesLoc = location ? profile.city === location : true;
       const matchesExp = experiencedOnly ? (profile.yearsExperience ?? 0) >= 5 : true;
       
@@ -190,7 +190,8 @@ export default function ProfessionalsDirectoryPage() {
                       {profile.displayName}
                     </h3>
                     <p className="text-sm font-bold text-[#2ec440] mb-3">
-                      {profile.specialisation}
+                      {profile.specialisations.slice(0, 2).join(" · ")}
+                      {profile.specialisations.length > 2 && <span className="ml-1 text-xs font-bold text-slate-400">+{profile.specialisations.length - 2}</span>}
                       {!!profile.reviewCount && (
                         <span className="ml-2 inline-flex items-center gap-1 text-xs font-bold text-amber-600">
                           <svg className="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">

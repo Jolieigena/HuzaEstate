@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNavBadges } from "@/lib/admin/useNavBadges";
+import NavBadge from "@/components/admin/NavBadge";
 import { useAuth } from "@/lib/auth-context";
 import { hasOrgPermission } from "@/lib/orgPermissions";
 import { ORG_ADMIN_NAV_ITEMS } from "./orgAdminNavItems";
 
 export function OrgAdminNavLinks() {
   const pathname = usePathname();
+  const badges = useNavBadges("org-admin");
   const { account } = useAuth();
   const items = ORG_ADMIN_NAV_ITEMS.filter((item) => !item.permission || hasOrgPermission(account?.permissions, item.permission));
 
@@ -26,6 +29,7 @@ export function OrgAdminNavLinks() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
             </svg>
             <span className="truncate">{item.label}</span>
+            <NavBadge count={badges[item.key]} />
           </Link>
         );
       })}

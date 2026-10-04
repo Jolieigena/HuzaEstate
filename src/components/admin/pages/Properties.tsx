@@ -6,7 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { PropertyApi } from "@/lib/properties/api";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
+import { usePropertyFilters } from "@/lib/admin/usePropertyFilters";
 import { useToast } from "@/lib/toast-context";
+import { ListingReviewDialog, SellerAutoPublishToggle, useSellerAutoPublish } from "../ListingModerationDialogs";
 import ReasonFormModal from "../ReasonFormModal";
 import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "../ui";
 
@@ -34,10 +36,10 @@ export function PropertiesListPage() {
   const canModerate = useIsAdministrator();
   const [properties, setProperties] = useState<Property[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState<"all" | "sale" | "rent">("all");
-  const [status, setStatus] = useState<"all" | PropertyStatus>("all");
+  const { search, setSearch, type, setType, status, setStatus } = usePropertyFilters();
   const [pending, setPending] = useState<Pending | null>(null);
+  const sellerAutoPublish = useSellerAutoPublish(token, canModerate);
+  const [reviewing, setReviewing] = useState<Property | null>(null);
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export function PropertiesListPage() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={property.imageUrl} alt="" className="h-12 w-16 shrink-0 rounded-lg border border-slate-200 bg-slate-100 object-cover" />
                       <div className="min-w-0">
-                        <Link href={`/properties/${property.id}`} target="_blank" className="block max-w-55 truncate text-sm font-bold text-slate-900 hover:text-[#219b31]">
+                        <Link href={`/properties/${property.id}`} className="block max-w-55 truncate text-sm font-bold text-slate-900 hover:text-[#219b31]">
                           {property.title}
                         </Link>
                         <p className="text-xs text-slate-500">
@@ -149,6 +151,16 @@ export function PropertiesListPage() {
                     ) : (
                       "—"
                     )}
+                    {property.ownerId && (
+                      <div>
+                        <SellerAutoPublishToggle
+                          seller={{ id: property.ownerId, name: property.ownerName ?? "this seller" }}
+                          value={sellerAutoPublish.settings[property.ownerId]}
+                          busy={sellerAutoPublish.saving === property.ownerId}
+                          onChange={(next) => sellerAutoPublish.set({ id: property.ownerId!, name: property.ownerName ?? "this seller" }, next)}
+                        />
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{property.type === "sale" ? "For sale" : "For rent"}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">
@@ -163,6 +175,11 @@ export function PropertiesListPage() {
                   <td className="px-6 py-4">
                     {canModerate ? (
                       <div className="flex flex-wrap gap-1.5">
+                        {current === "under_review" && (
+                          <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setReviewing(property)}>
+                            Review
+                          </SecondaryButton>
+                        )}
                         {current !== "published" && (
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => change(property, "published")}>
                             Publish
@@ -196,6 +213,16 @@ export function PropertiesListPage() {
           <EmptyState title="No listings found" description={properties.length ? "Try a different search or filter." : "Listings appear here once sellers post them."} />
         )}
       </RequirePermission>
+
+      <ListingReviewDialog
+        property={reviewing}
+        onClose={() => setReviewing(null)}
+        onDecide={async (property, decision) => {
+          setReviewing(null);
+          if (decision === "published") await change(property, "published");
+          else setPending({ property, status: decision });
+        }}
+      />
 
       <ReasonFormModal
         key={pending ? `${pending.property.id}-${pending.status}` : "closed"}
