@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
-import type { Listing, ListingStatusCounts } from '@/lib/manager/types';
+import type { Listing, ListingStatus, ListingStatusCounts } from '@/lib/manager/types';
 import StatTile from '@/components/charts/StatTile';
-import BarBreakdown from '@/components/charts/BarBreakdown';
+import PortfolioOverview from './PortfolioOverview';
 import Dialog from '@/components/Dialog';
 import PricingCards from '@/components/postingPlans/PricingCards';
 import PlanCheckout from '@/components/postingPlans/PlanCheckout';
@@ -136,10 +136,12 @@ function nextExpiryLabel(listings: Listing[]): string {
   return days <= 0 ? 'Expired' : days === 1 ? '1 day' : `${days} days`;
 }
 
-export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
+export default function OverviewTab({ LISTINGS, statusCounts, topListings, onOpenListings }: {
   LISTINGS: Listing[];
   statusCounts: ListingStatusCounts;
   topListings: Listing[];
+  /** Jump to My Listings, filtered to a status. */
+  onOpenListings: (status: ListingStatus | 'all') => void;
 }) {
   const subscription = useSubscription();
   const limit = PLAN_LIMITS[subscription.tier];
@@ -182,18 +184,7 @@ export default function OverviewTab({ LISTINGS, statusCounts, topListings }: {
           )}
         </div>
 
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
-          <h3 className="font-bold text-slate-900 text-lg mb-1">Portfolio Status</h3>
-          <p className="text-sm text-slate-500 mb-6">{LISTINGS.length} total {LISTINGS.length === 1 ? 'listing' : 'listings'}</p>
-          <BarBreakdown
-            items={[
-              { label: 'Live', value: statusCounts.Live, color: '#0ca30c' },
-              { label: 'Off market', value: statusCounts['Off market'], color: '#94a3b8' },
-              { label: 'Needs attention', value: statusCounts['Needs attention'], color: '#d03b3b' },
-              { label: 'Expired', value: statusCounts.Expired, color: '#fab219' },
-            ]}
-          />
-        </div>
+        <PortfolioOverview listings={LISTINGS} statusCounts={statusCounts} onOpenListings={onOpenListings} />
       </div>
     </div>
   );

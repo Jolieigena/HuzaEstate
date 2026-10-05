@@ -140,7 +140,15 @@ export default function ManagerDashboard() {
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
-              <OverviewTab LISTINGS={LISTINGS} statusCounts={statusCounts} topListings={topListings} />
+              <OverviewTab
+                LISTINGS={LISTINGS}
+                statusCounts={statusCounts}
+                topListings={topListings}
+                onOpenListings={(status) => {
+                  setStatusFilter(status);
+                  setActiveTab('listings');
+                }}
+              />
             )}
 
             {/* LISTINGS TAB */}
