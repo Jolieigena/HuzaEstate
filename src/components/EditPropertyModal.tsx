@@ -67,6 +67,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       amenities: form.amenities,
       type: form.type,
       propertyType,
+      propertyLabel: form.propertyTypeLabel,
     };
 
     if (!token) {
@@ -336,7 +337,7 @@ function toFormState(property: Property | null) {
   // The backend only ever stores the bucket (house/apartment/land), so which
   // specific label (e.g. "Villa" vs "House") the seller originally picked
   // isn't recoverable — default to that bucket's first/plainest label.
-  const propertyTypeLabel = PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === (property?.propertyType ?? 'house'))?.label ?? 'House';
+  const propertyTypeLabel = property?.propertyLabel ?? PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === (property?.propertyType ?? 'house'))?.label ?? 'House';
   // Preserved as-is, whatever it is — the currency dropdown always includes
   // the listing's actual current value (see currencyOptions above), so this
   // no longer needs to coerce an unrecognized currency down to USD.

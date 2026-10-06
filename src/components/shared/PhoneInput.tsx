@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AsYouType, isValidPhoneNumber, getCountryCallingCode, type CountryCode } from "libphonenumber-js";
+import { AsYouType, isValidPhoneNumber, getCountryCallingCode, validatePhoneNumberLength, type CountryCode } from "libphonenumber-js";
 import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { COUNTRY_OPTIONS, countryFlagUrl, type CountryOption } from "@/lib/countries";
 
@@ -31,6 +31,37 @@ function findCountryByDialedDigits(digits: string): CountryOption | undefined {
     if (match && digits.length >= len) return match;
   }
   return undefined;
+}
+
+/** True when the field holds nothing but the auto-filled dial code ("+250 "): not a number anyone typed. */
+function isBareDialCode(value: string): boolean {
+  return /^\+\d{1,3}$/.test(value.replace(/\s/g, ""));
+}
+
+/** The value to save: empty when the field only has its auto-filled dial code, else the number as typed. */
+export function cleanPhone(value: string): string {
+  const trimmed = value.trim();
+  return isBareDialCode(trimmed) ? "" : trimmed;
+}
+
+/** What is wrong with a phone number, in words, or null when it is fine. An empty field (or one holding
+ *  only its auto-filled dial code) is fine, since the field is usually optional. Numbers must carry their
+ *  country code ("+250 ...") so they mean the same thing wherever they are read. Exported so forms can
+ *  refuse to save a bad number. */
+export function phoneProblem(value: string, fallbackCountry?: CountryCode): string | null {
+  const trimmed = cleanPhone(value);
+  if (!trimmed) return null;
+  if (!trimmed.startsWith("+")) return "Start with the country code, for example +250.";
+  const length = validatePhoneNumberLength(trimmed, fallbackCountry);
+  if (length === "TOO_SHORT" || length === "INVALID_LENGTH") return "That phone number is too short.";
+  if (length === "TOO_LONG") return "That phone number is too long.";
+  if (length === "INVALID_COUNTRY" || length === "NOT_A_NUMBER") return "That doesn't look like a phone number.";
+  return isValidPhoneNumber(trimmed, fallbackCountry) ? null : "That number isn't valid for its country. Check the first digits.";
+}
+
+/** True when the value can be saved: empty, or a complete valid international number. */
+export function isValidPhone(value: string, fallbackCountry?: CountryCode): boolean {
+  return phoneProblem(value, fallbackCountry) === null;
 }
 
 interface PhoneInputProps {
@@ -97,14 +128,23 @@ export default function PhoneInput({ value, onChange, id, required, placeholder,
     if (newDigits.length > prevDigits.length && value && isValidPhoneNumber(value, defaultCountry)) {
       return;
     }
-    const formatted = raw.startsWith("+") ? new AsYouType().input(raw) : new AsYouType(defaultCountry).input(raw);
+    const format = (input: string) => (input.startsWith("+") ? new AsYouType().input(input) : new AsYouType(defaultCountry).input(input));
+    let formatted = format(raw);
+    // A number can be too long without ever having been valid (a first digit no number in that
+    // country starts with, say), so the stop above never fires. Cut anything past the longest
+    // length that country allows. Also covers pasting a long string.
+    let guard = 0;
+    while (newDigits.length > prevDigits.length && validatePhoneNumberLength(formatted, defaultCountry) === "TOO_LONG" && guard++ < 40) {
+      const digitsOnly = formatted.replace(/\D/g, "");
+      formatted = format((formatted.startsWith("+") ? "+" : "") + digitsOnly.slice(0, -1));
+    }
     // The "+" prefix lets the dial code be read straight off the digits —
     // that's what makes the flag follow what's actually typed, as soon as
     // the dial code itself is complete (not waiting on the national number
     // too, the way AsYouType's own country detection does). Once the
     // visitor edits the number, a prior explicit dropdown pick no longer
     // applies (they've told us a different country by typing it).
-    const detected = raw.startsWith("+") ? findCountryByDialedDigits(raw.replace(/\D/g, "")) : undefined;
+    const detected = raw.startsWith("+") ? findCountryByDialedDigits(formatted.replace(/\D/g, "")) : undefined;
     if (detected) {
       setManualCountry(null);
       setTypedCountry(detected);
@@ -130,9 +170,8 @@ export default function PhoneInput({ value, onChange, id, required, placeholder,
     return COUNTRY_OPTIONS.filter((c) => c.name.toLowerCase().includes(t));
   }, [search]);
 
-  const isComplete = value.trim().length > 0;
-  const isValid = !isComplete || isValidPhoneNumber(value, defaultCountry);
-  const showError = touched && !isValid;
+  const problem = phoneProblem(value, defaultCountry);
+  const showError = touched && problem !== null;
 
   let dialCodePlaceholder = "+250 xxx xxx xxx";
   try {
@@ -204,7 +243,7 @@ export default function PhoneInput({ value, onChange, id, required, placeholder,
           </>
         )}
       </div>
-      {showError && <p className="mt-1.5 text-xs font-semibold text-red-600">That doesn&apos;t look like a complete phone number.</p>}
+      {showError && <p className="mt-1.5 text-xs font-semibold text-red-600">{problem}</p>}
     </div>
   );
 }

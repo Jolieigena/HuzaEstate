@@ -8,7 +8,7 @@ import { AdminApi, type AdminOrganization, type OrgRequestReason } from "@/lib/a
 import { useToast } from "@/lib/toast-context";
 import Dialog from "@/components/Dialog";
 import AddressInput from "@/components/shared/AddressInput";
-import PhoneInput from "@/components/shared/PhoneInput";
+import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { Card, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass } from "@/components/admin/ui";
 
 const REQUEST_REASONS: { value: OrgRequestReason; label: string }[] = [
@@ -61,12 +61,17 @@ export function OrgOrganisationPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !org) return;
+    const phoneIssue = phoneProblem(values.contactPhone);
+    if (phoneIssue) {
+      showToast(`Contact phone: ${phoneIssue}`, "error");
+      return;
+    }
     setSaving(true);
     const result = await AdminApi.updateOrganization(token, org.id, {
       name: values.name,
       description: values.description,
       contactEmail: values.contactEmail,
-      contactPhone: values.contactPhone,
+      contactPhone: cleanPhone(values.contactPhone),
       address: values.address,
     });
     setSaving(false);

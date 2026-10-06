@@ -93,7 +93,7 @@ function PostPropertyForm() {
       setTitle(p.title || '');
       setListingType(p.type || '');
       const matchedLabel = PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === p.propertyType)?.label;
-      setPropertyTypeLabel(matchedLabel || '');
+      setPropertyTypeLabel(p.propertyLabel || matchedLabel || '');
       if (p.currency) {
         setCurrency(p.currency.replace(/\/month$/, ''));
         setCurrencyTouched(true);
@@ -192,6 +192,7 @@ function PostPropertyForm() {
       photos,
       type: listingType || undefined,
       propertyType,
+      propertyLabel: propertyType ? propertyTypeLabel : undefined,
       videoUrl,
       country,
       district: district || undefined,

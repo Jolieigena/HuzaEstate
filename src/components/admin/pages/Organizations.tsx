@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import AddressInput from "@/components/shared/AddressInput";
-import PhoneInput from "@/components/shared/PhoneInput";
+import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminOrganization } from "@/lib/admin/api";
@@ -179,18 +179,22 @@ export function CreateOrganizationPage() {
   };
   const toggleDistrict = (d: string) => setDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
   const setManyDistricts = (list: string[], on: boolean) => setDistricts((prev) => (on ? Array.from(new Set([...prev, ...list])) : prev.filter((d) => !list.includes(d))));
-  const togglePropertyType = (value: string) => setPropertyTypes((prev) => (prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token || isSubmitting) return;
     setError("");
+    const phoneIssue = phoneProblem(contactPhone);
+    if (phoneIssue) {
+      setError(`Contact phone: ${phoneIssue}`);
+      return;
+    }
     setIsSubmitting(true);
     const result = await AdminApi.createOrganization(token, {
       name,
       description: description || undefined,
       contactEmail,
-      contactPhone: contactPhone || undefined,
+      contactPhone: cleanPhone(contactPhone) || undefined,
       address: address || undefined,
       countries,
       propertyTypes,
@@ -264,7 +268,7 @@ export function CreateOrganizationPage() {
             <div className="block text-sm font-bold text-slate-700">
               Property categories
               <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Limit this organisation to certain kinds of property within its countries. Leave empty for all.</p>
-              <PropertyCategoryChecklist selected={propertyTypes} onToggle={togglePropertyType} />
+              <PropertyCategoryChecklist selected={propertyTypes} onChange={setPropertyTypes} />
             </div>
             <div className="block text-sm font-bold text-slate-700">
               Regions
@@ -375,19 +379,20 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     setForm({ ...formValues, districts: on ? Array.from(new Set([...formValues.districts, ...list])) : formValues.districts.filter((d) => !list.includes(d)) });
   }
 
-  function togglePropertyType(value: string) {
-    setForm({ ...formValues, propertyTypes: formValues.propertyTypes.includes(value) ? formValues.propertyTypes.filter((t) => t !== value) : [...formValues.propertyTypes, value] });
-  }
-
   async function saveDetails(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !org) return;
+    const phoneIssue = phoneProblem(formValues.contactPhone);
+    if (phoneIssue) {
+      showToast(`Contact phone: ${phoneIssue}`, "error");
+      return;
+    }
     setSaving(true);
     const result = await AdminApi.updateOrganization(token, org.id, {
       name: formValues.name,
       description: formValues.description,
       contactEmail: formValues.contactEmail,
-      contactPhone: formValues.contactPhone,
+      contactPhone: cleanPhone(formValues.contactPhone),
       address: formValues.address,
       countries: formValues.countries,
       propertyTypes: formValues.propertyTypes,
@@ -515,7 +520,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
               <div className="text-sm font-bold text-slate-700">
                 Property categories
                 <div className="mt-1">
-                  <PropertyCategoryChecklist selected={formValues.propertyTypes} onToggle={togglePropertyType} />
+                  <PropertyCategoryChecklist selected={formValues.propertyTypes} onChange={(next) => setForm({ ...formValues, propertyTypes: next })} />
                 </div>
               </div>
               <div className="text-sm font-bold text-slate-700">

@@ -45,6 +45,9 @@ export interface Property {
   photos?: { url: string; category?: string }[];
   type: "sale" | "rent";
   propertyType: "house" | "apartment" | "land";
+  /** The exact type the seller picked (one of PROPERTY_TYPE_OPTIONS' labels, e.g. "Villa"). Listings
+   *  posted before this existed only have the bucket above. */
+  propertyLabel?: string;
   virtualTourUrl?: string;
   videoUrl?: string;
   lat?: number;
@@ -102,6 +105,14 @@ export const AMENITY_OPTIONS = [
 // other label here is a synonym that resolves down to one of them, same
 // synonyms /properties' old free-text Type field used to resolve from
 // typed text before it became a checklist.
+// The same labels grouped for pickers that want them sorted (organisation category limits).
+export const PROPERTY_LABEL_GROUPS: { label: string; options: string[] }[] = [
+  { label: 'Houses', options: ['House', 'Villa', 'Townhouse', 'Duplex', 'Bungalow', 'Cottage', 'Mansion'] },
+  { label: 'Apartments', options: ['Apartment', 'Condo', 'Studio'] },
+  { label: 'Land', options: ['Land'] },
+  { label: 'Commercial', options: ['Commercial'] },
+];
+
 export const PROPERTY_TYPE_OPTIONS: { label: string; bucket: Property["propertyType"] }[] = [
   { label: 'House', bucket: 'house' },
   { label: 'Apartment', bucket: 'apartment' },
