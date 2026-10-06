@@ -101,23 +101,15 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false }: { 
 }
 
 /** The same code, as a plain field inside a form (the become-a-seller page applies it after the account
- *  is created, so there's no Apply button here). */
-export function AccessCodeField({ value, onChange, defaultOpen = false }: { value: string; onChange: (next: string) => void; defaultOpen?: boolean }) {
+ *  is created, so there's no Apply button here). Always visible, so nobody has to find a link first. */
+export function AccessCodeField({ value, onChange, autoFocus = false }: { value: string; onChange: (next: string) => void; autoFocus?: boolean }) {
   const inputId = useId();
-  const [open, setOpen] = useState(defaultOpen || value !== "");
-  if (!open) {
-    return (
-      <button type="button" onClick={() => setOpen(true)} className="text-sm font-bold text-[#219b31] underline-offset-2 hover:underline">
-        Have an access code?
-      </button>
-    );
-  }
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
+    <div>
       <label htmlFor={inputId} className="block text-sm font-bold text-slate-700">
-        Access code <span className="font-medium text-slate-400">(optional)</span>
+        Have an access code? <span className="font-medium text-slate-400">(optional)</span>
       </label>
-      <input id={inputId} className={`${inputClass} mt-1.5`} value={value} onChange={(e) => onChange(tidy(e.target.value))} placeholder="HZE-XXXXXXXX" autoComplete="off" maxLength={20} spellCheck={false} />
+      <input id={inputId} className={`${inputClass} mt-2`} value={value} onChange={(e) => onChange(tidy(e.target.value))} placeholder="HZE-XXXXXXXX" autoComplete="off" autoFocus={autoFocus} maxLength={20} spellCheck={false} />
       <p className="mt-2 text-xs text-slate-500">Sign up with the email address your code was sent to.</p>
     </div>
   );

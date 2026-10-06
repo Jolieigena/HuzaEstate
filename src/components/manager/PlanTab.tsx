@@ -21,7 +21,7 @@ export default function PlanTab() {
 
   return (
     <div className="flex flex-col gap-8">
-      <SubscriptionPanel onCancel={() => setCancelling(true)} />
+      <SubscriptionPanel onCancel={() => setCancelling(true)} onUpgrade={(tier) => setCheckout({ kind: 'subscribe', tier })} />
 
       <section>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">

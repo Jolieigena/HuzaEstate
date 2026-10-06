@@ -5,13 +5,23 @@ import { useAuth } from "@/lib/auth-context";
 import { formatMoney } from "@/lib/finance/money";
 import { openBillingPortal, resumeSubscription } from "@/lib/postingPlans/api";
 import { notifySubscriptionChanged, useSubscription } from "@/lib/postingPlans/hooks";
-import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PLAN_PRICES } from "@/lib/postingPlans/types";
+import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PLAN_PRICES, type PlanTier } from "@/lib/postingPlans/types";
 import { useToast } from "@/lib/toast-context";
 import { formatLongDate } from "./RedeemAccessCode";
 
 /** "Your plan": what the seller is on, how much of this month's posting they've used, and the billing
  *  controls that go with a paid plan (automatic monthly payment, card and invoices, cancelling). */
-export default function SubscriptionPanel({ onCancel }: { onCancel: () => void }) {
+/** The plan the upgrade button offers: the next one up from what the seller pays for. Free goes to Gold, the
+ *  one most sellers pick; someone on an access code is offered a subscription to the plan the code gives, to
+ *  keep it once the code ends. Nothing is offered on Diamond, the top plan. */
+function upgradeTarget(paidTier: PlanTier, effectiveTier: PlanTier, onCode: boolean): { tier: Exclude<PlanTier, "free">; label: string } | null {
+  if (onCode && effectiveTier !== "free") return { tier: effectiveTier as Exclude<PlanTier, "free">, label: `Subscribe to keep ${PLAN_LABELS[effectiveTier]}` };
+  const next: Partial<Record<PlanTier, Exclude<PlanTier, "free">>> = { free: "gold", silver: "gold", gold: "diamond" };
+  const tier = next[paidTier];
+  return tier ? { tier, label: `Upgrade to ${PLAN_LABELS[tier]}` } : null;
+}
+
+export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: () => void; onUpgrade: (tier: Exclude<PlanTier, "free">) => void }) {
   const { token } = useAuth();
   const { showToast } = useToast();
   const subscription = useSubscription();
@@ -27,6 +37,7 @@ export default function SubscriptionPanel({ onCancel }: { onCancel: () => void }
   const used = subscription.postsUsed;
   const percent = cap === null || cap === 0 ? 0 : Math.min(Math.round((used / cap) * 100), 100);
   const features = PLAN_FEATURES[tier];
+  const upgrade = upgradeTarget(subscription.paidTier, tier, subscription.source === "code");
 
   const turnOn = async () => {
     if (!token || busy) return;
@@ -88,6 +99,12 @@ export default function SubscriptionPanel({ onCancel }: { onCancel: () => void }
             {features.priorityPlacement && <li>Priority placement</li>}
             {features.marketInsights && <li>Market Insights</li>}
           </ul>
+
+          {upgrade && (
+            <button type="button" onClick={() => onUpgrade(upgrade.tier)} className="mt-5 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#2ec440]">
+              {upgrade.label}
+            </button>
+          )}
         </div>
 
         {paid && (

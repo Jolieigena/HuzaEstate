@@ -328,6 +328,11 @@ function BecomeASellerForm() {
             </div>
           </div>
 
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5">Access Code</h2>
+            <AccessCodeField value={accessCode} onChange={setAccessCode} autoFocus={wantsCode} />
+          </div>
+
           <div className="flex items-start gap-3">
             <input
               type="checkbox"
@@ -341,8 +346,6 @@ function BecomeASellerForm() {
               I agree to HuzaEstate&apos;s <Link href="#" className="font-bold text-[#2ec440] hover:underline">Seller Terms &amp; Conditions</Link>.
             </label>
           </div>
-
-          <AccessCodeField value={accessCode} onChange={setAccessCode} defaultOpen={wantsCode} />
 
           {paidTier && !usingCode && (
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

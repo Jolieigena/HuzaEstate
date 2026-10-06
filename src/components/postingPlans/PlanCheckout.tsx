@@ -87,7 +87,7 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
           {mode.kind === "subscribe" && <span className="text-sm font-semibold text-slate-500">/month</span>}
         </p>
         <p className="text-sm text-slate-500">You&apos;ll complete payment securely with Stripe next.</p>
-        {mode.kind === "subscribe" && <RedeemAccessCode onRedeemed={() => setTimeout(onClose, 2500)} />}
+        {mode.kind === "subscribe" && <RedeemAccessCode defaultOpen onRedeemed={() => setTimeout(onClose, 2500)} />}
 
         {error && (
           <p className="rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{error}</p>

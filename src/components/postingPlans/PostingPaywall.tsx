@@ -43,7 +43,7 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
       />
 
       <div className="mt-6 mx-auto max-w-xl">
-        <RedeemAccessCode />
+        <RedeemAccessCode defaultOpen />
       </div>
 
       <div className="mt-8 flex flex-col items-center gap-2">
