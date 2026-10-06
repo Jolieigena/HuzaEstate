@@ -228,6 +228,7 @@ function CreateUserForm() {
                 <div className="mt-2">
                   <DistrictChecklist
                     countries={selectedOrg.countries}
+                    allowed={selectedOrg.districts}
                     selected={scopeDistricts}
                     onToggle={(d) => setScopeDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))}
                   />

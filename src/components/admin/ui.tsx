@@ -181,12 +181,19 @@ export function AdminTable({ headers, children }: { headers: string[], children:
  *  Empty `selected` means "this org's whole country scope" — same backward-compatible shape
  *  PermissionsChecklist's empty-selection-means-full-access convention already uses, just for
  *  geography instead of features. */
-export function DistrictChecklist({ countries, selected, onToggle }: { countries: string[]; selected: string[]; onToggle: (district: string) => void }) {
+export function DistrictChecklist({ countries, selected, onToggle, allowed }: { countries: string[]; selected: string[]; onToggle: (district: string) => void; allowed?: string[] }) {
+  // `allowed` is the districts the organisation itself covers — staff can only be scoped inside those.
+  // Empty/absent means the organisation covers every district of its countries.
+  const narrow = (regions: NonNullable<ReturnType<typeof regionsForCountry>>) =>
+    allowed?.length ? regions.map((r) => ({ ...r, districts: r.districts.filter((d) => allowed.includes(d)) })).filter((r) => r.districts.length) : regions;
   const groups = countries.map((country) => ({ country, regions: regionsForCountry(country) })).filter((g): g is { country: string; regions: NonNullable<ReturnType<typeof regionsForCountry>> } => !!g.regions);
   if (!groups.length) return null;
   return (
     <div className="flex flex-col gap-4">
-      {groups.map(({ country, regions }) => (
+      {groups.map(({ country, regions: allRegions }) => {
+        const regions = narrow(allRegions);
+        if (!regions.length) return null;
+        return (
         <div key={country}>
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">{country}</p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -212,7 +219,8 @@ export function DistrictChecklist({ countries, selected, onToggle }: { countries
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

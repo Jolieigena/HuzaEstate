@@ -1,5 +1,6 @@
 "use client";
 
+import { describeDistricts, describePropertyCategories } from "@/lib/admin/propertyCategories";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { hasOrgPermission } from "@/lib/orgPermissions";
@@ -147,6 +148,16 @@ export function OrgOrganisationPage() {
                 <p className="text-sm font-bold text-slate-700">Countries</p>
                 <p className="mt-1 text-sm text-slate-600">{org.countries.length > 0 ? org.countries.join(", ") : "None assigned"}</p>
                 <p className="mt-1 text-xs text-slate-400">Set by a platform administrator.</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">Regions</p>
+                <p className="mt-1 text-sm text-slate-600">{describeDistricts(org.districts)}</p>
+                <p className="mt-1 text-xs text-slate-400">Set by a platform administrator. Your staff can only be scoped to these districts.</p>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-700">Property categories</p>
+                <p className="mt-1 text-sm text-slate-600">{describePropertyCategories(org.propertyTypes)}</p>
+                <p className="mt-1 text-xs text-slate-400">Set by a platform administrator. Listings outside these categories aren&apos;t shown to your organisation.</p>
                 <SecondaryButton type="button" className="mt-2 min-h-9 px-3 py-1.5 text-xs" onClick={openRequest}>
                   Request a change
                 </SecondaryButton>

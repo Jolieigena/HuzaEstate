@@ -10,6 +10,10 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminOrganization } from "@/lib/admin/api";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
+import { describeDistricts, describePropertyCategories } from "@/lib/admin/propertyCategories";
+import { districtsForCountry } from "@/lib/regions";
+import RegionChecklist from "../RegionChecklist";
+import PropertyCategoryChecklist from "../PropertyCategoryChecklist";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
 
@@ -162,10 +166,20 @@ export function CreateOrganizationPage() {
   const [contactPhone, setContactPhone] = useState("");
   const [address, setAddress] = useState("");
   const [countries, setCountries] = useState<string[]>([]);
+  const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const toggleCountry = (name: string) => setCountries((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]));
+  const toggleCountry = (name: string) => {
+    const removing = countries.includes(name);
+    setCountries((prev) => (removing ? prev.filter((c) => c !== name) : [...prev, name]));
+    // Drop districts that belonged to a country that's no longer covered.
+    if (removing) setDistricts((prev) => prev.filter((d) => !districtsForCountry(name).includes(d)));
+  };
+  const toggleDistrict = (d: string) => setDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
+  const setManyDistricts = (list: string[], on: boolean) => setDistricts((prev) => (on ? Array.from(new Set([...prev, ...list])) : prev.filter((d) => !list.includes(d))));
+  const togglePropertyType = (value: string) => setPropertyTypes((prev) => (prev.includes(value) ? prev.filter((t) => t !== value) : [...prev, value]));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -179,6 +193,8 @@ export function CreateOrganizationPage() {
       contactPhone: contactPhone || undefined,
       address: address || undefined,
       countries,
+      propertyTypes,
+      districts,
     });
     setIsSubmitting(false);
     if (!result.ok) {
@@ -245,6 +261,16 @@ export function CreateOrganizationPage() {
               <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Which country/countries this organisation operates in — you can change this any time.</p>
               <CountryChecklist selected={countries} onToggle={toggleCountry} />
             </div>
+            <div className="block text-sm font-bold text-slate-700">
+              Property categories
+              <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Limit this organisation to certain kinds of property within its countries. Leave empty for all.</p>
+              <PropertyCategoryChecklist selected={propertyTypes} onToggle={togglePropertyType} />
+            </div>
+            <div className="block text-sm font-bold text-slate-700">
+              Regions
+              <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Limit this organisation to certain districts of its countries. Leave empty for the whole country.</p>
+              <RegionChecklist countries={countries} selected={districts} onToggle={toggleDistrict} onSetMany={setManyDistricts} />
+            </div>
 
             <PrimaryButton type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Creating…" : "Create organisation"}
@@ -274,7 +300,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   const canManage = useIsAdministrator();
 
   const [detail, setDetail] = useState<DetailState | null>(null);
-  const [form, setForm] = useState<{ id: string; name: string; description: string; contactEmail: string; contactPhone: string; address: string; countries: string[] } | null>(null);
+  const [form, setForm] = useState<{ id: string; name: string; description: string; contactEmail: string; contactPhone: string; address: string; countries: string[]; propertyTypes: string[]; districts: string[] } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [savingAutoPublish, setSavingAutoPublish] = useState(false);
@@ -317,7 +343,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     );
   }
 
-  const formValues = form?.id === org.id ? form : { id: org.id, name: org.name, description: org.description ?? "", contactEmail: org.contactEmail ?? "", contactPhone: org.contactPhone ?? "", address: org.address ?? "", countries: org.countries };
+  const formValues = form?.id === org.id ? form : { id: org.id, name: org.name, description: org.description ?? "", contactEmail: org.contactEmail ?? "", contactPhone: org.contactPhone ?? "", address: org.address ?? "", countries: org.countries, propertyTypes: org.propertyTypes ?? [], districts: org.districts ?? [] };
   const dirty =
     formValues.name !== org.name ||
     formValues.description !== (org.description ?? "") ||
@@ -325,10 +351,32 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     formValues.contactPhone !== (org.contactPhone ?? "") ||
     formValues.address !== (org.address ?? "") ||
     formValues.countries.length !== org.countries.length ||
-    formValues.countries.some((c) => !org.countries.includes(c));
+    formValues.countries.some((c) => !org.countries.includes(c)) ||
+    formValues.propertyTypes.length !== (org.propertyTypes ?? []).length ||
+    formValues.propertyTypes.some((t) => !(org.propertyTypes ?? []).includes(t)) ||
+    formValues.districts.length !== (org.districts ?? []).length ||
+    formValues.districts.some((d) => !(org.districts ?? []).includes(d));
 
   function toggleCountry(name: string) {
-    setForm({ ...formValues, countries: formValues.countries.includes(name) ? formValues.countries.filter((c) => c !== name) : [...formValues.countries, name] });
+    const removing = formValues.countries.includes(name);
+    setForm({
+      ...formValues,
+      countries: removing ? formValues.countries.filter((c) => c !== name) : [...formValues.countries, name],
+      // Drop districts that belonged to a country that's no longer covered.
+      districts: removing ? formValues.districts.filter((d) => !districtsForCountry(name).includes(d)) : formValues.districts,
+    });
+  }
+
+  function toggleDistrict(d: string) {
+    setForm({ ...formValues, districts: formValues.districts.includes(d) ? formValues.districts.filter((x) => x !== d) : [...formValues.districts, d] });
+  }
+
+  function setManyDistricts(list: string[], on: boolean) {
+    setForm({ ...formValues, districts: on ? Array.from(new Set([...formValues.districts, ...list])) : formValues.districts.filter((d) => !list.includes(d)) });
+  }
+
+  function togglePropertyType(value: string) {
+    setForm({ ...formValues, propertyTypes: formValues.propertyTypes.includes(value) ? formValues.propertyTypes.filter((t) => t !== value) : [...formValues.propertyTypes, value] });
   }
 
   async function saveDetails(e: React.FormEvent) {
@@ -342,6 +390,8 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
       contactPhone: formValues.contactPhone,
       address: formValues.address,
       countries: formValues.countries,
+      propertyTypes: formValues.propertyTypes,
+      districts: formValues.districts,
     });
     setSaving(false);
     if (result.ok) {
@@ -391,6 +441,8 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
               <Field label="Created" value={formatDate(org.createdAt)} />
               <Field label="Address" value={org.address || "Not set"} />
               <Field label="Countries" value={org.countries.length > 0 ? org.countries.join(", ") : "None assigned"} />
+              <Field label="Regions" value={describeDistricts(org.districts)} />
+              <Field label="Property categories" value={describePropertyCategories(org.propertyTypes)} />
               <Field label="Auto-publish" value={org.autoPublish === true ? "Always" : org.autoPublish === false ? "Never" : "Platform default"} />
             </dl>
           </Card>
@@ -458,6 +510,18 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
                 Countries
                 <div className="mt-1">
                   <CountryChecklist selected={formValues.countries} onToggle={toggleCountry} />
+                </div>
+              </div>
+              <div className="text-sm font-bold text-slate-700">
+                Property categories
+                <div className="mt-1">
+                  <PropertyCategoryChecklist selected={formValues.propertyTypes} onToggle={togglePropertyType} />
+                </div>
+              </div>
+              <div className="text-sm font-bold text-slate-700">
+                Regions
+                <div className="mt-1">
+                  <RegionChecklist countries={formValues.countries} selected={formValues.districts} onToggle={toggleDistrict} onSetMany={setManyDistricts} />
                 </div>
               </div>
               <div className="flex gap-2">
