@@ -18,6 +18,7 @@ import DistrictSelect from '@/components/shared/DistrictSelect';
 import { useCurrencyOptions } from '@/lib/currencies';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { useToast } from '@/lib/toast-context';
+import Select from "@/components/shared/Select";
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
@@ -332,7 +333,7 @@ function PostPropertyForm() {
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Listing Type</label>
-                <select
+                <Select
                   value={listingType}
                   onChange={(e) => setListingType(e.target.value as Property['type'])}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
@@ -341,12 +342,12 @@ function PostPropertyForm() {
                   <option value="" disabled>Select type</option>
                   <option value="sale">For Sale</option>
                   <option value="rent">For Rent</option>
-                </select>
+                </Select>
               </div>
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Type</label>
-                <select
+                <Select
                   value={propertyTypeLabel}
                   onChange={(e) => setPropertyTypeLabel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
@@ -356,7 +357,7 @@ function PostPropertyForm() {
                   {PROPERTY_TYPE_OPTIONS.map(({ label }) => (
                     <option key={label} value={label}>{label}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {isApartmentType && (
@@ -397,7 +398,7 @@ function PostPropertyForm() {
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     required
                   />
-                  <select
+                  <Select
                     value={currency}
                     onChange={(e) => { setCurrency(e.target.value); setCurrencyTouched(true); }}
                     aria-label="Currency"
@@ -406,7 +407,7 @@ function PostPropertyForm() {
                     {currencyOptions.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -424,7 +425,7 @@ function PostPropertyForm() {
 
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
-                <select
+                <Select
                   value={country}
                   onChange={(e) => { setCountry(e.target.value); setDistrict(''); }}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
@@ -432,7 +433,7 @@ function PostPropertyForm() {
                   {COUNTRY_OPTIONS.map((c) => (
                     <option key={c.code} value={c.name}>{c.name}</option>
                   ))}
-                </select>
+                </Select>
               </div>
 
               {regionsForCountry(country) && (
@@ -501,7 +502,7 @@ function PostPropertyForm() {
                     placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   />
-                  <select
+                  <Select
                     value={sqmUnit}
                     onChange={(e) => setSqmUnit(e.target.value as 'sqm' | 'sqkm')}
                     aria-label="Size unit"
@@ -509,7 +510,7 @@ function PostPropertyForm() {
                   >
                     <option value="sqm">sqm</option>
                     <option value="sqkm">sq km</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
 

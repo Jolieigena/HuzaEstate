@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/finance/format";
 import { getAccountName } from "@/lib/finance/accountLookup";
 import { INVOICE_STATUS_LABELS } from "@/lib/finance/types";
 import { PageFrame, Card, FinancePill, EmptyState, PrototypeBanner, fieldClass } from "@/components/finance/ui";
+import Select from "@/components/shared/Select";
 
 export default function InvoicesPage() {
   const { account, isAuthReady } = useAuth();
@@ -27,14 +28,14 @@ export default function InvoicesPage() {
 
       <Card className="mb-6">
         <label className="sr-only" htmlFor="invoice-status-filter">Filter by status</label>
-        <select id="invoice-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${fieldClass} w-auto`}>
+        <Select id="invoice-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${fieldClass} w-auto`}>
           <option value="all">All statuses</option>
           {Object.entries(INVOICE_STATUS_LABELS).map(([v, l]) => (
             <option key={v} value={v}>
               {l}
             </option>
           ))}
-        </select>
+        </Select>
       </Card>
 
       {filtered.length === 0 ? (

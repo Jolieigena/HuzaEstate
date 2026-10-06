@@ -9,6 +9,7 @@ import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrencyOptions } from '@/lib/currencies';
+import Select from "@/components/shared/Select";
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
@@ -150,18 +151,18 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Listing Type</label>
-            <select
+            <Select
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as Property['type'] }))}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
             >
               <option value="sale">For Sale</option>
               <option value="rent">For Rent</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Property Type</label>
-            <select
+            <Select
               value={form.propertyTypeLabel}
               onChange={(e) => setForm((f) => ({ ...f, propertyTypeLabel: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
@@ -169,7 +170,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               {PROPERTY_TYPE_OPTIONS.map(({ label }) => (
                 <option key={label} value={label}>{label}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -211,7 +212,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 required
               />
-              <select
+              <Select
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
                 aria-label="Currency"
@@ -220,7 +221,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                 {currencyOptions.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
-              </select>
+              </Select>
             </div>
           </div>
           <div>
@@ -235,7 +236,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
-            <select
+            <Select
               value={form.country}
               onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
@@ -243,7 +244,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               {COUNTRY_OPTIONS.map((c) => (
                 <option key={c.code} value={c.name}>{c.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
 
@@ -285,7 +286,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                 placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
               />
-              <select
+              <Select
                 value={sqmUnit}
                 onChange={(e) => setSqmUnit(e.target.value as 'sqm' | 'sqkm')}
                 aria-label="Size unit"
@@ -293,7 +294,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               >
                 <option value="sqm">sqm</option>
                 <option value="sqkm">sq km</option>
-              </select>
+              </Select>
             </div>
           </div>
         </div>

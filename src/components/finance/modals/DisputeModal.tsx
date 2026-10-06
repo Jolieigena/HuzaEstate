@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { DISPUTE_CATEGORY_LABELS, type DisputeCategory } from "@/lib/finance/types";
 import { PrimaryButton, SecondaryButton, fieldClass, labelClass } from "../ui";
+import Select from "@/components/shared/Select";
 
 interface Props {
   open: boolean;
@@ -38,13 +39,13 @@ export default function DisputeModal({ open, contextLabel, onClose, onConfirm }:
         <label htmlFor="dispute-category" className={labelClass}>
           Category
         </label>
-        <select id="dispute-category" value={category} onChange={(e) => setCategory(e.target.value as DisputeCategory)} className={`${fieldClass} mb-4`}>
+        <Select id="dispute-category" value={category} onChange={(e) => setCategory(e.target.value as DisputeCategory)} className={`${fieldClass} mb-4`}>
           {Object.entries(DISPUTE_CATEGORY_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
 
         <label htmlFor="dispute-description" className={labelClass}>
           Description

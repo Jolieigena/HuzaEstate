@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/finance/money";
 import { toMajor, toMinor } from "@/lib/finance/money";
 import { REFUND_REASON_LABELS, type Money, type Payment, type RefundReason } from "@/lib/finance/types";
 import { PrimaryButton, SecondaryButton, fieldClass, labelClass } from "../ui";
+import Select from "@/components/shared/Select";
 
 interface Props {
   payment: Payment | null;
@@ -46,13 +47,13 @@ export default function RefundRequestModal({ payment, maxRefundable, open, onClo
         <label htmlFor="refund-reason" className={labelClass}>
           Reason
         </label>
-        <select id="refund-reason" value={reason} onChange={(e) => setReason(e.target.value as RefundReason)} className={`${fieldClass} mb-4`}>
+        <Select id="refund-reason" value={reason} onChange={(e) => setReason(e.target.value as RefundReason)} className={`${fieldClass} mb-4`}>
           {Object.entries(REFUND_REASON_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
               {label}
             </option>
           ))}
-        </select>
+        </Select>
 
         <label htmlFor="refund-amount" className={labelClass}>
           Requested amount ({maxRefundable.currency})

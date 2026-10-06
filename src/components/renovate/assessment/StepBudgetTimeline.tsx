@@ -3,6 +3,7 @@
 import { BudgetFlexibility, BudgetTimelinePreferences, FINISH_LEVEL_LABELS, FinishLevel } from "@/lib/renovate/types";
 import { AssessmentWarning } from "@/lib/renovate/assessmentValidation";
 import { FormField, inputClass } from "./FormField";
+import Select from "@/components/shared/Select";
 
 interface Props {
   value: BudgetTimelinePreferences;
@@ -33,31 +34,31 @@ export default function StepBudgetTimeline({ value, onChange, warnings, errors }
 
         <FormField label="Budget flexibility">
           {(id) => (
-            <select id={id} value={value.flexibility} onChange={(e) => onChange({ flexibility: e.target.value as BudgetFlexibility })} className={inputClass}>
+            <Select id={id} value={value.flexibility} onChange={(e) => onChange({ flexibility: e.target.value as BudgetFlexibility })} className={inputClass}>
               <option value="fixed">Fixed</option>
               <option value="some_flexibility">Some flexibility</option>
               <option value="flexible">Flexible</option>
-            </select>
+            </Select>
           )}
         </FormField>
         <FormField label="Finish level">
           {(id) => (
-            <select id={id} value={value.finishLevel} onChange={(e) => onChange({ finishLevel: e.target.value as FinishLevel })} className={inputClass}>
+            <Select id={id} value={value.finishLevel} onChange={(e) => onChange({ finishLevel: e.target.value as FinishLevel })} className={inputClass}>
               {Object.entries(FINISH_LEVEL_LABELS).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </FormField>
         <FormField label="Contingency preference">
           {(id) => (
-            <select id={id} value={value.contingencyPreference} onChange={(e) => onChange({ contingencyPreference: e.target.value as BudgetTimelinePreferences["contingencyPreference"] })} className={inputClass}>
+            <Select id={id} value={value.contingencyPreference} onChange={(e) => onChange({ contingencyPreference: e.target.value as BudgetTimelinePreferences["contingencyPreference"] })} className={inputClass}>
               <option value="minimal">Minimal</option>
               <option value="standard">Standard</option>
               <option value="higher">Higher</option>
-            </select>
+            </Select>
           )}
         </FormField>
 

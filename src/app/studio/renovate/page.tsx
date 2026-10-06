@@ -17,6 +17,7 @@ import {
   RENOVATION_AREA_LABELS,
 } from "@/lib/renovate/types";
 import { propertyLocationLabel } from "@/lib/renovate/format";
+import Select from "@/components/shared/Select";
 
 type SortKey = "recent" | "oldest" | "name";
 
@@ -161,7 +162,7 @@ export default function RenovateDashboardPage() {
                 <label className="sr-only" htmlFor="status-filter">
                   Filter by status
                 </label>
-                <select
+                <Select
                   id="status-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as RenovationProjectStatus | "all")}
@@ -175,12 +176,12 @@ export default function RenovateDashboardPage() {
                         {label}
                       </option>
                     ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="property-type-filter">
                   Filter by property type
                 </label>
-                <select
+                <Select
                   id="property-type-filter"
                   value={propertyTypeFilter}
                   onChange={(e) => setPropertyTypeFilter(e.target.value as PropertyType | "all")}
@@ -192,12 +193,12 @@ export default function RenovateDashboardPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="area-filter">
                   Filter by renovation category
                 </label>
-                <select
+                <Select
                   id="area-filter"
                   value={areaFilter}
                   onChange={(e) => setAreaFilter(e.target.value as RenovationAreaKey | "all")}
@@ -209,12 +210,12 @@ export default function RenovateDashboardPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="mode-filter">
                   Filter by creation mode
                 </label>
-                <select
+                <Select
                   id="mode-filter"
                   value={modeFilter}
                   onChange={(e) => setModeFilter(e.target.value as RenovationCreationMode | "all")}
@@ -226,12 +227,12 @@ export default function RenovateDashboardPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="sort-by">
                   Sort by
                 </label>
-                <select
+                <Select
                   id="sort-by"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as SortKey)}
@@ -240,7 +241,7 @@ export default function RenovateDashboardPage() {
                   <option value="recent">Recently updated</option>
                   <option value="oldest">Oldest</option>
                   <option value="name">Project name</option>
-                </select>
+                </Select>
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PricingCards from "./PricingCards";
 import PlanCheckout from "./PlanCheckout";
+import RedeemAccessCode from "./RedeemAccessCode";
 import { useSubscription } from "@/lib/postingPlans/hooks";
 import { formatMoney } from "@/lib/finance/money";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
@@ -34,12 +35,16 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
       </div>
 
       <PricingCards
-        currentTier={subscription.tier}
+        currentTier={subscription.paidTier}
         onSelect={(tier) => {
           if (tier === "free") return;
           setCheckout({ kind: "subscribe", tier });
         }}
       />
+
+      <div className="mt-6 mx-auto max-w-xl">
+        <RedeemAccessCode />
+      </div>
 
       <div className="mt-8 flex flex-col items-center gap-2">
         <div className="w-full max-w-sm border-t border-slate-200 pt-6 text-center">

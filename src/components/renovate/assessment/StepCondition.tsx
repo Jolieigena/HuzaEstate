@@ -3,6 +3,7 @@
 import { CONDITION_RATING_LABELS, ConditionRating, ExistingConditionEntry, ProjectUploads, RENOVATION_AREA_LABELS, SelectedRenovationArea, UploadedFile } from "@/lib/renovate/types";
 import { FormField, inputClass } from "./FormField";
 import FileUploadList from "@/components/renovate/FileUploadList";
+import Select from "@/components/shared/Select";
 
 interface Props {
   areas: SelectedRenovationArea[];
@@ -84,7 +85,7 @@ export default function StepCondition({ areas, conditions, onChangeConditions, u
 
             <FormField label="Overall condition rating">
               {(id) => (
-                <select
+                <Select
                   id={id}
                   value={condition.conditionRating}
                   onChange={(e) => updateCondition(area.id, { conditionRating: e.target.value as ConditionRating })}
@@ -95,7 +96,7 @@ export default function StepCondition({ areas, conditions, onChangeConditions, u
                       {l}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
             </FormField>
 

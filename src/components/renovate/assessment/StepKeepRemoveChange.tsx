@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeepRemoveChangeItem, KeepRemoveChangeListType, PriorityLevel, PRIORITY_LABELS, RENOVATION_AREA_LABELS, SelectedRenovationArea } from "@/lib/renovate/types";
 import { inputClass } from "./FormField";
+import Select from "@/components/shared/Select";
 
 interface Props {
   areas: SelectedRenovationArea[];
@@ -78,7 +79,7 @@ export default function StepKeepRemoveChange({ areas, items, onChange }: Props) 
                       <li key={it.id} className="flex items-start justify-between gap-2 text-sm">
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-800 truncate">{it.item}</p>
-                          <select
+                          <Select
                             value={it.priority}
                             onChange={(e) => updateItem(it.id, { priority: e.target.value as PriorityLevel })}
                             className="text-xs text-slate-500 bg-transparent border-0 p-0 focus:outline-none"
@@ -88,7 +89,7 @@ export default function StepKeepRemoveChange({ areas, items, onChange }: Props) 
                                 {l}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                         </div>
                         <button type="button" onClick={() => removeItem(it.id)} aria-label={`Remove ${it.item}`} className="text-slate-300 hover:text-red-500 flex-shrink-0">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

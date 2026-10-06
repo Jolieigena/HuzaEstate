@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { useToast } from "@/lib/toast-context";
+import Select from "@/components/shared/Select";
 
 // Your country is only ever a best-effort, IP-detected guess made once at signup — this is
 // where you can correct it if it's wrong, or if you've since moved. See access-service's
@@ -35,7 +36,7 @@ export default function SettingsTab() {
       <div className="bg-white rounded-3xl border border-slate-200 p-6 max-w-lg">
         <label className="block text-sm font-bold text-slate-700">
           Country
-          <select
+          <Select
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-[#2ec440] focus:ring-4 focus:ring-[#2ec440]/10"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
@@ -44,7 +45,7 @@ export default function SettingsTab() {
             {COUNTRY_OPTIONS.map((c) => (
               <option key={c.code} value={c.name}>{c.name}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <p className="mt-2 text-xs text-slate-400">
           {account?.country

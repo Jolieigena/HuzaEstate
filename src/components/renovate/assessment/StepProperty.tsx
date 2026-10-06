@@ -3,6 +3,7 @@
 import { RenovationPropertyInfo, OCCUPANCY_STATUS_LABELS, OccupancyStatus, PROPERTY_TYPE_LABELS, PropertyType } from "@/lib/renovate/types";
 import { FormField, inputClass } from "./FormField";
 import { StepErrors } from "@/lib/renovate/assessmentValidation";
+import Select from "@/components/shared/Select";
 
 interface Props {
   value: RenovationPropertyInfo;
@@ -23,7 +24,7 @@ export default function StepProperty({ value, onChange, errors }: Props) {
         </FormField>
         <FormField label="Property type" error={errors.propertyType}>
           {(id) => (
-            <select id={id} value={value.propertyType ?? ""} onChange={(e) => onChange({ propertyType: e.target.value as PropertyType })} className={inputClass}>
+            <Select id={id} value={value.propertyType ?? ""} onChange={(e) => onChange({ propertyType: e.target.value as PropertyType })} className={inputClass}>
               <option value="" disabled>
                 Select a type
               </option>
@@ -32,7 +33,7 @@ export default function StepProperty({ value, onChange, errors }: Props) {
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </FormField>
 
@@ -73,7 +74,7 @@ export default function StepProperty({ value, onChange, errors }: Props) {
 
         <FormField label="Occupancy status">
           {(id) => (
-            <select id={id} value={value.occupancy ?? ""} onChange={(e) => onChange({ occupancy: e.target.value as OccupancyStatus })} className={inputClass}>
+            <Select id={id} value={value.occupancy ?? ""} onChange={(e) => onChange({ occupancy: e.target.value as OccupancyStatus })} className={inputClass}>
               <option value="" disabled>
                 Select occupancy
               </option>
@@ -82,7 +83,7 @@ export default function StepProperty({ value, onChange, errors }: Props) {
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           )}
         </FormField>
         <FormField label="Access information" optional hint="Gate codes, parking, lift access — anything a contractor would need to know.">

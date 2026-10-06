@@ -4,6 +4,7 @@ import { useId } from "react";
 import { ProjectBasics, PROPERTY_USE_LABELS, PropertyUse } from "@/lib/build/types";
 import { StepErrors } from "@/lib/build/briefValidation";
 import { Field, inputClass } from "./FormField";
+import Select from "@/components/shared/Select";
 
 export default function BriefStepBasics({ value, onChange, errors }: { value: ProjectBasics; onChange: (patch: Partial<ProjectBasics>) => void; errors: StepErrors }) {
   const ids = {
@@ -73,14 +74,14 @@ export default function BriefStepBasics({ value, onChange, errors }: { value: Pr
           />
         </Field>
         <Field label="Expected construction start" htmlFor={ids.start}>
-          <select id={ids.start} value={value.constructionStartPeriod} onChange={(e) => onChange({ constructionStartPeriod: e.target.value })} className={inputClass()}>
+          <Select id={ids.start} value={value.constructionStartPeriod} onChange={(e) => onChange({ constructionStartPeriod: e.target.value })} className={inputClass()}>
             <option value="">Not decided yet</option>
             <option value="Within 6 months">Within 6 months</option>
             <option value="Within 12 months">Within 12 months</option>
             <option value="Within 18 months">Within 18 months</option>
             <option value="Within 2 years">Within 2 years</option>
             <option value="No specific timeline">No specific timeline</option>
-          </select>
+          </Select>
         </Field>
       </div>
     </div>

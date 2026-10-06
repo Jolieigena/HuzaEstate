@@ -13,6 +13,7 @@ import ConfirmModal from "@/components/shared/ConfirmModal";
 import GenerationProgress from "@/components/renovate/GenerationProgress";
 import ConceptCard from "@/components/renovate/ConceptCard";
 import RefineDrawer from "@/components/renovate/RefineDrawer";
+import Select from "@/components/shared/Select";
 
 type SortKey = "default" | "cost" | "duration" | "disruption" | "reuse";
 
@@ -159,13 +160,13 @@ export default function ConceptsPage() {
           <label htmlFor="concept-sort" className="sr-only">
             Sort concepts
           </label>
-          <select id="concept-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl px-3 py-2.5">
+          <Select id="concept-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl px-3 py-2.5">
             <option value="default">Default order</option>
             <option value="cost">Lowest cost</option>
             <option value="duration">Shortest duration</option>
             <option value="disruption">Lowest disruption</option>
             <option value="reuse">Most retained materials</option>
-          </select>
+          </Select>
         </div>
       </div>
 

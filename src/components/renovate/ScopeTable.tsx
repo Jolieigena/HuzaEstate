@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { PRIORITY_LABELS, PriorityLevel, RENOVATION_AREA_LABELS, RenovationAreaKey, ScopeItem, SCOPE_WORK_CATEGORY_LABELS, ScopeWorkCategory } from "@/lib/renovate/types";
+import Select from "@/components/shared/Select";
 
 type GroupBy = "area" | "category";
 
@@ -74,7 +75,7 @@ export default function ScopeTable({ items, onEdit, onDelete, onToggleExcluded, 
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <select
+                    <Select
                       value={item.priority}
                       onChange={(e) => onTogglePriority(item.id, e.target.value as PriorityLevel)}
                       className="text-xs font-semibold border border-slate-200 rounded-lg px-2 py-1.5"
@@ -84,7 +85,7 @@ export default function ScopeTable({ items, onEdit, onDelete, onToggleExcluded, 
                           {l}
                         </option>
                       ))}
-                    </select>
+                    </Select>
                     <button type="button" onClick={() => onToggleExcluded(item.id, item.status !== "excluded")} className="text-xs font-bold text-slate-500 hover:text-slate-800">
                       {item.status === "excluded" ? "Include" : "Exclude"}
                     </button>

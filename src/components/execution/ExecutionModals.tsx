@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Dialog from "../Dialog";
 import { ExecutionRole, TaskPriority, PhaseName, InspectionType, IssuePriority, DefectSeverity } from "../../lib/execution/types";
+import Select from "@/components/shared/Select";
 
 interface ModalBaseProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function AddTaskModal({ open, onClose, onSubmit }: ModalBaseProps & { onS
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Phase</label>
-          <select value={phase} onChange={(e) => setPhase(e.target.value as PhaseName)} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-[#2ec440]">
+          <Select value={phase} onChange={(e) => setPhase(e.target.value as PhaseName)} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-[#2ec440]">
             <option value="Foundation and substructure">Foundation and substructure</option>
             <option value="Structural work">Structural work</option>
             <option value="Roofing">Roofing</option>
@@ -45,7 +46,7 @@ export function AddTaskModal({ open, onClose, onSubmit }: ModalBaseProps & { onS
             <option value="Testing and inspection">Testing and inspection</option>
             <option value="Snagging">Snagging</option>
             <option value="Handover">Handover</option>
-          </select>
+          </Select>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -64,12 +65,12 @@ export function AddTaskModal({ open, onClose, onSubmit }: ModalBaseProps & { onS
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Priority</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className="w-full px-3 py-2 border rounded-xl text-sm">
+            <Select value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} className="w-full px-3 py-2 border rounded-xl text-sm">
               <option value="low">Low</option>
               <option value="normal">Normal</option>
               <option value="high">High</option>
               <option value="critical">Critical</option>
-            </select>
+            </Select>
           </div>
         </div>
         <div>
@@ -163,7 +164,7 @@ export function RequestInspectionModal({ open, onClose, onSubmit }: ModalBasePro
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Inspection Type</label>
-          <select value={type} onChange={(e) => setType(e.target.value as InspectionType)} className="w-full px-3 py-2 border rounded-xl text-sm">
+          <Select value={type} onChange={(e) => setType(e.target.value as InspectionType)} className="w-full px-3 py-2 border rounded-xl text-sm">
             <option value="site_readiness">Site Readiness</option>
             <option value="foundation">Foundation & Substructure</option>
             <option value="structural_frame">Structural Frame</option>
@@ -173,7 +174,7 @@ export function RequestInspectionModal({ open, onClose, onSubmit }: ModalBasePro
             <option value="waterproofing">Waterproofing Barrier</option>
             <option value="finishes">Finishes & Joinery</option>
             <option value="final_inspection">Final Handover Inspection</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Inspection Title</label>
@@ -280,13 +281,13 @@ export function AddIssueModal({ open, onClose, onSubmit }: ModalBaseProps & { on
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Priority</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value as IssuePriority)} className="w-full px-3 py-2 border rounded-xl text-sm font-semibold">
+            <Select value={priority} onChange={(e) => setPriority(e.target.value as IssuePriority)} className="w-full px-3 py-2 border rounded-xl text-sm font-semibold">
               <option value="low">Low</option>
               <option value="normal">Normal</option>
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
               <option value="stop_work">STOP WORK Alert ⚠️</option>
-            </select>
+            </Select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Assigned Party</label>
@@ -345,12 +346,12 @@ export function AddDefectModal({ open, onClose, onSubmit }: ModalBaseProps & { o
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Severity</label>
-          <select value={severity} onChange={(e) => setSeverity(e.target.value as DefectSeverity)} className="w-full px-3 py-2 border rounded-xl text-sm">
+          <Select value={severity} onChange={(e) => setSeverity(e.target.value as DefectSeverity)} className="w-full px-3 py-2 border rounded-xl text-sm">
             <option value="minor_cosmetic">Minor Cosmetic</option>
             <option value="moderate">Moderate</option>
             <option value="major_functional">Major Functional</option>
             <option value="critical_safety">Critical Safety</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Defect Description</label>

@@ -17,6 +17,7 @@ import {
 import { useToast } from "@/lib/toast-context";
 import PromptModal from "@/components/shared/PromptModal";
 import ConfirmModal from "@/components/shared/ConfirmModal";
+import Select from "@/components/shared/Select";
 
 const SWATCH_IMAGES = ["/hero-house.jpg", "/hero-house-white.jpg", "/hero-house-final.jpg", "/hero-house-spacious.jpg", "/hero-house-ai.jpg", "/hero-house.png"];
 
@@ -191,13 +192,13 @@ export default function DesignerPage() {
         <label htmlFor="mobile-area" className="block text-xs font-bold text-slate-500 uppercase tracking-wide">
           Room / area
         </label>
-        <select id="mobile-area" value={selectedAreaId ?? ""} onChange={(e) => setSelectedAreaId(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm">
+        <Select id="mobile-area" value={selectedAreaId ?? ""} onChange={(e) => setSelectedAreaId(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm">
           {activeDesign.areas.map((a) => (
             <option key={a.id} value={a.id}>
               {a.label}
             </option>
           ))}
-        </select>
+        </Select>
         <button type="button" onClick={() => setMobileDrawer(mobileDrawer === "materials" ? "none" : "materials")} className="w-full bg-slate-100 text-slate-700 font-semibold py-2.5 rounded-xl text-sm">
           {mobileDrawer === "materials" ? "Hide materials" : "Show materials"}
         </button>

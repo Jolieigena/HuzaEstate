@@ -11,7 +11,10 @@ import AddressInput from '@/components/shared/AddressInput';
 import Dialog from '@/components/Dialog';
 import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
 import { createSellerFreeCheckout, createSubscribeCheckout } from '@/lib/postingPlans/api';
+import { redeemAccessCode } from '@/lib/accessCodes/api';
+import { AccessCodeField } from '@/components/postingPlans/RedeemAccessCode';
 import { formatMoney } from '@/lib/finance/money';
+import Select from "@/components/shared/Select";
 
 function isPlanTier(value: string | null): value is PlanTier {
   return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
@@ -46,6 +49,10 @@ function BecomeASellerForm() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  // An access code from the emailed link (?code=) or typed in; when present it is applied instead of paying.
+  const [accessCode, setAccessCode] = useState(searchParams.get('code') ?? '');
+  const wantsCode = searchParams.get('redeem') === '1';
+  const usingCode = accessCode.trim() !== '';
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   // Stripe not configured server-side — fall back to the existing simulated
@@ -61,6 +68,17 @@ function BecomeASellerForm() {
   };
 
   const proceedPastAccountCreation = async (freshToken: string) => {
+    if (usingCode) {
+      // The code replaces payment: it makes this account a seller on the code's plan for its days.
+      const redeemed = await redeemAccessCode(freshToken, accessCode);
+      if (!redeemed.ok) {
+        setError(`Your account is ready, but the access code couldn't be applied: ${redeemed.error}`);
+        setSubmitting(false);
+        return;
+      }
+      goToLogin();
+      return;
+    }
     if (!paidTier) {
       // Free tier is fully self-serve, no Stripe involved — grants seller_manager immediately.
       const result = await createSellerFreeCheckout(freshToken);
@@ -160,12 +178,11 @@ function BecomeASellerForm() {
           <h1 className="text-2xl font-bold text-slate-900 leading-none">Become a seller</h1>
           {selectedTier && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs leading-none">
-              Selected plan: {PLAN_LABELS[selectedTier]}
-              {paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}
+              {usingCode ? 'Access code: no payment needed' : `Selected plan: ${PLAN_LABELS[selectedTier]}${paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}`}
             </div>
           )}
         </div>
-        {paidTier && <p className="text-slate-500 mb-4">You&apos;ll complete payment securely with Stripe next.</p>}
+        {paidTier && !usingCode && <p className="text-slate-500 mb-4">You&apos;ll complete payment securely with Stripe next.</p>}
 
         {error && (
           <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
@@ -298,7 +315,7 @@ function BecomeASellerForm() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">I want to</label>
-              <select
+              <Select
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                 required
                 defaultValue=""
@@ -307,7 +324,7 @@ function BecomeASellerForm() {
                 <option value="sell">Sell my properties</option>
                 <option value="rent">Rent out my properties</option>
                 <option value="both">Both sell and rent out properties</option>
-              </select>
+              </Select>
             </div>
           </div>
 
@@ -325,7 +342,9 @@ function BecomeASellerForm() {
             </label>
           </div>
 
-          {paidTier && (
+          <AccessCodeField value={accessCode} onChange={setAccessCode} defaultOpen={wantsCode} />
+
+          {paidTier && !usingCode && (
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <span className="text-sm font-bold text-slate-700">{PLAN_LABELS[paidTier]} plan</span>
               <span className="text-sm font-bold text-slate-900">{formatMoney(PLAN_PRICES[paidTier])}/month</span>
@@ -333,7 +352,7 @@ function BecomeASellerForm() {
           )}
 
           <button type="submit" disabled={submitting || !termsAccepted} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
-            {submitting ? 'Submitting…' : paidTier ? 'Continue to Payment' : 'Create Seller Account'}
+            {submitting ? 'Submitting…' : usingCode ? 'Apply Code & Create Seller Account' : paidTier ? 'Continue to Payment' : 'Create Seller Account'}
           </button>
         </form>
 

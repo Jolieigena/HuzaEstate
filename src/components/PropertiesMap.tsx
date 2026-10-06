@@ -8,6 +8,7 @@ import L from 'leaflet';
 import TourWatchBadge from '@/components/TourWatchBadge';
 import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
+import Select from "@/components/shared/Select";
 
 // Create custom glowing price marker
 const createPriceIcon = (price: number) => {
@@ -241,7 +242,7 @@ function MapInteractions({
         {pointCenter ? (
           <>
             <span className="text-[12px] font-bold text-slate-700">Within</span>
-            <select
+            <Select
               value={radiusKm}
               onChange={(e) => setRadiusKm(Number(e.target.value))}
               className="text-[12px] font-bold text-[#2ec440] bg-transparent focus:outline-none cursor-pointer"
@@ -250,7 +251,7 @@ function MapInteractions({
               <option value={3}>3 km</option>
               <option value={5}>5 km</option>
               <option value={10}>10 km</option>
-            </select>
+            </Select>
             <button onClick={clearPointSearch} className="text-slate-400 hover:text-red-500 transition-colors ml-1" title="Clear location search">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>

@@ -12,6 +12,14 @@ const FEATURES: Record<PlanTier, string[]> = {
 };
 
 const RECOMMENDED: PlanTier = "gold";
+const RANK: Record<PlanTier, number> = { free: 0, silver: 1, gold: 2, diamond: 3 };
+
+function buttonLabel(tier: PlanTier, currentTier?: PlanTier): string {
+  if (currentTier === undefined) return tier === "free" ? "Get Started Free" : `Get Started ${PLAN_LABELS[tier]}`;
+  if (tier === currentTier) return "Current Plan";
+  if (tier === "free") return "Downgrade";
+  return RANK[tier] > RANK[currentTier] ? `Upgrade to ${PLAN_LABELS[tier]}` : `Switch to ${PLAN_LABELS[tier]}`;
+}
 
 /** Claude-pricing-page shaped: a card per tier, a short feature checklist,
  *  one tier visually highlighted, and the current plan shown as disabled
@@ -72,7 +80,7 @@ export default function PricingCards({
                   : "bg-slate-900 hover:bg-[#2ec440] text-white"
               }`}
             >
-              {isCurrent ? "Current Plan" : tier === "free" ? (currentTier ? "Downgrade" : "Get Started Free") : `Get Started ${PLAN_LABELS[tier]}`}
+              {buttonLabel(tier, currentTier)}
             </button>
 
             <p className="text-[11px] text-slate-400 mt-2">{PLAN_LIMITS[tier] === null ? "No monthly cap" : `Up to ${PLAN_LIMITS[tier]}/month`}</p>

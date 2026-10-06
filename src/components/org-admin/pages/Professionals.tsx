@@ -10,6 +10,7 @@ import { useToast } from "@/lib/toast-context";
 import { regionsForCountry } from "@/lib/regions";
 import { AdminTable, Card, DestructiveButton, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/admin/ui";
 import DistrictSelect from "@/components/shared/DistrictSelect";
+import Select from "@/components/shared/Select";
 
 export function OrgProfessionalsListPage() {
   const { token, account, isAuthReady } = useAuth();
@@ -217,22 +218,22 @@ export function OrgCreateProfessionalPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-bold text-slate-700">
                 Professional type
-                <select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
+                <Select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
                   <option value="individual">Individual professional</option>
                   <option value="firm">Firm / company</option>
-                </select>
+                </Select>
               </label>
               <label className="block text-sm font-bold text-slate-700">
                 Country
                 {org && org.countries.length === 0 ? (
                   <p className="mt-2 text-sm font-medium text-slate-500">Your organisation has no countries assigned yet — contact a platform administrator.</p>
                 ) : (
-                  <select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required disabled={!org}>
+                  <Select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required disabled={!org}>
                     <option value="" disabled>{org ? "Select a country" : "Loading…"}</option>
                     {org?.countries.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </label>
               {regionsForCountry(country) && (

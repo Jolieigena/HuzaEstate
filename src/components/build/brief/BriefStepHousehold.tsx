@@ -5,6 +5,7 @@ import { HouseholdBrief, KitchenType, PrivacyLevel, RoomKey, RoomRequirement, RO
 import { StepErrors } from "@/lib/build/briefValidation";
 import { newId } from "@/lib/build/factory";
 import { Field, inputClass } from "./FormField";
+import Select from "@/components/shared/Select";
 
 const KITCHEN_OPTIONS: { key: KitchenType; label: string }[] = [
   { key: "open_plan", label: "Open-plan" },
@@ -183,7 +184,7 @@ export default function BriefStepHousehold({ value, onChange, errors }: { value:
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">Privacy</label>
-                  <select
+                  <Select
                     value={room.privacy ?? "private"}
                     onChange={(e) => updateRoom(room.key, { privacy: e.target.value as PrivacyLevel })}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20"
@@ -193,7 +194,7 @@ export default function BriefStepHousehold({ value, onChange, errors }: { value:
                         {opt.label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="mt-3">

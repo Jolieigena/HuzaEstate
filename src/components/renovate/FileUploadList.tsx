@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { UploadCategory, UploadedFile } from "@/lib/renovate/types";
 import { formatBytes } from "@/lib/renovate/format";
 import { newId } from "@/lib/renovate/factory";
+import Select from "@/components/shared/Select";
 
 const ALLOWED_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "mp4", "mov"];
 const MAX_SIZE_BYTES = 50 * 1024 * 1024;
@@ -164,7 +165,7 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
                 </p>
               </div>
               {areaOptions && areaOptions.length > 0 && (
-                <select
+                <Select
                   value={file.relatedAreaId ?? ""}
                   onChange={(e) => onChange(files.map((f) => (f.id === file.id ? { ...f, relatedAreaId: e.target.value || undefined } : f)))}
                   className="text-xs font-semibold border border-slate-200 rounded-lg px-2 py-1.5 flex-shrink-0"
@@ -176,7 +177,7 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
                       {a.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               )}
               <button
                 type="button"

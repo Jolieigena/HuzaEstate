@@ -19,4 +19,5 @@ export const ORG_ADMIN_NAV_ITEMS: OrgAdminNavItem[] = [
   { key: "staff", label: "Staff", href: "/org-admin/staff", iconPath: "M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-3.13a4 4 0 10-4-4 4 4 0 004 4zm6 3a4 4 0 10-4-4", permission: "manage_staff" },
   { key: "organisation", label: "Organisation", href: "/org-admin/organisation", iconPath: "M20 7h-3V5a2 2 0 00-2-2H9a2 2 0 00-2 2v2H4a1 1 0 00-1 1v11a2 2 0 002 2h14a2 2 0 002-2V8a1 1 0 00-1-1zM9 5h6v2H9V5z", permission: "manage_organisation" },
   { key: "payments", label: "Payments", href: "/org-admin/payments", iconPath: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z", permission: "view_payments" },
+  { key: "access-codes", label: "Access Codes", href: "/org-admin/access-codes", iconPath: "M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z", permission: "manage_access_codes" },
 ];

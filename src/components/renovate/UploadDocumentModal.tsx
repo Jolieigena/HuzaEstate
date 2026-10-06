@@ -6,6 +6,7 @@ import FileUploadList from "@/components/renovate/FileUploadList";
 import { DocumentCategory, DOCUMENT_CATEGORY_LABELS, UploadedFile } from "@/lib/renovate/types";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { useToast } from "@/lib/toast-context";
+import Select from "@/components/shared/Select";
 
 export default function UploadDocumentModal({ projectId, open, onClose }: { projectId: string; open: boolean; onClose: () => void }) {
   const { showToast } = useToast();
@@ -52,7 +53,7 @@ export default function UploadDocumentModal({ projectId, open, onClose }: { proj
         <label htmlFor="doc-category" className="block text-sm font-bold text-slate-700 mb-2">
           Category
         </label>
-        <select
+        <Select
           id="doc-category"
           value={category}
           onChange={(e) => setCategory(e.target.value as DocumentCategory)}
@@ -63,7 +64,7 @@ export default function UploadDocumentModal({ projectId, open, onClose }: { proj
               {label}
             </option>
           ))}
-        </select>
+        </Select>
 
         <FileUploadList files={files} onChange={setFiles} category="measurement_document" />
 

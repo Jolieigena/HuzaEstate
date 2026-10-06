@@ -12,6 +12,7 @@ import { ORG_PERMISSIONS, type OrgPermission } from "@/lib/orgPermissions";
 import { regionsForCountry } from "@/lib/regions";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, DistrictChecklist, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime } from "../ui";
+import Select from "@/components/shared/Select";
 
 const ALL_PERMISSIONS = new Set(ORG_PERMISSIONS.map((p) => p.value));
 
@@ -167,7 +168,7 @@ export function UsersListPage() {
             </label>
             <label className="text-sm font-bold text-slate-700">
               Status
-              <select
+              <Select
                 className={`${fieldClass} mt-1`}
                 value={status}
                 onChange={(e) => {
@@ -178,7 +179,7 @@ export function UsersListPage() {
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
-              </select>
+              </Select>
             </label>
           </div>
         </Card>

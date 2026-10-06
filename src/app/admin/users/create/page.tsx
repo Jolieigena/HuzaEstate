@@ -11,6 +11,7 @@ import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { regionsForCountry } from "@/lib/regions";
 import { Card, DistrictChecklist, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "@/components/admin/ui";
 import DistrictSelect from "@/components/shared/DistrictSelect";
+import Select from "@/components/shared/Select";
 
 // The only roles created from this admin form (enforced server-side too — see access-service's
 // POST /auth/admin/users). Customer only ever comes from public signup; Seller (Manager) is
@@ -156,13 +157,13 @@ function CreateUserForm() {
             {!fromOrganizationId && (
               <label className="block text-sm font-bold text-slate-700">
                 Role
-                <select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional" | "organization_admin">)}>
+                <Select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional" | "organization_admin">)}>
                   {ROLE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
             )}
 
@@ -170,19 +171,19 @@ function CreateUserForm() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block text-sm font-bold text-slate-700">
                   Professional type
-                  <select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
+                  <Select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
                     <option value="individual">Individual professional</option>
                     <option value="firm">Firm / company</option>
-                  </select>
+                  </Select>
                 </label>
                 <label className="block text-sm font-bold text-slate-700">
                   Country
-                  <select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required>
+                  <Select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required>
                     <option value="" disabled>Select a country</option>
                     {COUNTRY_OPTIONS.map((c) => (
                       <option key={c.code} value={c.name}>{c.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 </label>
                 {regionsForCountry(country) && (
                   <label className="block text-sm font-bold text-slate-700">
@@ -212,12 +213,12 @@ function CreateUserForm() {
                     .
                   </p>
                 ) : (
-                  <select className={`${fieldClass} mt-2`} value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} required>
+                  <Select className={`${fieldClass} mt-2`} value={organizationId} onChange={(e) => setOrganizationId(e.target.value)} required>
                     <option value="" disabled>Select an organisation</option>
                     {organizations.map((org) => (
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </label>
             ) : null}

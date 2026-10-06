@@ -1,6 +1,7 @@
 "use client";
 
 import { regionsForCountry } from "@/lib/regions";
+import Select from "@/components/shared/Select";
 
 const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 
@@ -12,7 +13,7 @@ export default function DistrictSelect({ country, value, onChange, className = "
   const regions = regionsForCountry(country);
   if (!regions) return null;
   return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className={`${fieldClass} ${className}`}>
+    <Select value={value} onChange={(e) => onChange(e.target.value)} className={`${fieldClass} ${className}`}>
       <option value="">Select a district…</option>
       {regions.map((r) => (
         <optgroup key={r.region} label={r.region}>
@@ -21,6 +22,6 @@ export default function DistrictSelect({ country, value, onChange, className = "
           ))}
         </optgroup>
       ))}
-    </select>
+    </Select>
   );
 }

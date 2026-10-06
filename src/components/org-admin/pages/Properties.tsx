@@ -11,6 +11,7 @@ import { useToast } from "@/lib/toast-context";
 import { ListingReviewDialog, SellerAutoPublishToggle, useSellerAutoPublish } from "@/components/admin/ListingModerationDialogs";
 import ReasonFormModal from "@/components/admin/ReasonFormModal";
 import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "@/components/admin/ui";
+import Select from "@/components/shared/Select";
 
 const STATUS_FILTERS: { key: "all" | PropertyStatus; label: string }[] = [
   { key: "all", label: "All" },
@@ -112,11 +113,11 @@ export function OrgPropertiesListPage() {
             </label>
             <label className="text-sm font-bold text-slate-700">
               Type
-              <select className={`${fieldClass} mt-1`} value={type} onChange={(e) => setType(e.target.value as typeof type)}>
+              <Select className={`${fieldClass} mt-1`} value={type} onChange={(e) => setType(e.target.value as typeof type)}>
                 <option value="all">All types</option>
                 <option value="sale">For sale</option>
                 <option value="rent">For rent</option>
-              </select>
+              </Select>
             </label>
           </div>
         </Card>

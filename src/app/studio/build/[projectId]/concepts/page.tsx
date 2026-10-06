@@ -14,6 +14,7 @@ import ConfirmModal from "@/components/shared/ConfirmModal";
 import GenerationProgress from "@/components/build/GenerationProgress";
 import ConceptCard from "@/components/build/ConceptCard";
 import RefineDrawer from "@/components/build/RefineDrawer";
+import Select from "@/components/shared/Select";
 
 type SortKey = "default" | "cost" | "area" | "sustainability" | "efficiency";
 
@@ -163,13 +164,13 @@ export default function ConceptsPage() {
           <label htmlFor="concept-sort" className="sr-only">
             Sort concepts
           </label>
-          <select id="concept-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl px-3 py-2.5">
+          <Select id="concept-sort" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl px-3 py-2.5">
             <option value="default">Default order</option>
             <option value="cost">Lowest estimated cost</option>
             <option value="area">Largest floor area</option>
             <option value="sustainability">Best sustainability</option>
             <option value="efficiency">Best space efficiency</option>
-          </select>
+          </Select>
         </div>
       </div>
 

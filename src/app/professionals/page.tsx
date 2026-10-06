@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib/professional/api";
+import Select from "@/components/shared/Select";
 
 export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
@@ -78,28 +79,26 @@ export default function ProfessionalsDirectoryPage() {
 
             {/* Specialization Select Pill */}
             <div className="relative flex-shrink-0">
-              <select 
+              <Select 
                 value={specialization}
                 onChange={e => setSpecialization(e.target.value)}
                 className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${specialization ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
               >
                 <option value="">All Services</option>
                 {specializations.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <svg className={`w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${specialization ? 'text-slate-900' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </Select>
             </div>
 
             {/* Location Select Pill */}
             <div className="relative flex-shrink-0">
-              <select 
+              <Select 
                 value={location}
                 onChange={e => setLocation(e.target.value)}
                 className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${location ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
               >
                 <option value="">All Locations</option>
                 {locations.map(l => <option key={l} value={l}>{l}</option>)}
-              </select>
-              <svg className={`w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${location ? 'text-slate-900' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+              </Select>
             </div>
 
             <div className="hidden sm:block w-px h-5 bg-slate-200 mx-0.5"></div>

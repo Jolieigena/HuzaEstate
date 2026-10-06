@@ -112,6 +112,9 @@ export interface AdminSubscription {
   priceCents: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  /** 'code' when the plan shown comes from an access code rather than a paid subscription. */
+  source?: "paid" | "code" | "free";
+  accessUntil?: string;
   postsUsed: number;
   extraCredits: number;
   postsLimit: number | null;
@@ -124,7 +127,8 @@ export interface AdminSubscriptionList {
   total: number;
   page: number;
   limit: number;
-  summary: { byTier: Record<string, number>; paidActive: number; monthlyRecurringCents: number };
+  /** byTier counts what sellers can use today (access codes included); revenue is paid plans only. */
+  summary: { byTier: Record<string, number>; paidActive: number; monthlyRecurringCents: number; onAccessCode: number };
 }
 
 export type PaymentKind = "subscribe" | "per_post" | "promote";
@@ -148,7 +152,8 @@ export interface AdminPaymentList {
   total: number;
   page: number;
   limit: number;
-  summary: { totalCents: number; byKind: Record<PaymentKind, number> };
+  /** oneTimeCents is per-post + promotion payments only; totalCents also counts plan sign-ups. */
+  summary: { totalCents: number; oneTimeCents: number; byKind: Record<PaymentKind, number>; byKindCents: Record<PaymentKind, number> };
 }
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -206,13 +211,13 @@ export const AdminApi = {
     call<AdminSubscriptionList>(`${PAYMENT_API_URL}/subscriptions${qs({ ...query })}`, token),
   /** Every completed one-time or recurring payment — per-post, promotion, and plan subscriptions,
    *  all in one ledger (see payment-service's Payment model). */
-  listPayments: (token: string, query: { kind?: PaymentKind; accountId?: string; page?: number; limit?: number } = {}) =>
+  listPayments: (token: string, query: { kind?: PaymentKind | "one_time"; accountId?: string; page?: number; limit?: number } = {}) =>
     call<AdminPaymentList>(`${PAYMENT_API_URL}/subscriptions/payments${qs({ ...query })}`, token),
   /** organization_admin only: subscriptions/payments scoped to sellers with a listing in the
    *  caller's organisation's countries — same shape as listSubscriptions/listPayments. */
   orgSubscriptions: (token: string, query: { tier?: string; status?: string; page?: number; limit?: number } = {}) =>
     call<AdminSubscriptionList>(`${PAYMENT_API_URL}/subscriptions/org${qs({ ...query })}`, token),
-  orgPayments: (token: string, query: { kind?: PaymentKind; page?: number; limit?: number } = {}) =>
+  orgPayments: (token: string, query: { kind?: PaymentKind | "one_time"; page?: number; limit?: number } = {}) =>
     call<AdminPaymentList>(`${PAYMENT_API_URL}/subscriptions/payments/org${qs({ ...query })}`, token),
   listOrganizations: async (token: string, query: { country?: string } = {}) => {
     const result = await call<{ organizations: AdminOrganization[] }>(`${ACCESS_API_URL}/organizations${qs({ ...query })}`, token);

@@ -26,6 +26,13 @@ const FOCUSABLE_SELECTOR =
 export default function Dialog({ open, onClose, labelledBy, describedBy, children, panelClassName = "", backdropClassName = "bg-slate-900/70 backdrop-blur-sm" }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+  // Callers usually pass a fresh onClose on every render. Keeping it in a ref means the effect below
+  // runs only when the dialog opens or closes. Depending on onClose itself re-ran it on every
+  // keystroke in a form inside the dialog, and each run moved focus out of the field being typed in.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -37,7 +44,7 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab") {
@@ -68,7 +75,7 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
       clearTimeout(focusTimer);
       previouslyFocused.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -76,7 +83,7 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current();
       }}
     >
       <div className={`absolute inset-0 ${backdropClassName}`} aria-hidden="true" />

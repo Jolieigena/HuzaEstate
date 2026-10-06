@@ -16,6 +16,6 @@ export interface Listing {
   property: Property;
 }
 
-export type ManagerTab = 'overview' | 'listings' | 'inquiries' | 'insights' | 'profile';
+export type ManagerTab = 'overview' | 'listings' | 'inquiries' | 'insights' | 'plan' | 'profile';
 export type ListingStatusFilter = ListingStatus | 'all';
 export type ListingStatusCounts = Record<ListingStatus, number>;

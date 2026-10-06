@@ -74,6 +74,12 @@ export default function SellPage() {
               router.push(`/become-a-seller?plan=${tier}`);
             }}
           />
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Got an access code?{' '}
+            <button type="button" onClick={() => router.push('/become-a-seller?redeem=1')} className="font-bold text-[#2ec440] hover:underline">
+              Use it here
+            </button>
+          </p>
         </div>
       </section>
     </div>

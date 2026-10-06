@@ -13,7 +13,7 @@ export function EmptyState({ title, description, action }: { title: string; desc
 export const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 export function formatDate(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium" }).format(new Date(value)); }
 export function formatDateTime(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
-export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, maximumFractionDigits: 0 }).format(value); }
+export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(value); }
 
 export function AdminTable({ headers, children }: { headers: string[]; children: React.ReactNode }) {
   return (

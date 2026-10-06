@@ -14,6 +14,12 @@ export interface RemoteSubscription {
   /** True once cancellation is scheduled — the plan stays active and billed until renewsOn,
    *  then drops to Free. */
   cancelAtPeriodEnd: boolean;
+  /** What the seller is billed for. `tier` above is the better of this and any running access code. */
+  paidTier: PlanTier;
+  /** Where `tier` comes from: a paid plan, an access code, or nothing (Free). */
+  source: "paid" | "code" | "free";
+  /** Set while an access code is giving the seller extra access. */
+  accessGrant: { tier: PlanTier; label: string; endsAt: string; startedAt?: string; days?: number } | null;
   postsUsed: number;
   postsLimit: number | null;
   postsRemaining: number | null;
@@ -78,6 +84,38 @@ export async function cancelSubscription(token: string): Promise<CancelResult> {
     if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
     const data = await res.json();
     return { ok: true, effectiveDate: data.effectiveDate as string };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+export type ResumeResult = { ok: true; subscription: RemoteSubscription } | { ok: false; error: string };
+
+/** Turns automatic monthly payment back on after cancellation was scheduled (only possible while the
+ *  period already paid for is still running). */
+export async function resumeSubscription(token: string): Promise<ResumeResult> {
+  try {
+    const res = await fetch(`${PAYMENT_API_URL}/subscriptions/resume`, { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+    return { ok: true, subscription: (await res.json()) as RemoteSubscription };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+export type PortalResult = { ok: true; url: string } | { ok: false; error: string };
+
+/** A link to Stripe's hosted page for changing the card and seeing invoices. */
+export async function openBillingPortal(token: string, returnUrl: string): Promise<PortalResult> {
+  try {
+    const res = await fetch(`${PAYMENT_API_URL}/subscriptions/portal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ returnUrl }),
+    });
+    if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+    const data = await res.json();
+    return { ok: true, url: data.url as string };
   } catch {
     return { ok: false, error: "Could not reach the server. Please try again." };
   }

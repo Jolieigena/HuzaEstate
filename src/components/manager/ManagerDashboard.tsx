@@ -19,6 +19,7 @@ import ApplyGate from './ApplyGate';
 import ManagerHeader from './ManagerHeader';
 import ManagerSidebar from './ManagerSidebar';
 import ManagerMobileDrawer from './ManagerMobileDrawer';
+import PlanTab from './PlanTab';
 import OverviewTab from './OverviewTab';
 import ListingsTab from './ListingsTab';
 import InquiriesTab from './InquiriesTab';
@@ -148,6 +149,7 @@ export default function ManagerDashboard() {
                   setStatusFilter(status);
                   setActiveTab('listings');
                 }}
+                onOpenPlan={() => setActiveTab('plan')}
               />
             )}
 
@@ -184,6 +186,9 @@ export default function ManagerDashboard() {
             )}
 
             {/* LANDLORD PROFILE TAB */}
+            {/* PLAN & BILLING TAB */}
+            {activeTab === 'plan' && <PlanTab />}
+
             {activeTab === 'profile' && (
               <LandlordProfileTab />
             )}

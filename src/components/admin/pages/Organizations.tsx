@@ -15,6 +15,7 @@ import RegionChecklist from "../RegionChecklist";
 import PropertyCategoryChecklist from "../PropertyCategoryChecklist";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
+import Select from "@/components/shared/Select";
 
 // A checklist of every country this organisation operates in — admin-assigned, and changeable
 // any time (see the Detail page below). Same checkbox-list pattern /properties' own Country
@@ -106,12 +107,12 @@ export function OrganizationsListPage() {
             </label>
             <label className="text-sm font-bold text-slate-700">
               Country
-              <select className={`${fieldClass} mt-1`} value={country} onChange={(e) => setCountry(e.target.value)}>
+              <Select className={`${fieldClass} mt-1`} value={country} onChange={(e) => setCountry(e.target.value)}>
                 <option value="">All countries</option>
                 {COUNTRY_OPTIONS.map((c) => (
                   <option key={c.code} value={c.name}>{c.name}</option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
         </Card>

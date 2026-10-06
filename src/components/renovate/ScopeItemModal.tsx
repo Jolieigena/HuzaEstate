@@ -3,6 +3,7 @@
 import { useId, useState, FormEvent } from "react";
 import Dialog from "@/components/Dialog";
 import { PRIORITY_LABELS, PriorityLevel, RenovationAreaKey, RENOVATION_AREA_LABELS, ScopeItem, SCOPE_WORK_CATEGORY_LABELS, ScopeWorkCategory } from "@/lib/renovate/types";
+import Select from "@/components/shared/Select";
 
 interface Props {
   open: boolean;
@@ -56,25 +57,25 @@ export default function ScopeItemModal({ open, onClose, onSubmit, areaOptions, i
             <label htmlFor="scope-area" className="block text-sm font-bold text-slate-700 mb-1.5">
               Area
             </label>
-            <select id="scope-area" value={areaKey} onChange={(e) => setAreaKey(e.target.value as RenovationAreaKey)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
+            <Select id="scope-area" value={areaKey} onChange={(e) => setAreaKey(e.target.value as RenovationAreaKey)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
               {areaOptions.map((a) => (
                 <option key={a} value={a}>
                   {RENOVATION_AREA_LABELS[a]}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="scope-category" className="block text-sm font-bold text-slate-700 mb-1.5">
               Category
             </label>
-            <select id="scope-category" value={category} onChange={(e) => setCategory(e.target.value as ScopeWorkCategory)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
+            <Select id="scope-category" value={category} onChange={(e) => setCategory(e.target.value as ScopeWorkCategory)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
               {Object.entries(SCOPE_WORK_CATEGORY_LABELS).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="scope-task" className="block text-sm font-bold text-slate-700 mb-1.5">
@@ -104,13 +105,13 @@ export default function ScopeItemModal({ open, onClose, onSubmit, areaOptions, i
             <label htmlFor="scope-priority" className="block text-sm font-bold text-slate-700 mb-1.5">
               Priority
             </label>
-            <select id="scope-priority" value={priority} onChange={(e) => setPriority(e.target.value as PriorityLevel)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
+            <Select id="scope-priority" value={priority} onChange={(e) => setPriority(e.target.value as PriorityLevel)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200">
               {Object.entries(PRIORITY_LABELS).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="scope-dependency" className="block text-sm font-bold text-slate-700 mb-1.5">

@@ -102,7 +102,7 @@ export const fieldClass = "w-full rounded-xl border border-slate-200/80 bg-white
 
 export function formatDate(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium" }).format(new Date(value)); }
 export function formatDateTime(value: string) { return new Intl.DateTimeFormat("en-RW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); }
-export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, maximumFractionDigits: 0 }).format(value); }
+export function formatMoney(value: number, currency = "RWF") { return new Intl.NumberFormat("en-RW", { style: "currency", currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(value); }
 
 /** Small "send a note to whoever's responsible" action — a button that opens a composer modal,
  *  used on the admin/org-admin Inquiries pages (both property and professional) to nudge the

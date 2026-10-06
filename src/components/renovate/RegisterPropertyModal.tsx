@@ -3,6 +3,7 @@
 import { useId, useState, FormEvent } from "react";
 import Dialog from "@/components/Dialog";
 import { OccupancyStatus, OwnershipStatus, OWNERSHIP_STATUS_LABELS, PropertyType, PROPERTY_TYPE_LABELS, RenovationPropertyInfo } from "@/lib/renovate/types";
+import Select from "@/components/shared/Select";
 
 interface RegisterPropertyModalProps {
   open: boolean;
@@ -72,26 +73,26 @@ export default function RegisterPropertyModal({ open, onClose, onSubmit }: Regis
             <label htmlFor="reg-type" className="block text-sm font-bold text-slate-700 mb-1.5">
               Property type
             </label>
-            <select id="reg-type" value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
+            <Select id="reg-type" value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
               {Object.entries(PROPERTY_TYPE_LABELS).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
             <label htmlFor="reg-ownership" className="block text-sm font-bold text-slate-700 mb-1.5">
               Ownership status
             </label>
-            <select id="reg-ownership" value={ownershipStatus} onChange={(e) => setOwnershipStatus(e.target.value as OwnershipStatus)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
+            <Select id="reg-ownership" value={ownershipStatus} onChange={(e) => setOwnershipStatus(e.target.value as OwnershipStatus)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
               {Object.entries(OWNERSHIP_STATUS_LABELS).map(([k, l]) => (
                 <option key={k} value={k}>
                   {l}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="sm:col-span-2">
@@ -135,11 +136,11 @@ export default function RegisterPropertyModal({ open, onClose, onSubmit }: Regis
             <label htmlFor="reg-occupancy" className="block text-sm font-bold text-slate-700 mb-1.5">
               Current occupancy
             </label>
-            <select id="reg-occupancy" value={occupancy} onChange={(e) => setOccupancy(e.target.value as OccupancyStatus)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
+            <Select id="reg-occupancy" value={occupancy} onChange={(e) => setOccupancy(e.target.value as OccupancyStatus)} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20">
               <option value="occupied">Occupied</option>
               <option value="vacant">Vacant</option>
               <option value="partially_occupied">Partially occupied</option>
-            </select>
+            </Select>
           </div>
         </div>
 

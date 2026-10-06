@@ -6,6 +6,7 @@ import FileUploadList from "@/components/build/FileUploadList";
 import { FileCategory, FILE_CATEGORY_LABELS, UploadedFile } from "@/lib/build/types";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { useToast } from "@/lib/toast-context";
+import Select from "@/components/shared/Select";
 
 export default function UploadDocumentModal({ projectId, open, onClose }: { projectId: string; open: boolean; onClose: () => void }) {
   const { showToast } = useToast();
@@ -55,7 +56,7 @@ export default function UploadDocumentModal({ projectId, open, onClose }: { proj
         <label htmlFor="doc-category" className="block text-sm font-bold text-slate-700 mb-2">
           Category
         </label>
-        <select
+        <Select
           id="doc-category"
           value={category}
           onChange={(e) => setCategory(e.target.value as FileCategory)}
@@ -66,7 +67,7 @@ export default function UploadDocumentModal({ projectId, open, onClose }: { proj
               {label}
             </option>
           ))}
-        </select>
+        </Select>
 
         <label htmlFor="doc-description" className="block text-sm font-bold text-slate-700 mb-2">
           Description <span className="text-slate-400 font-medium">(optional)</span>

@@ -13,6 +13,7 @@ import FloorPlanSvg from "@/components/build/FloorPlanSvg";
 import Dialog from "@/components/Dialog";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import PromptModal from "@/components/shared/PromptModal";
+import Select from "@/components/shared/Select";
 
 const ROOM_LIBRARY = Object.entries(MANUAL_ROOM_TYPE_LABELS) as [ManualRoomType, string][];
 
@@ -362,7 +363,7 @@ function DesignerContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">Room type</label>
-                  <select
+                  <Select
                     value={selectedRoom.type}
                     onChange={(e) => updateRoom(selectedRoom.id, { type: e.target.value as ManualRoomType })}
                     className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20"
@@ -372,7 +373,7 @@ function DesignerContent() {
                         {label}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>

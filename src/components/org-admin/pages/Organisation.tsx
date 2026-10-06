@@ -10,6 +10,7 @@ import Dialog from "@/components/Dialog";
 import AddressInput from "@/components/shared/AddressInput";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { Card, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass } from "@/components/admin/ui";
+import Select from "@/components/shared/Select";
 
 const REQUEST_REASONS: { value: OrgRequestReason; label: string }[] = [
   { value: "add_country", label: "Add a country" },
@@ -227,13 +228,13 @@ export function OrgOrganisationPage() {
             <p className="mt-1 text-sm text-slate-500">Submit a request to a platform administrator — they&apos;ll review it and make the change if approved.</p>
             <label className="mt-4 block text-sm font-bold text-slate-700">
               Reason
-              <select className={`${fieldClass} mt-2`} value={requestReason} onChange={(e) => setRequestReason(e.target.value as OrgRequestReason)}>
+              <Select className={`${fieldClass} mt-2`} value={requestReason} onChange={(e) => setRequestReason(e.target.value as OrgRequestReason)}>
                 {REQUEST_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
                     {r.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="mt-4 block text-sm font-bold text-slate-700">
               Message {requestReason !== "other" && <span className="font-medium text-slate-400">(optional)</span>}

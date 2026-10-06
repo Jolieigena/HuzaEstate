@@ -57,5 +57,5 @@ export function clampMoney(amount: Money, min?: number, max?: number): Money {
 
 export function formatMoney(amount: Money): string {
   const major = toMajor(amount.amountMinor, amount.currency);
-  return new Intl.NumberFormat("en-RW", { style: "currency", currency: amount.currency, maximumFractionDigits: amount.currency === "USD" ? 2 : 0 }).format(major);
+  return new Intl.NumberFormat("en-RW", { style: "currency", currency: amount.currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: amount.currency === "USD" ? 2 : 0 }).format(major);
 }

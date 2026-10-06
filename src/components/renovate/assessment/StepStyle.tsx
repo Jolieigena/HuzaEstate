@@ -4,6 +4,7 @@ import Image from "next/image";
 import { RENOVATION_STYLE_LABELS, RenovationStyle, StylePreferences, UploadedFile } from "@/lib/renovate/types";
 import { FormField, inputClass, Chip } from "./FormField";
 import FileUploadList from "@/components/renovate/FileUploadList";
+import Select from "@/components/shared/Select";
 
 interface Props {
   value: StylePreferences;
@@ -35,7 +36,7 @@ export default function StepStyle({ value, onChange, inspirationFiles, onChangeI
     <div className="space-y-6">
       <FormField label="Primary style">
         {(id) => (
-          <select id={id} value={value.primaryStyle ?? ""} onChange={(e) => onChange({ primaryStyle: e.target.value as RenovationStyle })} className={`${inputClass} max-w-sm`}>
+          <Select id={id} value={value.primaryStyle ?? ""} onChange={(e) => onChange({ primaryStyle: e.target.value as RenovationStyle })} className={`${inputClass} max-w-sm`}>
             <option value="" disabled>
               Choose a style
             </option>
@@ -44,7 +45,7 @@ export default function StepStyle({ value, onChange, inspirationFiles, onChangeI
                 {l}
               </option>
             ))}
-          </select>
+          </Select>
         )}
       </FormField>
 

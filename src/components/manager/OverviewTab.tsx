@@ -1,131 +1,38 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
 import type { Listing, ListingStatus, ListingStatusCounts } from '@/lib/manager/types';
 import StatTile from '@/components/charts/StatTile';
 import PortfolioOverview from './PortfolioOverview';
-import Dialog from '@/components/Dialog';
-import PricingCards from '@/components/postingPlans/PricingCards';
-import PlanCheckout from '@/components/postingPlans/PlanCheckout';
-import { useAuth } from '@/lib/auth-context';
-import { useSubscription, notifySubscriptionChanged } from '@/lib/postingPlans/hooks';
-import { cancelSubscription } from '@/lib/postingPlans/api';
-import { PLAN_LABELS, PLAN_LIMITS, type PlanTier } from '@/lib/postingPlans/types';
-import { PrimaryButton, SecondaryButton } from '@/components/finance/ui';
+import { useSubscription } from '@/lib/postingPlans/hooks';
+import { PLAN_LABELS, PLAN_LIMITS } from '@/lib/postingPlans/types';
+import { formatLongDate } from '@/components/postingPlans/RedeemAccessCode';
 
-function CancelPlanConfirm({ tier, renewsOn, onClose }: { tier: PlanTier; renewsOn: string | null; onClose: () => void }) {
-  const { token } = useAuth();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [effectiveDate, setEffectiveDate] = useState<string | null>(null);
-
-  const handleCancel = async () => {
-    if (!token || busy) return;
-    setBusy(true);
-    setError('');
-    const result = await cancelSubscription(token);
-    if (!result.ok) {
-      setError(result.error);
-      setBusy(false);
-      return;
-    }
-    notifySubscriptionChanged();
-    setEffectiveDate(result.effectiveDate);
-    setBusy(false);
-  };
-
-  if (effectiveDate) {
-    return (
-      <>
-        <h3 className="text-lg font-black text-slate-900 mb-4">Cancellation scheduled</h3>
-        <p className="text-sm text-slate-600 mb-6">
-          Your {PLAN_LABELS[tier]} plan stays active until <span className="font-bold text-slate-900">{new Date(effectiveDate).toLocaleDateString()}</span>, then moves to Free.
-          You won&apos;t be billed again.
-        </p>
-        <div className="flex justify-end">
-          <PrimaryButton onClick={onClose}>Done</PrimaryButton>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <h3 className="text-lg font-black text-slate-900 mb-4">Cancel your {PLAN_LABELS[tier]} plan?</h3>
-      <p className="text-sm text-slate-600 mb-6">
-        You&apos;ll keep {PLAN_LABELS[tier]} access{renewsOn ? ` until ${new Date(renewsOn).toLocaleDateString()}` : ''}, then move to the Free plan. You won&apos;t be billed again.
-      </p>
-      {error && <p className="rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3 mb-4">{error}</p>}
-      <div className="flex justify-end gap-3">
-        <SecondaryButton onClick={onClose}>Keep my plan</SecondaryButton>
-        <PrimaryButton onClick={handleCancel} disabled={busy}>{busy ? 'Cancelling…' : 'Cancel plan'}</PrimaryButton>
-      </div>
-    </>
-  );
-}
-
-function PostingPlanCard() {
+function PostingPlanCard({ onOpenPlan }: { onOpenPlan: () => void }) {
   const subscription = useSubscription();
-  const [open, setOpen] = useState(false);
-  const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, 'free'> | null>(null);
-  const [cancelling, setCancelling] = useState(false);
-
   const limit = PLAN_LIMITS[subscription.tier];
   const used = subscription.postsUsed;
 
-  const closeDialog = () => {
-    setOpen(false);
-    setCheckoutTier(null);
-    setCancelling(false);
-  };
-
   return (
-    <>
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-sm font-semibold text-slate-500">Posting Plan</div>
-          <div className="text-lg font-black text-slate-900">
-            {PLAN_LABELS[subscription.tier]} <span className="font-semibold text-slate-500 text-sm">· {used}{limit === null ? '' : `/${limit + subscription.extraCredits}`} posts used this month</span>
-          </div>
-          {subscription.cancelAtPeriodEnd && subscription.renewsOn && (
-            <div className="text-sm font-semibold text-amber-600 mt-1">Won&apos;t renew — ends {new Date(subscription.renewsOn).toLocaleDateString()}</div>
-          )}
+    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <div className="text-sm font-semibold text-slate-500">Posting Plan</div>
+        <div className="text-lg font-black text-slate-900">
+          {PLAN_LABELS[subscription.tier]} <span className="font-semibold text-slate-500 text-sm">· {used}{limit === null ? '' : `/${limit + subscription.extraCredits}`} posts used this month</span>
         </div>
-        <button onClick={() => setOpen(true)} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap">
-          Manage Plan
-        </button>
-      </div>
-
-      <Dialog open={open} onClose={closeDialog} labelledBy="posting-plan-title" panelClassName="max-w-6xl p-8 sm:p-12">
-        {checkoutTier ? (
-          <PlanCheckout
-            mode={{ kind: 'subscribe', tier: checkoutTier }}
-            onClose={closeDialog}
-          />
-        ) : cancelling ? (
-          <CancelPlanConfirm tier={subscription.tier} renewsOn={subscription.renewsOn} onClose={closeDialog} />
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-8">
-              <h2 id="posting-plan-title" className="text-2xl font-bold text-slate-900">Choose your posting plan</h2>
-              <button onClick={closeDialog} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label="Close">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-              </button>
-            </div>
-            <PricingCards
-              currentTier={subscription.tier}
-              onSelect={(tier) => {
-                if (tier === 'free') {
-                  if (subscription.tier !== 'free' && !subscription.cancelAtPeriodEnd) setCancelling(true);
-                } else {
-                  setCheckoutTier(tier);
-                }
-              }}
-            />
-          </>
+        {subscription.accessGrant && (
+          <div className="text-sm font-semibold text-emerald-700 mt-1">
+            Access code: {subscription.accessGrant.label} until {formatLongDate(subscription.accessGrant.endsAt)}
+            {subscription.source === 'code' ? '' : ' (your paid plan is already as good or better)'}
+          </div>
         )}
-      </Dialog>
-    </>
+        {subscription.cancelAtPeriodEnd && subscription.renewsOn && (
+          <div className="text-sm font-semibold text-amber-600 mt-1">Won&apos;t renew — ends {formatLongDate(subscription.renewsOn)}</div>
+        )}
+      </div>
+      <button onClick={onOpenPlan} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors shadow-sm whitespace-nowrap">
+        Manage Plan
+      </button>
+    </div>
   );
 }
 
@@ -136,19 +43,21 @@ function nextExpiryLabel(listings: Listing[]): string {
   return days <= 0 ? 'Expired' : days === 1 ? '1 day' : `${days} days`;
 }
 
-export default function OverviewTab({ LISTINGS, statusCounts, topListings, onOpenListings }: {
+export default function OverviewTab({ LISTINGS, statusCounts, topListings, onOpenListings, onOpenPlan }: {
   LISTINGS: Listing[];
   statusCounts: ListingStatusCounts;
   topListings: Listing[];
   /** Jump to My Listings, filtered to a status. */
   onOpenListings: (status: ListingStatus | 'all') => void;
+  /** Go to the Plan & Billing tab. */
+  onOpenPlan: () => void;
 }) {
   const subscription = useSubscription();
   const limit = PLAN_LIMITS[subscription.tier];
 
   return (
     <div className="flex flex-col gap-6">
-      <PostingPlanCard />
+      <PostingPlanCard onOpenPlan={onOpenPlan} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <StatTile label="Live Listings" value={String(statusCounts.Live)} />

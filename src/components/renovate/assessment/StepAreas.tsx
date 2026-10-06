@@ -2,6 +2,7 @@
 
 import { PRIORITY_LABELS, PriorityLevel, RENOVATION_AREA_LABELS, RenovationAreaKey, SelectedRenovationArea } from "@/lib/renovate/types";
 import { FormField, inputClass, Chip } from "./FormField";
+import Select from "@/components/shared/Select";
 
 interface Props {
   value: SelectedRenovationArea[];
@@ -95,19 +96,19 @@ export default function StepAreas({ value, onChange, errors }: Props) {
 
               <FormField label="Priority">
                 {(id) => (
-                  <select id={id} value={area.priority} onChange={(e) => updateArea(area.id, { priority: e.target.value as PriorityLevel })} className={inputClass}>
+                  <Select id={id} value={area.priority} onChange={(e) => updateArea(area.id, { priority: e.target.value as PriorityLevel })} className={inputClass}>
                     {Object.entries(PRIORITY_LABELS).map(([k, l]) => (
                       <option key={k} value={k}>
                         {l}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                 )}
               </FormField>
 
               <FormField label="Are structural changes expected?">
                 {(id) => (
-                  <select
+                  <Select
                     id={id}
                     value={String(area.structuralChangesExpected)}
                     onChange={(e) => updateArea(area.id, { structuralChangesExpected: e.target.value === "unknown" ? "unknown" : e.target.value === "true" })}
@@ -116,7 +117,7 @@ export default function StepAreas({ value, onChange, errors }: Props) {
                     <option value="false">No</option>
                     <option value="true">Yes</option>
                     <option value="unknown">Not sure</option>
-                  </select>
+                  </Select>
                 )}
               </FormField>
             </div>

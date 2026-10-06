@@ -5,6 +5,7 @@ import { ExecutionProject, ExecutionTask, TASK_STATUS_LABELS, TaskStatus, Execut
 import { ExecutionScheduleService } from "../../lib/execution/executionService";
 import { AddTaskModal } from "./ExecutionModals";
 import { canPerformExecutionAction } from "../../lib/execution/permissions";
+import Select from "@/components/shared/Select";
 
 interface ScheduleViewProps {
   project: ExecutionProject;
@@ -251,7 +252,7 @@ export function ExecutionScheduleView({ project, currentRole }: ScheduleViewProp
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Status</label>
-              <select
+              <Select
                 defaultValue={editingTask.status}
                 id="update-status-select"
                 className="w-full px-3 py-2 border rounded-xl text-sm"
@@ -262,7 +263,7 @@ export function ExecutionScheduleView({ project, currentRole }: ScheduleViewProp
                 <option value="delayed">Delayed</option>
                 <option value="awaiting_inspection">Awaiting Inspection</option>
                 <option value="completed">Completed</option>
-              </select>
+              </Select>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1">Delay / Blocker Reason (Required if Delayed)</label>

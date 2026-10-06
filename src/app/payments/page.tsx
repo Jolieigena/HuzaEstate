@@ -10,6 +10,7 @@ import { getAccountName } from "@/lib/finance/accountLookup";
 import { ExecutionProjectService } from "@/lib/execution/executionService";
 import { PAYMENT_STATUS_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/finance/types";
 import { PageFrame, Card, FinancePill, EmptyState, PrimaryLink, PrototypeBanner, fieldClass } from "@/components/finance/ui";
+import Select from "@/components/shared/Select";
 
 export default function PaymentsPage() {
   const { account, isAuthReady } = useAuth();
@@ -65,25 +66,25 @@ export default function PaymentsPage() {
       <Card className="mb-6">
         <div className="flex flex-wrap gap-3">
           <label className="sr-only" htmlFor="status-filter">Filter by status</label>
-          <select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${fieldClass} w-auto`}>
+          <Select id="status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className={`${fieldClass} w-auto`}>
             <option value="all">All statuses</option>
             {Object.entries(PAYMENT_STATUS_LABELS).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}
               </option>
             ))}
-          </select>
+          </Select>
           {projectOptions.length > 0 && (
             <>
               <label className="sr-only" htmlFor="project-filter">Filter by project</label>
-              <select id="project-filter" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className={`${fieldClass} w-auto`}>
+              <Select id="project-filter" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className={`${fieldClass} w-auto`}>
                 <option value="all">All projects</option>
                 {projectOptions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </>
           )}
         </div>

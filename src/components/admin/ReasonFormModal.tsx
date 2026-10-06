@@ -3,6 +3,7 @@
 import { useId, useState, FormEvent, ReactNode } from "react";
 import Dialog from "@/components/Dialog";
 import { fieldClass } from "./ui";
+import Select from "@/components/shared/Select";
 
 export interface ReasonFormModalProps {
   open: boolean;
@@ -94,7 +95,7 @@ export default function ReasonFormModal({
         <label className="block text-sm font-bold text-slate-700">
           {reasonLabel}
           {reasonOptions ? (
-            <select
+            <Select
               className={`${fieldClass} mt-2`}
               value={reason}
               onChange={(e) => {
@@ -107,7 +108,7 @@ export default function ReasonFormModal({
                   {option}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <textarea
               className={`${fieldClass} mt-2 min-h-24`}

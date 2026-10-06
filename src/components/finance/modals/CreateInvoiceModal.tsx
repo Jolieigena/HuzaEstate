@@ -5,6 +5,7 @@ import Dialog from "@/components/Dialog";
 import { toMinor } from "@/lib/finance/money";
 import { INVOICE_TYPE_LABELS, type Currency, type InvoiceType } from "@/lib/finance/types";
 import { PrimaryButton, SecondaryButton, fieldClass, labelClass } from "../ui";
+import Select from "@/components/shared/Select";
 
 export interface NewLineItemDraft {
   description: string;
@@ -67,14 +68,14 @@ export default function CreateInvoiceModal({ open, currency, defaultInvoiceType 
             <label htmlFor="invoice-target" className={labelClass}>
               Bill to
             </label>
-            <select id="invoice-target" value={targetKey} onChange={(e) => setTargetKey(e.target.value)} className={fieldClass}>
+            <Select id="invoice-target" value={targetKey} onChange={(e) => setTargetKey(e.target.value)} className={fieldClass}>
               <option value={STANDALONE_KEY}>Standalone service invoice</option>
               {targetOptions.map((t) => (
                 <option key={t.key} value={t.key}>
                   {t.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
 
@@ -83,13 +84,13 @@ export default function CreateInvoiceModal({ open, currency, defaultInvoiceType 
             <label htmlFor="invoice-type" className={labelClass}>
               Invoice type
             </label>
-            <select id="invoice-type" value={invoiceType} onChange={(e) => setInvoiceType(e.target.value as InvoiceType)} className={fieldClass}>
+            <Select id="invoice-type" value={invoiceType} onChange={(e) => setInvoiceType(e.target.value as InvoiceType)} className={fieldClass}>
               {Object.entries(INVOICE_TYPE_LABELS).map(([value, label]) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div>
             <label htmlFor="due-date" className={labelClass}>

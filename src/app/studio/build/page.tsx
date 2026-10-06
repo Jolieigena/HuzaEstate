@@ -8,6 +8,7 @@ import { useBuildProjects } from "@/lib/build/hooks";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { BuildProjectStatus, CreationMode, CREATION_MODE_LABELS, PROJECT_STATUS_LABELS } from "@/lib/build/types";
 import { projectLocationLabel } from "@/lib/build/format";
+import Select from "@/components/shared/Select";
 
 type SortKey = "recent" | "oldest" | "name";
 
@@ -147,7 +148,7 @@ export default function BuildDashboardPage() {
                 <label className="sr-only" htmlFor="status-filter">
                   Filter by status
                 </label>
-                <select
+                <Select
                   id="status-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as BuildProjectStatus | "all")}
@@ -161,12 +162,12 @@ export default function BuildDashboardPage() {
                         {label}
                       </option>
                     ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="mode-filter">
                   Filter by creation mode
                 </label>
-                <select
+                <Select
                   id="mode-filter"
                   value={modeFilter}
                   onChange={(e) => setModeFilter(e.target.value as CreationMode | "all")}
@@ -178,12 +179,12 @@ export default function BuildDashboardPage() {
                       {label}
                     </option>
                   ))}
-                </select>
+                </Select>
 
                 <label className="sr-only" htmlFor="sort-by">
                   Sort by
                 </label>
-                <select
+                <Select
                   id="sort-by"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as SortKey)}
@@ -192,7 +193,7 @@ export default function BuildDashboardPage() {
                   <option value="recent">Recently updated</option>
                   <option value="oldest">Oldest</option>
                   <option value="name">Project name</option>
-                </select>
+                </Select>
               </div>
             </div>
           )}
