@@ -10,8 +10,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminOrganization } from "@/lib/admin/api";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
-import { describeDistricts, describePropertyCategories } from "@/lib/admin/propertyCategories";
-import { districtsForCountry } from "@/lib/regions";
+import { describePropertyCategories, describeRegionScopes, mapToScopes, scopesToMap, type RegionScopeMap } from "@/lib/admin/propertyCategories";
 import RegionChecklist from "../RegionChecklist";
 import PropertyCategoryChecklist from "../PropertyCategoryChecklist";
 import { useToast } from "@/lib/toast-context";
@@ -167,18 +166,16 @@ export function CreateOrganizationPage() {
   const [address, setAddress] = useState("");
   const [countries, setCountries] = useState<string[]>([]);
   const [propertyTypes, setPropertyTypes] = useState<string[]>([]);
-  const [districts, setDistricts] = useState<string[]>([]);
+  const [regionScopes, setRegionScopes] = useState<RegionScopeMap>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const toggleCountry = (name: string) => {
     const removing = countries.includes(name);
     setCountries((prev) => (removing ? prev.filter((c) => c !== name) : [...prev, name]));
-    // Drop districts that belonged to a country that's no longer covered.
-    if (removing) setDistricts((prev) => prev.filter((d) => !districtsForCountry(name).includes(d)));
+    // Drop the region limit of a country that's no longer covered.
+    if (removing) setRegionScopes((prev) => Object.fromEntries(Object.entries(prev).filter(([c]) => c !== name)));
   };
-  const toggleDistrict = (d: string) => setDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]));
-  const setManyDistricts = (list: string[], on: boolean) => setDistricts((prev) => (on ? Array.from(new Set([...prev, ...list])) : prev.filter((d) => !list.includes(d))));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -198,7 +195,7 @@ export function CreateOrganizationPage() {
       address: address || undefined,
       countries,
       propertyTypes,
-      districts,
+      regionScopes: mapToScopes(regionScopes),
     });
     setIsSubmitting(false);
     if (!result.ok) {
@@ -272,8 +269,8 @@ export function CreateOrganizationPage() {
             </div>
             <div className="block text-sm font-bold text-slate-700">
               Regions
-              <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Limit this organisation to certain districts of its countries. Leave empty for the whole country.</p>
-              <RegionChecklist countries={countries} selected={districts} onToggle={toggleDistrict} onSetMany={setManyDistricts} />
+              <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Give this organisation certain regions in certain countries. Leave a country alone to cover it whole.</p>
+              <RegionChecklist countries={countries} value={regionScopes} onChange={setRegionScopes} />
             </div>
 
             <PrimaryButton type="submit" disabled={isSubmitting} className="w-full">
@@ -304,7 +301,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   const canManage = useIsAdministrator();
 
   const [detail, setDetail] = useState<DetailState | null>(null);
-  const [form, setForm] = useState<{ id: string; name: string; description: string; contactEmail: string; contactPhone: string; address: string; countries: string[]; propertyTypes: string[]; districts: string[] } | null>(null);
+  const [form, setForm] = useState<{ id: string; name: string; description: string; contactEmail: string; contactPhone: string; address: string; countries: string[]; propertyTypes: string[]; regionScopes: RegionScopeMap } | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [savingAutoPublish, setSavingAutoPublish] = useState(false);
@@ -347,7 +344,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     );
   }
 
-  const formValues = form?.id === org.id ? form : { id: org.id, name: org.name, description: org.description ?? "", contactEmail: org.contactEmail ?? "", contactPhone: org.contactPhone ?? "", address: org.address ?? "", countries: org.countries, propertyTypes: org.propertyTypes ?? [], districts: org.districts ?? [] };
+  const formValues = form?.id === org.id ? form : { id: org.id, name: org.name, description: org.description ?? "", contactEmail: org.contactEmail ?? "", contactPhone: org.contactPhone ?? "", address: org.address ?? "", countries: org.countries, propertyTypes: org.propertyTypes ?? [], regionScopes: scopesToMap(org.regionScopes) };
   const dirty =
     formValues.name !== org.name ||
     formValues.description !== (org.description ?? "") ||
@@ -358,25 +355,16 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     formValues.countries.some((c) => !org.countries.includes(c)) ||
     formValues.propertyTypes.length !== (org.propertyTypes ?? []).length ||
     formValues.propertyTypes.some((t) => !(org.propertyTypes ?? []).includes(t)) ||
-    formValues.districts.length !== (org.districts ?? []).length ||
-    formValues.districts.some((d) => !(org.districts ?? []).includes(d));
+    JSON.stringify(mapToScopes(formValues.regionScopes)) !== JSON.stringify(mapToScopes(scopesToMap(org.regionScopes)));
 
   function toggleCountry(name: string) {
     const removing = formValues.countries.includes(name);
     setForm({
       ...formValues,
       countries: removing ? formValues.countries.filter((c) => c !== name) : [...formValues.countries, name],
-      // Drop districts that belonged to a country that's no longer covered.
-      districts: removing ? formValues.districts.filter((d) => !districtsForCountry(name).includes(d)) : formValues.districts,
+      // Drop the region limit of a country that's no longer covered.
+      regionScopes: removing ? Object.fromEntries(Object.entries(formValues.regionScopes).filter(([c]) => c !== name)) : formValues.regionScopes,
     });
-  }
-
-  function toggleDistrict(d: string) {
-    setForm({ ...formValues, districts: formValues.districts.includes(d) ? formValues.districts.filter((x) => x !== d) : [...formValues.districts, d] });
-  }
-
-  function setManyDistricts(list: string[], on: boolean) {
-    setForm({ ...formValues, districts: on ? Array.from(new Set([...formValues.districts, ...list])) : formValues.districts.filter((d) => !list.includes(d)) });
   }
 
   async function saveDetails(e: React.FormEvent) {
@@ -396,7 +384,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
       address: formValues.address,
       countries: formValues.countries,
       propertyTypes: formValues.propertyTypes,
-      districts: formValues.districts,
+      regionScopes: mapToScopes(formValues.regionScopes),
     });
     setSaving(false);
     if (result.ok) {
@@ -446,7 +434,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
               <Field label="Created" value={formatDate(org.createdAt)} />
               <Field label="Address" value={org.address || "Not set"} />
               <Field label="Countries" value={org.countries.length > 0 ? org.countries.join(", ") : "None assigned"} />
-              <Field label="Regions" value={describeDistricts(org.districts)} />
+              <Field label="Regions" value={describeRegionScopes(org.regionScopes)} />
               <Field label="Property categories" value={describePropertyCategories(org.propertyTypes)} />
               <Field label="Auto-publish" value={org.autoPublish === true ? "Always" : org.autoPublish === false ? "Never" : "Platform default"} />
             </dl>
@@ -526,7 +514,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
               <div className="text-sm font-bold text-slate-700">
                 Regions
                 <div className="mt-1">
-                  <RegionChecklist countries={formValues.countries} selected={formValues.districts} onToggle={toggleDistrict} onSetMany={setManyDistricts} />
+                  <RegionChecklist countries={formValues.countries} value={formValues.regionScopes} onChange={(next) => setForm({ ...formValues, regionScopes: next })} />
                 </div>
               </div>
               <div className="flex gap-2">

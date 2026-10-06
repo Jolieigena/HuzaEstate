@@ -1,5 +1,6 @@
 "use client";
 
+import { allowedDistricts } from "@/lib/admin/propertyCategories";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -254,7 +255,7 @@ export function OrgStaffListPage() {
             <div className="mt-4">
               <DistrictChecklist
                 countries={org?.countries ?? []}
-                allowed={org?.districts}
+                allowed={allowedDistricts(org?.regionScopes)}
                 selected={scopeSelected}
                 onToggle={(district) => setScopeSelected((prev) => (prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]))}
               />
@@ -391,7 +392,7 @@ export function OrgCreateStaffPage() {
                 <div className="mt-2">
                   <DistrictChecklist
                     countries={org.countries}
-                    allowed={org.districts}
+                    allowed={allowedDistricts(org.regionScopes)}
                     selected={scopeDistricts}
                     onToggle={(district) => setScopeDistricts((prev) => (prev.includes(district) ? prev.filter((d) => d !== district) : [...prev, district]))}
                   />

@@ -55,9 +55,8 @@ export interface AdminOrganization {
   /** Property categories (house / apartment / land) this organisation is limited to within its
    *  countries. Empty means every category. */
   propertyTypes: string[];
-  /** Districts inside `countries` the organisation covers (lib/regions.ts). Empty means each
-   *  country's whole territory. */
-  districts: string[];
+  /** Per-country region limits (admin-assigned). A country with no entry is covered whole. */
+  regionScopes: { country: string; districts: string[] }[];
   /** Opt-in bypass of the platform's default listing-review requirement, for every one of
    *  `countries` above — undefined means "no opinion, inherit the platform default" (see
    *  admin Settings' requireListingReview); only an explicit true/false here overrides it. */
@@ -227,11 +226,11 @@ export const AdminApi = {
   // first organization_admin account, auto-provisioned server-side in the same call (see
   // access-service's createOrganization). `admin.created` is false (with `admin.error` set) when
   // that email was already in use elsewhere — the organisation itself is still created either way.
-  createOrganization: async (token: string, input: { name: string; description?: string; contactEmail: string; contactPhone?: string; address?: string; countries?: string[]; propertyTypes?: string[]; districts?: string[] }) => {
+  createOrganization: async (token: string, input: { name: string; description?: string; contactEmail: string; contactPhone?: string; address?: string; countries?: string[]; propertyTypes?: string[]; regionScopes?: { country: string; districts: string[] }[] }) => {
     const result = await call<{ organization: AdminOrganization; admin: { created: boolean; emailDelivered: boolean; error?: string } }>(`${ACCESS_API_URL}/organizations`, token, { method: "POST", body: input });
     return result.ok ? ({ ok: true, data: result.data } as const) : result;
   },
-  updateOrganization: async (token: string, id: string, changes: Partial<Pick<AdminOrganization, "name" | "description" | "contactEmail" | "contactPhone" | "address" | "countries" | "propertyTypes" | "districts">> & { autoPublish?: boolean | null }) => {
+  updateOrganization: async (token: string, id: string, changes: Partial<Pick<AdminOrganization, "name" | "description" | "contactEmail" | "contactPhone" | "address" | "countries" | "propertyTypes" | "regionScopes">> & { autoPublish?: boolean | null }) => {
     const result = await call<{ organization: AdminOrganization }>(`${ACCESS_API_URL}/organizations/${encodeURIComponent(id)}`, token, { method: "PATCH", body: changes });
     return result.ok ? ({ ok: true, data: result.data.organization } as const) : result;
   },

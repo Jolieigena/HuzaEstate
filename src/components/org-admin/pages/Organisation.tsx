@@ -1,6 +1,6 @@
 "use client";
 
-import { describeDistricts, describePropertyCategories } from "@/lib/admin/propertyCategories";
+import { describePropertyCategories, describeRegionScopes } from "@/lib/admin/propertyCategories";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { hasOrgPermission } from "@/lib/orgPermissions";
@@ -156,8 +156,8 @@ export function OrgOrganisationPage() {
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-700">Regions</p>
-                <p className="mt-1 text-sm text-slate-600">{describeDistricts(org.districts)}</p>
-                <p className="mt-1 text-xs text-slate-400">Set by a platform administrator. Your staff can only be scoped to these districts.</p>
+                <p className="mt-1 text-sm text-slate-600">{describeRegionScopes(org.regionScopes)}</p>
+                <p className="mt-1 text-xs text-slate-400">Set by a platform administrator. Your staff can only be scoped inside these regions.</p>
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-700">Property categories</p>

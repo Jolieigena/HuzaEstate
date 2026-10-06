@@ -1,5 +1,6 @@
 "use client";
 
+import { allowedDistricts } from "@/lib/admin/propertyCategories";
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -228,7 +229,7 @@ function CreateUserForm() {
                 <div className="mt-2">
                   <DistrictChecklist
                     countries={selectedOrg.countries}
-                    allowed={selectedOrg.districts}
+                    allowed={allowedDistricts(selectedOrg.regionScopes)}
                     selected={scopeDistricts}
                     onToggle={(d) => setScopeDistricts((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))}
                   />
