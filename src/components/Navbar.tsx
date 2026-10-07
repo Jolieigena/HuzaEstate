@@ -17,6 +17,7 @@ const NAV_LINKS = [
   { href: '/build', label: 'Build' },
   { href: '/renovate', label: 'Renovate' },
   { href: '/professionals', label: 'Professionals' },
+  { href: '/designs', label: 'Designs' },
   { href: '/blog', label: 'Blog' },
 ];
 
