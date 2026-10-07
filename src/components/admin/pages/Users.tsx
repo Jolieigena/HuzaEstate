@@ -43,11 +43,12 @@ function PermissionsChecklist({ selected, onChange }: { selected: Set<OrgPermiss
   );
 }
 
-const TYPE_LABELS: Record<UserAccountType, string> = { administrator: "Administrator", professional: "Professional", organization_admin: "Organisation Admin", seller_manager: "Seller / Owner", customer: "Customer" };
+const TYPE_LABELS: Record<UserAccountType, string> = { administrator: "Administrator", professional: "Professional", supplier: "Furniture Supplier", organization_admin: "Organisation Admin", seller_manager: "Seller / Owner", customer: "Customer" };
 const TYPE_TABS: { key: "all" | UserAccountType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "administrator", label: "Administrators" },
   { key: "professional", label: "Professionals" },
+  { key: "supplier", label: "Furniture Suppliers" },
   { key: "organization_admin", label: "Organisation Admins" },
   { key: "seller_manager", label: "Sellers" },
   { key: "customer", label: "Customers" },

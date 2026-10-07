@@ -21,6 +21,7 @@ interface AppHeaderProps {
 const ROLE_LABELS: Record<string, string> = {
   administrator: "Administrator",
   professional: "Professional",
+  supplier: "Supplier",
   seller_manager: "Owner",
   organization_admin: "Org Admin",
   customer: "Customer",
@@ -87,6 +88,9 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
                 Settings
               </Link>
             )}
+            <Link href="/design-requests" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+              My design requests
+            </Link>
             {account?.roles.includes("professional") && (
               <Link href="/professional" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                 Professional Portal

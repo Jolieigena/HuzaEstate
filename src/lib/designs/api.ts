@@ -18,6 +18,12 @@ export interface DesignDesigner {
   country?: string;
 }
 
+export interface FurnitureItem {
+  name: string;
+  quantity: number;
+  notes?: string;
+}
+
 export interface Design {
   id: string;
   title: string;
@@ -25,6 +31,8 @@ export interface Design {
   category: DesignCategory;
   spaceType?: string;
   images: string[];
+  /** What the design calls for. Clients can ask suppliers to price this list. */
+  furniture: FurnitureItem[];
   priceType: DesignPriceType;
   price?: number;
   currency: string;
@@ -40,10 +48,105 @@ export interface DesignInput {
   category: DesignCategory;
   spaceType?: string;
   images: string[];
+  furniture: FurnitureItem[];
   priceType: DesignPriceType;
   price?: number;
   currency: string;
   status: DesignStatus;
+}
+
+// ---- requests to designers (custom price, custom design)
+
+export type DesignRequestKind = "custom_price" | "custom_design";
+export type DesignRequestStatus = "open" | "quoted" | "accepted" | "rejected" | "declined" | "cancelled";
+
+export const DESIGN_REQUEST_STATUS_LABELS: Record<DesignRequestStatus, string> = {
+  open: "Waiting for a price",
+  quoted: "Price received",
+  accepted: "Accepted",
+  rejected: "Price turned down",
+  declined: "Declined",
+  cancelled: "Cancelled",
+};
+
+export interface DesignRequest {
+  id: string;
+  kind: DesignRequestKind;
+  designId?: string;
+  designTitle?: string;
+  professionalId: string;
+  professionalName?: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  spaceType?: string;
+  areaSqm?: number;
+  budget?: number;
+  budgetCurrency?: string;
+  message: string;
+  status: DesignRequestStatus;
+  quote?: { amount: number; currency: string; note: string; validUntil?: string; quotedAt: string };
+  declineReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DesignRequestInput {
+  kind: DesignRequestKind;
+  designId?: string;
+  professionalId?: string;
+  message: string;
+  spaceType?: string;
+  areaSqm?: number;
+  budget?: number;
+  currency?: string;
+}
+
+// ---- furniture quotes (suppliers price a design's furniture list)
+
+export type FurnitureQuoteStatus = "open" | "accepted" | "closed";
+
+export interface FurnitureResponseLine {
+  name: string;
+  quantity: number;
+  available: boolean;
+  unitPrice?: number;
+  note?: string;
+}
+
+export interface FurnitureResponse {
+  supplierId: string;
+  companyName: string;
+  currency: string;
+  lines: FurnitureResponseLine[];
+  total: number;
+  leadTimeDays?: number;
+  note?: string;
+  respondedAt: string;
+}
+
+export interface FurnitureQuote {
+  id: string;
+  designId: string;
+  designTitle: string;
+  designImage?: string;
+  /** Only shown to the client who asked. */
+  clientName?: string;
+  country?: string;
+  items: FurnitureItem[];
+  message: string;
+  status: FurnitureQuoteStatus;
+  acceptedSupplierId?: string;
+  responses: FurnitureResponse[];
+  responseCount: number;
+  createdAt: string;
+}
+
+export interface FurnitureResponseInput {
+  currency: string;
+  lines: { index: number; available: boolean; unitPrice?: number; note?: string }[];
+  leadTimeDays?: number;
+  note?: string;
 }
 
 export interface DesignList {
@@ -98,4 +201,31 @@ export const DesignsApi = {
   create: (token: string, input: DesignInput) => call<{ design: Design }>("/designs", { token, method: "POST", body: input }),
   update: (token: string, id: string, input: DesignInput) => call<{ design: Design }>(`/designs/${encodeURIComponent(id)}`, { token, method: "PUT", body: input }),
   remove: (token: string, id: string) => call<{ deleted: boolean }>(`/designs/${encodeURIComponent(id)}`, { token, method: "DELETE" }),
+
+  // requests to designers
+  createRequest: (token: string, input: DesignRequestInput) => call<{ request: DesignRequest }>("/designs/requests", { token, method: "POST", body: input }),
+  myRequests: (token: string) => call<{ requests: DesignRequest[] }>("/designs/requests/mine", { token }),
+  incomingRequests: (token: string) => call<{ requests: DesignRequest[] }>("/designs/requests/incoming", { token }),
+  quoteRequest: (token: string, id: string, input: { amount: number; currency: string; note?: string; validDays?: number }) =>
+    call<{ request: DesignRequest }>(`/designs/requests/${encodeURIComponent(id)}/quote`, { token, method: "POST", body: input }),
+  declineRequest: (token: string, id: string, reason?: string) => call<{ request: DesignRequest }>(`/designs/requests/${encodeURIComponent(id)}/decline`, { token, method: "POST", body: { reason } }),
+  acceptQuote: (token: string, id: string) => call<{ request: DesignRequest }>(`/designs/requests/${encodeURIComponent(id)}/accept`, { token, method: "POST" }),
+  rejectQuote: (token: string, id: string) => call<{ request: DesignRequest }>(`/designs/requests/${encodeURIComponent(id)}/reject`, { token, method: "POST" }),
+  cancelRequest: (token: string, id: string) => call<{ request: DesignRequest }>(`/designs/requests/${encodeURIComponent(id)}/cancel`, { token, method: "POST" }),
+
+  // furniture quotes
+  requestFurnitureQuote: (token: string, designId: string, message?: string) => call<{ quote: FurnitureQuote }>(`/designs/${encodeURIComponent(designId)}/furniture-quotes`, { token, method: "POST", body: { message } }),
+  myFurnitureQuotes: (token: string) => call<{ quotes: FurnitureQuote[] }>("/designs/furniture-quotes/mine", { token }),
+  supplierFurnitureQuotes: (token: string, filter: "open" | "answered") => call<{ quotes: FurnitureQuote[] }>(`/designs/furniture-quotes/supplier?filter=${filter}`, { token }),
+  respondToFurnitureQuote: (token: string, id: string, input: FurnitureResponseInput) =>
+    call<{ quote: FurnitureQuote }>(`/designs/furniture-quotes/${encodeURIComponent(id)}/respond`, { token, method: "POST", body: input }),
+  acceptFurnitureQuote: (token: string, id: string, supplierId: string) =>
+    call<{ quote: FurnitureQuote }>(`/designs/furniture-quotes/${encodeURIComponent(id)}/accept`, { token, method: "POST", body: { supplierId } }),
+  closeFurnitureQuote: (token: string, id: string) => call<{ quote: FurnitureQuote }>(`/designs/furniture-quotes/${encodeURIComponent(id)}/close`, { token, method: "POST" }),
 };
+
+/** "$450" or "RWF 450,000". */
+export function formatMoney(amount: number, currency: string): string {
+  const text = Math.round(amount).toLocaleString("en-US");
+  return currency === "USD" ? `$${text}` : `${currency} ${text}`;
+}

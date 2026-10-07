@@ -20,10 +20,12 @@ import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass
 
 const MAX_IMAGES = 10;
 
-const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], priceType: "fixed", price: undefined, currency: "USD", status: "draft" };
+const MAX_FURNITURE = 40;
+
+const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], priceType: "fixed", price: undefined, currency: "USD", status: "draft" };
 
 function toInput(design: Design): DesignInput {
-  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
+  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
 }
 
 /** The professional's own designs: publish interior and exterior designs, each with a price. */
@@ -175,7 +177,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
     const price = form.priceType === "on_request" ? undefined : Number(priceText);
     setBusy(true);
     setError("");
-    const input: DesignInput = { ...form, status, price, currency: (form.currency || "USD").toUpperCase() };
+    const input: DesignInput = { ...form, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: (form.currency || "USD").toUpperCase() };
     const result = id ? await DesignsApi.update(token, id, input) : await DesignsApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -240,6 +242,29 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
               )}
             </div>
             <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
+          </div>
+
+          <div>
+            <p className="text-sm font-bold text-slate-700">
+              Furniture list <span className="font-normal text-slate-400">({form.furniture.length}/{MAX_FURNITURE})</span>
+            </p>
+            <div className="mt-2 space-y-2">
+              {form.furniture.map((item, index) => (
+                <div key={index} className="grid grid-cols-[1fr_5rem_auto] gap-2 sm:grid-cols-[1fr_5rem_1fr_auto]">
+                  <input className={fieldClass} placeholder="Item, e.g. 3 seater sofa" aria-label={`Furniture item ${index + 1}`} maxLength={120} value={item.name} onChange={(e) => patch({ furniture: form.furniture.map((f, i) => (i === index ? { ...f, name: e.target.value } : f)) })} />
+                  <input className={fieldClass} inputMode="numeric" placeholder="Qty" aria-label={`Quantity for item ${index + 1}`} value={String(item.quantity)} onChange={(e) => patch({ furniture: form.furniture.map((f, i) => (i === index ? { ...f, quantity: Number(e.target.value.replace(/\D/g, "")) || 0 } : f)) })} />
+                  <input className={`${fieldClass} col-span-3 sm:col-span-1 sm:col-start-3 sm:row-start-1`} placeholder="Notes (colour, size)" aria-label={`Notes for item ${index + 1}`} maxLength={200} value={item.notes ?? ""} onChange={(e) => patch({ furniture: form.furniture.map((f, i) => (i === index ? { ...f, notes: e.target.value } : f)) })} />
+                  <button type="button" aria-label={`Remove item ${index + 1}`} onClick={() => patch({ furniture: form.furniture.filter((_, i) => i !== index) })} className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-600 sm:col-start-4 sm:row-start-1">
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            {form.furniture.length < MAX_FURNITURE && (
+              <button type="button" onClick={() => patch({ furniture: [...form.furniture, { name: "", quantity: 1, notes: "" }] })} className="mt-2 text-sm font-bold text-[#219b31] hover:underline">
+                + Add item
+              </button>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">

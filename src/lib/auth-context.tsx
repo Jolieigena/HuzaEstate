@@ -8,7 +8,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 // lib/admin/api.ts's AdminOrganization), scoped to that org and its countries via their own
 // portal at /org-admin; admin-provisioned only, same as professional/administrator, never from
 // public signup.
-export type AccountRole = "customer" | "seller_manager" | "professional" | "organization_admin" | "administrator";
+export type AccountRole = "customer" | "seller_manager" | "professional" | "supplier" | "organization_admin" | "administrator";
 
 export interface Account {
   id: string;
@@ -77,7 +77,7 @@ export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  roleType: Extract<AccountRole, "administrator" | "professional" | "organization_admin">;
+  roleType: Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin">;
   /** Required when roleType is "professional" — chosen once at creation, not editable by the
    * professional themselves afterwards (see access-service's professionals module). */
   professionalKind?: "individual" | "firm";
@@ -149,6 +149,7 @@ function deriveActiveRole(account: Account, preferred?: string | null): AccountR
   if (preferred && account.roles.includes(preferred as AccountRole)) return preferred as AccountRole;
   if (account.roles.includes("administrator")) return "administrator";
   if (account.roles.includes("professional")) return "professional";
+  if (account.roles.includes("supplier")) return "supplier";
   if (account.isApprovedSeller && account.roles.includes("seller_manager")) return "seller_manager";
   if (account.roles.includes("organization_admin")) return "organization_admin";
   return "customer";

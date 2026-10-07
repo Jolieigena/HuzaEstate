@@ -4,7 +4,7 @@
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 const PAYMENT_API_URL = process.env.NEXT_PUBLIC_PAYMENT_API_URL || "http://localhost:8081/api/payment-service";
 
-export type UserAccountType = "customer" | "seller_manager" | "professional" | "organization_admin" | "administrator";
+export type UserAccountType = "customer" | "seller_manager" | "professional" | "supplier" | "organization_admin" | "administrator";
 export type UserStatus = "active" | "suspended";
 
 export interface AdminUser {

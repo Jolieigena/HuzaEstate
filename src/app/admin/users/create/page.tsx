@@ -16,8 +16,10 @@ import Select from "@/components/shared/Select";
 // The only roles created from this admin form (enforced server-side too — see access-service's
 // POST /auth/admin/users). Customer only ever comes from public signup; Seller (Manager) is
 // granted self-serve via the become-a-seller flow, never here.
-const ROLE_OPTIONS: { value: Extract<AccountRole, "administrator" | "professional" | "organization_admin">; label: string }[] = [
+type CreatableRole = Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin">;
+const ROLE_OPTIONS: { value: CreatableRole; label: string }[] = [
   { value: "professional", label: "Professional" },
+  { value: "supplier", label: "Furniture Supplier" },
   { value: "organization_admin", label: "Organisation Admin" },
   { value: "administrator", label: "Administrator" },
 ];
@@ -44,7 +46,7 @@ function CreateUserForm() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [roleType, setRoleType] = useState<Extract<AccountRole, "administrator" | "professional" | "organization_admin">>(fromOrganizationId ? "organization_admin" : "professional");
+  const [roleType, setRoleType] = useState<CreatableRole>(fromOrganizationId ? "organization_admin" : "professional");
   const [professionalKind, setProfessionalKind] = useState<"individual" | "firm">("individual");
   const [country, setCountry] = useState("");
   const [district, setDistrict] = useState("");
@@ -72,7 +74,7 @@ function CreateUserForm() {
       setError("Please choose an organisation.");
       return;
     }
-    if (roleType === "professional" && !country) {
+    if ((roleType === "professional" || roleType === "supplier") && !country) {
       setError("Please choose a country.");
       return;
     }
@@ -83,7 +85,7 @@ function CreateUserForm() {
       email,
       roleType,
       professionalKind: roleType === "professional" ? professionalKind : undefined,
-      country: roleType === "professional" ? country : undefined,
+      country: roleType === "professional" || roleType === "supplier" ? country : undefined,
       district: roleType === "professional" ? (district || undefined) : undefined,
       organizationId: roleType === "organization_admin" ? organizationId : undefined,
       scopeDistricts: roleType === "organization_admin" && scopeDistricts.length ? scopeDistricts : undefined,
@@ -157,7 +159,7 @@ function CreateUserForm() {
             {!fromOrganizationId && (
               <label className="block text-sm font-bold text-slate-700">
                 Role
-                <Select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as Extract<AccountRole, "administrator" | "professional" | "organization_admin">)}>
+                <Select className={`${fieldClass} mt-2`} value={roleType} onChange={(e) => setRoleType(e.target.value as CreatableRole)}>
                   {ROLE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -167,15 +169,17 @@ function CreateUserForm() {
               </label>
             )}
 
-            {roleType === "professional" && (
+            {(roleType === "professional" || roleType === "supplier") && (
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-sm font-bold text-slate-700">
-                  Professional type
-                  <Select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
-                    <option value="individual">Individual professional</option>
-                    <option value="firm">Firm / company</option>
-                  </Select>
-                </label>
+                {roleType === "professional" && (
+                  <label className="block text-sm font-bold text-slate-700">
+                    Professional type
+                    <Select className={`${fieldClass} mt-2`} value={professionalKind} onChange={(e) => setProfessionalKind(e.target.value as "individual" | "firm")}>
+                      <option value="individual">Individual professional</option>
+                      <option value="firm">Firm / company</option>
+                    </Select>
+                  </label>
+                )}
                 <label className="block text-sm font-bold text-slate-700">
                   Country
                   <Select className={`${fieldClass} mt-2`} value={country} onChange={(e) => { setCountry(e.target.value); setDistrict(""); }} required>
@@ -185,7 +189,7 @@ function CreateUserForm() {
                     ))}
                   </Select>
                 </label>
-                {regionsForCountry(country) && (
+                {roleType === "professional" && regionsForCountry(country) && (
                   <label className="block text-sm font-bold text-slate-700">
                     District
                     <DistrictSelect country={country} value={district} onChange={setDistrict} className="mt-2" />

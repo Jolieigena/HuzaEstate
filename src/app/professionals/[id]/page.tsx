@@ -6,6 +6,7 @@ import { fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalC
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { StarRating } from "@/components/professional/ui";
+import { ProfessionalDesignsSection, RequestCustomDesignButton } from "@/components/designs/ProfessionalDesigns";
 
 function ContactCard({ profileId, profileName }: { profileId: string; profileName: string }) {
   const { showToast } = useToast();
@@ -276,6 +277,8 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
               ))}
             </div>
 
+            <ProfessionalDesignsSection profileId={profile.accountId} />
+
             <h2 className="text-xl font-bold text-slate-900 mb-4">Example projects done</h2>
             {profile.portfolio.length > 0 ? (
               <div className="grid sm:grid-cols-2 gap-5">
@@ -299,6 +302,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
 
           <div className="lg:col-span-1">
             <div className="sticky top-28">
+              <RequestCustomDesignButton profileId={profile.accountId} profileName={profile.displayName} />
               <ContactCard profileId={profile.accountId} profileName={profile.displayName} />
             </div>
           </div>

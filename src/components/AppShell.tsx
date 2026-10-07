@@ -53,7 +53,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   // AppHeader/Sidebar. This runs before the account-shell/Navbar branches below so `/admin`,
   // `/manager`, `/org-admin`, and `/professional` never get either, and every other route is
   // unaffected.
-  if (shell === "admin" || shell === "manager" || shell === "org-admin" || shell === "professional") {
+  if (shell === "admin" || shell === "manager" || shell === "org-admin" || shell === "professional" || shell === "supplier") {
     return <>{children}</>;
   }
 
