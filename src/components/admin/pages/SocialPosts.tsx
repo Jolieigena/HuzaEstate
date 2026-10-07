@@ -7,6 +7,7 @@ import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
 import { SOCIAL_STATUS_LABELS, SocialApi, type SocialChannel, type SocialPostList, type SocialPostStatus } from "@/lib/social/api";
 import Select from "@/components/shared/Select";
+import SocialPostDialog from "./SocialPostDialog";
 import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDateTime } from "../ui";
 
 const STATUS_STYLE: Record<SocialPostStatus, string> = {
@@ -58,6 +59,7 @@ export function SocialPostsPage() {
   const [countryText, setCountryText] = useState("");
   const [limitText, setLimitText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false);
 
   const [status, setStatus] = useState<SocialPostStatus | "">("");
   const [page, setPage] = useState(1);
@@ -152,7 +154,16 @@ export function SocialPostsPage() {
 
   return (
     <RequirePermission granted={isAdmin}>
-      <PageFrame title="Social posts">
+      <PageFrame
+        title="Social posts"
+        action={
+          channel && (
+            <PrimaryButton type="button" onClick={() => setPicking(true)}>
+              Post a listing
+            </PrimaryButton>
+          )
+        }
+      >
         {configError && <p className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{configError}</p>}
 
         {channels.length > 0 && (
@@ -298,6 +309,7 @@ export function SocialPostsPage() {
             </div>
           </div>
         )}
+        {channel && <SocialPostDialog channel={channel} open={picking} onClose={() => setPicking(false)} onQueued={() => setReload((n) => n + 1)} />}
       </PageFrame>
     </RequirePermission>
   );

@@ -58,6 +58,35 @@ export interface SocialPostList {
   summary: Record<SocialPostStatus, number>;
 }
 
+export interface SocialListing {
+  id: string;
+  title?: string;
+  imageUrl?: string;
+  city?: string;
+  country?: string;
+  location?: string;
+  price?: number;
+  currency?: string;
+  type?: string;
+  /** Set when this listing already has a post on the channel. */
+  postStatus?: SocialPostStatus;
+}
+
+export interface SocialListingList {
+  listings: SocialListing[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface SocialPreview {
+  text: string;
+  length: number;
+  limit: number;
+  postable: boolean;
+  reason?: string;
+}
+
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function call<T>(path: string, token: string, init: { method?: string; body?: unknown } = {}): Promise<Result<T>> {
@@ -93,6 +122,15 @@ export const SocialApi = {
     const text = params.toString();
     return call<SocialPostList>(`/social/posts${text ? `?${text}` : ""}`, token);
   },
+  listListings: (token: string, query: { channel: string; search?: string; page?: number; limit?: number }) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
+    return call<SocialListingList>(`/social/listings?${params.toString()}`, token);
+  },
+  preview: (token: string, channel: string, propertyId: string) =>
+    call<SocialPreview>(`/social/preview?channel=${encodeURIComponent(channel)}&propertyId=${encodeURIComponent(propertyId)}`, token),
+  createPosts: (token: string, input: { channel: string; propertyIds: string[]; text?: string }) =>
+    call<{ queued: number; skipped: { propertyId: string; title?: string; reason: string }[] }>("/social/posts", token, { method: "POST", body: input }),
   retry: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/retry`, token, { method: "POST" }),
   skip: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/skip`, token, { method: "POST" }),
 };
