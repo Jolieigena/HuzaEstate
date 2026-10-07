@@ -1,8 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { fetchMyProfessionalProfile, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput } from "@/lib/professional/api";
+import Select from "@/components/shared/Select";
+import { DesignsApi } from "@/lib/designs/api";
+import { SERVICE_PRICE_TYPE_LABELS, fetchMyProfessionalProfile, formatServicePrice, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput, type ServicePriceType } from "@/lib/professional/api";
 import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
 import MultiSelectCombobox from "@/components/shared/MultiSelectCombobox";
@@ -19,14 +22,14 @@ const MAX_PROJECT_IMAGES = 8;
 const SUPPORTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 /** One titled block of the profile form: a numbered heading and a one-line purpose, then the fields. */
-function Section({ id, step, title, description, children }: { id: string; step: number; title: string; description: string; children: React.ReactNode }) {
+function Section({ id, step, title, description, children }: { id: string; step: number; title: string; description?: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm">
       <header className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
         <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{step}</span>
         <div>
           <h3 className="text-base font-black text-slate-900">{title}</h3>
-          <p className="mt-0.5 text-sm text-slate-500">{description}</p>
+          {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
         </div>
       </header>
       <div className="px-5 py-5 sm:px-6">{children}</div>
@@ -100,7 +103,9 @@ export default function ProfessionalProfileForm() {
   const [portfolio, setPortfolio] = useState<PortfolioItemInput[]>([]);
   const [services, setServices] = useState<ServiceOfferingInput[]>([]);
 
-  const [newService, setNewService] = useState({ name: "", description: "" });
+  const [newService, setNewService] = useState<{ name: string; description: string; priceType: ServicePriceType | ""; price: string; currency: string }>({ name: "", description: "", priceType: "", price: "", currency: "USD" });
+  // How many designs this professional has published, shown in the Designs step (null until known).
+  const [designCount, setDesignCount] = useState<number | null>(null);
   const [newProject, setNewProject] = useState<{ title: string; description: string; year: string; images: string[]; videoUrl: string }>({ title: "", description: "", year: "", images: [], videoUrl: "" });
   const [projectImagesUploading, setProjectImagesUploading] = useState(false);
   const [projectVideoUploading, setProjectVideoUploading] = useState(false);
@@ -128,6 +133,17 @@ export default function ProfessionalProfileForm() {
     return () => { cancelled = true; };
   }, [token]);
 
+  // The Designs step shows how many designs exist. Designs need a saved profile, so ask only once it is.
+  const profileSaved = account?.profileCompleted !== false;
+  useEffect(() => {
+    if (!token || !profileSaved) return;
+    let cancelled = false;
+    DesignsApi.mine(token).then((result) => {
+      if (!cancelled && result.ok) setDesignCount(result.data.designs.length);
+    });
+    return () => { cancelled = true; };
+  }, [token, profileSaved]);
+
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -146,8 +162,22 @@ export default function ProfessionalProfileForm() {
 
   const addService = () => {
     if (!newService.name.trim()) return;
-    setServices((list) => [...list, { name: newService.name.trim(), description: newService.description.trim() || undefined }]);
-    setNewService({ name: "", description: "" });
+    const priced = newService.priceType && newService.priceType !== "on_request";
+    if (priced && !(Number(newService.price) > 0)) {
+      setError("Enter a price above zero, or choose \"On request\".");
+      return;
+    }
+    setError("");
+    setServices((list) => [
+      ...list,
+      {
+        name: newService.name.trim(),
+        description: newService.description.trim() || undefined,
+        ...(newService.priceType ? { priceType: newService.priceType } : {}),
+        ...(priced ? { price: Number(newService.price), currency: (newService.currency || "USD").toUpperCase() } : {}),
+      },
+    ]);
+    setNewService({ name: "", description: "", priceType: "", price: "", currency: newService.currency });
   };
   const removeService = (index: number) => setServices((list) => list.filter((_, i) => i !== index));
 
@@ -243,6 +273,7 @@ export default function ProfessionalProfileForm() {
     { label: "Profile photo", done: !!photoUrl, href: "#photo" },
     { label: "At least one service", done: services.length > 0, href: "#services" },
     { label: "At least one project", done: portfolio.length > 0, href: "#projects" },
+    { label: "At least one design", done: (designCount ?? 0) > 0, href: "#designs" },
   ];
   const isPublic = account?.profileCompleted !== false;
 
@@ -321,6 +352,7 @@ export default function ProfessionalProfileForm() {
                   <li key={index} className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-3">
                     <div>
                       <p className="text-sm font-bold text-slate-800">{service.name}</p>
+                      {formatServicePrice(service) && <p className="mt-0.5 text-xs font-bold text-[#219b31]">{formatServicePrice(service)}</p>}
                       {service.description && <p className="mt-0.5 text-xs text-slate-500">{service.description}</p>}
                     </div>
                     <button type="button" onClick={() => removeService(index)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
@@ -328,10 +360,29 @@ export default function ProfessionalProfileForm() {
                 ))}
               </ul>
             )}
-            <div className="grid gap-3 rounded-xl border border-dashed border-slate-200 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <div className="grid gap-3 rounded-xl border border-dashed border-slate-200 p-4 sm:grid-cols-2">
               <label className="text-xs font-bold text-slate-700">Service name<input className={`${fieldClass} mt-1.5`} value={newService.name} onChange={(e) => setNewService((v) => ({ ...v, name: e.target.value }))} placeholder="e.g. Structural assessment" /></label>
               <label className="text-xs font-bold text-slate-700">Description (optional)<input className={`${fieldClass} mt-1.5`} value={newService.description} onChange={(e) => setNewService((v) => ({ ...v, description: e.target.value }))} /></label>
-              <SecondaryButton type="button" onClick={addService} disabled={!newService.name.trim()}>Add service</SecondaryButton>
+              <label className="text-xs font-bold text-slate-700">
+                Price (optional)
+                <Select className={`${fieldClass} mt-1.5`} value={newService.priceType} onChange={(e) => setNewService((v) => ({ ...v, priceType: e.target.value as ServicePriceType | "" }))}>
+                  <option value="">No price shown</option>
+                  {(Object.keys(SERVICE_PRICE_TYPE_LABELS) as ServicePriceType[]).map((t) => (
+                    <option key={t} value={t}>{SERVICE_PRICE_TYPE_LABELS[t]}</option>
+                  ))}
+                </Select>
+              </label>
+              {newService.priceType && newService.priceType !== "on_request" ? (
+                <div className="grid grid-cols-[1fr_5rem] gap-3">
+                  <label className="text-xs font-bold text-slate-700">Amount<input className={`${fieldClass} mt-1.5`} inputMode="decimal" value={newService.price} onChange={(e) => setNewService((v) => ({ ...v, price: e.target.value.replace(/[^\d.]/g, "") }))} /></label>
+                  <label className="text-xs font-bold text-slate-700">Currency<input className={`${fieldClass} mt-1.5 uppercase`} maxLength={3} value={newService.currency} onChange={(e) => setNewService((v) => ({ ...v, currency: e.target.value.replace(/[^A-Za-z]/g, "") }))} /></label>
+                </div>
+              ) : (
+                <div />
+              )}
+              <div className="sm:col-span-2">
+                <SecondaryButton type="button" onClick={addService} disabled={!newService.name.trim()}>Add service</SecondaryButton>
+              </div>
             </div>
           </Section>
 
@@ -409,6 +460,19 @@ export default function ProfessionalProfileForm() {
                 <SecondaryButton type="button" className="ml-auto" onClick={addProject} disabled={!newProject.title.trim()}>Add project</SecondaryButton>
               </div>
             </div>
+          </Section>
+
+          <Section id="designs" step={6} title="Designs">
+            {account?.profileCompleted === false ? (
+              <p className="text-sm font-semibold text-slate-500">Save your profile first. Then you can publish priced interior and exterior designs here.</p>
+            ) : (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-slate-700">{designCount === null ? "Loading…" : designCount === 0 ? "You have no designs yet." : `${designCount} ${designCount === 1 ? "design" : "designs"}`}</p>
+                <Link href="/professional/designs" className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440]">
+                  {designCount ? "Manage designs" : "Add a design"}
+                </Link>
+              </div>
+            )}
           </Section>
         </div>
 

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalContact, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
+import { formatServicePrice, fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalContact, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { StarRating } from "@/components/professional/ui";
@@ -272,6 +272,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
               {profile.services.map((service, index) => (
                 <div key={`${service.name}-${index}`} className="border border-slate-100 rounded-2xl p-4">
                   <h3 className="font-bold text-slate-900 text-sm mb-1">{service.name}</h3>
+                  {formatServicePrice(service) && <p className="text-sm font-bold text-[#219b31] mb-1">{formatServicePrice(service)}</p>}
                   <p className="text-xs text-slate-500 leading-relaxed">{service.description}</p>
                 </div>
               ))}

@@ -15,9 +15,26 @@ export interface PortfolioItemInput {
   year?: number;
 }
 
+export type ServicePriceType = "fixed" | "from" | "per_sqm" | "on_request";
+
+export const SERVICE_PRICE_TYPE_LABELS: Record<ServicePriceType, string> = { fixed: "Fixed price", from: "Starting from", per_sqm: "Per square metre", on_request: "On request" };
+
 export interface ServiceOfferingInput {
   name: string;
   description?: string;
+  /** Optional: what the service costs. Absent means no price is shown. */
+  priceType?: ServicePriceType;
+  price?: number;
+  currency?: string;
+}
+
+/** "$450", "From $450", "$25/m²", "Price on request", or "" when the service has no price. */
+export function formatServicePrice(service: Pick<ServiceOfferingInput, "priceType" | "price" | "currency">): string {
+  if (!service.priceType) return "";
+  if (service.priceType === "on_request" || !service.price) return "Price on request";
+  const amount = Math.round(service.price).toLocaleString("en-US");
+  const money = !service.currency || service.currency === "USD" ? `$${amount}` : `${service.currency} ${amount}`;
+  return service.priceType === "from" ? `From ${money}` : service.priceType === "per_sqm" ? `${money}/m²` : money;
 }
 
 export type ProfessionalKind = "individual" | "firm";
