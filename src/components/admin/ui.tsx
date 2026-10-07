@@ -64,7 +64,7 @@ export const PrimaryLink = ({ href, children, className = "" }: { href: string; 
   </Link>
 );
 
-export function EmptyState({ title, description, action }: { title: string; description: string; action?: React.ReactNode }) { 
+export function EmptyState({ title, description, action }: { title: string; description?: string; action?: React.ReactNode }) { 
   return (
     <Card className="py-20 text-center flex flex-col items-center justify-center border-dashed border-2 border-slate-200 bg-slate-50/50">
       <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm border border-slate-100 text-slate-400">
@@ -73,7 +73,7 @@ export function EmptyState({ title, description, action }: { title: string; desc
         </svg>
       </div>
       <h3 className="text-xl font-bold tracking-tight text-slate-900">{title}</h3>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">{description}</p>
+      {description && <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">{description}</p>}
       {action && <div className="mt-8">{action}</div>}
     </Card>
   ); 

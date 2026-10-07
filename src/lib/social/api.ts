@@ -1,4 +1,5 @@
-// property-service client for posting approved listings to the platform's X account (admin only).
+// property-service client for posting approved listings to social networks (admin only). Each network
+// is a "channel" the server reports; the page and this client work for any number of them.
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
@@ -24,15 +25,19 @@ export interface SocialSettings {
   deleteOnTakedown: boolean;
 }
 
-export interface SocialSettingsResponse {
-  settings: SocialSettings;
-  /** Whether the four X keys are set on the server. */
+export interface SocialChannel {
+  id: string;
+  label: string;
+  postLimit: number;
+  /** Whether the server has this network's keys. */
   credentialsConfigured: boolean;
+  settings: SocialSettings;
 }
 
 export interface SocialPost {
   id: string;
   propertyId: string;
+  channel: string;
   title?: string;
   status: SocialPostStatus;
   text?: string;
@@ -79,9 +84,10 @@ async function call<T>(path: string, token: string, init: { method?: string; bod
 }
 
 export const SocialApi = {
-  getSettings: (token: string) => call<SocialSettingsResponse>("/social/settings", token),
-  updateSettings: (token: string, changes: Partial<SocialSettings>) => call<SocialSettingsResponse>("/social/settings", token, { method: "PUT", body: changes }),
-  listPosts: (token: string, query: { status?: SocialPostStatus | ""; page?: number; limit?: number } = {}) => {
+  listChannels: (token: string) => call<{ channels: SocialChannel[] }>("/social/channels", token),
+  updateChannel: (token: string, channel: string, changes: Partial<SocialSettings>) =>
+    call<{ channel: SocialChannel }>(`/social/channels/${encodeURIComponent(channel)}`, token, { method: "PUT", body: changes }),
+  listPosts: (token: string, query: { channel?: string; status?: SocialPostStatus | ""; page?: number; limit?: number } = {}) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
     const text = params.toString();

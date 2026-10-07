@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
-import { SOCIAL_STATUS_LABELS, SocialApi, type SocialPostList, type SocialPostStatus, type SocialSettingsResponse } from "@/lib/social/api";
+import { SOCIAL_STATUS_LABELS, SocialApi, type SocialChannel, type SocialPostList, type SocialPostStatus } from "@/lib/social/api";
 import Select from "@/components/shared/Select";
 import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDateTime } from "../ui";
 
@@ -35,15 +35,24 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: (val
   );
 }
 
-/** Controls for posting approved listings to the HuzaEstate X account, and the list of what was posted.
- *  Starts in rehearsal mode: posts are composed and logged but not sent until X is connected and an
- *  administrator switches to live. */
+function SwitchRow({ title, checked, onChange }: { title: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-6">
+      <p className="font-bold text-slate-900">{title}</p>
+      <Switch checked={checked} label={title} onChange={onChange} />
+    </div>
+  );
+}
+
+/** Posting approved listings to social networks. One tab per network the server supports; each has its
+ *  own switches, limits and list of posts, so a new network appears here without any change to the page. */
 export function SocialPostsPage() {
   const { token, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const isAdmin = useIsAdministrator();
 
-  const [config, setConfig] = useState<SocialSettingsResponse | null>(null);
+  const [channels, setChannels] = useState<SocialChannel[]>([]);
+  const [selectedId, setSelectedId] = useState("");
   const [configError, setConfigError] = useState("");
   const [hashtagText, setHashtagText] = useState("");
   const [countryText, setCountryText] = useState("");
@@ -55,48 +64,66 @@ export function SocialPostsPage() {
   const [reload, setReload] = useState(0);
   const [list, setList] = useState<{ key: string; data?: SocialPostList; error?: string } | null>(null);
 
-  const applyConfig = (data: SocialSettingsResponse) => {
-    setConfig(data);
-    setHashtagText(data.settings.hashtags.join(" "));
-    setCountryText(data.settings.countries.join(", "));
-    setLimitText(String(data.settings.dailyLimit));
+  const channel = channels.find((c) => c.id === selectedId) ?? channels[0];
+
+  const fillFields = (c: SocialChannel) => {
+    setHashtagText(c.settings.hashtags.join(" "));
+    setCountryText(c.settings.countries.join(", "));
+    setLimitText(String(c.settings.dailyLimit));
   };
 
   useEffect(() => {
     if (!isAuthReady || !token || !isAdmin) return;
     let cancelled = false;
-    SocialApi.getSettings(token).then((result) => {
+    SocialApi.listChannels(token).then((result) => {
       if (cancelled) return;
-      if (result.ok) applyConfig(result.data);
-      else setConfigError(result.error);
+      if (!result.ok) {
+        setConfigError(result.error);
+        return;
+      }
+      setChannels(result.data.channels);
+      if (result.data.channels[0]) {
+        setSelectedId(result.data.channels[0].id);
+        fillFields(result.data.channels[0]);
+      }
     });
     return () => {
       cancelled = true;
     };
   }, [isAuthReady, token, isAdmin]);
 
-  const key = `${status}|${page}|${reload}`;
+  const channelId = channel?.id ?? "";
+  const key = `${channelId}|${status}|${page}|${reload}`;
   useEffect(() => {
-    if (!isAuthReady || !token || !isAdmin) return;
+    if (!isAuthReady || !token || !isAdmin || !channelId) return;
     let cancelled = false;
-    SocialApi.listPosts(token, { status, page, limit: PAGE_SIZE }).then((result) => {
+    SocialApi.listPosts(token, { channel: channelId, status, page, limit: PAGE_SIZE }).then((result) => {
       if (!cancelled) setList(result.ok ? { key, data: result.data } : { key, error: result.error });
     });
     return () => {
       cancelled = true;
     };
-  }, [isAuthReady, token, isAdmin, status, page, key]);
+  }, [isAuthReady, token, isAdmin, channelId, status, page, key]);
 
-  const save = async (changes: Parameters<typeof SocialApi.updateSettings>[1], message = "Saved.") => {
-    if (!token) return;
+  const selectChannel = (c: SocialChannel) => {
+    setSelectedId(c.id);
+    fillFields(c);
+    setStatus("");
+    setPage(1);
+  };
+
+  const save = async (changes: Parameters<typeof SocialApi.updateChannel>[2], message = "Saved.") => {
+    if (!token || !channel) return;
     setSaving(true);
-    const result = await SocialApi.updateSettings(token, changes);
+    const result = await SocialApi.updateChannel(token, channel.id, changes);
     setSaving(false);
     if (!result.ok) {
       showToast(result.error, "error");
       return;
     }
-    applyConfig(result.data);
+    const updated = result.data.channel;
+    setChannels((current) => current.map((c) => (c.id === updated.id ? updated : c)));
+    fillFields(updated);
     showToast(message);
   };
 
@@ -117,7 +144,7 @@ export function SocialPostsPage() {
     }
   };
 
-  const settings = config?.settings;
+  const settings = channel?.settings;
   const data = list?.data;
   const loading = list?.key !== key;
   const total = data?.total ?? 0;
@@ -125,51 +152,43 @@ export function SocialPostsPage() {
 
   return (
     <RequirePermission granted={isAdmin}>
-      <PageFrame title="Social posts" description="Approved listings are posted to the HuzaEstate X account a couple of minutes after they go live, within a daily limit. A listing is only ever posted once, and its post is deleted if the listing is taken down.">
+      <PageFrame title="Social posts">
         {configError && <p className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{configError}</p>}
 
-        {settings && config && (
+        {channels.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Social networks">
+            {channels.map((c) => {
+              const active = c.id === channel?.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => selectChannel(c)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${c.settings.enabled ? "bg-[#2ec440]" : "bg-slate-300"}`} aria-hidden="true" />
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {channel && settings && (
           <Card className="mb-8">
             <div className="grid gap-8 lg:grid-cols-2">
               <div className="space-y-6">
-                <div className="flex items-center justify-between gap-6">
-                  <div>
-                    <p className="font-bold text-slate-900">Automatic posting</p>
-                    <p className="mt-1 text-sm text-slate-500">{settings.enabled ? "On: newly approved listings are queued." : "Off: nothing is queued."}</p>
-                  </div>
-                  <Switch checked={settings.enabled} label="Automatic posting" onChange={(enabled) => save({ enabled }, enabled ? "Posting is on." : "Posting is off.")} />
-                </div>
-
-                <div className="flex items-center justify-between gap-6">
-                  <div>
-                    <p className="font-bold text-slate-900">Send for real</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {settings.mode === "live" ? "Live: posts are sent to X." : "Rehearsal: posts are written and logged below but not sent."}
-                      {!config.credentialsConfigured && " The X keys are not on the server yet."}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.mode === "live"}
-                    label="Send posts to X"
-                    onChange={(live) => save({ mode: live ? "live" : "dry_run" }, live ? "Posts will now be sent to X." : "Back to rehearsal.")}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between gap-6">
-                  <div>
-                    <p className="font-bold text-slate-900">Delete the post when a listing is taken down</p>
-                    <p className="mt-1 text-sm text-slate-500">Applies to unpublished, rejected and deleted listings.</p>
-                  </div>
-                  <Switch checked={settings.deleteOnTakedown} label="Delete post on takedown" onChange={(deleteOnTakedown) => save({ deleteOnTakedown })} />
-                </div>
-
-                <div className="flex items-center justify-between gap-6">
-                  <div>
-                    <p className="font-bold text-slate-900">Add place hashtags</p>
-                    <p className="mt-1 text-sm text-slate-500">For example #RwandaRealEstate and #Kigali.</p>
-                  </div>
-                  <Switch checked={settings.placeHashtags} label="Place hashtags" onChange={(placeHashtags) => save({ placeHashtags })} />
-                </div>
+                <SwitchRow title="Automatic posting" checked={settings.enabled} onChange={(enabled) => save({ enabled }, enabled ? "Posting is on." : "Posting is off.")} />
+                <SwitchRow
+                  title="Send for real"
+                  checked={settings.mode === "live"}
+                  onChange={(live) => save({ mode: live ? "live" : "dry_run" }, live ? "Posts will now be sent." : "Back to rehearsal.")}
+                />
+                {!channel.credentialsConfigured && <p className="text-sm font-semibold text-amber-700">{channel.label} keys are not set on the server.</p>}
+                <SwitchRow title="Delete the post when a listing is taken down" checked={settings.deleteOnTakedown} onChange={(deleteOnTakedown) => save({ deleteOnTakedown })} />
+                <SwitchRow title="Add place hashtags" checked={settings.placeHashtags} onChange={(placeHashtags) => save({ placeHashtags })} />
               </div>
 
               <div className="space-y-5">
@@ -184,7 +203,6 @@ export function SocialPostsPage() {
                 <label className="block text-sm font-bold text-slate-700">
                   Only these countries
                   <input className={`${fieldClass} mt-1`} value={countryText} onChange={(e) => setCountryText(e.target.value)} placeholder="Every country" />
-                  <span className="mt-1 block text-xs font-normal text-slate-500">Separate with commas. Leave empty to post listings from every country.</span>
                 </label>
                 <PrimaryButton type="button" disabled={saving} onClick={saveDetails}>
                   {saving ? "Saving..." : "Save"}
@@ -226,7 +244,7 @@ export function SocialPostsPage() {
         {list?.error ? (
           <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{list.error}</p>
         ) : !loading && data && data.posts.length === 0 ? (
-          <EmptyState title="No posts yet" description={status ? "Nothing has this status." : "Once posting is on, approved listings show up here."} />
+          <EmptyState title="No posts yet" />
         ) : (
           <AdminTable headers={["Listing", "Status", "When", "Post", ""]}>
             {(data?.posts ?? []).map((post) => (
