@@ -140,6 +140,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               )}
               <div className="min-w-0">
                 <p className="truncate font-bold text-slate-900">{designer.displayName}</p>
+                {designer.specialisations.length > 0 && <p className="truncate text-sm text-slate-500">{designer.specialisations.slice(0, 2).join(" · ")}</p>}
                 <p className="truncate text-sm text-slate-500">{[designer.city, designer.country].filter(Boolean).join(", ")}</p>
               </div>
             </Link>

@@ -89,7 +89,12 @@ export default function DesignsCatalogPage() {
                   <h2 className="mt-1 font-black text-slate-900">{design.title}</h2>
                   <div className="mt-3 flex items-center justify-between gap-3 text-sm">
                     <span className="font-bold text-slate-900">{formatDesignPrice(design)}</span>
-                    {design.designer && <span className="truncate text-slate-500">{design.designer.displayName}</span>}
+                    {design.designer && (
+                      <span className="min-w-0 text-right">
+                        <span className="block truncate font-semibold text-slate-700">{design.designer.displayName}</span>
+                        {design.designer.specialisations.length > 0 && <span className="block truncate text-xs text-slate-400">{design.designer.specialisations.slice(0, 2).join(" · ")}</span>}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>

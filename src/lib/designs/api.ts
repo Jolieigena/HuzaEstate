@@ -13,6 +13,8 @@ export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed
 export interface DesignDesigner {
   accountId: string;
   displayName: string;
+  /** What they practise, e.g. Interior Designer. */
+  specialisations: string[];
   photoUrl?: string;
   city?: string;
   country?: string;
