@@ -151,6 +151,40 @@ export interface FurnitureResponseInput {
   note?: string;
 }
 
+export type DesignSort = "newest" | "price_asc" | "price_desc" | "title";
+
+/** Everything the catalogue can be narrowed by. Empty values are left out of the request. */
+export interface DesignQuery {
+  category?: DesignCategory | "";
+  search?: string;
+  space?: string;
+  profession?: string;
+  country?: string;
+  city?: string;
+  professionalId?: string;
+  priceType?: DesignPriceType | "";
+  hasFurniture?: boolean;
+  currency?: string;
+  minPrice?: number | "";
+  maxPrice?: number | "";
+  sort?: DesignSort | "";
+  page?: number;
+  limit?: number;
+}
+
+/** What the catalogue's filters can offer right now, each with how many designs it has. */
+export interface DesignFacets {
+  spaces: { name: string; category: DesignCategory; count: number }[];
+  professions: { name: string; count: number }[];
+  countries: { name: string; count: number }[];
+  cities: { name: string; count: number }[];
+  currencies: { code: string; count: number }[];
+  priceTypes: { value: DesignPriceType; count: number }[];
+  withFurniture: number;
+  designers: { id: string; name: string; count: number }[];
+  total: number;
+}
+
 export interface DesignList {
   designs: Design[];
   total: number;
@@ -192,12 +226,13 @@ export function formatDesignPrice(design: Pick<Design, "priceType" | "price" | "
 }
 
 export const DesignsApi = {
-  list: (query: { category?: DesignCategory | ""; search?: string; professionalId?: string; page?: number; limit?: number } = {}) => {
+  list: (query: DesignQuery = {}) => {
     const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
+    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "" && value !== false) params.set(key, String(value));
     const text = params.toString();
     return call<DesignList>(`/designs${text ? `?${text}` : ""}`);
   },
+  filters: () => call<DesignFacets>("/designs/filters"),
   mine: (token: string) => call<{ designs: Design[] }>("/designs/me", { token }),
   get: (id: string, token?: string | null) => call<{ design: Design }>(`/designs/${encodeURIComponent(id)}`, { token }),
   create: (token: string, input: DesignInput) => call<{ design: Design }>("/designs", { token, method: "POST", body: input }),
