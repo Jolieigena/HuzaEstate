@@ -322,12 +322,12 @@ export default function ProfessionalProfileForm() {
   const isPublic = account?.profileCompleted !== false;
 
   return (
-    <PageFrame title="Professional profile" description="This is what clients see in the professionals directory. Keep it current: complete profiles get more enquiries.">
+    <PageFrame title="Professional profile">
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="flex flex-col gap-6 pb-20 xl:pb-0">
           {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
 
-          <Section id="photo" step={1} title="Photo & identity" description="Your photo appears next to your name across the platform.">
+          <Section id="photo" step={1} title="Photo & identity">
             <div className="flex flex-wrap items-center gap-5">
               <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-slate-50">
                 {photoUrl ? (
@@ -351,12 +351,11 @@ export default function ProfessionalProfileForm() {
                     </button>
                   )}
                 </div>
-                <p className="mt-1.5 text-xs text-slate-400">JPG, PNG or WebP. A clear head-and-shoulders photo works best. Photo changes apply when you save.</p>
               </div>
             </div>
           </Section>
 
-          <Section id="details" step={2} title="About you" description="Who you are and what you do.">
+          <Section id="details" step={2} title="About you">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Display name"><input className={fieldClass} value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></Field>
               <Field label="Years of experience"><input type="number" min={0} max={80} className={fieldClass} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} /></Field>
@@ -372,15 +371,14 @@ export default function ProfessionalProfileForm() {
                     ariaLabel="Specialisations"
                   />
                 </div>
-                <p className="mt-1 text-xs font-medium text-slate-400">Choose up to {MAX_SPECIALISATIONS}. Can&apos;t find yours? Type it and add it.</p>
               </div>
-              <Field label="Professional biography" className="sm:col-span-2" hint="A few sentences on your background, the work you take on and how you work with clients.">
+              <Field label="Professional biography" className="sm:col-span-2">
                 <textarea className={`${fieldClass} min-h-32`} value={bio} onChange={(e) => setBio(e.target.value)} />
               </Field>
             </div>
           </Section>
 
-          <Section id="contact" step={3} title="Contact & location" description="How clients reach you and where you work.">
+          <Section id="contact" step={3} title="Contact & location">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Phone"><input className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
               <Field label="City"><input className={fieldClass} value={city} onChange={(e) => setCity(e.target.value)} /></Field>
