@@ -339,7 +339,7 @@ export default function ProfessionalProfileForm() {
               </div>
               <div>
                 <p className="text-base font-black text-slate-900">{displayName || "Your name"}</p>
-                {kind && <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{PROFESSIONAL_KIND_LABEL[kind] ?? kind} · set by your administrator</p>}
+                {kind && <p className="mt-0.5 text-xs font-semibold uppercase tracking-wide text-slate-400">{PROFESSIONAL_KIND_LABEL[kind] ?? kind}</p>}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <label className={`${photoUploading ? "opacity-50" : ""} inline-block cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                     {photoUploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
