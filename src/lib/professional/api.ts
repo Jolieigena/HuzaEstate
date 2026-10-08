@@ -13,6 +13,8 @@ export interface PortfolioItemInput {
   images?: string[];
   videoUrl?: string;
   year?: number;
+  /** Set when this project was also published as a design. */
+  designId?: string;
 }
 
 export type ServicePriceType = "fixed" | "from" | "per_sqm" | "on_request";

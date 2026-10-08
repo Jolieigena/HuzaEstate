@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import Select from "@/components/shared/Select";
-import { DesignsApi } from "@/lib/designs/api";
-import { CurrencySelect } from "@/components/designs/fields";
+import { DESIGN_CATEGORY_LABELS, DesignsApi, type DesignCategory } from "@/lib/designs/api";
+import { CurrencySelect, SpaceSelect } from "@/components/designs/fields";
 import { useCurrencyOptions } from "@/lib/currencies";
 import { SERVICE_PRICE_TYPE_LABELS, fetchMyProfessionalProfile, formatServicePrice, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput, type ServicePriceType } from "@/lib/professional/api";
 import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
@@ -21,6 +21,22 @@ import { PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "./ui";
 // update), so keeping it a separate page just meant two fetches and two saves of the same data.
 const PROFESSIONAL_KIND_LABEL: Record<string, string> = { individual: "Individual professional", firm: "Firm / company" };
 const MAX_PROJECT_IMAGES = 8;
+
+/** The project being added to a service. With `toDesigns` it is also published as a design. */
+interface NewProject {
+  title: string;
+  description: string;
+  year: string;
+  images: string[];
+  videoUrl: string;
+  toDesigns: boolean;
+  category: DesignCategory;
+  spaceType: string;
+  priceType: "fixed" | "on_request";
+  price: string;
+  currency: string;
+}
+const EMPTY_PROJECT: NewProject = { title: "", description: "", year: "", images: [], videoUrl: "", toDesigns: false, category: "interior", spaceType: "", priceType: "on_request", price: "", currency: "" };
 const SUPPORTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 /** One titled block of the profile form: a numbered heading and a one-line purpose, then the fields. */
@@ -113,7 +129,7 @@ export default function ProfessionalProfileForm() {
   // Which service the "add a project" form is open under (null when closed).
   const [openProject, setOpenProject] = useState<number | null>(null);
   const [designCount, setDesignCount] = useState<number | null>(null);
-  const [newProject, setNewProject] = useState<{ title: string; description: string; year: string; images: string[]; videoUrl: string }>({ title: "", description: "", year: "", images: [], videoUrl: "" });
+  const [newProject, setNewProject] = useState<NewProject>(EMPTY_PROJECT);
   const [projectImagesUploading, setProjectImagesUploading] = useState(false);
   const [projectVideoUploading, setProjectVideoUploading] = useState(false);
 
@@ -240,21 +256,47 @@ export default function ProfessionalProfileForm() {
     }
   };
 
-  const emptyProject = { title: "", description: "", year: "", images: [] as string[], videoUrl: "" };
-  const addProject = (serviceIndex: number) => {
-    if (!newProject.title.trim()) return;
+  const emptyProject = EMPTY_PROJECT;
+  const addProject = async (serviceIndex: number) => {
+    if (!token || saving || !newProject.title.trim()) return;
+    let designId: string | undefined;
+    if (newProject.toDesigns) {
+      // Publish it as a design too. If that fails the project is not added, so nothing is half done.
+      const fixed = newProject.priceType === "fixed";
+      setSaving(true);
+      const result = await DesignsApi.create(token, {
+        title: newProject.title.trim(),
+        description: newProject.description.trim(),
+        category: newProject.category,
+        spaceType: newProject.spaceType || undefined,
+        images: newProject.images,
+        furniture: [],
+        priceType: newProject.priceType,
+        price: fixed ? Number(newProject.price) : undefined,
+        currency: newProject.currency || defaultCurrency,
+        status: "published",
+      });
+      setSaving(false);
+      if (!result.ok) {
+        showToast(result.error, "error");
+        return;
+      }
+      designId = result.data.design.id;
+      setDesignCount((count) => (count ?? 0) + 1);
+    }
     const project: PortfolioItemInput = {
       title: newProject.title.trim(),
       description: newProject.description.trim() || undefined,
       year: newProject.year ? Number(newProject.year) : undefined,
       images: newProject.images,
       videoUrl: newProject.videoUrl || undefined,
+      ...(designId ? { designId } : {}),
     };
     const next = services.map((service, i) => (i === serviceIndex ? { ...service, projects: [...(service.projects ?? []), project] } : service));
     setServices(next);
     setNewProject(emptyProject);
     setOpenProject(null);
-    if (profileSaved) void persist({ services: next }, "Project added.");
+    if (profileSaved) void persist({ services: next }, designId ? "Project added and published in Designs." : "Project added.");
     else showToast("Project added. Save your profile to keep it.");
   };
   const removeProject = (serviceIndex: number, projectIndex: number) => {
@@ -427,6 +469,7 @@ export default function ProfessionalProfileForm() {
                                     {item.year && <span>{item.year}</span>}
                                     {images.length > 1 && <span>{images.length} photos</span>}
                                     {item.videoUrl && <span className="font-bold text-[#219b31]">Video included</span>}
+                                    {item.designId && <Link href={`/designs/${item.designId}`} className="font-bold text-[#219b31] hover:underline">In Designs</Link>}
                                   </div>
                                   {item.description && <p className="mt-1 text-xs text-slate-500">{item.description}</p>}
                                 </div>
@@ -442,38 +485,77 @@ export default function ProfessionalProfileForm() {
                             <label className="text-xs font-bold text-slate-700">Project title<input className={`${fieldClass} mt-1.5`} autoFocus value={newProject.title} onChange={(e) => setNewProject((v) => ({ ...v, title: e.target.value }))} placeholder="e.g. Kigali Heights Tower" /></label>
                             <label className="text-xs font-bold text-slate-700">Year<input type="number" className={`${fieldClass} mt-1.5`} value={newProject.year} onChange={(e) => setNewProject((v) => ({ ...v, year: e.target.value }))} /></label>
                           </div>
-                          {newProject.title.trim() && (
-                            <>
-                              <label className="mt-3 block text-xs font-bold text-slate-700">Description<textarea className={`${fieldClass} mt-1.5`} rows={3} value={newProject.description} onChange={(e) => setNewProject((v) => ({ ...v, description: e.target.value }))} /></label>
-                              {newProject.images.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                  {newProject.images.map((url, i) => (
-                                    <div key={i} className="relative h-16 w-16">
-                                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
-                                      <button type="button" onClick={() => removeNewProjectImage(i)} aria-label="Remove image" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white shadow">&times;</button>
-                                    </div>
+                          <label className="mt-3 block text-xs font-bold text-slate-700">Description<textarea className={`${fieldClass} mt-1.5`} rows={3} value={newProject.description} onChange={(e) => setNewProject((v) => ({ ...v, description: e.target.value }))} /></label>
+                          {newProject.images.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {newProject.images.map((url, i) => (
+                                <div key={i} className="relative h-16 w-16">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
+                                  <button type="button" onClick={() => removeNewProjectImage(i)} aria-label="Remove image" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white shadow">&times;</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
+                              {projectImagesUploading ? "Uploading…" : `Add photos (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
+                              <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
+                            </label>
+                            <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
+                              {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}
+                              <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
+                            </label>
+                            {newProject.videoUrl && (
+                              <button type="button" onClick={() => setNewProject((v) => ({ ...v, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">Remove video</button>
+                            )}
+                          </div>
+
+                          {profileSaved && (
+                            <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">
+                              <input type="checkbox" className="h-4 w-4 accent-[#2ec440]" checked={newProject.toDesigns} onChange={(e) => setNewProject((v) => ({ ...v, toDesigns: e.target.checked }))} />
+                              Also publish it in Designs
+                            </label>
+                          )}
+                          {newProject.toDesigns && (
+                            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                              <label className="text-xs font-bold text-slate-700">
+                                Type
+                                <Select className={`${fieldClass} mt-1.5`} value={newProject.category} aria-label="Design type" onChange={(e) => setNewProject((v) => ({ ...v, category: e.target.value as DesignCategory, spaceType: "" }))}>
+                                  {(Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).map((c) => (
+                                    <option key={c} value={c}>{DESIGN_CATEGORY_LABELS[c]}</option>
                                   ))}
+                                </Select>
+                              </label>
+                              <label className="text-xs font-bold text-slate-700">
+                                Space
+                                <SpaceSelect className={`${fieldClass} mt-1.5`} category={newProject.category} value={newProject.spaceType} onChange={(spaceType) => setNewProject((v) => ({ ...v, spaceType }))} />
+                              </label>
+                              <label className="text-xs font-bold text-slate-700">
+                                Price
+                                <Select className={`${fieldClass} mt-1.5`} value={newProject.priceType} aria-label="Design price" onChange={(e) => setNewProject((v) => ({ ...v, priceType: e.target.value as "fixed" | "on_request" }))}>
+                                  <option value="on_request">On request</option>
+                                  <option value="fixed">Fixed price</option>
+                                </Select>
+                              </label>
+                              {newProject.priceType === "fixed" && (
+                                <div className="grid grid-cols-[1fr_6.5rem] gap-3">
+                                  <label className="text-xs font-bold text-slate-700">Amount<input className={`${fieldClass} mt-1.5`} inputMode="decimal" value={newProject.price} onChange={(e) => setNewProject((v) => ({ ...v, price: e.target.value.replace(/[^\d.]/g, "") }))} /></label>
+                                  <label className="text-xs font-bold text-slate-700">Currency<CurrencySelect className={`${fieldClass} mt-1.5`} value={newProject.currency || defaultCurrency} onChange={(currency) => setNewProject((v) => ({ ...v, currency }))} /></label>
                                 </div>
                               )}
-                              <div className="mt-3 flex flex-wrap items-center gap-3">
-                                <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
-                                  {projectImagesUploading ? "Uploading…" : `Add images (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
-                                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
-                                </label>
-                                <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
-                                  {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}
-                                  <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
-                                </label>
-                                {newProject.videoUrl && (
-                                  <button type="button" onClick={() => setNewProject((v) => ({ ...v, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">Remove video</button>
-                                )}
-                              </div>
-                            </>
+                            </div>
                           )}
+
                           <div className="mt-3 flex justify-end gap-2">
                             <SecondaryButton type="button" onClick={() => { setOpenProject(null); setNewProject(emptyProject); }}>Cancel</SecondaryButton>
-                            <PrimaryButton type="button" onClick={() => addProject(index)} disabled={saving || projectImagesUploading || projectVideoUploading || !newProject.title.trim()}>Add project</PrimaryButton>
+                            <PrimaryButton
+                              type="button"
+                              onClick={() => addProject(index)}
+                              disabled={saving || projectImagesUploading || projectVideoUploading || !newProject.title.trim() || (newProject.toDesigns && (newProject.images.length === 0 || (newProject.priceType === "fixed" && !(Number(newProject.price) > 0))))}
+                            >
+                              Add project
+                            </PrimaryButton>
                           </div>
                         </div>
                       ) : (
