@@ -222,13 +222,14 @@ export default function ProfessionalProfileForm() {
       showToast(`You can add at most ${MAX_PROJECT_IMAGES} images per project.`, "error");
       return;
     }
+    if (files.length > room) showToast(`Only ${room} more ${room === 1 ? "photo fits" : "photos fit"} (${MAX_PROJECT_IMAGES} per project). The rest were skipped.`, "error");
     setProjectImagesUploading(true);
     setError("");
     try {
       const uploaded = await Promise.all(files.slice(0, room).map((file) => uploadProfessionalImage(file, file.type, token)));
       setNewProject((p) => ({ ...p, images: [...p.images, ...uploaded] }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload image.");
+      showToast(err instanceof Error ? err.message : "Could not upload image.", "error");
     } finally {
       setProjectImagesUploading(false);
     }
@@ -250,7 +251,7 @@ export default function ProfessionalProfileForm() {
       const url = await uploadProfessionalImage(file, file.type, token);
       setNewProject((p) => ({ ...p, videoUrl: url }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not upload video.");
+      showToast(err instanceof Error ? err.message : "Could not upload video.", "error");
     } finally {
       setProjectVideoUploading(false);
     }
