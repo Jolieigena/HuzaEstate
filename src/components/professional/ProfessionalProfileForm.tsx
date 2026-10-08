@@ -108,6 +108,8 @@ export default function ProfessionalProfileForm() {
   const [newService, setNewService] = useState<{ name: string; description: string; priceType: ServicePriceType | ""; price: string; currency: string }>({ name: "", description: "", priceType: "", price: "", currency: "" });
   const { defaultCurrency } = useCurrencyOptions();
   // How many designs this professional has published, shown in the Designs step (null until known).
+  // Which service the "add a project" form is open under (null when closed).
+  const [openProject, setOpenProject] = useState<number | null>(null);
   const [designCount, setDesignCount] = useState<number | null>(null);
   const [newProject, setNewProject] = useState<{ title: string; description: string; year: string; images: string[]; videoUrl: string }>({ title: "", description: "", year: "", images: [], videoUrl: "" });
   const [projectImagesUploading, setProjectImagesUploading] = useState(false);
@@ -187,6 +189,7 @@ export default function ProfessionalProfileForm() {
     else showToast("Service added. Save your profile to keep it.");
   };
   const removeService = (index: number) => {
+    if ((services[index]?.projects?.length ?? 0) > 0 && !window.confirm("Remove this service and its projects?")) return;
     const next = services.filter((_, i) => i !== index);
     setServices(next);
     if (profileSaved) void persist({ services: next }, "Service removed.");
@@ -235,21 +238,39 @@ export default function ProfessionalProfileForm() {
     }
   };
 
-  const addProject = () => {
+  const emptyProject = { title: "", description: "", year: "", images: [] as string[], videoUrl: "" };
+  const addProject = (serviceIndex: number) => {
     if (!newProject.title.trim()) return;
-    const next: PortfolioItemInput[] = [...portfolio, {
+    const project: PortfolioItemInput = {
       title: newProject.title.trim(),
       description: newProject.description.trim() || undefined,
       year: newProject.year ? Number(newProject.year) : undefined,
       images: newProject.images,
       videoUrl: newProject.videoUrl || undefined,
-    }];
-    setPortfolio(next);
-    setNewProject({ title: "", description: "", year: "", images: [], videoUrl: "" });
-    if (profileSaved) void persist({ portfolio: next }, "Project added.");
+    };
+    const next = services.map((service, i) => (i === serviceIndex ? { ...service, projects: [...(service.projects ?? []), project] } : service));
+    setServices(next);
+    setNewProject(emptyProject);
+    setOpenProject(null);
+    if (profileSaved) void persist({ services: next }, "Project added.");
     else showToast("Project added. Save your profile to keep it.");
   };
-  const removeProject = (index: number) => {
+  const removeProject = (serviceIndex: number, projectIndex: number) => {
+    const next = services.map((service, i) => (i === serviceIndex ? { ...service, projects: (service.projects ?? []).filter((_, j) => j !== projectIndex) } : service));
+    setServices(next);
+    if (profileSaved) void persist({ services: next }, "Project removed.");
+  };
+  // Projects saved before projects belonged to a service: move one into a service, or remove it.
+  const moveProject = (portfolioIndex: number, serviceIndex: number) => {
+    const item = portfolio[portfolioIndex];
+    if (!item) return;
+    const nextServices = services.map((service, i) => (i === serviceIndex ? { ...service, projects: [...(service.projects ?? []), item] } : service));
+    const nextPortfolio = portfolio.filter((_, i) => i !== portfolioIndex);
+    setServices(nextServices);
+    setPortfolio(nextPortfolio);
+    if (profileSaved) void persist({ services: nextServices, portfolio: nextPortfolio }, "Project moved.");
+  };
+  const removeOtherProject = (index: number) => {
     const next = portfolio.filter((_, i) => i !== index);
     setPortfolio(next);
     if (profileSaved) void persist({ portfolio: next }, "Project removed.");
@@ -291,10 +312,11 @@ export default function ProfessionalProfileForm() {
     { label: "City", done: !!city.trim(), href: "#contact" },
   ];
   const doneCount = required.filter((item) => item.done).length;
+  const projectCount = portfolio.length + services.reduce((sum, service) => sum + (service.projects?.length ?? 0), 0);
   const recommended = [
     { label: "Profile photo", done: !!photoUrl, href: "#photo" },
     { label: "At least one service", done: services.length > 0, href: "#services" },
-    { label: "At least one project", done: portfolio.length > 0, href: "#projects" },
+    { label: "At least one project", done: projectCount > 0, href: "#services" },
     { label: "At least one design", done: (designCount ?? 0) > 0, href: "#designs" },
   ];
   const isPublic = account?.profileCompleted !== false;
@@ -367,21 +389,103 @@ export default function ProfessionalProfileForm() {
             </div>
           </Section>
 
-          <Section id="services" step={4} title="Services offered" description="Shown to clients on your public profile.">
+          <Section id="services" step={4} title="Services & projects">
             {services.length > 0 && (
-              <ul className="mb-4 space-y-2">
+              <ul className="mb-4 space-y-4">
                 {services.map((service, index) => (
-                  <li key={index} className="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-3">
-                    <div>
-                      <p className="text-sm font-bold text-slate-800">{service.name}</p>
-                      {formatServicePrice(service) && <p className="mt-0.5 text-xs font-bold text-[#219b31]">{formatServicePrice(service)}</p>}
-                      {service.description && <p className="mt-0.5 text-xs text-slate-500">{service.description}</p>}
+                  <li key={index} className="overflow-hidden rounded-xl border border-slate-200">
+                    <div className="flex items-start justify-between gap-3 bg-slate-50 p-3">
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">{service.name}</p>
+                        {formatServicePrice(service) && <p className="mt-0.5 text-xs font-bold text-[#219b31]">{formatServicePrice(service)}</p>}
+                        {service.description && <p className="mt-0.5 text-xs text-slate-500">{service.description}</p>}
+                      </div>
+                      <button type="button" onClick={() => removeService(index)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
                     </div>
-                    <button type="button" onClick={() => removeService(index)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
+                    <div className="p-3">
+                      {(service.projects ?? []).length > 0 && (
+                        <ul className="mb-3 grid gap-3 sm:grid-cols-2">
+                          {(service.projects ?? []).map((item, projectIndex) => {
+                            const images = projectImages(item);
+                            return (
+                              <li key={projectIndex} className="overflow-hidden rounded-xl border border-slate-100">
+                                {images.length > 0 && (
+                                  <div className="flex gap-1 overflow-x-auto">
+                                    {images.map((url, i) => (
+                                      // eslint-disable-next-line @next/next/no-img-element
+                                      <img key={i} src={url} alt="" className="h-28 w-32 shrink-0 object-cover" />
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="p-3">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="text-sm font-bold text-slate-800">{item.title}</p>
+                                    <button type="button" onClick={() => removeProject(index, projectIndex)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
+                                  </div>
+                                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                                    {item.year && <span>{item.year}</span>}
+                                    {images.length > 1 && <span>{images.length} photos</span>}
+                                    {item.videoUrl && <span className="font-bold text-[#219b31]">Video included</span>}
+                                  </div>
+                                  {item.description && <p className="mt-1 text-xs text-slate-500">{item.description}</p>}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+
+                      {openProject === index ? (
+                        <div className="rounded-xl border border-dashed border-slate-200 p-3">
+                          <div className="grid gap-3 sm:grid-cols-[1fr_7rem]">
+                            <label className="text-xs font-bold text-slate-700">Project title<input className={`${fieldClass} mt-1.5`} autoFocus value={newProject.title} onChange={(e) => setNewProject((v) => ({ ...v, title: e.target.value }))} placeholder="e.g. Kigali Heights Tower" /></label>
+                            <label className="text-xs font-bold text-slate-700">Year<input type="number" className={`${fieldClass} mt-1.5`} value={newProject.year} onChange={(e) => setNewProject((v) => ({ ...v, year: e.target.value }))} /></label>
+                          </div>
+                          {newProject.title.trim() && (
+                            <>
+                              <label className="mt-3 block text-xs font-bold text-slate-700">Description<textarea className={`${fieldClass} mt-1.5`} rows={3} value={newProject.description} onChange={(e) => setNewProject((v) => ({ ...v, description: e.target.value }))} /></label>
+                              {newProject.images.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  {newProject.images.map((url, i) => (
+                                    <div key={i} className="relative h-16 w-16">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
+                                      <button type="button" onClick={() => removeNewProjectImage(i)} aria-label="Remove image" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white shadow">&times;</button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="mt-3 flex flex-wrap items-center gap-3">
+                                <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
+                                  {projectImagesUploading ? "Uploading…" : `Add images (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
+                                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
+                                </label>
+                                <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
+                                  {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}
+                                  <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
+                                </label>
+                                {newProject.videoUrl && (
+                                  <button type="button" onClick={() => setNewProject((v) => ({ ...v, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">Remove video</button>
+                                )}
+                              </div>
+                            </>
+                          )}
+                          <div className="mt-3 flex justify-end gap-2">
+                            <SecondaryButton type="button" onClick={() => { setOpenProject(null); setNewProject(emptyProject); }}>Cancel</SecondaryButton>
+                            <PrimaryButton type="button" onClick={() => addProject(index)} disabled={saving || projectImagesUploading || projectVideoUploading || !newProject.title.trim()}>Add project</PrimaryButton>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => { setNewProject(emptyProject); setOpenProject(index); }} className="text-sm font-bold text-[#219b31] hover:underline">
+                          + Add a project to this service
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
+
             <div className="grid gap-3 rounded-xl border border-dashed border-slate-200 p-4 sm:grid-cols-2">
               <label className="text-xs font-bold text-slate-700">Service name<input className={`${fieldClass} mt-1.5`} value={newService.name} onChange={(e) => setNewService((v) => ({ ...v, name: e.target.value }))} placeholder="e.g. Structural assessment" /></label>
               <label className="text-xs font-bold text-slate-700">Description (optional)<input className={`${fieldClass} mt-1.5`} value={newService.description} onChange={(e) => setNewService((v) => ({ ...v, description: e.target.value }))} /></label>
@@ -406,85 +510,32 @@ export default function ProfessionalProfileForm() {
                 <SecondaryButton type="button" onClick={addService} disabled={saving || !newService.name.trim() || (!!newService.priceType && newService.priceType !== "on_request" && !(Number(newService.price) > 0))}>Add service</SecondaryButton>
               </div>
             </div>
-          </Section>
-
-          <Section id="projects" step={5} title="Example projects" description="Show your work. Add several photos and a video walkthrough per project.">
             {portfolio.length > 0 && (
-              <ul className="grid gap-3 sm:grid-cols-2">
-                {portfolio.map((item, index) => {
-                  const images = projectImages(item);
-                  return (
-                    <li key={index} className="overflow-hidden rounded-xl border border-slate-100">
-                      {images.length > 0 && (
-                        <div className="flex gap-1 overflow-x-auto">
-                          {images.map((url, i) => (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img key={i} src={url} alt="" className="h-28 w-32 shrink-0 object-cover" />
-                          ))}
-                        </div>
-                      )}
-                      <div className="p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-bold text-slate-800">{item.title}</p>
-                          <button type="button" onClick={() => removeProject(index)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
-                          {item.year && <span>{item.year}</span>}
-                          {images.length > 1 && <span>{images.length} photos</span>}
-                          {item.videoUrl && <span className="font-bold text-[#219b31]">Video included</span>}
-                        </div>
-                        {item.description && <p className="mt-1 text-xs text-slate-500">{item.description}</p>}
+              <div className="mt-6">
+                <p className="text-sm font-bold text-slate-700">Other projects</p>
+                <ul className="mt-2 space-y-2">
+                  {portfolio.map((item, index) => (
+                    <li key={index} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-3">
+                      <p className="text-sm font-bold text-slate-800">{item.title}{item.year ? <span className="ml-2 text-xs font-normal text-slate-400">{item.year}</span> : null}</p>
+                      <div className="flex items-center gap-3">
+                        {services.length > 0 && (
+                          <Select className={`${fieldClass} min-w-44`} value="" aria-label={`Move ${item.title} to a service`} onChange={(e) => { if (e.target.value !== "") moveProject(index, Number(e.target.value)); }}>
+                            <option value="">Move to a service</option>
+                            {services.map((service, serviceIndex) => (
+                              <option key={serviceIndex} value={serviceIndex}>{service.name}</option>
+                            ))}
+                          </Select>
+                        )}
+                        <button type="button" onClick={() => removeOtherProject(index)} className="shrink-0 text-xs font-bold text-red-600 hover:text-red-800">Remove</button>
                       </div>
                     </li>
-                  );
-                })}
-              </ul>
-            )}
-
-            <div className="mt-5 rounded-xl border border-dashed border-slate-200 p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Add a project</p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <label className="text-xs font-bold text-slate-700">Title<input className={`${fieldClass} mt-1.5`} value={newProject.title} onChange={(e) => setNewProject((p) => ({ ...p, title: e.target.value }))} placeholder="e.g. Kigali Heights Tower" /></label>
-                <label className="text-xs font-bold text-slate-700">Year<input type="number" className={`${fieldClass} mt-1.5`} value={newProject.year} onChange={(e) => setNewProject((p) => ({ ...p, year: e.target.value }))} /></label>
-                <label className="text-xs font-bold text-slate-700 sm:col-span-2">Description<textarea className={`${fieldClass} mt-1.5`} value={newProject.description} onChange={(e) => setNewProject((p) => ({ ...p, description: e.target.value }))} /></label>
-              </div>
-
-              {newProject.images.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {newProject.images.map((url, i) => (
-                    <div key={i} className="relative h-16 w-16">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt="" className="h-full w-full rounded-lg object-cover" />
-                      <button type="button" onClick={() => removeNewProjectImage(i)} aria-label="Remove image" className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-bold shadow">
-                        &times;
-                      </button>
-                    </div>
                   ))}
-                </div>
-              )}
-
-              <div className="mt-3 flex flex-wrap items-center gap-3">
-                <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
-                  {projectImagesUploading ? "Uploading…" : `Add images (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
-                  <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
-                </label>
-
-                <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
-                  {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}
-                  <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
-                </label>
-                {newProject.videoUrl && (
-                  <button type="button" onClick={() => setNewProject((p) => ({ ...p, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">
-                    Remove video
-                  </button>
-                )}
-
-                <SecondaryButton type="button" className="ml-auto" onClick={addProject} disabled={!newProject.title.trim()}>Add project</SecondaryButton>
+                </ul>
               </div>
-            </div>
+            )}
           </Section>
 
-          <Section id="designs" step={6} title="Designs">
+          <Section id="designs" step={5} title="Designs">
             {account?.profileCompleted === false ? (
               <p className="text-sm font-semibold text-slate-500">Save your profile first. Then you can publish priced interior and exterior designs here.</p>
             ) : (

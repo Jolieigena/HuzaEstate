@@ -218,34 +218,50 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
             <p className="text-slate-600 leading-relaxed mb-8">{profile.bio}</p>
 
             <h2 className="text-xl font-bold text-slate-900 mb-4">Services</h2>
-            <div className="grid sm:grid-cols-2 gap-4 mb-10">
+            <div className="space-y-5 mb-10">
               {profile.services.map((service, index) => (
-                <div key={`${service.name}-${index}`} className="border border-slate-100 rounded-2xl p-4">
-                  <h3 className="font-bold text-slate-900 text-sm mb-1">{service.name}</h3>
-                  {formatServicePrice(service) && <p className="text-sm font-bold text-[#219b31] mb-1">{formatServicePrice(service)}</p>}
-                  <p className="text-xs text-slate-500 leading-relaxed">{service.description}</p>
+                <div key={`${service.name}-${index}`} className="border border-slate-100 rounded-2xl p-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-bold text-slate-900">{service.name}</h3>
+                    {formatServicePrice(service) && <p className="text-sm font-bold text-[#219b31]">{formatServicePrice(service)}</p>}
+                  </div>
+                  {service.description && <p className="mt-1 text-sm text-slate-500 leading-relaxed">{service.description}</p>}
+                  {(service.projects ?? []).length > 0 && (
+                    <div className="mt-4 grid sm:grid-cols-2 gap-4">
+                      {(service.projects ?? []).map((item, projectIndex) => (
+                        <div key={`${item.title}-${projectIndex}`} className="border border-slate-100 rounded-2xl overflow-hidden">
+                          <ProjectMedia item={item} />
+                          <div className="p-4">
+                            <h4 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h4>
+                            <p className="text-xs text-slate-500 mb-1">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
+                            {item.description && <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
             <ProfessionalDesignsSection profileId={profile.accountId} />
 
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Example projects done</h2>
-            {profile.portfolio.length > 0 ? (
-              <div className="grid sm:grid-cols-2 gap-5">
-                {profile.portfolio.map((item, index) => (
-                  <div key={`${item.title}-${index}`} className="border border-slate-100 rounded-2xl overflow-hidden">
-                    <ProjectMedia item={item} />
-                    <div className="p-4">
-                      <h3 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h3>
-                      <p className="text-xs text-slate-500 mb-2">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-2">{item.description}</p>
+            {profile.portfolio.length > 0 && (
+              <>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">Other projects</h2>
+                <div className="grid sm:grid-cols-2 gap-5 mb-10">
+                  {profile.portfolio.map((item, index) => (
+                    <div key={`${item.title}-${index}`} className="border border-slate-100 rounded-2xl overflow-hidden">
+                      <ProjectMedia item={item} />
+                      <div className="p-4">
+                        <h3 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h3>
+                        <p className="text-xs text-slate-500 mb-2">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
+                        <p className="text-xs text-slate-600 leading-relaxed mb-2">{item.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No example projects yet.</p>
+                  ))}
+                </div>
+              </>
             )}
 
             <ReviewsSection profileId={profile.accountId} profileName={profile.displayName} />

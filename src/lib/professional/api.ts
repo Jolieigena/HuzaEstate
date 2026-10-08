@@ -26,6 +26,8 @@ export interface ServiceOfferingInput {
   priceType?: ServicePriceType;
   price?: number;
   currency?: string;
+  /** The projects done for this service. */
+  projects?: PortfolioItemInput[];
 }
 
 /** "$450", "From $450", "$25/m²", "Price on request", or "" when the service has no price. */
