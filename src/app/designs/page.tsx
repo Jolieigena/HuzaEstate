@@ -381,8 +381,15 @@ function Catalog() {
           <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-60" : ""}`}>
             {(list?.designs ?? []).map((design) => (
               <Link key={design.id} href={`/designs/${design.id}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {design.images[0] ? <img src={design.images[0]} alt={design.title} className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="h-56 w-full bg-slate-100" />}
+                <div className="relative overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {design.images[0] ? <img src={design.images[0]} alt={design.title} className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="h-56 w-full bg-slate-100" />}
+                  {design.furniture.length > 0 && (
+                    <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-800 shadow">
+                      Furniture list · {design.furniture.length} {design.furniture.length === 1 ? "item" : "items"}
+                    </span>
+                  )}
+                </div>
                 <div className="p-5">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     {DESIGN_CATEGORY_LABELS[design.category]}
