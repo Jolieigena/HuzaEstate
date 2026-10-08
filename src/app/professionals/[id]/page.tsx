@@ -116,12 +116,18 @@ function ReviewsSection({ profileId, profileName }: { profileId: string; profile
           <p className="text-xs text-slate-500 mb-3">Only people who&apos;ve contacted {profileName} can leave a review.</p>
           <div className="flex items-center gap-1 mb-3" onMouseLeave={() => setHoverRating(0)}>
             {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setRating(n)} onMouseEnter={() => setHoverRating(n)} aria-label={`${n} star${n === 1 ? "" : "s"}`}>
+              // Clicking the star that is already selected takes the rating back.
+              <button key={n} type="button" onClick={() => { setRating(n === rating ? 0 : n); setHoverRating(0); }} onMouseEnter={() => setHoverRating(n)} aria-label={`${n} star${n === 1 ? "" : "s"}`}>
                 <svg className={`h-6 w-6 ${n <= (hoverRating || rating) ? "text-amber-400" : "text-slate-200"}`} fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.957 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
                 </svg>
               </button>
             ))}
+            {rating > 0 && (
+              <button type="button" onClick={() => { setRating(0); setHoverRating(0); }} className="ml-2 text-xs font-bold text-slate-500 hover:text-slate-900">
+                Clear
+              </button>
+            )}
           </div>
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} placeholder="Optional comment…" className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none" />
           <button type="submit" disabled={rating < 1 || submitting} className="mt-3 bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
