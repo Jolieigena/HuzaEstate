@@ -24,16 +24,18 @@ const MAX_PROJECT_IMAGES = 8;
 const SUPPORTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 /** One titled block of the profile form: a numbered heading and a one-line purpose, then the fields. */
-function Section({ id, step, title, description, children }: { id: string; step: number; title: string; description?: string; children: React.ReactNode }) {
+function Section({ id, step, title, description, children }: { id: string; step?: number; title?: string; description?: string; children: React.ReactNode }) {
   return (
     <section id={id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <header className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{step}</span>
-        <div>
-          <h3 className="text-base font-black text-slate-900">{title}</h3>
-          {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
-        </div>
-      </header>
+      {title && (
+        <header className="flex items-start gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-black text-white">{step}</span>
+          <div>
+            <h3 className="text-base font-black text-slate-900">{title}</h3>
+            {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+          </div>
+        </header>
+      )}
       <div className="px-5 py-5 sm:px-6">{children}</div>
     </section>
   );
@@ -327,7 +329,7 @@ export default function ProfessionalProfileForm() {
         <div className="flex flex-col gap-6 pb-20 xl:pb-0">
           {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
 
-          <Section id="photo" step={1} title="Photo & identity">
+          <Section id="photo">
             <div className="flex flex-wrap items-center gap-5">
               <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-slate-50">
                 {photoUrl ? (
@@ -356,7 +358,7 @@ export default function ProfessionalProfileForm() {
             </div>
           </Section>
 
-          <Section id="details" step={2} title="About you">
+          <Section id="details" step={1} title="About you">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Display name"><input className={fieldClass} value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></Field>
               <Field label="Years of experience"><input type="number" min={0} max={80} className={fieldClass} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} /></Field>
@@ -379,7 +381,7 @@ export default function ProfessionalProfileForm() {
             </div>
           </Section>
 
-          <Section id="contact" step={3} title="Contact & location">
+          <Section id="contact" step={2} title="Contact & location">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Phone"><input className={fieldClass} value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
               <Field label="City"><input className={fieldClass} value={city} onChange={(e) => setCity(e.target.value)} /></Field>
@@ -388,7 +390,7 @@ export default function ProfessionalProfileForm() {
             </div>
           </Section>
 
-          <Section id="services" step={4} title="Services & projects">
+          <Section id="services" step={3} title="Services & projects">
             {services.length > 0 && (
               <ul className="mb-4 space-y-4">
                 {services.map((service, index) => (
@@ -534,7 +536,7 @@ export default function ProfessionalProfileForm() {
             )}
           </Section>
 
-          <Section id="designs" step={5} title="Designs">
+          <Section id="designs" step={4} title="Designs">
             {account?.profileCompleted === false ? (
               <p className="text-sm font-semibold text-slate-500">Save your profile first. Then you can publish priced interior and exterior designs here.</p>
             ) : (
