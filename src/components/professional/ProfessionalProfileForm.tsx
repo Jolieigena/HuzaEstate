@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import Select from "@/components/shared/Select";
 import { DesignsApi } from "@/lib/designs/api";
+import { CurrencySelect } from "@/components/designs/fields";
+import { useCurrencyOptions } from "@/lib/currencies";
 import { SERVICE_PRICE_TYPE_LABELS, fetchMyProfessionalProfile, formatServicePrice, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput, type ServicePriceType } from "@/lib/professional/api";
 import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
@@ -103,7 +105,8 @@ export default function ProfessionalProfileForm() {
   const [portfolio, setPortfolio] = useState<PortfolioItemInput[]>([]);
   const [services, setServices] = useState<ServiceOfferingInput[]>([]);
 
-  const [newService, setNewService] = useState<{ name: string; description: string; priceType: ServicePriceType | ""; price: string; currency: string }>({ name: "", description: "", priceType: "", price: "", currency: "USD" });
+  const [newService, setNewService] = useState<{ name: string; description: string; priceType: ServicePriceType | ""; price: string; currency: string }>({ name: "", description: "", priceType: "", price: "", currency: "" });
+  const { defaultCurrency } = useCurrencyOptions();
   // How many designs this professional has published, shown in the Designs step (null until known).
   const [designCount, setDesignCount] = useState<number | null>(null);
   const [newProject, setNewProject] = useState<{ title: string; description: string; year: string; images: string[]; videoUrl: string }>({ title: "", description: "", year: "", images: [], videoUrl: "" });
@@ -174,7 +177,7 @@ export default function ProfessionalProfileForm() {
         name: newService.name.trim(),
         description: newService.description.trim() || undefined,
         ...(newService.priceType ? { priceType: newService.priceType } : {}),
-        ...(priced ? { price: Number(newService.price), currency: (newService.currency || "USD").toUpperCase() } : {}),
+        ...(priced ? { price: Number(newService.price), currency: newService.currency || defaultCurrency } : {}),
       },
     ]);
     setNewService({ name: "", description: "", priceType: "", price: "", currency: newService.currency });
@@ -375,7 +378,7 @@ export default function ProfessionalProfileForm() {
               {newService.priceType && newService.priceType !== "on_request" ? (
                 <div className="grid grid-cols-[1fr_5rem] gap-3">
                   <label className="text-xs font-bold text-slate-700">Amount<input className={`${fieldClass} mt-1.5`} inputMode="decimal" value={newService.price} onChange={(e) => setNewService((v) => ({ ...v, price: e.target.value.replace(/[^\d.]/g, "") }))} /></label>
-                  <label className="text-xs font-bold text-slate-700">Currency<input className={`${fieldClass} mt-1.5 uppercase`} maxLength={3} value={newService.currency} onChange={(e) => setNewService((v) => ({ ...v, currency: e.target.value.replace(/[^A-Za-z]/g, "") }))} /></label>
+                  <label className="text-xs font-bold text-slate-700">Currency<CurrencySelect className={`${fieldClass} mt-1.5`} value={newService.currency || defaultCurrency} onChange={(currency) => setNewService((v) => ({ ...v, currency }))} /></label>
                 </div>
               ) : (
                 <div />

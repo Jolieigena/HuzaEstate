@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { CurrencySelect, DaysSelect, useCurrencyChoice } from "@/components/designs/fields";
 import { DesignsApi, formatMoney, type FurnitureQuote } from "@/lib/designs/api";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
 
@@ -111,7 +112,7 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
   const { token } = useAuth();
   const { showToast } = useToast();
   const previous = quote.responses.find((r) => r.supplierId === supplierId);
-  const [currency, setCurrency] = useState(previous?.currency ?? "USD");
+  const { currency, setCurrency } = useCurrencyChoice(previous?.currency ?? "");
   const [lines, setLines] = useState(() =>
     quote.items.map((item, index) => {
       const old = previous?.lines[index];
@@ -133,7 +134,7 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
     if (!token) return;
     setBusy(true);
     const result = await DesignsApi.respondToFurnitureQuote(token, quote.id, {
-      currency: currency.toUpperCase(),
+      currency,
       lines: lines.map((l, index) => ({ index, available: l.available, ...(l.available ? { unitPrice: Number(l.price) } : {}), note: l.note })),
       ...(leadTime !== "" ? { leadTimeDays: Number(leadTime) } : {}),
       note,
@@ -167,10 +168,7 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
               </div>
               {item.notes && <p className="text-xs text-slate-400">{item.notes}</p>}
               {lines[index].available && (
-                <div className="mt-2 grid gap-2 sm:grid-cols-[10rem_1fr]">
-                  <input className={fieldClass} inputMode="decimal" placeholder="Price each" aria-label={`Price each for ${item.name}`} value={lines[index].price} onChange={(e) => patch(index, { price: e.target.value.replace(/[^\d.]/g, "") })} />
-                  <input className={fieldClass} placeholder="Note (optional)" aria-label={`Note for ${item.name}`} maxLength={200} value={lines[index].note} onChange={(e) => patch(index, { note: e.target.value })} />
-                </div>
+                <input className={`${fieldClass} mt-2 sm:max-w-[12rem]`} inputMode="decimal" placeholder="Price each" aria-label={`Price each for ${item.name}`} value={lines[index].price} onChange={(e) => patch(index, { price: e.target.value.replace(/[^\d.]/g, "") })} />
               )}
             </div>
           ))}
@@ -178,11 +176,17 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block text-sm font-bold text-slate-700">
             Currency
-            <input className={`${fieldClass} mt-1 uppercase`} value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.replace(/[^A-Za-z]/g, ""))} />
+            <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
           </label>
           <label className="block text-sm font-bold text-slate-700">
-            Delivery (days)
-            <input className={`${fieldClass} mt-1`} inputMode="numeric" value={leadTime} onChange={(e) => setLeadTime(e.target.value.replace(/\D/g, ""))} />
+            Delivery
+            <DaysSelect
+              className={`${fieldClass} mt-1`}
+              ariaLabel="Delivery"
+              value={leadTime}
+              onChange={setLeadTime}
+              options={[{ value: "", label: "Not stated" }, { value: "0", label: "In stock" }, ...[3, 7, 14, 21, 30, 45, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }))]}
+            />
           </label>
         </div>
         <label className="block text-sm font-bold text-slate-700">
@@ -192,7 +196,7 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
         {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
       </div>
       <div className="mt-5 flex items-center justify-between gap-3">
-        <p className="text-sm font-bold text-slate-900">Total {formatMoney(total, currency.toUpperCase() || "USD")}</p>
+        <p className="text-sm font-bold text-slate-900">Total {formatMoney(total, currency)}</p>
         <div className="flex gap-2">
           <SecondaryButton type="button" onClick={onClose}>
             Cancel

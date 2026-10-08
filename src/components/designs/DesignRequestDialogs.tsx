@@ -7,6 +7,7 @@ import Dialog from "@/components/Dialog";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { DesignsApi, type DesignRequestKind } from "@/lib/designs/api";
+import { CurrencySelect, SpaceSelect, useCurrencyChoice } from "./fields";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const primary = "min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:opacity-50";
@@ -33,6 +34,8 @@ export interface RequestTarget {
   designTitle?: string;
   professionalId: string;
   professionalName?: string;
+  /** The design's price type. The area is only asked for when it drives the price (per m²) or for a new design. */
+  priceType?: "fixed" | "per_sqm" | "on_request";
   /** Pre-filled from the page, e.g. the area typed into the price estimate. */
   areaSqm?: number;
   spaceType?: string;
@@ -51,14 +54,19 @@ export function RequestDialog({ target, onClose }: { target: RequestTarget | nul
 function RequestForm({ titleId, target, onClose }: { titleId: string; target: RequestTarget; onClose: () => void }) {
   const { token } = useAuth();
   const { showToast } = useToast();
-  const [spaceType, setSpaceType] = useState(target.spaceType ?? "");
+  const [spaceType, setSpaceType] = useState(target.kind === "custom_design" ? (target.spaceType ?? "") : "");
   const [area, setArea] = useState(target.areaSqm ? String(target.areaSqm) : "");
   const [budget, setBudget] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const { currency, setCurrency } = useCurrencyChoice();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  // A price request is about a design that already says what space it is for, so only a brand new design
+  // asks for the space. The area is asked only when it drives the price (per m²) or for a new design.
+  const showSpace = target.kind === "custom_design";
+  const showArea = target.kind === "custom_design" || target.priceType === "per_sqm";
 
   const submit = async () => {
     if (!token) return;
@@ -69,9 +77,9 @@ function RequestForm({ titleId, target, onClose }: { titleId: string; target: Re
       designId: target.designId,
       professionalId: target.professionalId,
       message: message.trim(),
-      ...(spaceType.trim() ? { spaceType: spaceType.trim() } : {}),
-      ...(Number(area) > 0 ? { areaSqm: Number(area) } : {}),
-      ...(Number(budget) > 0 ? { budget: Number(budget), currency: currency.toUpperCase() } : {}),
+      ...(showSpace && spaceType ? { spaceType } : target.spaceType ? { spaceType: target.spaceType } : {}),
+      ...(showArea && Number(area) > 0 ? { areaSqm: Number(area) } : {}),
+      ...(budgetOpen && Number(budget) > 0 ? { budget: Number(budget), currency } : {}),
     });
     setBusy(false);
     if (!result.ok) {
@@ -112,26 +120,38 @@ function RequestForm({ titleId, target, onClose }: { titleId: string; target: Re
         {target.professionalName ?? ""}
       </p>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm font-bold text-slate-700">
-            Space
-            <input className={`${field} mt-1`} placeholder="Living room, facade…" maxLength={80} value={spaceType} onChange={(e) => setSpaceType(e.target.value)} />
-          </label>
-          <label className="block text-sm font-bold text-slate-700">
-            Area (m²)
-            <input className={`${field} mt-1`} inputMode="decimal" value={area} onChange={(e) => setArea(e.target.value.replace(/[^\d.]/g, ""))} />
-          </label>
-        </div>
-        <div className="grid grid-cols-[1fr_6rem] gap-3">
-          <label className="block text-sm font-bold text-slate-700">
-            Budget (optional)
-            <input className={`${field} mt-1`} inputMode="decimal" value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^\d.]/g, ""))} />
-          </label>
-          <label className="block text-sm font-bold text-slate-700">
-            Currency
-            <input className={`${field} mt-1 uppercase`} value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.replace(/[^A-Za-z]/g, ""))} />
-          </label>
-        </div>
+        {(showSpace || showArea) && (
+          <div className={`grid gap-3 ${showSpace && showArea ? "sm:grid-cols-2" : ""}`}>
+            {showSpace && (
+              <label className="block text-sm font-bold text-slate-700">
+                Space
+                <SpaceSelect className={`${field} mt-1`} value={spaceType} onChange={setSpaceType} />
+              </label>
+            )}
+            {showArea && (
+              <label className="block text-sm font-bold text-slate-700">
+                Area (m²)
+                <input className={`${field} mt-1`} inputMode="decimal" value={area} onChange={(e) => setArea(e.target.value.replace(/[^\d.]/g, ""))} />
+              </label>
+            )}
+          </div>
+        )}
+        {budgetOpen ? (
+          <div className="grid grid-cols-[1fr_7rem] gap-3">
+            <label className="block text-sm font-bold text-slate-700">
+              Budget
+              <input className={`${field} mt-1`} inputMode="decimal" autoFocus value={budget} onChange={(e) => setBudget(e.target.value.replace(/[^\d.]/g, ""))} />
+            </label>
+            <label className="block text-sm font-bold text-slate-700">
+              Currency
+              <CurrencySelect className={`${field} mt-1`} value={currency} onChange={setCurrency} />
+            </label>
+          </div>
+        ) : (
+          <button type="button" onClick={() => setBudgetOpen(true)} className="text-sm font-bold text-[#219b31] hover:underline">
+            + Add a budget (optional)
+          </button>
+        )}
         <label className="block text-sm font-bold text-slate-700">
           {target.kind === "custom_price" ? "Tell the designer about your space" : "What do you want designed?"}
           <textarea className={`${field} mt-1 min-h-28 resize-y font-normal`} maxLength={4000} value={message} onChange={(e) => setMessage(e.target.value)} />

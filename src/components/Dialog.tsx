@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, ReactNode } from "react";
+import { useEffect, useRef, useSyncExternalStore, ReactNode } from "react";
+import { createPortal } from "react-dom";
+
+// True in the browser, false while rendering on the server, without setting state in an effect.
+const noopSubscribe = () => () => {};
+const useIsClient = () => useSyncExternalStore(noopSubscribe, () => true, () => false);
 
 interface DialogProps {
   open: boolean;
@@ -24,6 +29,7 @@ const FOCUSABLE_SELECTOR =
  * Callers supply their own header/content/footer as children.
  */
 export default function Dialog({ open, onClose, labelledBy, describedBy, children, panelClassName = "", backdropClassName = "bg-slate-900/70 backdrop-blur-sm" }: DialogProps) {
+  const isClient = useIsClient();
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
   // Callers usually pass a fresh onClose on every render. Keeping it in a ref means the effect below
@@ -77,9 +83,11 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
     };
   }, [open]);
 
-  if (!open) return null;
+  if (!open || !isClient) return null;
 
-  return (
+  // Rendered at the top of the page, not where the dialog was written: inside a sticky or transformed
+  // parent it would be trapped in that parent's layer and slip under the navbar.
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
       onMouseDown={(e) => {
@@ -99,6 +107,7 @@ export default function Dialog({ open, onClose, labelledBy, describedBy, childre
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

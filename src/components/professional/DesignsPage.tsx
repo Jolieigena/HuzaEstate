@@ -6,6 +6,8 @@ import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
+import { useCurrencyOptions } from "@/lib/currencies";
+import { CurrencySelect, SpaceSelect, spacesFor } from "@/components/designs/fields";
 import {
   DESIGN_CATEGORY_LABELS,
   DESIGN_PRICE_TYPE_LABELS,
@@ -22,7 +24,7 @@ const MAX_IMAGES = 10;
 
 const MAX_FURNITURE = 40;
 
-const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], priceType: "fixed", price: undefined, currency: "USD", status: "draft" };
+const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], priceType: "fixed", price: undefined, currency: "", status: "draft" };
 
 function toInput(design: Design): DesignInput {
   return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
@@ -148,6 +150,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
   const { showToast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<DesignInput>(initial);
+  const { defaultCurrency } = useCurrencyOptions();
   const [priceText, setPriceText] = useState(initial.price ? String(initial.price) : "");
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -177,7 +180,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
     const price = form.priceType === "on_request" ? undefined : Number(priceText);
     setBusy(true);
     setError("");
-    const input: DesignInput = { ...form, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: (form.currency || "USD").toUpperCase() };
+    const input: DesignInput = { ...form, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: form.currency || defaultCurrency };
     const result = id ? await DesignsApi.update(token, id, input) : await DesignsApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -202,7 +205,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
               Type
-              <Select className={`${fieldClass} mt-1`} value={form.category} onChange={(e) => patch({ category: e.target.value as DesignCategory })}>
+              <Select className={`${fieldClass} mt-1`} value={form.category} onChange={(e) => { const category = e.target.value as DesignCategory; patch({ category, spaceType: spacesFor(category).includes(form.spaceType ?? "") ? form.spaceType : "" }); }}>
                 {(Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).map((c) => (
                   <option key={c} value={c}>
                     {DESIGN_CATEGORY_LABELS[c]}
@@ -212,7 +215,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
             </label>
             <label className="block text-sm font-bold text-slate-700">
               Space
-              <input className={`${fieldClass} mt-1`} value={form.spaceType ?? ""} maxLength={80} placeholder="Living room, kitchen, facade…" onChange={(e) => patch({ spaceType: e.target.value })} />
+              <SpaceSelect className={`${fieldClass} mt-1`} category={form.category} value={form.spaceType ?? ""} onChange={(spaceType) => patch({ spaceType })} />
             </label>
           </div>
           <label className="block text-sm font-bold text-slate-700">
@@ -286,7 +289,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
                 </label>
                 <label className="block text-sm font-bold text-slate-700">
                   Currency
-                  <input className={`${fieldClass} mt-1 uppercase`} value={form.currency} maxLength={3} onChange={(e) => patch({ currency: e.target.value.replace(/[^A-Za-z]/g, "") })} />
+                  <CurrencySelect className={`${fieldClass} mt-1`} value={form.currency || defaultCurrency} onChange={(currency) => patch({ currency })} />
                 </label>
               </>
             )}

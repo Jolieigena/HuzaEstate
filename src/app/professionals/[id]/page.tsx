@@ -198,15 +198,18 @@ function ReviewsSection({ profileId, profileName }: { profileId: string; profile
 
 export default function ProfessionalProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { token, isAuthReady, isLoggedIn } = useAuth();
   const [loaded, setLoaded] = useState<{ id: string; profile: RealProfessionalProfile | null } | null>(null);
 
+  // Signed-in visitors also get the professional's phone and email back, so wait for the session first.
   useEffect(() => {
+    if (!isAuthReady) return;
     let cancelled = false;
-    fetchProfessionalProfile(id).then((real) => {
+    fetchProfessionalProfile(id, token).then((real) => {
       if (!cancelled) setLoaded({ id, profile: real });
     });
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, token, isAuthReady]);
 
   const profile = loaded && loaded.id === id ? loaded.profile : null;
 
@@ -304,6 +307,31 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
           <div className="lg:col-span-1">
             <div className="sticky top-28">
               <RequestCustomDesignButton profileId={profile.accountId} profileName={profile.displayName} />
+              <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-5">
+                <h3 className="mb-3 text-base font-bold text-slate-900">Contact details</h3>
+                {isLoggedIn ? (
+                  profile.phone || profile.email ? (
+                    <ul className="space-y-2 text-sm">
+                      {profile.phone && (
+                        <li>
+                          <a href={`tel:${profile.phone}`} className="font-semibold text-slate-800 hover:text-[#219b31]">{profile.phone}</a>
+                        </li>
+                      )}
+                      {profile.email && (
+                        <li>
+                          <a href={`mailto:${profile.email}`} className="break-all font-semibold text-slate-800 hover:text-[#219b31]">{profile.email}</a>
+                        </li>
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-slate-500">No contact details shared.</p>
+                  )
+                ) : (
+                  <p className="text-sm text-slate-600">
+                    <Link href={`/login?redirect=${encodeURIComponent(`/professionals/${profile.accountId}`)}`} className="font-bold text-[#219b31] hover:underline">Sign in</Link> to see their phone and email.
+                  </p>
+                )}
+              </div>
               <ContactCard profileId={profile.accountId} profileName={profile.displayName} />
             </div>
           </div>

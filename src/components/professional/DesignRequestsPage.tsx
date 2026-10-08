@@ -4,6 +4,7 @@ import { useEffect, useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { CurrencySelect, DaysSelect, useCurrencyChoice } from "@/components/designs/fields";
 import { DESIGN_REQUEST_STATUS_LABELS, DesignsApi, formatMoney, type DesignRequest } from "@/lib/designs/api";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "./ui";
 
@@ -120,7 +121,7 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
   const { token } = useAuth();
   const { showToast } = useToast();
   const [amount, setAmount] = useState(request.quote ? String(request.quote.amount) : "");
-  const [currency, setCurrency] = useState(request.quote?.currency ?? request.budgetCurrency ?? "USD");
+  const { currency, setCurrency } = useCurrencyChoice(request.quote?.currency ?? request.budgetCurrency ?? "");
   const [note, setNote] = useState(request.quote?.note ?? "");
   const [days, setDays] = useState("14");
   const [busy, setBusy] = useState(false);
@@ -129,7 +130,7 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
   const submit = async () => {
     if (!token) return;
     setBusy(true);
-    const result = await DesignsApi.quoteRequest(token, request.id, { amount: Number(amount), currency: currency.toUpperCase(), note, ...(days ? { validDays: Number(days) } : {}) });
+    const result = await DesignsApi.quoteRequest(token, request.id, { amount: Number(amount), currency, note, validDays: Number(days) });
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
@@ -152,12 +153,12 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
           </label>
           <label className="block text-sm font-bold text-slate-700">
             Currency
-            <input className={`${fieldClass} mt-1 uppercase`} value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.replace(/[^A-Za-z]/g, ""))} />
+            <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
           </label>
         </div>
         <label className="block text-sm font-bold text-slate-700">
-          Valid for (days)
-          <input className={`${fieldClass} mt-1`} inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value.replace(/\D/g, ""))} />
+          Price valid for
+          <DaysSelect className={`${fieldClass} mt-1`} ariaLabel="Price valid for" value={days} onChange={setDays} options={[7, 14, 30, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }))} />
         </label>
         <label className="block text-sm font-bold text-slate-700">
           What the price includes

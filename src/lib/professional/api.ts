@@ -56,7 +56,10 @@ export interface RealProfessionalProfile {
    *  `country`. Absent for countries with no district reference data (every country but Rwanda
    *  at launch) or accounts created before this field. */
   district?: string;
-  phone: string;
+  /** Only present when the viewer is signed in. */
+  phone?: string;
+  /** The professional's contact email. Only present on the detail page, and only for signed-in viewers. */
+  email?: string;
   portfolio: PortfolioItemInput[];
   services: ServiceOfferingInput[];
   completedAt: string | null;
@@ -131,9 +134,10 @@ export async function fetchProfessionalsDirectory(): Promise<RealProfessionalPro
   }
 }
 
-export async function fetchProfessionalProfile(accountId: string): Promise<RealProfessionalProfile | null> {
+/** With a token, the response also carries the professional's phone and email. */
+export async function fetchProfessionalProfile(accountId: string, token?: string | null): Promise<RealProfessionalProfile | null> {
   try {
-    const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}`);
+    const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
     if (!res.ok) return null;
     const data = await res.json();
     return (data.professional as RealProfessionalProfile | null) ?? null;

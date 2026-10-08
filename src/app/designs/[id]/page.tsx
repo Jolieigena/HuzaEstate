@@ -47,7 +47,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
       setSignInOpen(true);
       return;
     }
-    setTarget({ kind, designId: design.id, designTitle: design.title, professionalId: designer.accountId, professionalName: designer.displayName, areaSqm: areaNumber > 0 ? areaNumber : undefined, spaceType: design.spaceType });
+    setTarget({ kind, designId: design.id, designTitle: design.title, professionalId: designer.accountId, professionalName: designer.displayName, priceType: design.priceType, areaSqm: areaNumber > 0 ? areaNumber : undefined, spaceType: design.spaceType });
   };
 
   return (
