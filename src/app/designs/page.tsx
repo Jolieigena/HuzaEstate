@@ -156,6 +156,12 @@ function Catalog() {
   if (hasFurniture) chips.push({ label: "With furniture list", clear: { furniture: undefined } });
   if (search) chips.push({ label: `“${search}”`, clear: { q: undefined } });
 
+  // Where the "design it with Huza AI" button leads, carrying what was searched for (or the space and type
+  // that were picked) so the visitor does not have to describe it again. Interior searches suit the
+  // renovate studio (a space in an existing home), the rest suit the build studio (a whole new house).
+  const aiBrief = search || [space, category ? `${DESIGN_CATEGORY_LABELS[category].toLowerCase()} design` : "", profession].filter(Boolean).join(" ");
+  const aiHref = (studio: "build" | "renovate") => `/studio/${studio}/new?mode=ai${aiBrief ? `&brief=${encodeURIComponent(aiBrief)}` : ""}`;
+
   const [panelOpen, setPanelOpen] = useState(false);
   const showPanel = panelOpen;
   const clearAll = () => {
@@ -351,13 +357,25 @@ function Catalog() {
         {data?.error ? (
           <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{data.error}</p>
         ) : list && list.designs.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-12 text-center">
             <p className="text-sm font-semibold text-slate-400">No designs match</p>
             {chips.length > 0 && (
               <button type="button" onClick={clearAll} className="mt-3 text-sm font-bold text-[#219b31] hover:underline">
                 Clear filters
               </button>
             )}
+            {/* Nothing found: lead the visitor on to designing it with Huza AI, starting from what they looked for. */}
+            <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-[#2ec440]/30 bg-[#2ec440]/5 p-6">
+              <h2 className="text-lg font-black text-slate-900">Can&apos;t find it? Let Huza AI design it</h2>
+              <Link href={aiHref(category === "interior" ? "renovate" : "build")} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+                Design with Huza AI
+              </Link>
+              <div className="mt-3">
+                <Link href={aiHref(category === "interior" ? "build" : "renovate")} className="text-xs font-bold text-slate-500 underline hover:text-slate-900">
+                  {category === "interior" ? "Planning a new home instead?" : "Redesigning an existing space instead?"}
+                </Link>
+              </div>
+            </div>
           </div>
         ) : (
           <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-60" : ""}`}>

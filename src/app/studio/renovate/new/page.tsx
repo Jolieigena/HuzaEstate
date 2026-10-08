@@ -1,8 +1,8 @@
 "use client";
 
-import { useId, useState, FormEvent } from "react";
+import { Suspense, useId, useState, FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
 import PropertySelector from "@/components/renovate/PropertySelector";
@@ -69,12 +69,26 @@ const MODE_OPTIONS: ModeOption[] = [
 
 type FlowStep = "mode" | "property";
 
+
+/** A project name made from what the visitor typed into the designs search: the words, capitalised and
+ *  kept short, so they only have to press Create. */
+function nameFromBrief(brief: string): string {
+  const text = brief.trim().replace(/\s+/g, " ");
+  if (!text) return "";
+  const cut = text.length > 40 ? `${text.slice(0, 37).trim()}…` : text;
+  return cut.charAt(0).toUpperCase() + cut.slice(1);
+}
+
 function NewProjectContent() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [selected, setSelected] = useState<ModeOption | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  // Arriving from a designs search that found nothing: open "Renovate with Huza AI" with the search as the brief.
+  const params = useSearchParams();
+  const brief = params.get("brief") ?? "";
+  const fromSearch = params.get("mode") === "ai";
+  const [selected, setSelected] = useState<ModeOption | null>(() => (fromSearch ? (MODE_OPTIONS.find((o) => o.mode === "ai") ?? null) : null));
+  const [name, setName] = useState(() => (fromSearch ? nameFromBrief(brief) : ""));
+  const [description, setDescription] = useState(() => (fromSearch ? brief.slice(0, 500) : ""));
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [step, setStep] = useState<FlowStep>("mode");
@@ -249,7 +263,9 @@ function NewProjectContent() {
 export default function RenovateStudioNewPage() {
   return (
     <RequireAuth>
-      <NewProjectContent />
+      <Suspense fallback={null}>
+        <NewProjectContent />
+      </Suspense>
     </RequireAuth>
   );
 }
