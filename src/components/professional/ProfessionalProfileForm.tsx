@@ -171,18 +171,26 @@ export default function ProfessionalProfileForm() {
       return;
     }
     setError("");
-    setServices((list) => [
-      ...list,
+    const next: ServiceOfferingInput[] = [
+      ...services,
       {
         name: newService.name.trim(),
         description: newService.description.trim() || undefined,
         ...(newService.priceType ? { priceType: newService.priceType } : {}),
         ...(priced ? { price: Number(newService.price), currency: newService.currency || defaultCurrency } : {}),
       },
-    ]);
+    ];
+    setServices(next);
     setNewService({ name: "", description: "", priceType: "", price: "", currency: newService.currency });
+    // A profile that is already live saves straight away, so nothing added here is lost by leaving the page.
+    if (profileSaved) void persist({ services: next }, "Service added.");
+    else showToast("Service added. Save your profile to keep it.");
   };
-  const removeService = (index: number) => setServices((list) => list.filter((_, i) => i !== index));
+  const removeService = (index: number) => {
+    const next = services.filter((_, i) => i !== index);
+    setServices(next);
+    if (profileSaved) void persist({ services: next }, "Service removed.");
+  };
 
   const handleProjectImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -229,35 +237,46 @@ export default function ProfessionalProfileForm() {
 
   const addProject = () => {
     if (!newProject.title.trim()) return;
-    setPortfolio((list) => [...list, {
+    const next: PortfolioItemInput[] = [...portfolio, {
       title: newProject.title.trim(),
       description: newProject.description.trim() || undefined,
       year: newProject.year ? Number(newProject.year) : undefined,
       images: newProject.images,
       videoUrl: newProject.videoUrl || undefined,
-    }]);
+    }];
+    setPortfolio(next);
     setNewProject({ title: "", description: "", year: "", images: [], videoUrl: "" });
+    if (profileSaved) void persist({ portfolio: next }, "Project added.");
+    else showToast("Project added. Save your profile to keep it.");
   };
-  const removeProject = (index: number) => setPortfolio((list) => list.filter((_, i) => i !== index));
+  const removeProject = (index: number) => {
+    const next = portfolio.filter((_, i) => i !== index);
+    setPortfolio(next);
+    if (profileSaved) void persist({ portfolio: next }, "Project removed.");
+  };
 
-  const handleSave = async () => {
+  // Saves the whole profile. `overrides` carries a services or projects list that was just changed, since
+  // the state update for it has not landed yet when this runs.
+  const persist = async (overrides?: { services?: ServiceOfferingInput[]; portfolio?: PortfolioItemInput[] }, message = "Profile updated.") => {
     if (!token || saving) return;
     setSaving(true);
     setError("");
     const result = await saveMyProfessionalProfile(token, {
       displayName, bio, specialisations, city, phone,
       yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
-      portfolio, services, photoUrl,
+      portfolio: overrides?.portfolio ?? portfolio, services: overrides?.services ?? services, photoUrl,
     });
     setSaving(false);
     if (!result.ok) {
       setError(result.error);
+      showToast(result.error, "error");
       return;
     }
     await refreshAccount();
     notifyProfilePhotoChanged();
-    showToast("Profile updated.");
+    showToast(message);
   };
+  const handleSave = () => persist();
 
   if (!loaded) return null;
 
@@ -384,7 +403,7 @@ export default function ProfessionalProfileForm() {
                 <div />
               )}
               <div className="sm:col-span-2">
-                <SecondaryButton type="button" onClick={addService} disabled={!newService.name.trim()}>Add service</SecondaryButton>
+                <SecondaryButton type="button" onClick={addService} disabled={saving || !newService.name.trim() || (!!newService.priceType && newService.priceType !== "on_request" && !(Number(newService.price) > 0))}>Add service</SecondaryButton>
               </div>
             </div>
           </Section>
