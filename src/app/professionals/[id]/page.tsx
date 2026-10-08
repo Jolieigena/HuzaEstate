@@ -2,71 +2,12 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { formatServicePrice, fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalContact, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
+import { formatServicePrice, fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { StarRating } from "@/components/professional/ui";
+import ContactForm from "@/components/professional/ContactForm";
 import { ProfessionalDesignsSection, RequestCustomDesignButton } from "@/components/designs/ProfessionalDesigns";
-
-function ContactCard({ profileId, profileName }: { profileId: string; profileName: string }) {
-  const { showToast } = useToast();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim() || !email.trim() || !message.trim() || sending) return;
-    setSending(true);
-    // Emailed to the professional through communication-service.
-    const { ok } = await submitProfessionalContact(profileId, { name: name.trim(), email: email.trim(), message: message.trim() });
-    setSending(false);
-    if (ok) {
-      setSent(true);
-      showToast(`Message sent to ${profileName}`, "success");
-    } else {
-      showToast("Something went wrong. Please try again.", "error");
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="bg-[#2ec440]/5 border border-[#2ec440]/30 rounded-3xl p-8 text-center">
-        <svg className="w-10 h-10 text-[#2ec440] mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-        <h3 className="text-lg font-bold text-slate-900 mb-1">Message sent</h3>
-        <p className="text-sm text-slate-500">{profileName} will get back to you at {email}.</p>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8">
-      <h3 className="text-lg font-bold text-slate-900 mb-1">Contact {profileName}</h3>
-      <p className="text-sm text-slate-500 mb-5">Tell them about your project. They&apos;ll reply directly to your email.</p>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">Your name</label>
-          <input value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors" />
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">Your email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors" />
-        </div>
-        <div>
-          <label className="block text-sm font-bold text-slate-700 mb-1.5">Message</label>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} required rows={4} placeholder="Tell them about your project, timeline and budget..." className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none" />
-        </div>
-        <button type="submit" disabled={sending} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-60">
-          {sending ? "Sending…" : "Send Message"}
-        </button>
-      </div>
-    </form>
-  );
-}
 
 function ProjectMedia({ item }: { item: RealProfessionalProfile["portfolio"][number] }) {
   const images = item.images?.length ? item.images : item.imageUrl ? [item.imageUrl] : [];
@@ -332,7 +273,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
                   </p>
                 )}
               </div>
-              <ContactCard profileId={profile.accountId} profileName={profile.displayName} />
+              <ContactForm profileId={profile.accountId} profileName={profile.displayName} />
             </div>
           </div>
         </div>

@@ -43,7 +43,7 @@ export default function InquiriesPage() {
                 {inquiry.phone && <p className="text-xs text-slate-500">{inquiry.phone}</p>}
               </td>
               <td className="max-w-md px-6 py-4 text-sm text-slate-600">
-                {inquiry.message}
+                <span className="block whitespace-pre-line">{inquiry.message}</span>
                 {inquiry.adminNudges.length > 0 && (
                   <div className="mt-2 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5">
                     {inquiry.adminNudges.map((nudge, i) => (

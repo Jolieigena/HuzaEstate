@@ -158,7 +158,7 @@ export function InquiriesListPage() {
                     {inquiry.ownerEmail && <a href={`mailto:${inquiry.ownerEmail}`} className="text-xs text-slate-500 hover:text-[#219b31]">{inquiry.ownerEmail}</a>}
                   </td>
                   <td className="px-6 py-4 max-w-60 text-sm text-slate-600">
-                    {inquiry.message}
+                    <span className="block whitespace-pre-line">{inquiry.message}</span>
                     {inquiry.adminNudges.length > 0 && (
                       <p className="mt-1.5 text-xs font-semibold text-amber-600">{inquiry.adminNudges.length} note{inquiry.adminNudges.length === 1 ? "" : "s"} sent</p>
                     )}
@@ -192,7 +192,7 @@ export function InquiriesListPage() {
                   {inquiry.phone && <p className="text-xs text-slate-500">{inquiry.phone}</p>}
                 </td>
                 <td className="px-6 py-4 max-w-70 text-sm text-slate-600">
-                  {inquiry.message}
+                  <span className="block whitespace-pre-line">{inquiry.message}</span>
                   {inquiry.adminNudges.length > 0 && (
                     <p className="mt-1.5 text-xs font-semibold text-amber-600">{inquiry.adminNudges.length} note{inquiry.adminNudges.length === 1 ? "" : "s"} sent</p>
                   )}
