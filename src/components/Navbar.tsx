@@ -8,7 +8,7 @@ import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
 import { useMyProfilePhoto } from '@/lib/profilePhoto';
 import CountryFlagBadge from './CountryFlagBadge';
-import { useBasket } from '@/lib/furniture/basket';
+import CartButton from './shop/CartButton';
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -29,7 +29,6 @@ export default function Navbar() {
   const { isLoggedIn, logout, account } = useAuth();
   const photoUrl = useMyProfilePhoto();
   const pathname = usePathname();
-  const cartCount = useBasket().count;
   const dashboardHref = account?.path || '/dashboard';
 
   return (
@@ -55,7 +54,6 @@ export default function Navbar() {
               }`}
             >
               {link.label}
-              {link.href === '/shop' && cartCount > 0 && <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 align-middle text-[11px] font-bold text-white">{cartCount}</span>}
             </Link>
           );
         })}
@@ -63,6 +61,7 @@ export default function Navbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        <CartButton />
         <Link
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
@@ -163,7 +162,6 @@ export default function Navbar() {
                 }`}
               >
                 {link.label}
-              {link.href === '/shop' && cartCount > 0 && <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 align-middle text-[11px] font-bold text-white">{cartCount}</span>}
               </Link>
             );
           })}
