@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
+import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { FurnitureApi, formatPrice } from "@/lib/furniture/api";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
@@ -38,7 +39,7 @@ export default function CartPage() {
 
   // Delivery details are asked in order: where, then who to call. Each appears once the one before it is filled.
   const showMore = city.trim().length > 1;
-  const ready = showMore && phone.trim().length >= 6;
+  const ready = showMore && phoneProblem(phone) === null && cleanPhone(phone) !== "";
 
   const shareLocation = () => {
     if (!navigator.geolocation) {
@@ -68,7 +69,7 @@ export default function CartPage() {
       items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       city: city.trim(),
       location: location ?? undefined,
-      phone: phone.trim(),
+      phone: cleanPhone(phone),
     });
     setBusy(false);
     if (!result.ok) {
@@ -234,7 +235,7 @@ export default function CartPage() {
               {showMore && (
                 <label className={label}>
                   Phone number
-                  <input className={`${field} mt-1.5`} type="tel" value={phone} maxLength={20} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
+                  <div className="mt-1.5"><PhoneInput value={phone} onChange={setPhone} required /></div>
                 </label>
               )}
               {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
