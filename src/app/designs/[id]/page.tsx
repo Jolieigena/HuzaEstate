@@ -76,7 +76,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
                   <li key={index} className="flex items-baseline justify-between gap-4 px-5 py-3 text-sm">
                     <span className="font-semibold text-slate-800">
                       {item.name}{" "}
-                      <Link href={`/furniture?q=${encodeURIComponent(item.name)}`} className="ml-1 text-xs font-bold text-[#219b31] hover:underline">
+                      <Link href={`/shop?q=${encodeURIComponent(item.name)}`} className="ml-1 text-xs font-bold text-[#219b31] hover:underline">
                         Find in the shop
                       </Link>
                     </span>

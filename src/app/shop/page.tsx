@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Select from "@/components/shared/Select";
-import { useToast } from "@/lib/toast-context";
-import { useBasket } from "@/lib/furniture/basket";
-import { FurnitureApi, STOCK_LABELS, formatPrice, type ProductFacets, type ProductList, type ProductSort } from "@/lib/furniture/api";
+import ProductCard from "@/components/shop/ProductCard";
+import { FurnitureApi, type ProductFacets, type ProductList, type ProductSort } from "@/lib/furniture/api";
 import { priceBrackets } from "@/lib/priceBrackets";
 
 const PAGE_SIZE = 24;
@@ -25,8 +23,6 @@ function Catalog() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const { showToast } = useToast();
-  const basket = useBasket();
 
   // Every filter lives in the web address, so a filtered view can be shared and reached with Back.
   const get = (key: string) => params.get(key) ?? "";
@@ -130,19 +126,13 @@ function Catalog() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Furniture</h1>
-        <Link href="/furniture/order" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440]">
-          Order basket
-          {basket.count > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 text-[11px] text-white">{basket.count}</span>}
-        </Link>
-      </div>
+      <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Shop</h1>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <input
           className="min-w-52 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15"
-          placeholder="Search furniture"
-          aria-label="Search furniture"
+          placeholder="Search the shop"
+          aria-label="Search the shop"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
@@ -169,7 +159,7 @@ function Catalog() {
           {filterCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 text-[11px] text-white">{filterCount}</span>}
         </button>
         <div className="w-48">
-          <Select className={selectClass} value={sort} aria-label="Sort furniture" onChange={(e) => update({ sort: e.target.value === "newest" ? undefined : e.target.value })}>
+          <Select className={selectClass} value={sort} aria-label="Sort products" onChange={(e) => update({ sort: e.target.value === "newest" ? undefined : e.target.value })}>
             {(Object.keys(SORT_LABELS) as ProductSort[]).map((s) => (
               <option key={s} value={s}>
                 {SORT_LABELS[s]}
@@ -269,7 +259,7 @@ function Catalog() {
           <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{data.error}</p>
         ) : list && list.products.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm font-semibold text-slate-400">No furniture matches</p>
+            <p className="text-sm font-semibold text-slate-400">Nothing matches</p>
             {chips.length > 0 && (
               <button type="button" onClick={clearAll} className="mt-3 text-sm font-bold text-[#219b31] hover:underline">
                 Clear filters
@@ -279,41 +269,7 @@ function Catalog() {
         ) : (
           <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-60" : ""}`}>
             {(list?.products ?? []).map((product) => (
-              <div key={product.id} className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
-                <Link href={`/furniture/${product.id}`} className="block">
-                  <div className="relative overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {product.images[0] ? <img src={product.images[0]} alt={product.name} className={`h-52 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${product.stock === "out_of_stock" ? "opacity-60" : ""}`} /> : <div className="h-52 w-full bg-slate-100" />}
-                    {product.stock !== "in_stock" && (
-                      <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-800 shadow">
-                        {STOCK_LABELS[product.stock]}
-                        {product.stock === "made_to_order" && product.leadTimeDays ? ` · ${product.leadTimeDays} days` : ""}
-                      </span>
-                    )}
-                  </div>
-                  <div className="px-4 pt-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
-                    <h2 className="mt-1 font-black text-slate-900">{product.name}</h2>
-                  </div>
-                </Link>
-                <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900">{formatPrice(product.price, product.currency)}</p>
-                    {product.supplier && <p className="truncate text-xs text-slate-400">{product.supplier.companyName}</p>}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={product.stock === "out_of_stock"}
-                    onClick={() => {
-                      basket.add(product);
-                      showToast(`${product.name} added to your order.`);
-                    }}
-                    className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Add to order
-                  </button>
-                </div>
-              </div>
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}

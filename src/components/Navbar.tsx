@@ -8,6 +8,7 @@ import { Logo } from './Logo';
 import { useAuth } from '@/lib/auth-context';
 import { useMyProfilePhoto } from '@/lib/profilePhoto';
 import CountryFlagBadge from './CountryFlagBadge';
+import CartButton from './shop/CartButton';
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -18,7 +19,7 @@ const NAV_LINKS = [
   { href: '/renovate', label: 'Renovate' },
   { href: '/professionals', label: 'Professionals' },
   { href: '/designs', label: 'Designs' },
-  { href: '/furniture', label: 'Furniture' },
+  { href: '/shop', label: 'Shop' },
   { href: '/blog', label: 'Blog' },
 ];
 
@@ -60,6 +61,7 @@ export default function Navbar() {
 
       {/* Right Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
+        <CartButton />
         <Link
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
@@ -96,6 +98,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/dashboard?tab=saved" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                   Saved Homes
+                </Link>
+                <Link href="/shop/orders" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                  My Orders
                 </Link>
                 <Link href="/studio/build" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
                   Build Projects

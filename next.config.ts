@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   // node_modules the built app actually needs — what the Docker image below copies and runs,
   // instead of shipping the full node_modules tree into the runtime image.
   output: "standalone",
+  // The furniture pages are now the shop.
+  async redirects() {
+    return [
+      { source: "/furniture", destination: "/shop", permanent: true },
+      { source: "/furniture/order", destination: "/shop/cart", permanent: true },
+      { source: "/shop/order", destination: "/shop/cart", permanent: true },
+      { source: "/furniture/:id", destination: "/shop/:id", permanent: true },
+    ];
+  },
   images: {
     remotePatterns: [
       {

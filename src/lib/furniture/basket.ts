@@ -78,6 +78,14 @@ export function useBasket() {
     write(current);
   }, []);
 
+  const addLine = useCallback((line: BasketLine) => {
+    const current = parse(read());
+    const existing = current.find((l) => l.productId === line.productId);
+    if (existing) existing.quantity = Math.min(existing.quantity + line.quantity, MAX_QUANTITY);
+    else current.push({ ...line, quantity: Math.min(line.quantity, MAX_QUANTITY) });
+    write(current);
+  }, []);
+
   const setQuantity = useCallback((productId: string, quantity: number) => {
     write(parse(read()).map((l) => (l.productId === productId ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY) } : l)));
   }, []);
@@ -86,5 +94,5 @@ export function useBasket() {
   const clear = useCallback(() => write([]), []);
 
   const count = lines.reduce((sum, l) => sum + l.quantity, 0);
-  return { lines, count, add, setQuantity, remove, clear };
+  return { lines, count, add, addLine, setQuantity, remove, clear };
 }
