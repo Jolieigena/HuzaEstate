@@ -7,7 +7,6 @@ import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { FurnitureApi, formatPrice } from "@/lib/furniture/api";
-import DistrictSelect from "@/components/shared/DistrictSelect";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const label = "block text-sm font-bold text-slate-700";
@@ -211,10 +210,10 @@ export default function CartPage() {
           ) : (
             <div className="mt-5 space-y-4 border-t border-slate-100 pt-5">
               <h3 className="font-black text-slate-900">Delivery</h3>
-              <div className={label}>
-                District
-                <DistrictSelect country="Rwanda" value={city} onChange={setCity} className="mt-1.5" />
-              </div>
+              <label className={label}>
+                City
+                <input className={`${field} mt-1.5`} value={city} onChange={(e) => setCity(e.target.value)} autoComplete="address-level2" />
+              </label>
               {showMore && (
                 <div>
                   {location ? (
