@@ -74,7 +74,12 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               <ul className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
                 {design.furniture.map((item, index) => (
                   <li key={index} className="flex items-baseline justify-between gap-4 px-5 py-3 text-sm">
-                    <span className="font-semibold text-slate-800">{item.name}</span>
+                    <span className="font-semibold text-slate-800">
+                      {item.name}{" "}
+                      <Link href={`/furniture?q=${encodeURIComponent(item.name)}`} className="ml-1 text-xs font-bold text-[#219b31] hover:underline">
+                        Find in the shop
+                      </Link>
+                    </span>
                     <span className="shrink-0 text-slate-500">
                       {item.notes ? `${item.notes} · ` : ""}× {item.quantity}
                     </span>

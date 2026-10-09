@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { href: '/renovate', label: 'Renovate' },
   { href: '/professionals', label: 'Professionals' },
   { href: '/designs', label: 'Designs' },
+  { href: '/furniture', label: 'Furniture' },
   { href: '/blog', label: 'Blog' },
 ];
 

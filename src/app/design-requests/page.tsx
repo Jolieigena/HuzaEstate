@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Order, type OrderStatus } from "@/lib/furniture/api";
 import { DESIGN_REQUEST_STATUS_LABELS, DesignsApi, formatMoney, type DesignRequest, type DesignRequestStatus, type FurnitureQuote } from "@/lib/designs/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
@@ -26,14 +28,18 @@ function date(value: string) {
 export default function DesignRequestsPage() {
   return (
     <RequireAuth>
-      <Requests />
+      <Suspense fallback={null}>
+        <Requests />
+      </Suspense>
     </RequireAuth>
   );
 }
 
 function Requests() {
   const { token, isAuthReady } = useAuth();
-  const [tab, setTab] = useState<"designs" | "furniture">("designs");
+  const initialTab = useSearchParams().get("tab");
+  const [tab, setTab] = useState<"designs" | "furniture" | "orders">(initialTab === "orders" ? "orders" : initialTab === "furniture" ? "furniture" : "designs");
+  const [orders, setOrders] = useState<Order[] | null>(null);
   const [requests, setRequests] = useState<DesignRequest[] | null>(null);
   const [quotes, setQuotes] = useState<FurnitureQuote[] | null>(null);
   const [error, setError] = useState("");
@@ -42,12 +48,14 @@ function Requests() {
   useEffect(() => {
     if (!isAuthReady || !token) return;
     let cancelled = false;
-    Promise.all([DesignsApi.myRequests(token), DesignsApi.myFurnitureQuotes(token)]).then(([r, q]) => {
+    Promise.all([DesignsApi.myRequests(token), DesignsApi.myFurnitureQuotes(token), FurnitureApi.myOrders(token)]).then(([r, q, o]) => {
       if (cancelled) return;
       if (r.ok) setRequests(r.data.requests);
       else setError(r.error);
       if (q.ok) setQuotes(q.data.quotes);
       else setError(q.error);
+      if (o.ok) setOrders(o.data.orders);
+      else setError(o.error);
     });
     return () => {
       cancelled = true;
@@ -60,18 +68,19 @@ function Requests() {
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
       <h1 className="text-3xl font-black tracking-tight text-slate-900">My requests</h1>
       <div className="mt-6 flex gap-2" role="tablist">
-        {([["designs", "Design requests"], ["furniture", "Furniture quotes"]] as const).map(([key, label]) => (
+        {([["designs", "Design requests"], ["furniture", "Furniture quotes"], ["orders", "Furniture orders"]] as const).map(([key, label]) => (
           <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`rounded-full border px-5 py-2 text-sm font-bold transition-colors ${tab === key ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}>
             {label}
             {key === "designs" && requests ? ` (${requests.length})` : ""}
             {key === "furniture" && quotes ? ` (${quotes.length})` : ""}
+            {key === "orders" && orders ? ` (${orders.length})` : ""}
           </button>
         ))}
       </div>
 
       {error && <p className="mt-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
-      <div className="mt-6">{tab === "designs" ? <DesignRequestList requests={requests} onChanged={refresh} /> : <FurnitureQuoteList quotes={quotes} onChanged={refresh} />}</div>
+      <div className="mt-6">{tab === "designs" ? <DesignRequestList requests={requests} onChanged={refresh} /> : tab === "furniture" ? <FurnitureQuoteList quotes={quotes} onChanged={refresh} /> : <OrderList orders={orders} onChanged={refresh} />}</div>
     </main>
   );
 }
@@ -277,6 +286,86 @@ function FurnitureQuoteList({ quotes, onChanged }: { quotes: FurnitureQuote[] | 
           </section>
         );
       })}
+    </div>
+  );
+}
+
+const ORDER_STYLE: Record<OrderStatus, string> = {
+  requested: "bg-sky-50 text-sky-700",
+  confirmed: "bg-amber-50 text-amber-700",
+  completed: "bg-[#2ec440]/10 text-[#219b31]",
+  declined: "bg-red-50 text-red-700",
+  cancelled: "bg-slate-100 text-slate-500",
+};
+
+function OrderList({ orders, onChanged }: { orders: Order[] | null; onChanged: () => void }) {
+  const { token } = useAuth();
+  const { showToast } = useToast();
+  const [busyId, setBusyId] = useState("");
+
+  const cancel = async (order: Order) => {
+    if (!token) return;
+    setBusyId(order.id);
+    const result = await FurnitureApi.cancelOrder(token, order.id);
+    setBusyId("");
+    if (!result.ok) showToast(result.error, "error");
+    else {
+      showToast("Order cancelled.");
+      onChanged();
+    }
+  };
+
+  if (orders === null) return <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>;
+  if (orders.length === 0) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-slate-200 py-16 text-center">
+        <p className="font-bold text-slate-500">You haven&apos;t ordered any furniture</p>
+        <Link href="/furniture" className="mt-3 inline-block text-sm font-bold text-[#219b31] hover:underline">
+          Browse furniture
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {orders.map((order) => (
+        <section key={order.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="font-black text-slate-900">{order.supplierName ?? "Supplier"}</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                {formatPrice(order.total, order.currency)} · {date(order.createdAt)}
+              </p>
+            </div>
+            <span className={`rounded-full px-3 py-1 text-xs font-bold ${ORDER_STYLE[order.status]}`}>{ORDER_STATUS_LABELS[order.status]}</span>
+          </div>
+          <ul className="mt-3 divide-y divide-slate-100">
+            {order.items.map((item) => (
+              <li key={item.productId} className="flex items-center gap-3 py-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {item.image ? <img src={item.image} alt="" className="h-12 w-12 shrink-0 rounded-lg object-cover" /> : <div className="h-12 w-12 shrink-0 rounded-lg bg-slate-100" />}
+                <Link href={`/furniture/${item.productId}`} className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800 hover:underline">
+                  {item.name}
+                </Link>
+                <span className="shrink-0 text-sm text-slate-600">
+                  {item.quantity} × {formatPrice(item.unitPrice, order.currency)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-slate-500">Deliver to {[order.address, order.city].filter(Boolean).join(", ")}</p>
+          {order.reply && <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{order.reply}</p>}
+          {order.status === "confirmed" && order.deliveryDays !== undefined && <p className="mt-2 text-sm font-semibold text-slate-700">Delivery in about {order.deliveryDays} days</p>}
+          {(order.status === "requested" || order.status === "confirmed") && (
+            <div className="mt-4">
+              <button type="button" className={secondary} disabled={busyId === order.id} onClick={() => cancel(order)}>
+                Cancel order
+              </button>
+            </div>
+          )}
+        </section>
+      ))}
     </div>
   );
 }
