@@ -26,8 +26,8 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState("");
 
-  // Payment happens on IremboPay's own page, which has no way of sending the person back here. So whenever they
-  // return to this tab, any order that was sent off to be paid is asked about, and updated if it was.
+  // Payment happens on the card payment page. Orders that were sent off to be paid are asked about when this page
+  // opens (Stripe sends the person back here) and whenever they return to this tab, and updated if they were paid.
   useEffect(() => {
     if (!token || !orders?.some((o) => o.paymentStatus === "pending")) return;
     const check = async () => {
@@ -38,6 +38,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
     const onVisible = () => {
       if (document.visibilityState === "visible") void check();
     };
+    void check();
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
     return () => {
@@ -55,7 +56,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
       showToast(result.error, "error");
       return;
     }
-    // Opens IremboPay's checkout (mobile money, bank or card) in a new tab, so this page stays here to be updated.
+    // Opens the card payment page in a new tab, so this page stays here to be updated.
     window.open(result.data.paymentLinkUrl, "_blank", "noopener");
     onChanged();
   };

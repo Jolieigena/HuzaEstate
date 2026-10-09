@@ -79,10 +79,9 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { requested: "Wa
 
 export type PaymentStatus = "unpaid" | "pending" | "paid";
 
-/** "MTN_MOMO" -> "MTN MoMo", for showing how an order was paid. */
+/** How an order was paid, for showing next to "Paid". */
 export function paymentMethodLabel(method?: string): string {
-  const labels: Record<string, string> = { MTN_MOMO: "MTN MoMo", AIRTEL_MONEY: "Airtel Money", ONLINE_CARD: "card", BK: "Bank of Kigali", EQUITY: "Equity Bank", MOMO_PUSH: "mobile money" };
-  return method ? (labels[method] ?? method.replace(/_/g, " ").toLowerCase()) : "";
+  return method ? method.replace(/_/g, " ").toLowerCase() : "";
 }
 
 export interface OrderItem {

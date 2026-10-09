@@ -45,7 +45,7 @@ export default function ProductCard({ product }: { product: Product }) {
           {product.images[0] ? <img src={product.images[0]} alt={product.name} className={`h-52 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02] ${out ? "opacity-60" : ""}`} /> : <div className="h-52 w-full bg-slate-100" />}
           <SaveButton product={product} className="absolute right-3 top-3" />
           {product.stock !== "in_stock" && (
-            <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-800 shadow">
+            <span className={`absolute bottom-3 left-3 rounded-full px-3 py-1 text-xs font-bold shadow ${out ? "bg-red-600 text-white" : "bg-white/95 text-slate-800"}`}>
               {STOCK_LABELS[product.stock]}
               {product.stock === "made_to_order" && product.leadTimeDays ? ` · ${product.leadTimeDays} days` : ""}
             </span>
