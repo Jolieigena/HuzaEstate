@@ -18,12 +18,10 @@ export default function CartPage() {
   const cart = useBasket();
   const saved = useSaved();
   const [city, setCity] = useState("");
-  const [address, setAddress] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
   const [phone, setPhone] = useState("");
-  const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [placed, setPlaced] = useState<string[] | null>(null);
@@ -40,8 +38,8 @@ export default function CartPage() {
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
 
   // Delivery details are asked in order: where, then who to call. Each appears once the one before it is filled.
-  const showAddress = city.trim().length > 1;
-  const ready = showAddress && phone.trim().length >= 6;
+  const showMore = city.trim().length > 1;
+  const ready = showMore && phone.trim().length >= 6;
 
   const shareLocation = () => {
     if (!navigator.geolocation) {
@@ -70,10 +68,8 @@ export default function CartPage() {
     const result = await FurnitureApi.createOrder(token, {
       items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       city: city.trim(),
-      address: address.trim() || undefined,
       location: location ?? undefined,
       phone: phone.trim(),
-      note: note.trim() || undefined,
     });
     setBusy(false);
     if (!result.ok) {
@@ -219,13 +215,7 @@ export default function CartPage() {
                 District
                 <DistrictSelect country="Rwanda" value={city} onChange={setCity} className="mt-1.5" />
               </div>
-              {showAddress && (
-                <label className={label}>
-                  Landmark or directions <span className="font-normal text-slate-400">(optional)</span>
-                  <input className={`${field} mt-1.5`} value={address} maxLength={300} placeholder="Near Kimironko market, blue gate" onChange={(e) => setAddress(e.target.value)} />
-                </label>
-              )}
-              {showAddress && (
+              {showMore && (
                 <div>
                   {location ? (
                     <p className="flex items-center justify-between gap-3 rounded-xl border border-[#2ec440]/30 bg-[#2ec440]/5 px-3.5 py-2.5 text-sm font-bold text-slate-800">
@@ -242,16 +232,10 @@ export default function CartPage() {
                   {locationError && <p className="mt-2 text-sm text-red-600">{locationError}</p>}
                 </div>
               )}
-              {showAddress && (
+              {showMore && (
                 <label className={label}>
                   Phone number
                   <input className={`${field} mt-1.5`} type="tel" value={phone} maxLength={20} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />
-                </label>
-              )}
-              {ready && (
-                <label className={label}>
-                  Note to the supplier <span className="font-normal text-slate-400">(optional)</span>
-                  <textarea className={`${field} mt-1.5 min-h-20 resize-none`} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} />
                 </label>
               )}
               {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
