@@ -78,7 +78,13 @@ export default function SupplierOrdersPage() {
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Deliver to</dt>
-                  <dd className="font-semibold text-slate-800">{[order.address, order.city].filter(Boolean).join(", ")}</dd>
+                  <dd className="font-semibold text-slate-800">{[order.address, order.city].filter(Boolean).join(", ")}
+                    {order.mapLink && (
+                      <a href={order.mapLink} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#219b31] hover:underline">
+                        Open map
+                      </a>
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">Contact</dt>

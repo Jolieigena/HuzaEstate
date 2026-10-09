@@ -7,6 +7,7 @@ import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { FurnitureApi, formatPrice } from "@/lib/furniture/api";
+import DistrictSelect from "@/components/shared/DistrictSelect";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const label = "block text-sm font-bold text-slate-700";
@@ -18,6 +19,9 @@ export default function CartPage() {
   const saved = useSaved();
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState("");
   const [phone, setPhone] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,6 +43,26 @@ export default function CartPage() {
   const showAddress = city.trim().length > 1;
   const ready = showAddress && phone.trim().length >= 6;
 
+  const shareLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError("Your browser cannot share a location.");
+      return;
+    }
+    setLocating(true);
+    setLocationError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocationError("Could not get your location. Allow location access, or describe the place instead.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
+  };
+
   const placeOrder = async () => {
     if (!token || !ready || busy) return;
     setBusy(true);
@@ -47,6 +71,7 @@ export default function CartPage() {
       items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       city: city.trim(),
       address: address.trim() || undefined,
+      location: location ?? undefined,
       phone: phone.trim(),
       note: note.trim() || undefined,
     });
@@ -190,15 +215,32 @@ export default function CartPage() {
           ) : (
             <div className="mt-5 space-y-4 border-t border-slate-100 pt-5">
               <h3 className="font-black text-slate-900">Delivery</h3>
-              <label className={label}>
-                City or area
-                <input className={`${field} mt-1.5`} value={city} onChange={(e) => setCity(e.target.value)} autoComplete="address-level2" />
-              </label>
+              <div className={label}>
+                District
+                <DistrictSelect country="Rwanda" value={city} onChange={setCity} className="mt-1.5" />
+              </div>
               {showAddress && (
                 <label className={label}>
-                  Street address <span className="font-normal text-slate-400">(optional)</span>
-                  <input className={`${field} mt-1.5`} value={address} onChange={(e) => setAddress(e.target.value)} autoComplete="street-address" />
+                  Landmark or directions <span className="font-normal text-slate-400">(optional)</span>
+                  <input className={`${field} mt-1.5`} value={address} maxLength={300} placeholder="Near Kimironko market, blue gate" onChange={(e) => setAddress(e.target.value)} />
                 </label>
+              )}
+              {showAddress && (
+                <div>
+                  {location ? (
+                    <p className="flex items-center justify-between gap-3 rounded-xl border border-[#2ec440]/30 bg-[#2ec440]/5 px-3.5 py-2.5 text-sm font-bold text-slate-800">
+                      Location shared
+                      <button type="button" onClick={() => setLocation(null)} className="text-xs font-bold text-slate-500 underline hover:text-red-600">
+                        Remove
+                      </button>
+                    </p>
+                  ) : (
+                    <button type="button" disabled={locating} onClick={shareLocation} className="min-h-11 w-full rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] disabled:opacity-60">
+                      {locating ? "Finding you…" : "Share my location"}
+                    </button>
+                  )}
+                  {locationError && <p className="mt-2 text-sm text-red-600">{locationError}</p>}
+                </div>
               )}
               {showAddress && (
                 <label className={label}>

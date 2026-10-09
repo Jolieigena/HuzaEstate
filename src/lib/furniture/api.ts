@@ -103,6 +103,7 @@ export interface Order {
   clientPhone?: string;
   city: string;
   address: string;
+  mapLink?: string;
   note: string;
   items: OrderItem[];
   currency: string;
@@ -123,6 +124,7 @@ export interface OrderInput {
   items: { productId: string; quantity: number }[];
   city: string;
   address?: string;
+  location?: { lat: number; lng: number };
   phone: string;
   note?: string;
 }
