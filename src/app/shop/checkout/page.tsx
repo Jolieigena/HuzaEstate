@@ -74,7 +74,7 @@ function Checkout() {
     setPayingId(id);
     const result = await FurnitureApi.payOrder(token, id);
     if (result.ok) {
-      window.location.href = result.data.paymentLinkUrl;
+      window.location.assign(result.data.paymentLinkUrl);
       return;
     }
     setPayingId("");
