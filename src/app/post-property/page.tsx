@@ -7,6 +7,7 @@ import RequireAuth from '@/components/shared/RequireAuth';
 import ApplyGate from '@/components/manager/ApplyGate';
 import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
+import { useIsAdministrator } from '@/lib/admin/hooks';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
@@ -28,6 +29,7 @@ const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://loc
 function PostPropertyForm() {
   const router = useRouter();
   const { token, isApprovedSeller } = useAuth();
+  const isAdmin = useIsAdministrator();
   const { showToast } = useToast();
   // ?edit=<id> resumes an existing draft — see ListingActionsMenu.tsx's "Submit for Review"
   // action, which is the only place this link is generated.
@@ -116,7 +118,7 @@ function PostPropertyForm() {
     };
   }, [editId, token]);
 
-  if (!isApprovedSeller) {
+  if (!isApprovedSeller && !isAdmin) {
     return <ApplyGate />;
   }
 
@@ -128,7 +130,7 @@ function PostPropertyForm() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-slate-600">{draftLoadError}</p>
-        <Link href="/manager" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Back to Manager Portal</Link>
+        <Link href={isAdmin ? '/admin/properties' : '/manager'} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{isAdmin ? 'Back to Properties' : 'Back to Manager Portal'}</Link>
       </div>
     );
   }
@@ -291,7 +293,7 @@ function PostPropertyForm() {
       }
       notifyPropertiesChanged();
       showToast('Draft saved.');
-      router.push('/manager');
+      router.push(isAdmin ? '/admin/properties' : '/manager');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
       setSavingDraft(false);

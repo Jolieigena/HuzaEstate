@@ -21,7 +21,8 @@ export function canAccessPath(account: Account | null, path: string): boolean {
   if (under('/admin')) return roles.includes('administrator');
   if (under('/professional')) return roles.includes('professional');
   if (under('/supplier')) return roles.includes('supplier');
-  if (under('/manager') || under('/post-property')) return roles.includes('seller_manager');
+  if (under('/manager')) return roles.includes('seller_manager');
+  if (under('/post-property')) return roles.includes('seller_manager') || roles.includes('administrator');
   if (under('/org-admin')) return roles.includes('organization_admin');
   if (['/dashboard', '/studio', '/execution', '/payments', '/invoices', '/contracts'].some(under)) return roles.includes('customer');
   return true;

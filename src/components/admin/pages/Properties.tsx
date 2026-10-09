@@ -78,7 +78,16 @@ export function PropertiesListPage() {
   const count = (key: "all" | PropertyStatus) => (properties ?? []).filter((p) => key === "all" || (p.status ?? "published") === key).length;
 
   return (
-    <PageFrame title="Properties">
+    <PageFrame
+      title="Properties"
+      action={
+        canView && (
+          <Link href="/post-property" className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+            Add property
+          </Link>
+        )
+      }
+    >
       <RequirePermission granted={canView}>
         <div role="tablist" aria-label="Listing status" className="mb-5 flex flex-wrap gap-2">
           {STATUS_FILTERS.map((item) => {
