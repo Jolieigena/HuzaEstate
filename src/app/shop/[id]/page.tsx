@@ -128,7 +128,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 type="button"
                 onClick={() => {
                   cart.add(product, Number(quantity));
-                  router.push("/shop/cart");
+                  router.push("/shop/checkout");
                 }}
                 className="min-h-11 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]"
               >

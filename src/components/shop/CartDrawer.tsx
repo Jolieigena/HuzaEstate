@@ -99,7 +99,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                   <span className="text-lg font-black text-slate-900">{formatPrice(total, currency)}</span>
                 </div>
               ))}
-              <Link href="/shop/cart" onClick={onClose} className="mt-4 flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+              <Link href="/shop/checkout" onClick={onClose} className="mt-4 flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
                 Checkout
               </Link>
               <Link href="/shop/cart" onClick={onClose} className="mt-2 flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440]">

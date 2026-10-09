@@ -11,10 +11,10 @@ export default function ShopNav() {
   const cart = useBasket();
   const saved = useSaved();
   const items = [
-    { href: "/shop", label: "Shop", count: 0, active: pathname === "/shop" || (/^\/shop\/[^/]+$/.test(pathname) && !["/shop/cart", "/shop/saved", "/shop/orders"].includes(pathname)) },
+    { href: "/shop", label: "Shop", count: 0, active: pathname === "/shop" || (/^\/shop\/[^/]+$/.test(pathname) && !["/shop/cart", "/shop/checkout", "/shop/saved", "/shop/orders"].includes(pathname)) },
     { href: "/shop/saved", label: "Saved", count: saved.count, active: pathname === "/shop/saved" },
     { href: "/shop/orders", label: "My orders", count: 0, active: pathname === "/shop/orders" },
-    { href: "/shop/cart", label: "Cart", count: cart.count, red: true, active: pathname === "/shop/cart" },
+    { href: "/shop/cart", label: "Cart", count: cart.count, red: true, active: pathname === "/shop/cart" || pathname === "/shop/checkout" },
   ];
   return (
     <nav aria-label="Shop" className="border-b border-slate-100 bg-white">
