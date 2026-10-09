@@ -8,6 +8,7 @@ import RequireAuth from "@/components/shared/RequireAuth";
 import NotificationBell from "@/components/shared/NotificationBell";
 import { useAuth } from "@/lib/auth-context";
 import { roleHome } from "@/lib/navigation";
+import { useDismiss } from "@/lib/useDismiss";
 
 const NAV_ITEMS = [
   { href: "/supplier", label: "Requests", iconPath: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
@@ -24,6 +25,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const { account, isAuthReady, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const isSupplier = account?.roles.includes("supplier") ?? false;
   const incomplete = account?.profileCompleted === false;
 
@@ -53,7 +55,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
           </Link>
           <div className="flex items-center gap-2">
             <NotificationBell />
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-full border border-slate-200 py-1.5 pl-1.5 pr-3 transition-colors hover:border-[#2ec440] focus:outline-none focus:ring-2 focus:ring-[#2ec440]"

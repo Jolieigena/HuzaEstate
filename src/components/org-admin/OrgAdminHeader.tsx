@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { AdminApi } from "@/lib/admin/api";
 import NotificationBell from "@/components/shared/NotificationBell";
+import { useDismiss } from "@/lib/useDismiss";
 
 interface OrgAdminHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -17,6 +18,7 @@ interface OrgAdminHeaderProps {
  *  signed-in admin *which* organisation they were managing otherwise. */
 export default function OrgAdminHeader({ onOpenMobileSidebar }: OrgAdminHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { logout, account, token } = useAuth();
   const [orgName, setOrgName] = useState<string | null>(null);
 
@@ -57,7 +59,7 @@ export default function OrgAdminHeader({ onOpenMobileSidebar }: OrgAdminHeaderPr
 
       <div className="flex items-center gap-2">
         <NotificationBell />
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"

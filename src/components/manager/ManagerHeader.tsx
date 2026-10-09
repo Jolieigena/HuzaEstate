@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
 import NotificationBell from "@/components/shared/NotificationBell";
+import { useDismiss } from "@/lib/useDismiss";
 
 interface ManagerHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -16,6 +17,7 @@ interface ManagerHeaderProps {
  *  menu) so every dashboard-style area of the app looks like one product, not three. */
 export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { logout, account } = useAuth();
   const photoUrl = useMyProfilePhoto();
 
@@ -43,7 +45,7 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
           + Add Property
         </Link>
         <NotificationBell />
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"

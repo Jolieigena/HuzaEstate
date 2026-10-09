@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useMyProfilePhoto } from '@/lib/profilePhoto';
 import CountryFlagBadge from './CountryFlagBadge';
 import CartButton from './shop/CartButton';
+import { useDismiss } from "@/lib/useDismiss";
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -26,6 +27,7 @@ const NAV_LINKS = [
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const menuRef = useDismiss(profileOpen, () => setProfileOpen(false));
   const { isLoggedIn, logout, account } = useAuth();
   const photoUrl = useMyProfilePhoto();
   const pathname = usePathname();
@@ -71,7 +73,7 @@ export default function Navbar() {
 
         {/* Conditional Auth Actions */}
         {isLoggedIn ? (
-          <div className="relative hidden md:block ml-2">
+          <div className="relative hidden md:block ml-2" ref={menuRef}>
             <button
               onClick={() => setProfileOpen(!profileOpen)}
               className="block relative rounded-full border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"

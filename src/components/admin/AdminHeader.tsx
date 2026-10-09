@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import NotificationBell from "@/components/shared/NotificationBell";
+import { useDismiss } from "@/lib/useDismiss";
 
 interface AdminHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -15,6 +16,7 @@ interface AdminHeaderProps {
  * "Professional Portal" links that don't apply to internal staff). */
 export default function AdminHeader({ onOpenMobileSidebar }: AdminHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { logout, account } = useAuth();
 
   return (
@@ -38,7 +40,7 @@ export default function AdminHeader({ onOpenMobileSidebar }: AdminHeaderProps) {
 
       <div className="flex items-center gap-2">
         <NotificationBell />
-        <div className="relative">
+        <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
