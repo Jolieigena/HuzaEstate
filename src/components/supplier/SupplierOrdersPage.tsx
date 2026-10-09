@@ -6,7 +6,7 @@ import { DaysSelect } from "@/components/designs/fields";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Order } from "@/lib/furniture/api";
+import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order } from "@/lib/furniture/api";
 
 type Action = { order: Order; kind: "confirm" | "decline" };
 
@@ -97,6 +97,11 @@ export default function SupplierOrdersPage() {
                 </div>
               </dl>
               {order.note && <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">“{order.note}”</p>}
+              {order.status === "confirmed" && (
+                <p className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${order.paymentStatus === "paid" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>
+                  {order.paymentStatus === "paid" ? `Paid online${order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}` : "Not paid yet"}
+                </p>
+              )}
               {order.reply && <p className="mt-3 text-sm text-slate-500">Your reply: {order.reply}</p>}
               <div className="mt-4 flex flex-wrap gap-2">
                 {order.status === "requested" && (

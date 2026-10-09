@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Order, type OrderStatus } from "@/lib/furniture/api";
+import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order, type OrderStatus } from "@/lib/furniture/api";
 import { DESIGN_REQUEST_STATUS_LABELS, DesignsApi, formatMoney, type DesignRequest, type DesignRequestStatus, type FurnitureQuote } from "@/lib/designs/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
@@ -303,6 +303,52 @@ function OrderList({ orders, onChanged }: { orders: Order[] | null; onChanged: (
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState("");
 
+  // Payment happens on IremboPay's own page, which has no way of sending the person back here. So whenever they
+  // return to this tab, any order that was sent off to be paid is asked about, and updated if it was.
+  useEffect(() => {
+    if (!token || !orders?.some((o) => o.paymentStatus === "pending")) return;
+    const check = async () => {
+      const pending = orders.filter((o) => o.paymentStatus === "pending");
+      const results = await Promise.all(pending.map((o) => FurnitureApi.refreshPayment(token, o.id)));
+      if (results.some((r) => r.ok && r.data.paymentStatus === "paid")) onChanged();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [token, orders, onChanged]);
+
+  const pay = async (order: Order) => {
+    if (!token) return;
+    setBusyId(order.id);
+    const result = await FurnitureApi.payOrder(token, order.id);
+    setBusyId("");
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    // Opens IremboPay's checkout (mobile money, bank or card) in a new tab, so this page stays here to be updated.
+    window.open(result.data.paymentLinkUrl, "_blank", "noopener");
+    onChanged();
+  };
+
+  const checkPayment = async (order: Order) => {
+    if (!token) return;
+    setBusyId(order.id);
+    const result = await FurnitureApi.refreshPayment(token, order.id);
+    setBusyId("");
+    if (!result.ok) showToast(result.error, "error");
+    else if (result.data.paymentStatus === "paid") {
+      showToast("Payment received.");
+      onChanged();
+    } else showToast("No payment yet. If you have just paid, wait a moment and check again.");
+  };
+
   const cancel = async (order: Order) => {
     if (!token) return;
     setBusyId(order.id);
@@ -357,11 +403,26 @@ function OrderList({ orders, onChanged }: { orders: Order[] | null; onChanged: (
           <p className="mt-3 text-sm text-slate-500">Deliver to {[order.address, order.city].filter(Boolean).join(", ")}</p>
           {order.reply && <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{order.reply}</p>}
           {order.status === "confirmed" && order.deliveryDays !== undefined && <p className="mt-2 text-sm font-semibold text-slate-700">Delivery in about {order.deliveryDays} days</p>}
+          {order.paymentStatus === "paid" && (
+            <p className="mt-3 inline-flex rounded-full bg-[#2ec440]/10 px-3 py-1 text-xs font-bold text-[#219b31]">Paid{order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}</p>
+          )}
           {(order.status === "requested" || order.status === "confirmed") && (
-            <div className="mt-4">
-              <button type="button" className={secondary} disabled={busyId === order.id} onClick={() => cancel(order)}>
-                Cancel order
-              </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {order.payable && (
+                <button type="button" className={primary} disabled={busyId === order.id} onClick={() => pay(order)}>
+                  {order.paymentStatus === "pending" ? "Open payment page" : `Pay ${formatPrice(order.total, order.currency)}`}
+                </button>
+              )}
+              {order.paymentStatus === "pending" && (
+                <button type="button" className={secondary} disabled={busyId === order.id} onClick={() => checkPayment(order)}>
+                  I have paid
+                </button>
+              )}
+              {order.paymentStatus !== "paid" && (
+                <button type="button" className={secondary} disabled={busyId === order.id} onClick={() => cancel(order)}>
+                  Cancel order
+                </button>
+              )}
             </div>
           )}
         </section>

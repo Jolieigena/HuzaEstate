@@ -77,6 +77,14 @@ export interface ProductFacets {
 export type OrderStatus = "requested" | "confirmed" | "declined" | "completed" | "cancelled";
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { requested: "Waiting for the supplier", confirmed: "Confirmed", declined: "Declined", completed: "Delivered", cancelled: "Cancelled" };
 
+export type PaymentStatus = "unpaid" | "pending" | "paid";
+
+/** "MTN_MOMO" -> "MTN MoMo", for showing how an order was paid. */
+export function paymentMethodLabel(method?: string): string {
+  const labels: Record<string, string> = { MTN_MOMO: "MTN MoMo", AIRTEL_MONEY: "Airtel Money", ONLINE_CARD: "card", BK: "Bank of Kigali", EQUITY: "Equity Bank", MOMO_PUSH: "mobile money" };
+  return method ? (labels[method] ?? method.replace(/_/g, " ").toLowerCase()) : "";
+}
+
 export interface OrderItem {
   productId: string;
   name: string;
@@ -102,6 +110,11 @@ export interface Order {
   status: OrderStatus;
   reply: string;
   deliveryDays?: number;
+  paymentStatus: PaymentStatus;
+  /** True when the client can pay this order online right now. */
+  payable: boolean;
+  paymentMethod?: string;
+  paidAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -164,5 +177,7 @@ export const FurnitureApi = {
   confirmOrder: (token: string, id: string, input: { message?: string; deliveryDays?: number }) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/confirm`, { token, method: "POST", body: input }),
   declineOrder: (token: string, id: string, message?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/decline`, { token, method: "POST", body: { message } }),
   completeOrder: (token: string, id: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/complete`, { token, method: "POST" }),
+  payOrder: (token: string, id: string) => call<{ paymentLinkUrl: string; invoiceNumber: string }>(`/furniture/orders/${encodeURIComponent(id)}/pay`, { token, method: "POST" }),
+  refreshPayment: (token: string, id: string) => call<{ paymentStatus: PaymentStatus }>(`/furniture/orders/${encodeURIComponent(id)}/refresh-payment`, { token, method: "POST" }),
   cancelOrder: (token: string, id: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/cancel`, { token, method: "POST" }),
 };
