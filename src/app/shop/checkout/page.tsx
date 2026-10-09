@@ -7,7 +7,7 @@ import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneI
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
-import { FurnitureApi, formatPrice } from "@/lib/furniture/api";
+import { FurnitureApi, formatPrice, type Order } from "@/lib/furniture/api";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const label = "block text-sm font-bold text-slate-700";
@@ -31,7 +31,8 @@ function Checkout() {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [placed, setPlaced] = useState<string[] | null>(null);
+  const [placed, setPlaced] = useState<{ suppliers: string[]; payable: Order[] } | null>(null);
+  const [payingId, setPayingId] = useState("");
 
   // One order goes to each supplier (and currency) in the cart.
   const groups = new Map<string, { supplierName: string; currency: string; lines: BasketLine[] }>();
@@ -68,6 +69,18 @@ function Checkout() {
     );
   };
 
+  const pay = async (id: string) => {
+    if (!token) return;
+    setPayingId(id);
+    const result = await FurnitureApi.payOrder(token, id);
+    if (result.ok) {
+      window.location.href = result.data.paymentLinkUrl;
+      return;
+    }
+    setPayingId("");
+    setError(result.error);
+  };
+
   const placeOrder = async () => {
     if (!token || !ready || busy) return;
     setBusy(true);
@@ -84,15 +97,28 @@ function Checkout() {
       return;
     }
     cart.clear();
-    setPlaced(Array.from(new Set(result.data.orders.map((o) => o.supplierName ?? "the supplier"))));
+    const orders = result.data.orders;
+    setPlaced({ suppliers: Array.from(new Set(orders.map((o) => o.supplierName ?? "the supplier"))), payable: orders.filter((o) => o.payable) });
     showToast("Order placed.");
+    // A single order goes straight to payment.
+    if (orders.length === 1 && orders[0].payable) await pay(orders[0].id);
   };
 
   if (placed) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-8">
         <h1 className="text-2xl font-black text-slate-900">Order placed</h1>
-        <p className="mt-3 text-sm text-slate-600">{placed.join(", ")} will confirm it. You will get a notification, and can pay once it is confirmed.</p>
+        <p className="mt-3 text-sm text-slate-600">{placed.suppliers.join(", ")} will confirm it. You will get a notification.</p>
+        {error && <p className="mx-auto mt-4 max-w-md rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {placed.payable.length > 0 && (
+          <div className="mx-auto mt-6 max-w-md space-y-2">
+            {placed.payable.map((order) => (
+              <button key={order.id} type="button" disabled={!!payingId} onClick={() => pay(order.id)} className="min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-60">
+                {payingId === order.id ? "Opening payment…" : `Pay ${formatPrice(order.total, order.currency)} to ${order.supplierName ?? "the supplier"}`}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/shop" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440]">
             Keep shopping
@@ -156,7 +182,7 @@ function Checkout() {
           </div>
           {error && <p className="mt-5 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
           <button type="button" disabled={!ready || busy} onClick={placeOrder} className="mt-6 min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-50">
-            {busy ? "Placing order…" : groups.size > 1 ? `Place ${groups.size} orders` : "Place order"}
+            {busy ? "Please wait…" : groups.size > 1 ? `Place ${groups.size} orders` : "Place order and pay"}
           </button>
           <Link href="/shop/cart" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">
             <span aria-hidden>←</span> Back to cart
