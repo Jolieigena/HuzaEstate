@@ -14,7 +14,7 @@ export default function ShopNav() {
     { href: "/shop", label: "Shop", count: 0, active: pathname === "/shop" || (/^\/shop\/[^/]+$/.test(pathname) && !["/shop/cart", "/shop/saved", "/shop/orders"].includes(pathname)) },
     { href: "/shop/saved", label: "Saved", count: saved.count, active: pathname === "/shop/saved" },
     { href: "/shop/orders", label: "My orders", count: 0, active: pathname === "/shop/orders" },
-    { href: "/shop/cart", label: "Cart", count: cart.count, active: pathname === "/shop/cart" },
+    { href: "/shop/cart", label: "Cart", count: cart.count, red: true, active: pathname === "/shop/cart" },
   ];
   return (
     <nav aria-label="Shop" className="border-b border-slate-100 bg-white">
@@ -27,7 +27,7 @@ export default function ShopNav() {
             className={`relative inline-flex shrink-0 items-center gap-2 px-4 py-3 text-sm font-bold transition-colors ${item.active ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
           >
             {item.label}
-            {item.count > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 text-[11px] text-white">{item.count}</span>}
+            {item.count > 0 && <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] text-white ${"red" in item ? "bg-red-600" : "bg-slate-900"}`}>{item.count}</span>}
           </Link>
         ))}
       </div>
