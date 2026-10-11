@@ -18,6 +18,18 @@ export interface SupplierProfile {
 
 export type SupplierProfileInput = { companyName: string; bio: string; categories: string[]; city: string; phone: string; logoUrl?: string };
 
+export type PayoutMethod = "mobile_money" | "bank";
+export const MOBILE_MONEY_PROVIDERS = ["MTN MoMo", "Airtel Money"];
+
+export interface Payout {
+  method: PayoutMethod;
+  provider?: string;
+  accountName: string;
+  phone?: string;
+  bankName?: string;
+  accountNumber?: string;
+}
+
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function call<T>(path: string, token: string, init: { method?: string; body?: unknown } = {}): Promise<Result<T>> {
@@ -45,5 +57,7 @@ async function call<T>(path: string, token: string, init: { method?: string; bod
 
 export const SuppliersApi = {
   getMine: (token: string) => call<{ profile: SupplierProfile | null }>("/suppliers/me", token),
+  getPayout: (token: string) => call<{ payout: Payout | null }>("/suppliers/me/payout", token),
+  savePayout: (token: string, input: Payout) => call<{ payout: Payout }>("/suppliers/me/payout", token, { method: "PUT", body: input }),
   saveMine: (token: string, input: SupplierProfileInput) => call<{ profile: SupplierProfile }>("/suppliers/me", token, { method: "PUT", body: input }),
 };

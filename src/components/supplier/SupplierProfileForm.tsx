@@ -1,11 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
+import { findCountry } from "@/lib/countries";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
 import { SUPPLIER_CATEGORIES, SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
+import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { Card, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "@/components/professional/ui";
+
+/** A number saved without its country code (like "0782345678") gets the one for the supplier's country, so it passes
+ *  the same check as a newly typed one. A number that cannot be read is left as it was. */
+function withCountryCode(value: string, country?: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.startsWith("+")) return trimmed;
+  const code = findCountry(country ?? "")?.code;
+  const parsed = code ? parsePhoneNumberFromString(trimmed, code as CountryCode) : undefined;
+  return parsed?.isValid() ? parsed.formatInternational() : trimmed;
+}
 
 /** A supplier's company profile. Saving it is what unlocks the rest of the portal. */
 export default function SupplierProfileForm() {
@@ -41,7 +54,7 @@ export default function SupplierProfileForm() {
         setCompanyName(p.companyName);
         setBio(p.bio);
         setCity(p.city ?? "");
-        setPhone(p.phone ?? "");
+        setPhone(withCountryCode(p.phone ?? "", p.country));
         setLogoUrl(p.logoUrl ?? "");
         setCategories(p.categories);
       }
@@ -73,11 +86,24 @@ export default function SupplierProfileForm() {
     }
   };
 
+  // The first thing still missing, in words, so Save never fails silently.
+  const problem = !companyName.trim()
+    ? "Enter your company name."
+    : !city.trim()
+      ? "Enter your city."
+      : !cleanPhone(phone)
+        ? "Enter your phone number."
+        : (phoneProblem(phone) ?? (categories.length === 0 ? "Choose at least one thing you sell." : ""));
+
   const save = async () => {
     if (!token) return;
+    if (problem) {
+      setError(problem);
+      return;
+    }
     setSaving(true);
     setError("");
-    const result = await SuppliersApi.saveMine(token, { companyName: companyName.trim(), bio: bio.trim(), city: city.trim(), phone: phone.trim(), categories, ...(logoUrl ? { logoUrl } : {}) });
+    const result = await SuppliersApi.saveMine(token, { companyName: companyName.trim(), bio: bio.trim(), city: city.trim(), phone: cleanPhone(phone), categories, ...(logoUrl ? { logoUrl } : {}) });
     setSaving(false);
     if (!result.ok) {
       setError(result.error);
@@ -131,7 +157,9 @@ export default function SupplierProfileForm() {
             </label>
             <label className="block text-sm font-bold text-slate-700">
               Phone
-              <input className={`${fieldClass} mt-1`} value={phone} maxLength={20} onChange={(e) => setPhone(e.target.value)} />
+              <div className="mt-1">
+                <PhoneInput value={phone} onChange={setPhone} required />
+              </div>
             </label>
           </div>
 
@@ -152,7 +180,7 @@ export default function SupplierProfileForm() {
             </div>
           </div>
 
-          <PrimaryButton type="button" disabled={saving || uploading || !companyName.trim() || !bio.trim() || !city.trim() || !phone.trim() || categories.length === 0} onClick={save}>
+          <PrimaryButton type="button" disabled={saving || uploading} onClick={save}>
             {saving ? "Saving…" : profile?.completedAt ? "Save changes" : "Save profile"}
           </PrimaryButton>
         </Card>
