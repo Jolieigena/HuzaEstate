@@ -119,6 +119,15 @@ export interface Order {
   updatedAt: string;
 }
 
+export interface OrdersTrackResult {
+  orders: Order[];
+  total: number;
+  page: number;
+  limit: number;
+  /** Money for orders that are still going ahead, per currency. */
+  summary: { currency: string; paidTotal: number; paidOrders: number; waitingTotal: number; waitingOrders: number }[];
+}
+
 export interface OrderInput {
   items: { productId: string; quantity: number }[];
   city: string;
@@ -174,6 +183,11 @@ export const FurnitureApi = {
 
   createOrder: (token: string, input: OrderInput) => call<{ orders: Order[] }>("/furniture/orders", { token, method: "POST", body: input }),
   myOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/mine", { token }),
+  trackOrders: (token: string, query: { supplierId?: string; status?: string; paymentStatus?: string; page?: number; limit?: number }) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
+    return call<OrdersTrackResult>(`/furniture/orders/track?${params.toString()}`, { token });
+  },
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),
   confirmOrder: (token: string, id: string, input: { message?: string; deliveryDays?: number }) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/confirm`, { token, method: "POST", body: input }),
   declineOrder: (token: string, id: string, message?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/decline`, { token, method: "POST", body: { message } }),

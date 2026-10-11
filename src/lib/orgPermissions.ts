@@ -2,11 +2,12 @@
 // (Overview has no permission, it's always visible). An organization_admin with an
 // empty/absent `permissions` array has full access; see hasOrgPermission below and
 // access-service's own copy of this rule (auth/service.ts).
-export type OrgPermission = "manage_properties" | "manage_professionals" | "manage_staff" | "manage_organisation" | "manage_users" | "view_inquiries" | "view_payments" | "manage_access_codes";
+export type OrgPermission = "manage_properties" | "manage_professionals" | "manage_suppliers" | "manage_staff" | "manage_organisation" | "manage_users" | "view_inquiries" | "view_payments" | "manage_access_codes";
 
 export const ORG_PERMISSIONS: { value: OrgPermission; label: string }[] = [
   { value: "manage_properties", label: "Properties" },
   { value: "manage_professionals", label: "Professionals" },
+  { value: "manage_suppliers", label: "Suppliers" },
   { value: "manage_staff", label: "Staff" },
   { value: "manage_organisation", label: "Organisation" },
   { value: "manage_users", label: "Users" },
