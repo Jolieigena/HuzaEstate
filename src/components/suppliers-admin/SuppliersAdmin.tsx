@@ -128,9 +128,11 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
                     <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === user.id} onClick={() => toggleStatus(user)}>
                       {user.status === "active" ? "Suspend" : "Restore"}
                     </SecondaryButton>
-                    <DestructiveButton className="min-h-9 px-3 py-1.5 text-xs" onClick={() => setDeleteTarget(user)}>
-                      Delete
-                    </DestructiveButton>
+                    {scope === "admin" && (
+                      <DestructiveButton className="min-h-9 px-3 py-1.5 text-xs" onClick={() => setDeleteTarget(user)}>
+                        Delete
+                      </DestructiveButton>
+                    )}
                   </div>
                 </td>
               </tr>
