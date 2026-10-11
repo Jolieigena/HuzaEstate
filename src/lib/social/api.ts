@@ -132,5 +132,6 @@ export const SocialApi = {
   createPosts: (token: string, input: { channel: string; propertyIds: string[]; text?: string }) =>
     call<{ queued: number; skipped: { propertyId: string; title?: string; reason: string }[] }>("/social/posts", token, { method: "POST", body: input }),
   retry: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/retry`, token, { method: "POST" }),
+  remove: (token: string, id: string) => call<{ post?: SocialPost; deleted?: boolean }>(`/social/posts/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
   skip: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/skip`, token, { method: "POST" }),
 };

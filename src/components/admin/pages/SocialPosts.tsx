@@ -136,14 +136,20 @@ export function SocialPostsPage() {
       countries: countryText.split(",").map((c) => c.trim()).filter(Boolean),
     });
 
-  const act = async (id: string, action: "retry" | "skip") => {
+  const act = async (id: string, action: "retry" | "skip" | "remove") => {
     if (!token) return;
     const result = await SocialApi[action](token, id);
     if (!result.ok) showToast(result.error, "error");
     else {
-      showToast(action === "retry" ? "Back in the queue." : "Skipped.");
+      showToast(action === "retry" ? "Back in the queue." : action === "skip" ? "Skipped." : "Deleted.");
       setReload((n) => n + 1);
     }
+  };
+
+  const remove = (post: SocialPostList["posts"][number]) => {
+    const live = post.status === "posted";
+    if (!window.confirm(live ? `Delete this post from ${channel?.label ?? "the network"}? It will disappear from the account.` : "Remove this from the list?")) return;
+    void act(post.id, "remove");
   };
 
   const settings = channel?.settings;
@@ -287,6 +293,9 @@ export function SocialPostsPage() {
                         Skip
                       </SecondaryButton>
                     )}
+                    <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm text-red-600" onClick={() => remove(post)}>
+                      {post.status === "posted" ? `Delete from ${channel?.label ?? "network"}` : "Remove"}
+                    </SecondaryButton>
                   </div>
                 </td>
               </tr>
