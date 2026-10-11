@@ -11,7 +11,7 @@ const PAGE_SIZE = 8;
 
 /** Roughly how a network counts a post: every link counts as 23, other characters as 1 (2 for emoji and
  *  most non-Latin text). The server makes the final check. */
-function weightedLength(text: string): number {
+export function weightedLength(text: string): number {
   let length = 0;
   const rest = text.replace(/https?:\/\/\S+/g, () => {
     length += 23;

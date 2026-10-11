@@ -132,6 +132,9 @@ export const SocialApi = {
   createPosts: (token: string, input: { channel: string; propertyIds: string[]; text?: string }) =>
     call<{ queued: number; skipped: { propertyId: string; title?: string; reason: string }[] }>("/social/posts", token, { method: "POST", body: input }),
   retry: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/retry`, token, { method: "POST" }),
+  update: (token: string, id: string, text: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}`, token, { method: "PUT", body: { text } }),
+  sendNow: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/send-now`, token, { method: "POST" }),
+  clear: (token: string, channel: string) => call<{ deleted: number }>("/social/posts/clear", token, { method: "POST", body: { channel } }),
   remove: (token: string, id: string) => call<{ post?: SocialPost; deleted?: boolean }>(`/social/posts/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
   skip: (token: string, id: string) => call<{ post: SocialPost }>(`/social/posts/${encodeURIComponent(id)}/skip`, token, { method: "POST" }),
 };

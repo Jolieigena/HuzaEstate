@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
-import { SOCIAL_STATUS_LABELS, SocialApi, type SocialChannel, type SocialPostList, type SocialPostStatus } from "@/lib/social/api";
+import { SOCIAL_STATUS_LABELS, SocialApi, type SocialChannel, type SocialPost, type SocialPostList, type SocialPostStatus } from "@/lib/social/api";
 import Select from "@/components/shared/Select";
 import SocialPostDialog from "./SocialPostDialog";
+import SocialEditDialog from "./SocialEditDialog";
 import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDateTime } from "../ui";
 
 const STATUS_STYLE: Record<SocialPostStatus, string> = {
@@ -60,6 +61,7 @@ export function SocialPostsPage() {
   const [limitText, setLimitText] = useState("");
   const [saving, setSaving] = useState(false);
   const [picking, setPicking] = useState(false);
+  const [editing, setEditing] = useState<SocialPost | null>(null);
 
   const [status, setStatus] = useState<SocialPostStatus | "">("");
   const [page, setPage] = useState(1);
@@ -136,12 +138,22 @@ export function SocialPostsPage() {
       countries: countryText.split(",").map((c) => c.trim()).filter(Boolean),
     });
 
-  const act = async (id: string, action: "retry" | "skip" | "remove") => {
+  const act = async (id: string, action: "retry" | "skip" | "remove" | "sendNow") => {
     if (!token) return;
     const result = await SocialApi[action](token, id);
     if (!result.ok) showToast(result.error, "error");
     else {
-      showToast(action === "retry" ? "Back in the queue." : action === "skip" ? "Skipped." : "Deleted.");
+      showToast(action === "retry" ? "Back in the queue." : action === "skip" ? "Skipped." : action === "sendNow" ? "Sending now." : "Deleted.");
+      setReload((n) => n + 1);
+    }
+  };
+
+  const clearList = async () => {
+    if (!token || !channel || !window.confirm("Clear rehearsals, skipped, failed and taken-down posts from this list? Live and queued posts are kept.")) return;
+    const result = await SocialApi.clear(token, channel.id);
+    if (!result.ok) showToast(result.error, "error");
+    else {
+      showToast(`${result.data.deleted} cleared.`);
       setReload((n) => n + 1);
     }
   };
@@ -238,6 +250,12 @@ export function SocialPostsPage() {
                 </span>
               ))}
           </div>
+          <div className="flex flex-wrap items-center gap-3">
+          {data && (data.summary.dry_run + data.summary.skipped + data.summary.failed + data.summary.withdrawn > 0) && (
+            <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={clearList}>
+              Clear rehearsals and old posts
+            </SecondaryButton>
+          )}
           <label className="text-sm font-bold text-slate-700">
             <span className="sr-only">Status</span>
             <Select
@@ -256,6 +274,7 @@ export function SocialPostsPage() {
               ))}
             </Select>
           </label>
+          </div>
         </div>
 
         {list?.error ? (
@@ -282,7 +301,20 @@ export function SocialPostsPage() {
                   {post.text ? <p className="max-w-md whitespace-pre-line text-xs leading-relaxed">{post.text}</p> : <span className="text-slate-400">Not written yet</span>}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={() => setEditing(post)}>
+                      Edit
+                    </SecondaryButton>
+                    {post.status === "pending" && (
+                      <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={() => act(post.id, "sendNow")}>
+                        Post now
+                      </SecondaryButton>
+                    )}
+                    {post.status === "posted" && post.externalId && channel?.id === "x" && (
+                      <a href={`https://x.com/i/web/status/${post.externalId}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:border-slate-300">
+                        View on X
+                      </a>
+                    )}
                     {post.status !== "posted" && post.status !== "pending" && (
                       <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={() => act(post.id, "retry")}>
                         Queue again
@@ -319,6 +351,7 @@ export function SocialPostsPage() {
           </div>
         )}
         {channel && <SocialPostDialog channel={channel} open={picking} onClose={() => setPicking(false)} onQueued={() => setReload((n) => n + 1)} />}
+        {channel && <SocialEditDialog post={editing} channel={channel} onClose={() => setEditing(null)} onSaved={() => setReload((n) => n + 1)} />}
       </PageFrame>
     </RequirePermission>
   );
