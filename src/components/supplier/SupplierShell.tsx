@@ -9,6 +9,7 @@ import NotificationBell from "@/components/shared/NotificationBell";
 import { useAuth } from "@/lib/auth-context";
 import { roleHome } from "@/lib/navigation";
 import { useDismiss } from "@/lib/useDismiss";
+import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 const NAV_ITEMS = [
   { href: "/supplier", label: "Requests", iconPath: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
@@ -24,7 +25,7 @@ const NAV_ITEMS = [
 export default function SupplierShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { account, isAuthReady, logout } = useAuth();
+  const { account, isAuthReady } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const isSupplier = account?.roles.includes("supplier") ?? false;
@@ -71,22 +72,8 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
                 </span>
               </button>
               {menuOpen && (
-                <div role="menu" className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
-                  <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">
-                    Return to main site
-                  </Link>
-                  <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900">
-                    Change password
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      logout();
-                    }}
-                    className="mt-1 w-full border-t border-slate-50 px-4 py-2 pt-3 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
-                  >
-                    Log out
-                  </button>
+                <div role="menu" className="absolute right-0 mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
+                  <AccountMenuPanel onNavigate={() => setMenuOpen(false)} />
                 </div>
               )}
             </div>

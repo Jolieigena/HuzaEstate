@@ -10,6 +10,7 @@ import { useMyProfilePhoto } from '@/lib/profilePhoto';
 import CountryFlagBadge from './CountryFlagBadge';
 import CartButton from './shop/CartButton';
 import { useDismiss } from "@/lib/useDismiss";
+import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 const NAV_LINKS = [
   { href: '/home', label: 'Home' },
@@ -28,10 +29,9 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useDismiss(profileOpen, () => setProfileOpen(false));
-  const { isLoggedIn, logout, account } = useAuth();
+  const { isLoggedIn, account } = useAuth();
   const photoUrl = useMyProfilePhoto();
   const pathname = usePathname();
-  const dashboardHref = account?.path || '/dashboard';
 
   return (
     <header className="w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200">
@@ -90,35 +90,8 @@ export default function Navbar() {
             </button>
             
             {profileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl transition-all duration-200 py-2">
-                <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                  <div className="text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate account"}</div>
-                  <div className="text-xs text-slate-500">{account?.email ?? ""}</div>
-                </div>
-                <Link href={dashboardHref} onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                  My Dashboard
-                </Link>
-                <Link href="/dashboard?tab=saved" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                  Saved Homes
-                </Link>
-                <Link href="/shop/orders" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                  My Orders
-                </Link>
-                <Link href="/studio/build" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                  Build Projects
-                </Link>
-                <Link href="/studio/renovate" onClick={() => setProfileOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                  Renovation Projects
-                </Link>
-                <button
-                  onClick={() => {
-                    setProfileOpen(false);
-                    logout();
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3"
-                >
-                  Log out
-                </button>
+              <div role="menu" className="absolute right-0 mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
+                <AccountMenuPanel onNavigate={() => setProfileOpen(false)} />
               </div>
             )}
           </div>
@@ -181,27 +154,19 @@ export default function Navbar() {
           >
             Post a property
           </Link>
-          <Link
-            href={dashboardHref}
-            onClick={() => setMenuOpen(false)}
-            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
-          >
-            My Dashboard
-          </Link>
-          <Link
-            href="/studio/build"
-            onClick={() => setMenuOpen(false)}
-            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
-          >
-            Build Projects
-          </Link>
-          <Link
-            href="/studio/renovate"
-            onClick={() => setMenuOpen(false)}
-            className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
-          >
-            Renovation Projects
-          </Link>
+          {isLoggedIn ? (
+            <div className="mt-3 rounded-2xl border border-slate-100 py-2">
+              <AccountMenuPanel onNavigate={() => setMenuOpen(false)} />
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              onClick={() => setMenuOpen(false)}
+              className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
+            >
+              Get Started
+            </Link>
+          )}
         </div>
       )}
     </header>

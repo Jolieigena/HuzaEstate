@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
 import NotificationBell from "@/components/shared/NotificationBell";
 import { useDismiss } from "@/lib/useDismiss";
+import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 interface ManagerHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -18,7 +19,7 @@ interface ManagerHeaderProps {
 export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
-  const { logout, account } = useAuth();
+  const { account } = useAuth();
   const photoUrl = useMyProfilePhoto();
 
   return (
@@ -68,29 +69,8 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
           </button>
 
           {menuOpen && (
-            <div role="menu" className="absolute right-0 mt-2 w-56 bg-white border border-slate-100 rounded-2xl shadow-xl py-2">
-              <div className="px-4 py-2 border-b border-slate-50 mb-1">
-                <div className="text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate manager"}</div>
-                <div className="text-xs text-slate-500">{account?.email ?? ""}</div>
-              </div>
-              <Link href="/properties" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Browse Properties
-              </Link>
-              <Link href="/" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Return to main site
-              </Link>
-              <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Change password
-              </Link>
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  logout();
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3"
-              >
-                Log out
-              </button>
+            <div role="menu" className="absolute right-0 mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
+              <AccountMenuPanel onNavigate={() => setMenuOpen(false)} />
             </div>
           )}
         </div>

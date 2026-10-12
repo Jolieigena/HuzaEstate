@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
 import NotificationBell from "@/components/shared/NotificationBell";
 import { useDismiss } from "@/lib/useDismiss";
+import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 interface AppHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -31,7 +32,7 @@ const ROLE_LABELS: Record<string, string> = {
 export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
-  const { logout, account, activeRole } = useAuth();
+  const { account, activeRole } = useAuth();
   const photoUrl = useMyProfilePhoto();
 
   return (
@@ -77,39 +78,8 @@ export default function AppHeader({ onOpenMobileSidebar }: AppHeaderProps) {
         </button>
 
         {menuOpen && (
-          <div role="menu" className="absolute right-0 mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl py-2">
-            <div className="px-4 py-2 border-b border-slate-50 mb-1">
-              <div className="text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate account"}</div>
-              <div className="text-xs text-slate-500">{account?.email ?? ""}</div>
-            </div>
-            <Link href="/properties" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              Browse Properties
-            </Link>
-            {account?.roles.includes("customer") && (
-              <Link href="/dashboard/settings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Settings
-              </Link>
-            )}
-            <Link href="/design-requests" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              My design requests
-            </Link>
-            {account?.roles.includes("professional") && (
-              <Link href="/professional" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                Professional Portal
-              </Link>
-            )}
-            <Link href="/change-password" onClick={() => setMenuOpen(false)} className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-              Change password
-            </Link>
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                logout();
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-semibold transition-colors mt-1 border-t border-slate-50 pt-3"
-            >
-              Log out
-            </button>
+          <div role="menu" className="absolute right-0 mt-2 max-h-[80vh] w-60 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-2 shadow-xl">
+            <AccountMenuPanel onNavigate={() => setMenuOpen(false)} />
           </div>
         )}
         </div>
