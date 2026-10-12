@@ -1,14 +1,18 @@
 import type { PlanTier } from "@/lib/postingPlans/types";
-import { PLAN_EXPIRY_DAYS, PLAN_LABELS, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
+import { PER_POST_PRICE, PLAN_EXPIRY_DAYS, PLAN_LABELS, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
 import { formatMoney } from "@/lib/finance/money";
 
 const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
 
+// Out of posts for the month? One more listing costs this much, once, with no plan change. Read from the same price the
+// checkout charges, so the cards can never say something different.
+const EXTRA_POST = `Out of posts? Add one for ${formatMoney(PER_POST_PRICE)}, no subscription needed`;
+
 const FEATURES: Record<PlanTier, string[]> = {
-  free: ["2 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.free} days`, "Standard listing placement", "Pay-per-post available anytime"],
-  silver: ["3 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.silver} days`, "Standard listing placement", "Pay-per-post available anytime"],
-  gold: ["10 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.gold} days`, "Priority listing placement", "Market Insights access", "Pay-per-post available anytime"],
-  diamond: ["Unlimited listing posts", `Listings stay live ${PLAN_EXPIRY_DAYS.diamond} days`, "Priority listing placement", "Market Insights access", "No pay-per-post needed"],
+  free: ["2 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.free} days`, "Standard listing placement", EXTRA_POST],
+  silver: ["3 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.silver} days`, "Standard listing placement", EXTRA_POST],
+  gold: ["10 listing posts / month", `Listings stay live ${PLAN_EXPIRY_DAYS.gold} days`, "Priority placement: shown above standard listings", "Market Insights access", EXTRA_POST],
+  diamond: ["Unlimited listing posts", `Listings stay live ${PLAN_EXPIRY_DAYS.diamond} days`, "Priority placement: shown above standard listings", "Market Insights access", "No extra posts needed"],
 };
 
 const RECOMMENDED: PlanTier = "gold";
