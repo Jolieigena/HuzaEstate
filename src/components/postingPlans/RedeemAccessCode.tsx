@@ -19,11 +19,11 @@ const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py
 /** "Have an access code?": a seller types the code they were emailed and applies it. It gives time-limited
  *  access to a paid plan without paying, and works for brand-new sellers (it also makes them one) and for
  *  existing sellers upgrading. Used wherever a plan is chosen. */
-export default function RedeemAccessCode({ onRedeemed, defaultOpen = false }: { onRedeemed?: (result: RedeemedAccess) => void; defaultOpen?: boolean }) {
+export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, initialCode = "" }: { onRedeemed?: (result: RedeemedAccess) => void; defaultOpen?: boolean; initialCode?: string }) {
   const { token } = useAuth();
   const inputId = useId();
   const [open, setOpen] = useState(defaultOpen);
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(tidy(initialCode));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<RedeemedAccess | null>(null);
