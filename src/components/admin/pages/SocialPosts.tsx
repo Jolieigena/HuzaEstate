@@ -217,7 +217,7 @@ export function SocialPostsPage() {
                 />
                 {!channel.credentialsConfigured && <p className="text-sm font-semibold text-amber-700">{channel.label} keys are not set on the server.</p>}
                 <SwitchRow title="Delete the post when a listing is taken down" checked={settings.deleteOnTakedown} onChange={(deleteOnTakedown) => save({ deleteOnTakedown })} />
-                <SwitchRow title="Add place hashtags" checked={settings.placeHashtags} onChange={(placeHashtags) => save({ placeHashtags })} />
+                <SwitchRow title="Add city and real estate hashtags" checked={settings.placeHashtags} onChange={(placeHashtags) => save({ placeHashtags })} />
               </div>
 
               <div className="space-y-5">
