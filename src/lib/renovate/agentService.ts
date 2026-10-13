@@ -4,6 +4,7 @@ import {
   ExistingSpaceAnalysis,
   ExtractedRequirement,
   RenovationAssessment,
+  RenovationProject,
   RENOVATION_AREA_LABELS,
   RenovationAreaKey,
   RENOVATION_STYLE_LABELS,
@@ -196,6 +197,13 @@ export const RenovationAgentService = {
         "Tell me what you'd like to renovate. I can help organise the areas, what to keep, remove or change, your style direction and budget before creating renovation concepts.",
       timestamp: new Date().toISOString(),
     };
+  },
+
+  /** What goes to Huza AI as the first message when a project's chat opens: the description the person typed when they
+   *  created the project in the Huza AI mode, sent once. Empty when there is nothing to send. */
+  openingBrief(project: Pick<RenovationProject, "creationMode" | "description" | "agentConversation">): string {
+    if (project.creationMode !== "ai" || project.agentConversation.briefSent) return "";
+    return (project.description ?? "").trim();
   },
 
   suggestedPrompts(): string[] {

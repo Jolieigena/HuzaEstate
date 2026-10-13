@@ -290,7 +290,12 @@ export const RenovationProjectService = {
   },
 
   clearAgentConversation(id: string): RenovationProject | undefined {
-    return mutate(id, (p) => ({ ...p, agentConversation: { messages: [], extractedRequirements: p.agentConversation.extractedRequirements } }));
+    return mutate(id, (p) => ({ ...p, agentConversation: { messages: [], extractedRequirements: p.agentConversation.extractedRequirements, briefSent: p.agentConversation.briefSent } }));
+  },
+
+  /** Remembers that the description typed at creation has gone to Huza AI, so it is not sent again. */
+  markBriefSent(id: string): RenovationProject | undefined {
+    return mutate(id, (p) => ({ ...p, agentConversation: { ...p.agentConversation, briefSent: true } }));
   },
 
   // ---- Manual design ----

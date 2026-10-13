@@ -500,6 +500,8 @@ export interface AgentMessage {
 export interface AgentConversation {
   messages: AgentMessage[];
   extractedRequirements: ExtractedRequirement[];
+  /** True once the description typed when the project was created has been sent to Huza AI as the first message. */
+  briefSent?: boolean;
 }
 
 export interface ExistingSpaceAnalysis {

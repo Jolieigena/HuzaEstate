@@ -135,13 +135,6 @@ export default function AgentPanel({ project }: { project: RenovationProject }) 
   const initialised = useRef(false);
 
   useEffect(() => {
-    if (!initialised.current && project.agentConversation.messages.length === 0) {
-      initialised.current = true;
-      RenovationProjectService.appendAgentMessages(project.id, [RenovationAgentService.welcomeMessage()]);
-    }
-  }, [project.id, project.agentConversation.messages.length]);
-
-  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [project.agentConversation.messages.length, sending]);
 
@@ -177,6 +170,22 @@ export default function AgentPanel({ project }: { project: RenovationProject }) 
       abortRef.current = null;
     }
   };
+
+  // The first time the chat opens it greets the person. If they described the renovation when creating the project
+  // in the Huza AI mode, that description goes in as their first message, so Huza AI starts from what they wrote.
+  useEffect(() => {
+    if (initialised.current || project.agentConversation.messages.length > 0) return;
+    initialised.current = true;
+    RenovationProjectService.appendAgentMessages(project.id, [RenovationAgentService.welcomeMessage()]);
+    const brief = RenovationAgentService.openingBrief(project);
+    if (brief) {
+      RenovationProjectService.markBriefSent(project.id);
+      // Sent on the next tick, not inside the effect itself, and left running if this effect re-runs meanwhile.
+      window.setTimeout(() => void send(brief), 0);
+    }
+    // Runs once, when the conversation is first empty; send and project are read as they are at that moment.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, project.agentConversation.messages.length]);
 
   const stop = () => abortRef.current?.abort();
   const regenerate = () => {

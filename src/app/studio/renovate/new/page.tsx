@@ -234,14 +234,15 @@ function NewProjectContent() {
             {error && <p className="text-red-600 text-sm font-semibold mb-3">{error}</p>}
 
             <label htmlFor="project-description" className="block text-sm font-bold text-slate-700 mb-2 mt-4">
-              Description <span className="text-slate-400 font-medium">(optional)</span>
+              {selected.mode === "ai" ? "What do you want to renovate?" : "Description"} <span className="text-slate-400 font-medium">(optional)</span>
             </label>
             <textarea
               id="project-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="A short note to help you recognise this project later."
+              rows={selected.mode === "ai" ? 5 : 3}
+              maxLength={1000}
+              placeholder={selected.mode === "ai" ? "e.g. Open up the kitchen, add more natural light and keep the wooden floor. Budget around RWF 8 million." : "A short note to help you recognise this project later."}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
             />
 
