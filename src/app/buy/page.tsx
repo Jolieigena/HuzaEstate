@@ -4,11 +4,11 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import PublicPropertyGrid from '@/components/PublicPropertyGrid';
-import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import { sortPromotedFirst } from '@/lib/promotion/types';
 
 export default function BuyPage() {
-  const allProperties = useAllProperties();
+  const { properties: allProperties, loaded, failed } = useAllPropertiesState();
   const forSale = sortPromotedFirst(allProperties.filter(property => property.type === 'sale'));
 
   return (
@@ -114,7 +114,7 @@ export default function BuyPage() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </Link>
         </div>
-        <PublicPropertyGrid properties={forSale} limit={3} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
+        <PublicPropertyGrid properties={forSale} limit={3} loading={!loaded && !failed} failed={failed} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8" />
       </section>
 
       {/* Professionals Cross-Sell */}

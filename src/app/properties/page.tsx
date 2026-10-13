@@ -4,8 +4,9 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
+import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import AISearchCard from '@/components/AISearchCard';
-import { useAllProperties } from '@/lib/sellerListings/hooks';
+import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
@@ -273,7 +274,7 @@ function PropertiesContent() {
     setKeywordsInput(next.join(', '));
   }
 
-  const visibleProperties = useAllProperties();
+  const { properties: visibleProperties, loaded: listingsLoaded, failed: listingsFailed } = useAllPropertiesState();
 
   const filteredProperties = visibleProperties.filter((p) => {
     const propCountryName = getPropertyCountry(p).name;
@@ -702,7 +703,7 @@ function PropertiesContent() {
               {heading}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
-              {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}
+              {listingsLoaded ? `${filteredProperties.length} ${filteredProperties.length === 1 ? 'result' : 'results'}` : listingsFailed ? '' : 'Loading…'}
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
           </div>
@@ -778,7 +779,18 @@ function PropertiesContent() {
 
       {/* ── Property grid ─────────────────────────────────────────────────── */}
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-1 pb-12">
-        {filteredProperties.length > 0 ? (
+        {!listingsLoaded ? (
+          listingsFailed ? (
+            <div className="text-center py-24 bg-white rounded-3xl border border-slate-200 mt-4 max-w-2xl mx-auto shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">We could not load the listings</h3>
+              <button type="button" onClick={notifyPropertiesChanged} className="mt-2 bg-[#2ec440] hover:bg-[#28b039] text-white font-bold py-2.5 px-6 rounded-full transition-colors shadow-sm">
+                Try again
+              </button>
+            </div>
+          ) : (
+            <PropertyGridSkeleton className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
+          )
+        ) : filteredProperties.length > 0 ? (
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {filteredProperties.map((property) => (
               <PropertyCard key={property.id} property={property} />
@@ -843,7 +855,13 @@ function PropertiesContent() {
 
 export default function PropertiesPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-12">
+          <PropertyGridSkeleton className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
+        </div>
+      }
+    >
       <PropertiesContent />
     </Suspense>
   );

@@ -7,11 +7,15 @@ import Select from "@/components/shared/Select";
 
 export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
+  const [profilesLoaded, setProfilesLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     fetchProfessionalsDirectory().then((profiles) => {
-      if (!cancelled) setAllProfiles(profiles);
+      if (!cancelled) {
+        setAllProfiles(profiles);
+        setProfilesLoaded(true);
+      }
     });
     return () => { cancelled = true; };
   }, []);
@@ -139,12 +143,18 @@ export default function ProfessionalsDirectoryPage() {
         {/* Results Info */}
         <div className="mb-5">
           <h2 className="text-lg font-bold text-slate-900">
-            {filteredProfiles.length} {filteredProfiles.length === 1 ? 'professional' : 'professionals'}
+            {profilesLoaded ? `${filteredProfiles.length} ${filteredProfiles.length === 1 ? 'professional' : 'professionals'}` : 'Loading…'}
           </h2>
         </div>
 
         {/* Grid */}
-        {filteredProfiles.length === 0 ? (
+        {!profilesLoaded ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="status" aria-label="Loading professionals">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="h-64 animate-pulse rounded-3xl border border-slate-100 bg-slate-50" aria-hidden="true" />
+            ))}
+          </div>
+        ) : filteredProfiles.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 shadow-sm">
             <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <h3 className="text-lg font-bold text-slate-900 mb-2">No professionals found</h3>

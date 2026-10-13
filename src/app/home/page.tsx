@@ -5,7 +5,7 @@ import SearchBar from "@/components/SearchBar";
 import Reveal from "@/components/Reveal";
 import { ProcessVideoCard } from "@/components/ProcessVideo";
 import { buildVideos, renovateVideos } from "@/lib/videos";
-import { useAllProperties } from "@/lib/sellerListings/hooks";
+import { useAllPropertiesState } from "@/lib/sellerListings/hooks";
 import { sortPromotedFirst } from "@/lib/promotion/types";
 import Link from "next/link";
 import Image from "next/image";
@@ -35,7 +35,8 @@ const QUICK_ACTIONS = [
 ];
 
 export default function Home() {
-  const allProperties = sortPromotedFirst(useAllProperties());
+  const { properties: loadedProperties, loaded, failed } = useAllPropertiesState();
+  const allProperties = sortPromotedFirst(loadedProperties);
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -134,6 +135,8 @@ export default function Home() {
           <PublicPropertyGrid
             properties={allProperties}
             limit={6}
+            loading={!loaded && !failed}
+            failed={failed}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
             revealAnimation
             showFeaturedBadge
