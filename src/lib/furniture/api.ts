@@ -13,6 +13,14 @@ export interface ProductSupplier {
   logoUrl?: string;
   city?: string;
   country?: string;
+  /** What delivery costs: a flat fee per order, free above an order value. A fee of 0 means free delivery. */
+  delivery?: SupplierDelivery;
+}
+
+export interface SupplierDelivery {
+  fee: number;
+  currency?: string;
+  freeOver?: number;
 }
 
 export interface Product {
@@ -24,6 +32,9 @@ export interface Product {
   price: number;
   currency: string;
   stock: StockStatus;
+  /** How many are left, when the supplier counts them. */
+  quantity?: number;
+  lowStockAt?: number;
   leadTimeDays?: number;
   status: "draft" | "published";
   supplier?: ProductSupplier;
@@ -38,6 +49,9 @@ export interface ProductInput {
   price: number;
   currency: string;
   stock: StockStatus;
+  /** Leave out when the supplier does not count stock. */
+  quantity?: number;
+  lowStockAt?: number;
   leadTimeDays?: number;
   status: "draft" | "published";
 }
@@ -74,8 +88,14 @@ export interface ProductFacets {
   total: number;
 }
 
-export type OrderStatus = "requested" | "confirmed" | "declined" | "completed" | "cancelled";
-export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { requested: "Waiting for the supplier", confirmed: "Confirmed", declined: "Declined", completed: "Delivered", cancelled: "Cancelled" };
+export type OrderStatus = "requested" | "confirmed" | "shipped" | "declined" | "completed" | "cancelled";
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { requested: "Waiting for the supplier", confirmed: "Confirmed", shipped: "On its way", declined: "Declined", completed: "Delivered", cancelled: "Cancelled" };
+
+export interface OrderMessage {
+  from: "client" | "supplier";
+  text: string;
+  at: string;
+}
 
 export type PaymentStatus = "unpaid" | "pending" | "paid" | "refunded";
 
@@ -106,8 +126,17 @@ export interface Order {
   note: string;
   items: OrderItem[];
   currency: string;
+  /** The items, the supplier's delivery fee, and the total the client pays. */
+  subtotal: number;
+  deliveryFee: number;
   total: number;
   status: OrderStatus;
+  confirmedAt?: string;
+  shippedAt?: string;
+  completedAt?: string;
+  /** Who is bringing the order and how to reach them, written by the supplier when it is sent out. */
+  trackingNote?: string;
+  messages: OrderMessage[];
   reply: string;
   deliveryDays?: number;
   paymentStatus: PaymentStatus;
@@ -191,6 +220,18 @@ export interface PayoutSummary {
   refundsPending: { id: string; supplierId: string; supplierName: string; clientName: string; currency: string; total: number; error?: string; updatedAt: string }[];
 }
 
+/** What a basket costs for one supplier, with their delivery fee. */
+export interface OrderQuote {
+  supplierId: string;
+  supplierName: string;
+  currency: string;
+  subtotal: number;
+  deliveryFee: number;
+  /** Orders above this value are delivered free. */
+  freeOver?: number;
+  total: number;
+}
+
 export interface OrderInput {
   items: { productId: string; quantity: number }[];
   city: string;
@@ -260,6 +301,9 @@ export const FurnitureApi = {
   },
   createPayout: (token: string, input: { supplierId: string; currency: string; reference: string; note?: string; orderIds?: string[] }) => call<{ payout: Payout }>("/furniture/payouts", { token, method: "POST", body: input }),
   retryRefund: (token: string, orderId: string) => call<{ refunded: boolean; paymentStatus: PaymentStatus; error?: string }>(`/furniture/orders/${encodeURIComponent(orderId)}/retry-refund`, { token, method: "POST" }),
+  quoteOrder: (token: string, items: { productId: string; quantity: number }[]) => call<{ groups: OrderQuote[] }>("/furniture/orders/quote", { token, method: "POST", body: { items } }),
+  shipOrder: (token: string, id: string, trackingNote?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/ship`, { token, method: "POST", body: { trackingNote } }),
+  postMessage: (token: string, id: string, text: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/messages`, { token, method: "POST", body: { text } }),
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),
   confirmOrder: (token: string, id: string, input: { message?: string; deliveryDays?: number }) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/confirm`, { token, method: "POST", body: input }),
   declineOrder: (token: string, id: string, message?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/decline`, { token, method: "POST", body: { message } }),

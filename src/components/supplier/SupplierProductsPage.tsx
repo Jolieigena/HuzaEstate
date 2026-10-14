@@ -92,6 +92,11 @@ export default function SupplierProductsPage() {
                 <p className="mt-1 text-sm font-semibold text-slate-700">
                   {formatPrice(product.price, product.currency)} <span className="font-normal text-slate-400">· {STOCK_LABELS[product.stock]}</span>
                 </p>
+                {product.quantity !== undefined && (
+                  <p className={`mt-1 text-xs font-bold ${product.quantity === 0 ? "text-red-600" : product.quantity <= (product.lowStockAt ?? 3) ? "text-amber-600" : "text-slate-500"}`}>
+                    {product.quantity === 0 ? "Sold out" : product.quantity <= (product.lowStockAt ?? 3) ? `Running low: ${product.quantity} left` : `${product.quantity} in stock`}
+                  </p>
+                )}
                 <div className="mt-auto flex flex-wrap gap-2 pt-4">
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setEditing(product)}>
                     Edit
@@ -122,7 +127,7 @@ export default function SupplierProductsPage() {
 }
 
 function toInput(product: Product): ProductInput {
-  return { name: product.name, description: product.description, category: product.category, images: product.images, price: product.price, currency: product.currency, stock: product.stock, leadTimeDays: product.leadTimeDays, status: product.status };
+  return { name: product.name, description: product.description, category: product.category, images: product.images, price: product.price, currency: product.currency, stock: product.stock, leadTimeDays: product.leadTimeDays, quantity: product.quantity, lowStockAt: product.lowStockAt, status: product.status };
 }
 
 function ProductDialog({ editing, onClose, onSaved }: { editing: Product | "new" | null; onClose: () => void; onSaved: () => void }) {
@@ -146,6 +151,8 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   const { currency, setCurrency } = useCurrencyChoice(product?.currency ?? "");
   const [stock, setStock] = useState<StockStatus>(product?.stock ?? "in_stock");
   const [leadTime, setLeadTime] = useState(product?.leadTimeDays !== undefined ? String(product.leadTimeDays) : "14");
+  const [quantityText, setQuantityText] = useState(product?.quantity !== undefined ? String(product.quantity) : "");
+  const [lowText, setLowText] = useState(product?.lowStockAt !== undefined ? String(product.lowStockAt) : "3");
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -172,7 +179,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
     if (!token) return;
     setBusy(true);
     setError("");
-    const input: ProductInput = { name: name.trim(), description: description.trim(), category, images, price: Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), status };
+    const input: ProductInput = { name: name.trim(), description: description.trim(), category, images, price: Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), ...(stock === "in_stock" && quantityText.trim() !== "" ? { quantity: Number(quantityText), lowStockAt: Number(lowText || "3") } : {}), status };
     const result = product ? await FurnitureApi.update(token, product.id, input) : await FurnitureApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -262,7 +269,19 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
                       <DaysSelect className={`${fieldClass} mt-1`} ariaLabel="Ready in" value={leadTime} onChange={setLeadTime} options={MAKING_TIMES} />
                     </label>
                   )}
+                  {stock === "in_stock" && (
+                    <label className="block text-sm font-bold text-slate-700">
+                      How many in stock <span className="font-normal text-slate-400">(optional)</span>
+                      <input className={`${fieldClass} mt-1`} inputMode="numeric" value={quantityText} maxLength={6} onChange={(e) => setQuantityText(e.target.value.replace(/\D/g, ""))} />
+                    </label>
+                  )}
                 </div>
+                {stock === "in_stock" && quantityText.trim() !== "" && (
+                  <label className="block text-sm font-bold text-slate-700 sm:max-w-xs">
+                    Warn me when this many are left
+                    <input className={`${fieldClass} mt-1`} inputMode="numeric" value={lowText} maxLength={4} onChange={(e) => setLowText(e.target.value.replace(/\D/g, ""))} />
+                  </label>
+                )}
                 <label className="block text-sm font-bold text-slate-700">
                   Description <span className="font-normal text-slate-400">(optional)</span>
                   <textarea className={`${fieldClass} mt-1 min-h-24 resize-y font-normal`} maxLength={2000} value={description} onChange={(e) => setDescription(e.target.value)} />

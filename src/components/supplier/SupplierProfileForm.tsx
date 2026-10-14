@@ -8,6 +8,7 @@ import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
 import { SUPPLIER_CATEGORIES, SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
+import DeliverySettings from "@/components/supplier/DeliverySettings";
 import { Card, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "@/components/professional/ui";
 
 /** A number saved without its country code (like "0782345678") gets the one for the supplier's country, so it passes
@@ -185,6 +186,7 @@ export default function SupplierProfileForm() {
           </PrimaryButton>
         </Card>
       )}
+      {loaded && profile?.completedAt && <DeliverySettings />}
     </PageFrame>
   );
 }

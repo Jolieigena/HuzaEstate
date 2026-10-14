@@ -7,6 +7,7 @@ import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneI
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
+import { useQuote } from "@/lib/furniture/useQuote";
 import { FurnitureApi, formatPrice, type Order } from "@/lib/furniture/api";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
@@ -42,8 +43,11 @@ function Checkout() {
     group.lines.push(line);
     groups.set(key, group);
   }
+  const { quote, problem } = useQuote(cart.lines, token);
   const totals = new Map<string, number>();
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
+  const feeOf = (supplierName: string, currency: string) => quote?.find((g) => g.supplierName === supplierName && g.currency === currency);
+  if (quote) for (const g of quote) totals.set(g.currency, (totals.get(g.currency) ?? 0) + g.deliveryFee);
 
   // Delivery details are asked in order: where, then who to call. Each appears once the one before it is filled.
   const showMore = city.trim().length > 1;
@@ -180,8 +184,8 @@ function Checkout() {
               </label>
             )}
           </div>
-          {error && <p className="mt-5 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
-          <button type="button" disabled={!ready || busy} onClick={placeOrder} className="mt-6 min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-50">
+          {(problem || error) && <p className="mt-5 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{problem || error}</p>}
+          <button type="button" disabled={!ready || busy || !!problem} onClick={placeOrder} className="mt-6 min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-50">
             {busy ? "Please wait…" : groups.size > 1 ? `Place ${groups.size} orders` : "Place order and pay"}
           </button>
           <Link href="/shop/cart" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">
@@ -206,6 +210,12 @@ function Checkout() {
                     </li>
                   ))}
                 </ul>
+                {feeOf(group.supplierName, group.currency) && (
+                  <p className="mt-1 flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-sm">
+                    <span className="text-slate-300">Delivery</span>
+                    <span className="font-bold">{(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0) > 0 ? formatPrice(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0, group.currency) : "Free"}</span>
+                  </p>
+                )}
               </div>
             ))}
           </div>

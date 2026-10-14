@@ -1,5 +1,5 @@
-import SupplierQuotesPage from "@/components/supplier/SupplierQuotesPage";
+import SupplierDashboard from "@/components/supplier/SupplierDashboard";
 
 export default function Page() {
-  return <SupplierQuotesPage filter="open" />;
+  return <SupplierDashboard />;
 }

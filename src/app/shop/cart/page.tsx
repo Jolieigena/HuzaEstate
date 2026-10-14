@@ -6,9 +6,10 @@ import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { formatPrice } from "@/lib/furniture/api";
+import { useQuote } from "@/lib/furniture/useQuote";
 
 export default function CartPage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, token } = useAuth();
   const { showToast } = useToast();
   const cart = useBasket();
   const saved = useSaved();
@@ -20,8 +21,12 @@ export default function CartPage() {
     group.lines.push(line);
     groups.set(key, group);
   }
+  const { quote, problem } = useQuote(cart.lines, token);
   const totals = new Map<string, number>();
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
+  // With the delivery fees, once the server has priced the basket.
+  const deliveryRows = (quote ?? []).filter((g) => g.deliveryFee > 0 || g.freeOver !== undefined);
+  if (quote) for (const g of quote) totals.set(g.currency, (totals.get(g.currency) ?? 0) + g.deliveryFee);
 
   if (cart.lines.length === 0) {
     return (
@@ -121,6 +126,12 @@ export default function CartPage() {
               <dt className="text-slate-500">Items</dt>
               <dd className="font-bold text-slate-900">{cart.count}</dd>
             </div>
+            {deliveryRows.map((g) => (
+              <div key={`${g.supplierId}|${g.currency}`} className="flex justify-between gap-3">
+                <dt className="min-w-0 truncate text-slate-500">Delivery · {g.supplierName}</dt>
+                <dd className="shrink-0 font-bold text-slate-900">{g.deliveryFee > 0 ? formatPrice(g.deliveryFee, g.currency) : "Free"}</dd>
+              </div>
+            ))}
             {Array.from(totals, ([currency, total]) => (
               <div key={currency} className="flex justify-between border-t border-slate-100 pt-2">
                 <dt className="font-bold text-slate-900">Total</dt>
@@ -128,6 +139,7 @@ export default function CartPage() {
               </div>
             ))}
           </dl>
+          {problem && <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">{problem}</p>}
 
           <Link href={isLoggedIn ? "/shop/checkout" : `/login?redirect=${encodeURIComponent("/shop/checkout")}`} className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             {isLoggedIn ? "Checkout" : "Sign in to check out"}

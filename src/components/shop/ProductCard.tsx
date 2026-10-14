@@ -60,6 +60,7 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="min-w-0">
           <p className="font-bold text-slate-900">{formatPrice(product.price, product.currency)}</p>
           {product.supplier && <p className="truncate text-xs text-slate-400">{product.supplier.companyName}</p>}
+          {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 && <p className="text-xs font-bold text-amber-600">Only {product.quantity} left</p>}
         </div>
         <button
           type="button"

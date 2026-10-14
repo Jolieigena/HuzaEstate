@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { OrderConversation, OrderTimeline } from "@/components/shop/OrderExtras";
 import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order, type OrderStatus } from "@/lib/furniture/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
@@ -16,6 +17,7 @@ function date(value: string) {
 const ORDER_STYLE: Record<OrderStatus, string> = {
   requested: "bg-sky-50 text-sky-700",
   confirmed: "bg-amber-50 text-amber-700",
+  shipped: "bg-violet-50 text-violet-700",
   completed: "bg-[#2ec440]/10 text-[#219b31]",
   declined: "bg-red-50 text-red-700",
   cancelled: "bg-slate-100 text-slate-500",
@@ -106,10 +108,12 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
               <h2 className="font-black text-slate-900">{order.supplierName ?? "Supplier"}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {formatPrice(order.total, order.currency)} · {date(order.createdAt)}
+                {order.deliveryFee > 0 && <span className="text-slate-400"> · includes {formatPrice(order.deliveryFee, order.currency)} delivery</span>}
               </p>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${ORDER_STYLE[order.status]}`}>{ORDER_STATUS_LABELS[order.status]}</span>
           </div>
+          <OrderTimeline order={order} />
           <ul className="mt-3 divide-y divide-slate-100">
             {order.items.map((item) => (
               <li key={item.productId} className="flex items-center gap-3 py-2">
@@ -127,6 +131,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
           <p className="mt-3 text-sm text-slate-500">Deliver to {[order.address, order.city].filter(Boolean).join(", ")}</p>
           {order.reply && <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{order.reply}</p>}
           {order.status === "confirmed" && order.deliveryDays !== undefined && <p className="mt-2 text-sm font-semibold text-slate-700">Delivery in about {order.deliveryDays} days</p>}
+          {order.status === "shipped" && order.trackingNote && <p className="mt-2 rounded-xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{order.trackingNote}</p>}
           {order.paymentStatus === "paid" && !order.refundPending && (
             <p className="mt-3 inline-flex rounded-full bg-[#2ec440]/10 px-3 py-1 text-xs font-bold text-[#219b31]">Paid{order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}</p>
           )}
@@ -151,6 +156,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
               )}
             </div>
           )}
+          {order.status !== "declined" && order.status !== "cancelled" && <OrderConversation order={order} viewer="client" onSent={onChanged} />}
         </section>
       ))}
     </div>

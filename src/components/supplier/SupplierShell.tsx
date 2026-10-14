@@ -12,7 +12,8 @@ import { useDismiss } from "@/lib/useDismiss";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 const NAV_ITEMS = [
-  { href: "/supplier", label: "Requests", iconPath: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
+  { href: "/supplier", label: "Overview", iconPath: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
+  { href: "/supplier/requests", label: "Requests", iconPath: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" },
   { href: "/supplier/products", label: "Products", iconPath: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
   { href: "/supplier/orders", label: "Orders", iconPath: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" },
   { href: "/supplier/payments", label: "Payments", iconPath: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" },
@@ -50,7 +51,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
   return (
     <RequireAuth>
       <div className="min-h-full bg-slate-50">
-        <header className="sticky top-0 z-40 flex w-full items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-4 backdrop-blur-sm sm:px-10">
+        <header className="sticky top-0 z-40 flex w-full print:hidden items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-4 backdrop-blur-sm sm:px-10">
           <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
             <Logo className="h-8 w-auto" />
             <span className="hidden rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white sm:inline">Supplier</span>
@@ -81,7 +82,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
         </header>
 
         <div className="flex min-h-[calc(100vh-65px)]">
-          <aside className="sticky top-[65px] hidden h-[calc(100vh-65px)] w-64 shrink-0 flex-col border-r border-slate-100 bg-white lg:flex">
+          <aside className="sticky top-[65px] hidden print:!hidden h-[calc(100vh-65px)] w-64 shrink-0 flex-col border-r border-slate-100 bg-white lg:flex">
             <nav aria-label="Supplier navigation" className="flex grow flex-col gap-1 overflow-y-auto px-2 py-4">
               {NAV_ITEMS.map((item) => (
                 <Link
@@ -99,7 +100,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
             </nav>
           </aside>
           <main className="min-w-0 flex-grow">
-            <nav aria-label="Supplier navigation" className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 py-3 lg:hidden">
+            <nav aria-label="Supplier navigation" className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 py-3 lg:hidden print:hidden">
               {NAV_ITEMS.map((item) => (
                 <Link key={item.href} href={item.href} className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold ${isActive(item.href) ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
                   {item.label}

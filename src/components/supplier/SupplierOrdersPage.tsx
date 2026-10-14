@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import Link from "next/link";
 import Dialog from "@/components/Dialog";
+import { OrderConversation, OrderTimeline } from "@/components/shop/OrderExtras";
 import { DaysSelect } from "@/components/designs/fields";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order } from "@/lib/furniture/api";
 
-type Action = { order: Order; kind: "confirm" | "decline" };
+type Action = { order: Order; kind: "confirm" | "decline" | "ship" };
 
 /** Order requests from clients for the supplier's products: confirm or decline them, then mark them delivered. */
 export default function SupplierOrdersPage() {
@@ -59,10 +61,19 @@ export default function SupplierOrdersPage() {
                   <h3 className="font-black text-slate-900">{formatPrice(order.total, order.currency)}</h3>
                   <p className="mt-1 text-sm text-slate-500">
                     {order.clientName} · {formatDate(order.createdAt)}
+                    {order.deliveryFee > 0 && <span className="text-slate-400"> · includes {formatPrice(order.deliveryFee, order.currency)} delivery</span>}
                   </p>
                 </div>
-                <StatusPill status={ORDER_STATUS_LABELS[order.status]} />
+                <div className="flex items-center gap-3">
+                  {order.status !== "declined" && order.status !== "cancelled" && (
+                    <Link href={`/supplier/orders/${encodeURIComponent(order.id)}/note`} target="_blank" className="text-xs font-bold text-slate-500 underline hover:text-slate-900">
+                      Delivery note
+                    </Link>
+                  )}
+                  <StatusPill status={ORDER_STATUS_LABELS[order.status]} />
+                </div>
               </div>
+              <OrderTimeline order={order} />
               <ul className="mt-4 divide-y divide-slate-100">
                 {order.items.map((item) => (
                   <li key={item.productId} className="flex items-center gap-3 py-2.5">
@@ -103,7 +114,7 @@ export default function SupplierOrdersPage() {
                 </div>
               </dl>
               {order.note && <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">“{order.note}”</p>}
-              {(order.status === "requested" || order.status === "confirmed" || order.status === "completed") && (
+              {(order.status === "requested" || order.status === "confirmed" || order.status === "shipped" || order.status === "completed") && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${order.paymentStatus === "paid" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>
                     {order.paymentStatus === "paid" ? `Paid online${order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}` : "Not paid yet"}
@@ -119,6 +130,7 @@ export default function SupplierOrdersPage() {
               )}
               {order.paymentStatus === "refunded" && <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Refunded to the buyer</p>}
               {order.refundPending && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Refund being processed</p>}
+              {order.status === "shipped" && order.trackingNote && <p className="mt-3 rounded-xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{order.trackingNote}</p>}
               {order.reply && <p className="mt-3 text-sm text-slate-500">Your reply: {order.reply}</p>}
               <div className="mt-4 flex flex-wrap gap-2">
                 {order.status === "requested" && (
@@ -133,15 +145,24 @@ export default function SupplierOrdersPage() {
                 )}
                 {order.status === "confirmed" && (
                   <>
-                    <PrimaryButton type="button" onClick={() => complete(order)}>
-                      Mark as delivered
+                    <PrimaryButton type="button" onClick={() => setAction({ order, kind: "ship" })}>
+                      Mark as on its way
                     </PrimaryButton>
+                    <SecondaryButton type="button" onClick={() => complete(order)}>
+                      Mark as delivered
+                    </SecondaryButton>
                     <SecondaryButton type="button" onClick={() => setAction({ order, kind: "decline" })}>
                       Cancel order
                     </SecondaryButton>
                   </>
                 )}
+                {order.status === "shipped" && (
+                  <PrimaryButton type="button" onClick={() => complete(order)}>
+                    Mark as delivered
+                  </PrimaryButton>
+                )}
               </div>
+              {order.status !== "declined" && order.status !== "cancelled" && <OrderConversation order={order} viewer="supplier" onSent={() => setReload((n) => n + 1)} />}
             </Card>
           ))}
         </div>
@@ -172,6 +193,7 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
   const { token } = useAuth();
   const { showToast } = useToast();
   const confirming = action.kind === "confirm";
+  const shipping = action.kind === "ship";
   const [days, setDays] = useState("7");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -180,22 +202,24 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
   const submit = async () => {
     if (!token) return;
     setBusy(true);
-    const result = confirming
-      ? await FurnitureApi.confirmOrder(token, action.order.id, { deliveryDays: Number(days), message: message.trim() || undefined })
-      : await FurnitureApi.declineOrder(token, action.order.id, message.trim() || undefined);
+    const result = shipping
+      ? await FurnitureApi.shipOrder(token, action.order.id, message.trim() || undefined)
+      : confirming
+        ? await FurnitureApi.confirmOrder(token, action.order.id, { deliveryDays: Number(days), message: message.trim() || undefined })
+        : await FurnitureApi.declineOrder(token, action.order.id, message.trim() || undefined);
     setBusy(false);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    showToast(confirming ? "Order confirmed." : action.order.status === "confirmed" ? "Order cancelled." : "Order declined.");
+    showToast(shipping ? "Marked as on its way." : confirming ? "Order confirmed." : action.order.status === "confirmed" ? "Order cancelled." : "Order declined.");
     onDone();
   };
 
   return (
     <div className="p-6">
       <h2 id={titleId} className="mb-4 pr-6 text-lg font-semibold text-slate-900">
-        {confirming ? "Confirm this order" : action.order.status === "confirmed" ? "Cancel this order" : "Decline this order"}
+        {shipping ? "Send this order out" : confirming ? "Confirm this order" : action.order.status === "confirmed" ? "Cancel this order" : "Decline this order"}
       </h2>
       <div className="space-y-4">
         {!confirming && action.order.paymentStatus === "paid" && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">The buyer has paid. Declining sends their money back in full.</p>}
@@ -206,8 +230,8 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
           </label>
         )}
         <label className="block text-sm font-bold text-slate-700">
-          Message to the client <span className="font-normal text-slate-400">(optional)</span>
-          <textarea className={`${fieldClass} mt-1 min-h-24 resize-none font-normal`} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} />
+          {shipping ? "Driver or courier, and how to reach them" : "Message to the client"} <span className="font-normal text-slate-400">(optional)</span>
+          <textarea className={`${fieldClass} mt-1 min-h-24 resize-none font-normal`} maxLength={shipping ? 300 : 1000} placeholder={shipping ? "e.g. Jean, +250 788 111 222, plate RAB 123 C" : undefined} value={message} onChange={(e) => setMessage(e.target.value)} />
         </label>
         {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
       </div>
@@ -216,7 +240,7 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
           Cancel
         </SecondaryButton>
         <PrimaryButton type="button" disabled={busy} onClick={submit}>
-          {busy ? "Saving…" : confirming ? "Confirm order" : action.order.status === "confirmed" ? "Cancel order" : "Decline order"}
+          {busy ? "Saving…" : shipping ? "Mark as on its way" : confirming ? "Confirm order" : action.order.status === "confirmed" ? "Cancel order" : "Decline order"}
         </PrimaryButton>
       </div>
     </div>

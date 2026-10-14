@@ -96,7 +96,15 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <p className={`mt-2 text-sm font-bold ${product.stock === "out_of_stock" ? "text-red-600" : "text-slate-600"}`}>
             {STOCK_LABELS[product.stock]}
             {product.stock === "made_to_order" && product.leadTimeDays ? ` · ready in about ${product.leadTimeDays} days` : ""}
+            {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 ? ` · only ${product.quantity} left` : ""}
           </p>
+          {supplier?.delivery && (
+            <p className="mt-1 text-sm text-slate-500">
+              {supplier.delivery.fee > 0 && supplier.delivery.currency
+                ? `Delivery ${formatPrice(supplier.delivery.fee, supplier.delivery.currency)} per order${supplier.delivery.freeOver ? `, free above ${formatPrice(supplier.delivery.freeOver, supplier.delivery.currency)}` : ""}`
+                : "Free delivery"}
+            </p>
+          )}
           {product.status !== "published" && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
           {product.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{product.description}</p>}
 
@@ -106,7 +114,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <label className="block w-28 text-xs font-bold uppercase tracking-wide text-slate-500">
                   Quantity
                   <Select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800" value={quantity} aria-label="Quantity" onChange={(e) => setQuantity(e.target.value)}>
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                    {Array.from({ length: Math.min(10, product.stock === "in_stock" && product.quantity !== undefined ? Math.max(product.quantity, 1) : 10) }, (_, i) => i + 1).map((n) => (
                       <option key={n} value={String(n)}>
                         {n}
                       </option>
