@@ -77,7 +77,7 @@ export interface ProductFacets {
 export type OrderStatus = "requested" | "confirmed" | "declined" | "completed" | "cancelled";
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = { requested: "Waiting for the supplier", confirmed: "Confirmed", declined: "Declined", completed: "Delivered", cancelled: "Cancelled" };
 
-export type PaymentStatus = "unpaid" | "pending" | "paid";
+export type PaymentStatus = "unpaid" | "pending" | "paid" | "refunded";
 
 /** How an order was paid, for showing next to "Paid". */
 export function paymentMethodLabel(method?: string): string {
@@ -115,6 +115,13 @@ export interface Order {
   payable: boolean;
   paymentMethod?: string;
   paidAt?: string;
+  /** The money is being sent back to the buyer. */
+  refundPending?: boolean;
+  refundedAt?: string;
+  /** Only in the supplier's and staff's view: what the platform kept, what the supplier receives, and when they were paid. */
+  platformFee?: number;
+  supplierNet?: number;
+  paidOutAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -126,6 +133,62 @@ export interface OrdersTrackResult {
   limit: number;
   /** Money for orders that are still going ahead, per currency. */
   summary: { currency: string; paidTotal: number; paidOrders: number; waitingTotal: number; waitingOrders: number }[];
+}
+
+/** Where a paid order's money is: not delivered yet, ready to be paid to the supplier, paid out, or sent back to the buyer. */
+export type EarningStage = "awaiting_delivery" | "ready" | "paid_out" | "refunded" | "refund_pending" | "other";
+export const EARNING_STAGE_LABELS: Record<EarningStage, string> = { awaiting_delivery: "Awaiting delivery", ready: "Ready for payout", paid_out: "Paid out", refunded: "Refunded", refund_pending: "Refund pending", other: "—" };
+
+export interface EarningTotals {
+  currency: string;
+  awaitingDelivery: number;
+  ready: number;
+  paidOut: number;
+  /** Money sent back to buyers, in full. */
+  refunded: number;
+  /** What the platform kept on the orders that count. */
+  fees: number;
+  readyOrders: number;
+}
+
+export interface EarningOrder {
+  id: string;
+  clientName: string;
+  currency: string;
+  total: number;
+  fee: number;
+  net: number;
+  status: OrderStatus;
+  stage: EarningStage;
+  items: number;
+  paidAt?: string;
+  paidOutAt?: string;
+  refundedAt?: string;
+  createdAt: string;
+}
+
+export interface Payout {
+  id: string;
+  supplierId: string;
+  supplierName?: string;
+  currency: string;
+  amount: number;
+  orders: number;
+  reference: string;
+  note?: string;
+  paidByName?: string;
+  paidAt: string;
+}
+
+export interface Earnings {
+  totals: EarningTotals[];
+  orders: EarningOrder[];
+  payouts: Payout[];
+}
+
+export interface PayoutSummary {
+  suppliers: { supplierId: string; supplierName: string; currencies: EarningTotals[] }[];
+  refundsPending: { id: string; supplierId: string; supplierName: string; clientName: string; currency: string; total: number; error?: string; updatedAt: string }[];
 }
 
 export interface OrderInput {
@@ -188,6 +251,15 @@ export const FurnitureApi = {
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
     return call<OrdersTrackResult>(`/furniture/orders/track?${params.toString()}`, { token });
   },
+  earningsMine: (token: string) => call<Earnings>("/furniture/earnings/mine", { token }),
+  payoutSummary: (token: string) => call<PayoutSummary>("/furniture/payouts/summary", { token }),
+  listPayouts: (token: string, query: { supplierId?: string; page?: number; limit?: number } = {}) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
+    return call<{ payouts: Payout[]; total: number; page: number; limit: number }>(`/furniture/payouts?${params.toString()}`, { token });
+  },
+  createPayout: (token: string, input: { supplierId: string; currency: string; reference: string; note?: string; orderIds?: string[] }) => call<{ payout: Payout }>("/furniture/payouts", { token, method: "POST", body: input }),
+  retryRefund: (token: string, orderId: string) => call<{ refunded: boolean; paymentStatus: PaymentStatus; error?: string }>(`/furniture/orders/${encodeURIComponent(orderId)}/retry-refund`, { token, method: "POST" }),
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),
   confirmOrder: (token: string, id: string, input: { message?: string; deliveryDays?: number }) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/confirm`, { token, method: "POST", body: input }),
   declineOrder: (token: string, id: string, message?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/decline`, { token, method: "POST", body: { message } }),

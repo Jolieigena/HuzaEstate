@@ -103,11 +103,22 @@ export default function SupplierOrdersPage() {
                 </div>
               </dl>
               {order.note && <p className="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">“{order.note}”</p>}
-              {order.status === "confirmed" && (
-                <p className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold ${order.paymentStatus === "paid" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>
-                  {order.paymentStatus === "paid" ? `Paid online${order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}` : "Not paid yet"}
-                </p>
+              {(order.status === "requested" || order.status === "confirmed" || order.status === "completed") && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <p className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${order.paymentStatus === "paid" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>
+                    {order.paymentStatus === "paid" ? `Paid online${order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}` : "Not paid yet"}
+                  </p>
+                  {order.paymentStatus === "paid" && order.supplierNet !== undefined && (
+                    <p className="text-xs font-semibold text-slate-500">
+                      You receive {formatPrice(order.supplierNet, order.currency)}
+                      {order.platformFee ? ` (after a ${formatPrice(order.platformFee, order.currency)} fee)` : ""}
+                      {order.status === "completed" ? (order.paidOutAt ? " · paid out" : " · ready for payout") : " · once delivered"}
+                    </p>
+                  )}
+                </div>
               )}
+              {order.paymentStatus === "refunded" && <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Refunded to the buyer</p>}
+              {order.refundPending && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Refund being processed</p>}
               {order.reply && <p className="mt-3 text-sm text-slate-500">Your reply: {order.reply}</p>}
               <div className="mt-4 flex flex-wrap gap-2">
                 {order.status === "requested" && (
@@ -121,9 +132,14 @@ export default function SupplierOrdersPage() {
                   </>
                 )}
                 {order.status === "confirmed" && (
-                  <PrimaryButton type="button" onClick={() => complete(order)}>
-                    Mark as delivered
-                  </PrimaryButton>
+                  <>
+                    <PrimaryButton type="button" onClick={() => complete(order)}>
+                      Mark as delivered
+                    </PrimaryButton>
+                    <SecondaryButton type="button" onClick={() => setAction({ order, kind: "decline" })}>
+                      Cancel order
+                    </SecondaryButton>
+                  </>
                 )}
               </div>
             </Card>
@@ -172,16 +188,17 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
       setError(result.error);
       return;
     }
-    showToast(confirming ? "Order confirmed." : "Order declined.");
+    showToast(confirming ? "Order confirmed." : action.order.status === "confirmed" ? "Order cancelled." : "Order declined.");
     onDone();
   };
 
   return (
     <div className="p-6">
       <h2 id={titleId} className="mb-4 pr-6 text-lg font-semibold text-slate-900">
-        {confirming ? "Confirm this order" : "Decline this order"}
+        {confirming ? "Confirm this order" : action.order.status === "confirmed" ? "Cancel this order" : "Decline this order"}
       </h2>
       <div className="space-y-4">
+        {!confirming && action.order.paymentStatus === "paid" && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">The buyer has paid. Declining sends their money back in full.</p>}
         {confirming && (
           <label className="block text-sm font-bold text-slate-700">
             Delivery in
@@ -199,7 +216,7 @@ function ReplyForm({ titleId, action, onClose, onDone }: { titleId: string; acti
           Cancel
         </SecondaryButton>
         <PrimaryButton type="button" disabled={busy} onClick={submit}>
-          {busy ? "Saving…" : confirming ? "Confirm order" : "Decline order"}
+          {busy ? "Saving…" : confirming ? "Confirm order" : action.order.status === "confirmed" ? "Cancel order" : "Decline order"}
         </PrimaryButton>
       </div>
     </div>

@@ -87,6 +87,9 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
             <Link href={`${BASE[scope]}/orders`} className={`${buttonLink} border border-slate-200 bg-white text-slate-700 hover:border-slate-300`}>
               Track orders
             </Link>
+            <Link href={scope === "admin" ? "/admin/supplier-payouts" : "/org-admin/supplier-payouts"} className={`${buttonLink} border border-slate-200 bg-white text-slate-700 hover:border-slate-300`}>
+              Payouts
+            </Link>
             <Link href={`${BASE[scope]}/create`} className={`${buttonLink} bg-slate-900 text-white shadow-lg hover:bg-[#2ec440]`}>
               + Create supplier
             </Link>
@@ -262,6 +265,7 @@ const PAYMENT_OPTIONS = [
   { value: "", label: "Any payment" },
   { value: "paid", label: "Paid" },
   { value: "unpaid", label: "Not paid" },
+  { value: "refunded", label: "Refunded" },
 ];
 const PAGE_SIZE = 25;
 
@@ -390,7 +394,7 @@ export function SupplierOrdersTrackerPage({ scope }: { scope: SuppliersScope }) 
                   <StatusPill status={ORDER_STATUS_LABELS[order.status]} />
                 </td>
                 <td className="px-6 py-4">
-                  <StatusPill status={order.paymentStatus === "paid" ? "Paid" : order.paymentStatus === "pending" ? "Pending" : "Not paid"} />
+                  <StatusPill status={order.paymentStatus === "paid" ? (order.refundPending ? "Refund pending" : "Paid") : order.paymentStatus === "refunded" ? "Refunded" : order.paymentStatus === "pending" ? "Pending" : "Not paid"} />
                 </td>
               </tr>
             ))}

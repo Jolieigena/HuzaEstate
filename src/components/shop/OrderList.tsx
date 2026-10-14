@@ -127,9 +127,11 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
           <p className="mt-3 text-sm text-slate-500">Deliver to {[order.address, order.city].filter(Boolean).join(", ")}</p>
           {order.reply && <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{order.reply}</p>}
           {order.status === "confirmed" && order.deliveryDays !== undefined && <p className="mt-2 text-sm font-semibold text-slate-700">Delivery in about {order.deliveryDays} days</p>}
-          {order.paymentStatus === "paid" && (
+          {order.paymentStatus === "paid" && !order.refundPending && (
             <p className="mt-3 inline-flex rounded-full bg-[#2ec440]/10 px-3 py-1 text-xs font-bold text-[#219b31]">Paid{order.paymentMethod ? ` with ${paymentMethodLabel(order.paymentMethod)}` : ""}</p>
           )}
+          {order.refundPending && <p className="mt-3 inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Refund on its way</p>}
+          {order.paymentStatus === "refunded" && <p className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">Refunded{order.refundedAt ? ` on ${new Date(order.refundedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : ""}</p>}
           {(order.status === "requested" || order.status === "confirmed") && (
             <div className="mt-4 flex flex-wrap gap-2">
               {order.payable && (

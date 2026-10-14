@@ -3,25 +3,61 @@
 import { useEffect, useState } from "react";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import Select from "@/components/shared/Select";
-import { Card, EmptyState, PageFrame, PrimaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
+import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order } from "@/lib/furniture/api";
-import { MOBILE_MONEY_PROVIDERS, SuppliersApi, type Payout, type PayoutMethod } from "@/lib/suppliers/api";
+import { EARNING_STAGE_LABELS, FurnitureApi, formatPrice, type EarningStage, type Earnings } from "@/lib/furniture/api";
+import { MOBILE_MONEY_PROVIDERS, SuppliersApi, type Payout as PayoutDetails, type PayoutMethod } from "@/lib/suppliers/api";
 
-/** What customers have paid for the supplier's orders, and where the platform sends that money. */
+const STAGE_FILTERS: { value: "" | EarningStage; label: string }[] = [
+  { value: "", label: "All orders" },
+  { value: "awaiting_delivery", label: EARNING_STAGE_LABELS.awaiting_delivery },
+  { value: "ready", label: EARNING_STAGE_LABELS.ready },
+  { value: "paid_out", label: EARNING_STAGE_LABELS.paid_out },
+  { value: "refunded", label: EARNING_STAGE_LABELS.refunded },
+  { value: "refund_pending", label: EARNING_STAGE_LABELS.refund_pending },
+];
+
+const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+
+/** The earnings as a spreadsheet file the supplier can keep or send to their accountant. */
+function downloadCsv(earnings: Earnings, payouts: boolean) {
+  const rows: (string | number)[][] = payouts
+    ? [["Date", "Currency", "Amount", "Orders", "Reference", "Note"], ...earnings.payouts.map((p) => [p.paidAt.slice(0, 10), p.currency, p.amount, p.orders, p.reference, p.note ?? ""])]
+    : [["Date paid", "Customer", "Items", "Currency", "Order total", "Platform fee", "You receive", "Status"], ...earnings.orders.map((o) => [(o.paidAt ?? o.createdAt).slice(0, 10), o.clientName, o.items, o.currency, o.total, o.fee, o.net, EARNING_STAGE_LABELS[o.stage]])];
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = payouts ? "payouts.csv" : "orders-and-earnings.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+const stageTone: Record<EarningStage, string> = {
+  awaiting_delivery: "bg-slate-100 text-slate-600",
+  ready: "bg-amber-50 text-amber-700",
+  paid_out: "bg-[#2ec440]/10 text-[#219b31]",
+  refunded: "bg-slate-100 text-slate-500",
+  refund_pending: "bg-red-50 text-red-600",
+  other: "bg-slate-100 text-slate-500",
+};
+
+/** What customers paid for the supplier's orders and where each order's money stands, what has been paid to them, and
+ *  where they want to be paid. */
 export default function SupplierPaymentsPage() {
   const { token, isAuthReady } = useAuth();
-  const [orders, setOrders] = useState<Order[] | null>(null);
-  const [payout, setPayout] = useState<Payout | null | undefined>(undefined);
+  const [earnings, setEarnings] = useState<Earnings | null>(null);
+  const [payout, setPayout] = useState<PayoutDetails | null | undefined>(undefined);
+  const [stage, setStage] = useState<"" | EarningStage>("");
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isAuthReady || !token) return;
     let cancelled = false;
-    FurnitureApi.incomingOrders(token).then((result) => {
+    FurnitureApi.earningsMine(token).then((result) => {
       if (cancelled) return;
-      if (result.ok) setOrders(result.data.orders);
+      if (result.ok) setEarnings(result.data);
       else setError(result.error);
     });
     SuppliersApi.getPayout(token).then((result) => {
@@ -34,70 +70,145 @@ export default function SupplierPaymentsPage() {
     };
   }, [isAuthReady, token]);
 
-  // A paid order that was then declined or cancelled is a refund, so it does not count as money earned.
-  const live = (orders ?? []).filter((o) => o.status !== "declined" && o.status !== "cancelled");
-  const paid = live.filter((o) => o.paymentStatus === "paid");
-  const waiting = live.filter((o) => o.paymentStatus !== "paid");
-  const sum = (list: Order[]) => {
-    const totals = new Map<string, number>();
-    for (const o of list) totals.set(o.currency, (totals.get(o.currency) ?? 0) + o.total);
-    return Array.from(totals, ([currency, total]) => formatPrice(total, currency));
-  };
+  const rows = (earnings?.orders ?? []).filter((o) => !stage || o.stage === stage);
 
   return (
     <PageFrame title="Payments">
       {error && <p className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
-      {orders === null || payout === undefined ? (
+      {earnings === null || payout === undefined ? (
         !error && <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
       ) : (
         <div className="space-y-8">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card>
-              <p className="text-sm font-bold text-slate-500">Paid by customers</p>
-              <p className="mt-2 text-2xl font-black text-slate-900">{paid.length ? sum(paid).join(" · ") : "—"}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {paid.length} order{paid.length === 1 ? "" : "s"}
-              </p>
-            </Card>
-            <Card>
-              <p className="text-sm font-bold text-slate-500">Waiting for payment</p>
-              <p className="mt-2 text-2xl font-black text-slate-900">{waiting.length ? sum(waiting).join(" · ") : "—"}</p>
-              <p className="mt-1 text-sm text-slate-500">
-                {waiting.length} order{waiting.length === 1 ? "" : "s"}
-              </p>
-            </Card>
-          </div>
-
-          <PayoutForm key={payout ? payout.method : "none"} initial={payout} onSaved={setPayout} />
+          {earnings.totals.length === 0 ? (
+            <EmptyState title="No payments yet" />
+          ) : (
+            earnings.totals.map((t) => (
+              <section key={t.currency}>
+                {earnings.totals.length > 1 && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{t.currency}</h2>}
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <Card>
+                    <p className="text-sm font-bold text-slate-500">Awaiting delivery</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.awaitingDelivery, t.currency)}</p>
+                  </Card>
+                  <Card className={t.ready > 0 ? "!border-amber-200 !bg-amber-50/40" : ""}>
+                    <p className="text-sm font-bold text-slate-500">Ready for payout</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.ready, t.currency)}</p>
+                    {t.readyOrders > 0 && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {t.readyOrders} order{t.readyOrders === 1 ? "" : "s"}
+                      </p>
+                    )}
+                  </Card>
+                  <Card>
+                    <p className="text-sm font-bold text-slate-500">Paid out</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.paidOut, t.currency)}</p>
+                  </Card>
+                  <Card>
+                    <p className="text-sm font-bold text-slate-500">Refunded to buyers</p>
+                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.refunded, t.currency)}</p>
+                  </Card>
+                </div>
+              </section>
+            ))
+          )}
 
           <section>
-            <h2 className="mb-3 text-lg font-black text-slate-900">Payments received</h2>
-            {paid.length === 0 ? (
-              <EmptyState title="No payments yet" />
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-black text-slate-900">Orders and earnings</h2>
+              {earnings.orders.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select className={`${fieldClass} !w-auto min-w-44`} value={stage} onChange={(e) => setStage(e.target.value as "" | EarningStage)} aria-label="Show">
+                    {STAGE_FILTERS.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <SecondaryButton type="button" onClick={() => downloadCsv(earnings, false)}>
+                    Export CSV
+                  </SecondaryButton>
+                </div>
+              )}
+            </div>
+            {earnings.orders.length === 0 ? (
+              <EmptyState title="No paid orders yet" />
+            ) : rows.length === 0 ? (
+              <EmptyState title="Nothing in this view" />
+            ) : (
+              <Card className="overflow-x-auto !p-0">
+                <table className="w-full min-w-[40rem] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
+                      <th className="px-5 py-3">Date</th>
+                      <th className="px-5 py-3">Customer</th>
+                      <th className="px-5 py-3 text-right">Order</th>
+                      <th className="px-5 py-3 text-right">Fee</th>
+                      <th className="px-5 py-3 text-right">You receive</th>
+                      <th className="px-5 py-3">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {rows.map((o) => (
+                      <tr key={o.id}>
+                        <td className="px-5 py-3 text-slate-500">{formatDate(o.paidAt ?? o.createdAt)}</td>
+                        <td className="px-5 py-3 font-semibold text-slate-800">
+                          {o.clientName}
+                          <span className="block text-xs font-normal text-slate-400">
+                            {o.items} item{o.items === 1 ? "" : "s"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-right text-slate-700">{formatPrice(o.total, o.currency)}</td>
+                        <td className="px-5 py-3 text-right text-slate-500">{o.fee > 0 ? `−${formatPrice(o.fee, o.currency)}` : "—"}</td>
+                        <td className="px-5 py-3 text-right font-black text-slate-900">{o.stage === "refunded" || o.stage === "refund_pending" ? "—" : formatPrice(o.net, o.currency)}</td>
+                        <td className="px-5 py-3">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${stageTone[o.stage]}`}>{EARNING_STAGE_LABELS[o.stage]}</span>
+                          {o.stage === "paid_out" && o.paidOutAt && <span className="mt-0.5 block text-xs text-slate-400">{formatDate(o.paidOutAt)}</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Card>
+            )}
+          </section>
+
+          <section>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-black text-slate-900">Payouts received</h2>
+              {earnings.payouts.length > 0 && (
+                <SecondaryButton type="button" onClick={() => downloadCsv(earnings, true)}>
+                  Export CSV
+                </SecondaryButton>
+              )}
+            </div>
+            {earnings.payouts.length === 0 ? (
+              <EmptyState title="No payouts yet" />
             ) : (
               <Card className="divide-y divide-slate-100 !p-0">
-                {paid.map((order) => (
-                  <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                {earnings.payouts.map((p) => (
+                  <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                     <div>
-                      <p className="font-black text-slate-900">{formatPrice(order.total, order.currency)}</p>
+                      <p className="font-black text-slate-900">{formatPrice(p.amount, p.currency)}</p>
                       <p className="mt-0.5 text-sm text-slate-500">
-                        {order.clientName} · {order.items.length} item{order.items.length === 1 ? "" : "s"} · {order.paidAt ? formatDate(order.paidAt) : formatDate(order.createdAt)}
-                        {order.paymentMethod ? ` · ${paymentMethodLabel(order.paymentMethod)}` : ""}
+                        {formatDate(p.paidAt)} · {p.orders} order{p.orders === 1 ? "" : "s"}
+                        {p.note ? ` · ${p.note}` : ""}
                       </p>
                     </div>
-                    <StatusPill status={ORDER_STATUS_LABELS[order.status]} />
+                    <StatusPill status={`Ref ${p.reference}`} />
                   </div>
                 ))}
               </Card>
             )}
           </section>
+
+          <PayoutForm key={payout ? payout.method : "none"} initial={payout} onSaved={setPayout} />
         </div>
       )}
     </PageFrame>
   );
 }
 
-function PayoutForm({ initial, onSaved }: { initial: Payout | null; onSaved: (payout: Payout) => void }) {
+function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSaved: (payout: PayoutDetails) => void }) {
   const { token } = useAuth();
   const { showToast } = useToast();
   const [method, setMethod] = useState<PayoutMethod>(initial?.method ?? "mobile_money");
@@ -117,7 +228,7 @@ function PayoutForm({ initial, onSaved }: { initial: Payout | null; onSaved: (pa
     if (!token || !complete || saving) return;
     setSaving(true);
     setError("");
-    const input: Payout =
+    const input: PayoutDetails =
       method === "mobile_money" ? { method, provider, accountName: accountName.trim(), phone: cleanPhone(phone) } : { method, accountName: accountName.trim(), bankName: bankName.trim(), accountNumber: accountNumber.trim() };
     const result = await SuppliersApi.savePayout(token, input);
     setSaving(false);
