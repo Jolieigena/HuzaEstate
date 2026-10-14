@@ -13,8 +13,72 @@ export interface ProductSupplier {
   logoUrl?: string;
   city?: string;
   country?: string;
+  /** Checked by the platform. */
+  verified?: boolean;
+  /** The shop is switched off: nothing can be ordered from it. */
+  paused?: boolean;
+  rating?: Rating;
   /** What delivery costs: a flat fee per order, free above an order value. A fee of 0 means free delivery. */
   delivery?: SupplierDelivery;
+}
+
+export interface Rating {
+  average: number;
+  count: number;
+}
+
+export interface Review {
+  id: string;
+  orderId: string;
+  supplierId: string;
+  clientName: string;
+  rating: number;
+  comment: string;
+  items: string[];
+  reply?: string;
+  repliedAt?: string;
+  createdAt: string;
+}
+
+export interface Storefront {
+  accountId: string;
+  companyName: string;
+  logoUrl?: string;
+  bio: string;
+  categories: string[];
+  city?: string;
+  country?: string;
+  verified: boolean;
+  paused: boolean;
+  delivery: SupplierDelivery;
+  rating: Rating;
+  productCount: number;
+  memberSince?: string;
+}
+
+export interface ModerationProduct {
+  id: string;
+  name: string;
+  category: string;
+  image?: string;
+  price: number;
+  currency: string;
+  supplierId: string;
+  supplierName: string;
+  hidden: boolean;
+  hiddenReason?: string;
+  hiddenAt?: string;
+  updatedAt: string;
+}
+
+export interface Insights {
+  days: number;
+  granularity: "day" | "month";
+  currencies: string[];
+  series: { currency: string; date: string; revenue: number; orders: number }[];
+  totals: { currency: string; orders: number; value: number; paidOrders: number; paidValue: number; averageOrder: number }[];
+  status: Record<string, number>;
+  bestSellers: { productId: string; currency: string; name: string; image?: string; units: number; revenue: number }[];
 }
 
 export interface SupplierDelivery {
@@ -37,6 +101,9 @@ export interface Product {
   lowStockAt?: number;
   leadTimeDays?: number;
   status: "draft" | "published";
+  /** Taken down by the platform, with the reason (only the supplier sees their own hidden products). */
+  hidden?: boolean;
+  hiddenReason?: string;
   supplier?: ProductSupplier;
   createdAt: string;
 }
@@ -137,6 +204,8 @@ export interface Order {
   /** Who is bringing the order and how to reach them, written by the supplier when it is sent out. */
   trackingNote?: string;
   messages: OrderMessage[];
+  /** The buyer's review of this order, once given. */
+  review?: Review;
   reply: string;
   deliveryDays?: number;
   paymentStatus: PaymentStatus;
@@ -311,4 +380,18 @@ export const FurnitureApi = {
   payOrder: (token: string, id: string) => call<{ paymentLinkUrl: string; invoiceNumber: string }>(`/furniture/orders/${encodeURIComponent(id)}/pay`, { token, method: "POST" }),
   refreshPayment: (token: string, id: string) => call<{ paymentStatus: PaymentStatus }>(`/furniture/orders/${encodeURIComponent(id)}/refresh-payment`, { token, method: "POST" }),
   cancelOrder: (token: string, id: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/cancel`, { token, method: "POST" }),
+
+  storefront: (id: string) => call<{ supplier: Storefront }>(`/furniture/storefront/${encodeURIComponent(id)}`),
+  reviews: (supplierId: string, page = 1) => call<{ reviews: Review[]; total: number; page: number; limit: number; rating: Rating }>(`/furniture/reviews?supplierId=${encodeURIComponent(supplierId)}&page=${page}`),
+  reviewsReceived: (token: string) => call<{ reviews: Review[]; rating: Rating; stars: Record<string, number>; unanswered: number }>("/furniture/reviews/received", { token }),
+  reviewOrder: (token: string, orderId: string, input: { rating: number; comment?: string }) => call<{ review: Review }>(`/furniture/orders/${encodeURIComponent(orderId)}/review`, { token, method: "POST", body: input }),
+  replyToReview: (token: string, id: string, reply: string) => call<{ review: Review }>(`/furniture/reviews/${encodeURIComponent(id)}/reply`, { token, method: "POST", body: { reply } }),
+  insights: (token: string, days: number) => call<Insights>(`/furniture/insights?days=${days}`, { token }),
+  moderationList: (token: string, query: { supplierId?: string; search?: string; state?: string; page?: number; limit?: number }) => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
+    return call<{ products: ModerationProduct[]; total: number; hiddenCount: number; page: number; limit: number }>(`/furniture/moderation/products?${params.toString()}`, { token });
+  },
+  hideProduct: (token: string, id: string, reason: string) => call<{ hidden: boolean }>(`/furniture/moderation/products/${encodeURIComponent(id)}/hide`, { token, method: "POST", body: { reason } }),
+  restoreProduct: (token: string, id: string) => call<{ hidden: boolean }>(`/furniture/moderation/products/${encodeURIComponent(id)}/restore`, { token, method: "POST" }),
 };

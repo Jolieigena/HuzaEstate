@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -197,6 +197,20 @@ export default function BuildPage() {
   const [activeExample, setActiveExample] = useState<(typeof EXAMPLES)[0] | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
   const [demoStage, setDemoStage] = useState(0);
+  const demoTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (demoTimer.current) window.clearTimeout(demoTimer.current);
+  }, []);
+  const startDemo = () => {
+    setDemoStage(1);
+    demoTimer.current = window.setTimeout(() => setDemoStage(2), 2500);
+  };
+  // Resetting removes the tall result, which leaves the page scrolled past the demo; bring the demo back into view.
+  const resetDemo = () => {
+    if (demoTimer.current) window.clearTimeout(demoTimer.current);
+    setDemoStage(0);
+    document.getElementById("huza-demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const exampleTitleId = useId();
   const exampleDescId = useId();
@@ -287,7 +301,7 @@ export default function BuildPage() {
 
       {/* Section 3: Prompt experience preview */}
       <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
-        <div className="max-w-5xl mx-auto">
+        <div id="huza-demo" className="max-w-5xl mx-auto scroll-mt-24">
           <Reveal className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See Huza AI in action</h2>
             <p className="text-slate-600 text-lg leading-relaxed mt-4 max-w-2xl mx-auto">
@@ -328,10 +342,7 @@ export default function BuildPage() {
               {demoStage === 0 && (
                 <button
                   type="button"
-                  onClick={() => {
-                    setDemoStage(1);
-                    setTimeout(() => setDemoStage(2), 2500);
-                  }}
+                  onClick={startDemo}
                   className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
                 >
                   Try This Prompt
@@ -367,7 +378,7 @@ export default function BuildPage() {
                   </div>
                 </div>
                 <div className="mt-6 flex justify-end gap-3">
-                  <button onClick={() => setDemoStage(0)} className="px-5 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-100 transition-colors text-sm border border-slate-200">Reset Demo</button>
+                  <button onClick={resetDemo} className="px-5 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-100 transition-colors text-sm border border-slate-200">Reset Demo</button>
                   <button onClick={startBuild} className="bg-[#2ec440] hover:bg-[#28b039] text-white px-5 py-2 rounded-full font-bold transition-colors text-sm shadow-sm">Start Designing →</button>
                 </div>
               </Reveal>

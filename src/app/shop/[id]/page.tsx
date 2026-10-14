@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import BackLink from "@/components/BackLink";
 import Select from "@/components/shared/Select";
 import ProductCard, { SaveButton } from "@/components/shop/ProductCard";
+import { RatingSummary, VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket } from "@/lib/furniture/basket";
@@ -64,7 +65,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   if (!product) return <p className="py-24 text-center text-sm font-semibold text-slate-500">{state.error || "Product not found."}</p>;
 
   const supplier = product.supplier;
-  const orderable = product.status === "published" && product.stock !== "out_of_stock";
+  const paused = supplier?.paused === true;
+  const orderable = product.status === "published" && product.stock !== "out_of_stock" && !paused && !product.hidden;
   const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
 
   return (
@@ -105,6 +107,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 : "Free delivery"}
             </p>
           )}
+          {paused && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">This shop is not taking orders right now.</p>}
+          {product.hidden && <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Hidden from buyers{product.hiddenReason ? `: ${product.hiddenReason}` : ""}</p>}
           {product.status !== "published" && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
           {product.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{product.description}</p>}
 
@@ -162,11 +166,17 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 font-black text-slate-500">{supplier.companyName.charAt(0)}</span>
               )}
               <div className="min-w-0">
-                <p className="truncate font-bold text-slate-900">{supplier.companyName}</p>
-                <p className="truncate text-sm text-slate-500">{[supplier.city, supplier.country].filter(Boolean).join(", ")}</p>
+                <Link href={`/shop/supplier/${supplier.accountId}`} className="flex flex-wrap items-center gap-2 font-bold text-slate-900 hover:underline">
+                  <span className="truncate">{supplier.companyName}</span>
+                  {supplier.verified && <VerifiedBadge />}
+                </Link>
+                <p className="flex flex-wrap items-center gap-x-3 truncate text-sm text-slate-500">
+                  <span>{[supplier.city, supplier.country].filter(Boolean).join(", ")}</span>
+                  <RatingSummary rating={supplier.rating} />
+                </p>
               </div>
-              <Link href={`/shop?supplier=${supplier.accountId}`} className="ml-auto shrink-0 text-sm font-bold text-[#219b31] hover:underline">
-                More from them
+              <Link href={`/shop/supplier/${supplier.accountId}`} className="ml-auto shrink-0 text-sm font-bold text-[#219b31] hover:underline">
+                View shop
               </Link>
             </div>
           )}

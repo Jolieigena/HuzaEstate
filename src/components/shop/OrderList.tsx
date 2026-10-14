@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { OrderConversation, OrderTimeline } from "@/components/shop/OrderExtras";
+import { OrderConversation, OrderReview, OrderTimeline } from "@/components/shop/OrderExtras";
 import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order, type OrderStatus } from "@/lib/furniture/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
@@ -156,6 +156,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
               )}
             </div>
           )}
+          <OrderReview order={order} onSent={onChanged} />
           {order.status !== "declined" && order.status !== "cancelled" && <OrderConversation order={order} viewer="client" onSent={onChanged} />}
         </section>
       ))}

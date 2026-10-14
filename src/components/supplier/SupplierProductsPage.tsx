@@ -86,12 +86,17 @@ export default function SupplierProductsPage() {
               <div className="flex flex-1 flex-col p-5">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? "Published" : "Draft"}</span>
+                  {product.hidden ? (
+                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">Taken down</span>
+                  ) : (
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? "Published" : "Draft"}</span>
+                  )}
                 </div>
                 <h3 className="font-black text-slate-900">{product.name}</h3>
                 <p className="mt-1 text-sm font-semibold text-slate-700">
                   {formatPrice(product.price, product.currency)} <span className="font-normal text-slate-400">· {STOCK_LABELS[product.stock]}</span>
                 </p>
+                {product.hidden && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{product.hiddenReason || "Taken down by the platform."}</p>}
                 {product.quantity !== undefined && (
                   <p className={`mt-1 text-xs font-bold ${product.quantity === 0 ? "text-red-600" : product.quantity <= (product.lowStockAt ?? 3) ? "text-amber-600" : "text-slate-500"}`}>
                     {product.quantity === 0 ? "Sold out" : product.quantity <= (product.lowStockAt ?? 3) ? `Running low: ${product.quantity} left` : `${product.quantity} in stock`}

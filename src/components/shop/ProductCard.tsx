@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useToast } from "@/lib/toast-context";
+import { VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useBasket } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { STOCK_LABELS, formatPrice, type Product } from "@/lib/furniture/api";
@@ -59,7 +60,12 @@ export default function ProductCard({ product }: { product: Product }) {
       <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
         <div className="min-w-0">
           <p className="font-bold text-slate-900">{formatPrice(product.price, product.currency)}</p>
-          {product.supplier && <p className="truncate text-xs text-slate-400">{product.supplier.companyName}</p>}
+          {product.supplier && (
+            <p className="flex items-center gap-1.5 text-xs text-slate-400">
+              <span className="truncate">{product.supplier.companyName}</span>
+              {product.supplier.verified && <VerifiedBadge />}
+            </p>
+          )}
           {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 && <p className="text-xs font-bold text-amber-600">Only {product.quantity} left</p>}
         </div>
         <button

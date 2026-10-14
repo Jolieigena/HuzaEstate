@@ -4,14 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, EmptyState, PageFrame, StatusPill, formatDate } from "@/components/professional/ui";
 import { useAuth } from "@/lib/auth-context";
+import { RatingSummary } from "@/components/shop/SupplierBadges";
 import { DesignsApi } from "@/lib/designs/api";
-import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Earnings, type Order, type Product } from "@/lib/furniture/api";
+import { SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
+import { useToast } from "@/lib/toast-context";
+import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Earnings, type Order, type Product, type Rating } from "@/lib/furniture/api";
 
 interface Data {
   orders: Order[];
   earnings: Earnings | null;
   products: Product[];
   openRequests: number;
+  profile: SupplierProfile | null;
+  rating: Rating;
 }
 
 function Tile({ href, label, value, note, attention }: { href: string; label: string; value: string; note?: string; attention?: boolean }) {
@@ -27,24 +32,40 @@ function Tile({ href, label, value, note, attention }: { href: string; label: st
 /** The supplier's home: what needs doing today, in one place, with the orders that came in last. */
 export default function SupplierDashboard() {
   const { token, isAuthReady, account } = useAuth();
+  const { showToast } = useToast();
+  const [switching, setSwitching] = useState(false);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!isAuthReady || !token) return;
     let cancelled = false;
-    Promise.all([FurnitureApi.incomingOrders(token), FurnitureApi.earningsMine(token), FurnitureApi.mine(token), DesignsApi.supplierFurnitureQuotes(token, "open")]).then(([orders, earnings, products, quotes]) => {
+    Promise.all([FurnitureApi.incomingOrders(token), FurnitureApi.earningsMine(token), FurnitureApi.mine(token), DesignsApi.supplierFurnitureQuotes(token, "open"), SuppliersApi.getMine(token), FurnitureApi.reviewsReceived(token)]).then(([orders, earnings, products, quotes, mine, reviews]) => {
       if (cancelled) return;
       if (!orders.ok) {
         setError(orders.error);
         return;
       }
-      setData({ orders: orders.data.orders, earnings: earnings.ok ? earnings.data : null, products: products.ok ? products.data.products : [], openRequests: quotes.ok ? quotes.data.quotes.length : 0 });
+      setData({ orders: orders.data.orders, earnings: earnings.ok ? earnings.data : null, products: products.ok ? products.data.products : [], openRequests: quotes.ok ? quotes.data.quotes.length : 0, profile: mine.ok ? mine.data.profile : null, rating: reviews.ok ? reviews.data.rating : { average: 0, count: 0 } });
     });
     return () => {
       cancelled = true;
     };
   }, [isAuthReady, token]);
+
+  async function togglePaused() {
+    if (!token || !data?.profile) return;
+    const next = !data.profile.paused;
+    setSwitching(true);
+    const result = await SuppliersApi.setPaused(token, next);
+    setSwitching(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    setData((prev) => (prev && prev.profile ? { ...prev, profile: { ...prev.profile, paused: next } } : prev));
+    showToast(next ? "Shop paused." : "Shop is open again.");
+  }
 
   const toConfirm = data?.orders.filter((o) => o.status === "requested") ?? [];
   const toDeliver = data?.orders.filter((o) => o.status === "confirmed" || o.status === "shipped") ?? [];
@@ -62,6 +83,23 @@ export default function SupplierDashboard() {
         <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
       ) : (
         <div className="space-y-8">
+          {data.profile && (
+            <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-4 ${data.profile.paused ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+                <p className={`font-black ${data.profile.paused ? "text-amber-800" : "text-slate-900"}`}>{data.profile.paused ? "Shop paused" : "Shop open"}</p>
+                <RatingSummary rating={data.rating} />
+                {data.profile.verified && <span className="text-sm font-bold text-[#219b31]">Verified</span>}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/shop/supplier/${data.profile.accountId}`} className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
+                  View my shop
+                </Link>
+                <button type="button" disabled={switching} onClick={togglePaused} className="min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+                  {data.profile.paused ? "Open shop" : "Pause shop"}
+                </button>
+              </div>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <Tile href="/supplier/orders" label="Orders to confirm" value={String(toConfirm.length)} attention={toConfirm.length > 0} note={toConfirm.length > 0 ? "Waiting for your answer" : undefined} />
             <Tile href="/supplier/orders" label="To deliver" value={String(toDeliver.length)} note={toDeliver.length > 0 ? `${paidToDeliver} paid` : undefined} />

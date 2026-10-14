@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import { StarRow } from "@/components/shop/SupplierBadges";
 import { FurnitureApi, type Order } from "@/lib/furniture/api";
 
 function shortDate(value: string) {
@@ -108,6 +109,69 @@ export function OrderConversation({ order, viewer, onSent }: { order: Order; vie
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** After delivery the buyer rates the supplier once; afterwards their review and the supplier's reply are shown. */
+export function OrderReview({ order, onSent }: { order: Order; onSent: () => void }) {
+  const { token } = useAuth();
+  const { showToast } = useToast();
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [sending, setSending] = useState(false);
+  if (order.status !== "completed") return null;
+
+  if (order.review) {
+    return (
+      <div className="mt-4 rounded-xl bg-slate-50 p-4">
+        <div className="flex items-center gap-2">
+          <StarRow value={order.review.rating} />
+          <span className="text-xs font-bold text-slate-500">Your review</span>
+        </div>
+        {order.review.comment && <p className="mt-2 whitespace-pre-line text-sm text-slate-700">{order.review.comment}</p>}
+        {order.review.reply && (
+          <p className="mt-3 border-l-2 border-[#2ec440] pl-3 text-sm text-slate-700">
+            <span className="block text-xs font-bold text-slate-500">Reply from {order.supplierName ?? "the supplier"}</span>
+            {order.review.reply}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  const submit = async () => {
+    if (!token || sending) return;
+    if (rating < 1) {
+      showToast("Choose a rating from 1 to 5 stars.", "error");
+      return;
+    }
+    setSending(true);
+    const result = await FurnitureApi.reviewOrder(token, order.id, { rating, comment: comment.trim() || undefined });
+    setSending(false);
+    if (!result.ok) showToast(result.error, "error");
+    else {
+      showToast("Thank you for your review.");
+      onSent();
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-xl border border-slate-200 p-4">
+      <p className="text-sm font-bold text-slate-800">Rate this order</p>
+      <div className="mt-2 flex gap-1" role="radiogroup" aria-label="Rating">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <button key={n} type="button" role="radio" aria-checked={rating === n} aria-label={`${n} star${n === 1 ? "" : "s"}`} onClick={() => setRating(n)} className="rounded p-0.5">
+            <svg className={`h-7 w-7 ${n <= rating ? "fill-amber-400 text-amber-400" : "fill-slate-200 text-slate-200 hover:fill-amber-200"}`} viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+          </button>
+        ))}
+      </div>
+      <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1500} rows={3} placeholder="Write a review (optional)" className="mt-3 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-800 focus:border-[#2ec440] focus:outline-none" />
+      <button type="button" disabled={sending} onClick={submit} className="mt-3 min-h-11 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+        {sending ? "Sending…" : "Send review"}
+      </button>
     </div>
   );
 }

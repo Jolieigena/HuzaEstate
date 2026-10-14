@@ -13,7 +13,17 @@ export interface SupplierProfile {
   city?: string;
   country?: string;
   phone?: string;
+  /** The shop is switched off: hidden from the catalogue and taking no orders. */
+  paused?: boolean;
+  verified?: boolean;
   completedAt?: string | null;
+}
+
+export interface StaffFlags {
+  verified: boolean;
+  paused: boolean;
+  rating: number;
+  reviews: number;
 }
 
 export type SupplierProfileInput = { companyName: string; bio: string; categories: string[]; city: string; phone: string; logoUrl?: string };
@@ -67,5 +77,8 @@ export const SuppliersApi = {
   savePayout: (token: string, input: Payout) => call<{ payout: Payout }>("/suppliers/me/payout", token, { method: "PUT", body: input }),
   getDelivery: (token: string) => call<{ delivery: Delivery }>("/suppliers/me/delivery", token),
   saveDelivery: (token: string, input: { fee: number; currency?: string; freeOver?: number | null }) => call<{ delivery: Delivery }>("/suppliers/me/delivery", token, { method: "PUT", body: input }),
+  setPaused: (token: string, paused: boolean) => call<{ paused: boolean }>("/suppliers/me/shop", token, { method: "PUT", body: { paused } }),
+  staffFlags: (token: string) => call<{ flags: Record<string, StaffFlags> }>("/suppliers/staff/flags", token),
+  setVerified: (token: string, id: string, verified: boolean) => call<{ verified: boolean }>(`/suppliers/staff/${encodeURIComponent(id)}/verified`, token, { method: "PUT", body: { verified } }),
   saveMine: (token: string, input: SupplierProfileInput) => call<{ profile: SupplierProfile }>("/suppliers/me", token, { method: "PUT", body: input }),
 };

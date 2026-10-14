@@ -11,6 +11,8 @@ import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminOrganization, type AdminUser, type UserStatus } from "@/lib/admin/api";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Order, type OrderStatus, type OrdersTrackResult } from "@/lib/furniture/api";
+import { SuppliersApi, type StaffFlags } from "@/lib/suppliers/api";
+import { VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { hasOrgPermission } from "@/lib/orgPermissions";
 import { useToast } from "@/lib/toast-context";
 
@@ -39,10 +41,14 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [reload, setReload] = useState(0);
+  const [flags, setFlags] = useState<Record<string, StaffFlags>>({});
 
   useEffect(() => {
     if (!isAuthReady || !token || !canManage) return;
     let cancelled = false;
+    SuppliersApi.staffFlags(token).then((result) => {
+      if (!cancelled && result.ok) setFlags(result.data.flags);
+    });
     AdminApi.listUsers(token, { role: "supplier", limit: 200 }).then((result) => {
       if (cancelled) return;
       if (result.ok) setUsers(result.data.users);
@@ -68,6 +74,18 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
     } else showToast(result.error, "error");
   }
 
+  async function toggleVerified(user: AdminUser) {
+    if (!token) return;
+    const next = !(flags[user.id]?.verified ?? false);
+    setBusyId(user.id);
+    const result = await SuppliersApi.setVerified(token, user.id, next);
+    setBusyId(null);
+    if (result.ok) {
+      setFlags((prev) => ({ ...prev, [user.id]: { verified: next, paused: prev[user.id]?.paused ?? false, rating: prev[user.id]?.rating ?? 0, reviews: prev[user.id]?.reviews ?? 0 } }));
+      showToast(next ? "Supplier verified." : "Verification removed.");
+    } else showToast(result.error, "error");
+  }
+
   async function confirmDelete() {
     if (!token || !deleteTarget) return;
     const result = await AdminApi.deleteUser(token, deleteTarget.id);
@@ -84,6 +102,9 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
       action={
         canManage ? (
           <div className="flex flex-wrap gap-2">
+            <Link href={scope === "admin" ? "/admin/supplier-products" : "/org-admin/supplier-products"} className={`${buttonLink} border border-slate-200 bg-white text-slate-700 hover:border-slate-300`}>
+              Products
+            </Link>
             <Link href={`${BASE[scope]}/orders`} className={`${buttonLink} border border-slate-200 bg-white text-slate-700 hover:border-slate-300`}>
               Track orders
             </Link>
@@ -110,24 +131,34 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
         ) : !users ? (
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading suppliers…</p>
         ) : rows.length ? (
-          <AdminTable headers={["Supplier", "Country", "Status", "Joined", "Actions"]}>
+          <AdminTable headers={["Supplier", "Country", "Status", "Rating", "Joined", "Actions"]}>
             {rows.map((user) => (
               <tr key={user.id} className="transition-colors hover:bg-slate-50/50">
                 <td className="px-6 py-4">
-                  <p className="font-bold text-slate-900">{user.name}</p>
+                  <p className="flex flex-wrap items-center gap-2 font-bold text-slate-900">
+                    {user.name}
+                    {flags[user.id]?.verified && <VerifiedBadge />}
+                  </p>
                   <p className="text-xs text-slate-500">{user.email}</p>
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">{user.country ?? "—"}</td>
                 <td className="px-6 py-4">
                   <StatusPill status={user.status} />
                   {!user.profileCompleted && <p className="mt-1 text-xs text-slate-400">Profile not completed</p>}
+                  {flags[user.id]?.paused && <p className="mt-1 text-xs font-bold text-amber-700">Shop paused</p>}
                 </td>
+                <td className="px-6 py-4 text-sm text-slate-600">{flags[user.id]?.reviews ? `${flags[user.id].rating.toFixed(1)} (${flags[user.id].reviews})` : "—"}</td>
                 <td className="px-6 py-4 text-xs text-slate-500">{formatDate(user.createdAt)}</td>
                 <td className="px-6 py-4">
                   <div className="flex flex-wrap gap-2">
                     <Link href={`${BASE[scope]}/orders?supplier=${encodeURIComponent(user.id)}`} className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-slate-300">
                       Orders
                     </Link>
+                    {user.profileCompleted && (
+                      <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === user.id} onClick={() => toggleVerified(user)}>
+                        {flags[user.id]?.verified ? "Remove badge" : "Verify"}
+                      </SecondaryButton>
+                    )}
                     <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === user.id} onClick={() => toggleStatus(user)}>
                       {user.status === "active" ? "Suspend" : "Restore"}
                     </SecondaryButton>
