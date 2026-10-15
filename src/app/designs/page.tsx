@@ -396,8 +396,17 @@ function Catalog() {
                     {design.spaceType ? ` · ${design.spaceType}` : ""}
                   </p>
                   <h2 className="mt-1 font-black text-slate-900">{design.title}</h2>
+                  {design.included.length > 0 && (
+                    <p className="mt-2 truncate text-xs text-slate-500">
+                      Includes {design.included.slice(0, 2).join(", ")}
+                      {design.included.length > 2 ? ` +${design.included.length - 2} more` : ""}
+                    </p>
+                  )}
                   <div className="mt-3 flex items-center justify-between gap-3 text-sm">
-                    <span className="font-bold text-slate-900">{formatDesignPrice(design)}</span>
+                    <span className="font-bold text-slate-900">
+                      {design.priceType !== "on_request" && <span className="mr-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">Quote</span>}
+                      {formatDesignPrice(design)}
+                    </span>
                     {design.designer && (
                       <span className="min-w-0 text-right">
                         <span className="block truncate font-semibold text-slate-700">{design.designer.displayName}</span>

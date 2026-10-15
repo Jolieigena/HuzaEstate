@@ -35,8 +35,10 @@ interface NewProject {
   priceType: "fixed" | "on_request";
   price: string;
   currency: string;
+  /** What the quote includes, one item per line. */
+  included: string;
 }
-const EMPTY_PROJECT: NewProject = { title: "", description: "", year: "", images: [], videoUrl: "", toDesigns: false, category: "interior", spaceType: "", priceType: "on_request", price: "", currency: "" };
+const EMPTY_PROJECT: NewProject = { title: "", description: "", year: "", images: [], videoUrl: "", toDesigns: false, category: "interior", spaceType: "", priceType: "on_request", price: "", currency: "", included: "" };
 const SUPPORTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 /** One titled block of the profile form: a numbered heading and a one-line purpose, then the fields. */
@@ -272,6 +274,7 @@ export default function ProfessionalProfileForm() {
         spaceType: newProject.spaceType || undefined,
         images: newProject.images,
         furniture: [],
+        included: fixed ? newProject.included.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 12) : [],
         priceType: newProject.priceType,
         price: fixed ? Number(newProject.price) : undefined,
         currency: newProject.currency || defaultCurrency,
@@ -533,12 +536,18 @@ export default function ProfessionalProfileForm() {
                                 <SpaceSelect className={`${fieldClass} mt-1.5`} category={newProject.category} value={newProject.spaceType} onChange={(spaceType) => setNewProject((v) => ({ ...v, spaceType }))} />
                               </label>
                               <label className="text-xs font-bold text-slate-700">
-                                Price
-                                <Select className={`${fieldClass} mt-1.5`} value={newProject.priceType} aria-label="Design price" onChange={(e) => setNewProject((v) => ({ ...v, priceType: e.target.value as "fixed" | "on_request" }))}>
-                                  <option value="on_request">On request</option>
-                                  <option value="fixed">Fixed price</option>
+                                Quote
+                                <Select className={`${fieldClass} mt-1.5`} value={newProject.priceType} aria-label="Design quote" onChange={(e) => setNewProject((v) => ({ ...v, priceType: e.target.value as "fixed" | "on_request" }))}>
+                                  <option value="on_request">Quote on request</option>
+                                  <option value="fixed">Fixed quote</option>
                                 </Select>
                               </label>
+                              {newProject.priceType === "fixed" && (
+                                <label className="block text-xs font-bold text-slate-700">
+                                  What&apos;s included (one per line)
+                                  <textarea className={`${fieldClass} mt-1.5 min-h-20 font-normal`} rows={3} value={newProject.included} onChange={(e) => setNewProject((v) => ({ ...v, included: e.target.value }))} />
+                                </label>
+                              )}
                               {newProject.priceType === "fixed" && (
                                 <div className="grid grid-cols-[1fr_6.5rem] gap-3">
                                   <label className="text-xs font-bold text-slate-700">Amount<input className={`${fieldClass} mt-1.5`} inputMode="decimal" value={newProject.price} onChange={(e) => setNewProject((v) => ({ ...v, price: e.target.value.replace(/[^\d.]/g, "") }))} /></label>
@@ -553,7 +562,7 @@ export default function ProfessionalProfileForm() {
                             <PrimaryButton
                               type="button"
                               onClick={() => addProject(index)}
-                              disabled={saving || projectImagesUploading || projectVideoUploading || !newProject.title.trim() || (newProject.toDesigns && (newProject.images.length === 0 || (newProject.priceType === "fixed" && !(Number(newProject.price) > 0))))}
+                              disabled={saving || projectImagesUploading || projectVideoUploading || !newProject.title.trim() || (newProject.toDesigns && (newProject.images.length === 0 || (newProject.priceType === "fixed" && (!(Number(newProject.price) > 0) || !newProject.included.trim()))))}
                             >
                               Add project
                             </PrimaryButton>

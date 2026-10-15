@@ -50,7 +50,7 @@ export default function DesignRequestsPage() {
             <Card key={request.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{request.kind === "custom_price" ? "Price request" : "Custom design"}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{request.kind === "custom_price" ? "Quote request" : "Custom design"}</p>
                   <h3 className="mt-1 font-black text-slate-900">{request.designTitle || "New design for a client's space"}</h3>
                   <p className="mt-1 text-sm text-slate-500">
                     {request.clientName} · {request.clientEmail} · {formatDate(request.createdAt)}
@@ -81,7 +81,7 @@ export default function DesignRequestsPage() {
               <p className="mt-4 whitespace-pre-line text-sm leading-6 text-slate-700">{request.message}</p>
               {request.quote && (
                 <p className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <span className="font-bold text-slate-900">Your price: {formatMoney(request.quote.amount, request.quote.currency)}</span>
+                  <span className="font-bold text-slate-900">Your quote: {formatMoney(request.quote.amount, request.quote.currency)}</span>
                   {request.quote.validUntil ? ` · valid until ${formatDate(request.quote.validUntil)}` : ""}
                   {request.quote.note ? <span className="mt-1 block text-slate-500">{request.quote.note}</span> : null}
                 </p>
@@ -90,7 +90,7 @@ export default function DesignRequestsPage() {
               {(request.status === "open" || request.status === "quoted") && (
                 <div className="mt-5 flex flex-wrap gap-2">
                   <PrimaryButton type="button" onClick={() => setPricing(request)}>
-                    {request.status === "quoted" ? "Change price" : "Send a price"}
+                    {request.status === "quoted" ? "Change quote" : "Send a quote"}
                   </PrimaryButton>
                   <SecondaryButton type="button" onClick={() => setDeclining(request)}>
                     Decline
@@ -136,19 +136,19 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
       setError(result.error);
       return;
     }
-    showToast("Price sent.");
+    showToast("Quote sent.");
     onDone();
   };
 
   return (
     <div className="p-6">
       <h2 id={titleId} className="mb-4 pr-6 text-lg font-semibold text-slate-900">
-        Send a price to {request.clientName}
+        Send a quote to {request.clientName}
       </h2>
       <div className="space-y-4">
         <div className="grid grid-cols-[1fr_6rem] gap-3">
           <label className="block text-sm font-bold text-slate-700">
-            Price
+            Quote
             <input className={`${fieldClass} mt-1`} inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ""))} />
           </label>
           <label className="block text-sm font-bold text-slate-700">
@@ -157,11 +157,11 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
           </label>
         </div>
         <label className="block text-sm font-bold text-slate-700">
-          Price valid for
-          <DaysSelect className={`${fieldClass} mt-1`} ariaLabel="Price valid for" value={days} onChange={setDays} options={[7, 14, 30, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }))} />
+          Quote valid for
+          <DaysSelect className={`${fieldClass} mt-1`} ariaLabel="Quote valid for" value={days} onChange={setDays} options={[7, 14, 30, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }))} />
         </label>
         <label className="block text-sm font-bold text-slate-700">
-          What the price includes
+          What the quote includes
           <textarea className={`${fieldClass} mt-1 min-h-24 resize-y font-normal`} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
         </label>
         {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
@@ -171,7 +171,7 @@ function PriceForm({ titleId, request, onClose, onDone }: { titleId: string; req
           Cancel
         </SecondaryButton>
         <PrimaryButton type="button" disabled={busy || !(Number(amount) > 0)} onClick={submit}>
-          {busy ? "Sending…" : "Send price"}
+          {busy ? "Sending…" : "Send quote"}
         </PrimaryButton>
       </div>
     </div>

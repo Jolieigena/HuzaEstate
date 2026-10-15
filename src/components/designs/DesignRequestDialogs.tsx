@@ -96,7 +96,7 @@ function RequestForm({ titleId, target, onClose }: { titleId: string; target: Re
         <h2 id={titleId} className="mb-2 pr-6 text-lg font-semibold text-slate-900">
           Request sent
         </h2>
-        <p className="text-sm text-slate-600">{target.professionalName ?? "The designer"} will reply with a price. You will get a notification.</p>
+        <p className="text-sm text-slate-600">{target.professionalName ?? "The designer"} will reply with a quote. You will get a notification.</p>
         <div className="mt-5 flex justify-end gap-2">
           <button type="button" className={secondary} onClick={onClose}>
             Close
@@ -112,7 +112,7 @@ function RequestForm({ titleId, target, onClose }: { titleId: string; target: Re
   return (
     <div className="flex max-h-[88vh] flex-col p-6">
       <h2 id={titleId} className="mb-1 pr-6 text-lg font-semibold text-slate-900">
-        {target.kind === "custom_price" ? "Request a custom price" : "Request a custom design"}
+        {target.kind === "custom_price" ? "Request a different quote" : "Request a custom design"}
       </h2>
       <p className="mb-4 text-sm text-slate-500">
         {target.designTitle ? `“${target.designTitle}”` : ""}

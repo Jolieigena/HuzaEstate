@@ -8,7 +8,7 @@ export type DesignPriceType = "fixed" | "per_sqm" | "on_request";
 export type DesignStatus = "draft" | "published";
 
 export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { interior: "Interior", exterior: "Exterior" };
-export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed price", per_sqm: "Per square metre", on_request: "On request" };
+export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed quote", per_sqm: "Quote per square metre", on_request: "Quote on request" };
 
 export interface DesignDesigner {
   accountId: string;
@@ -38,6 +38,8 @@ export interface Design {
   priceType: DesignPriceType;
   price?: number;
   currency: string;
+  /** What the quote covers, one line each. */
+  included: string[];
   status: DesignStatus;
   designer?: DesignDesigner;
   createdAt: string;
@@ -54,6 +56,7 @@ export interface DesignInput {
   priceType: DesignPriceType;
   price?: number;
   currency: string;
+  included: string[];
   status: DesignStatus;
 }
 
@@ -63,10 +66,10 @@ export type DesignRequestKind = "custom_price" | "custom_design";
 export type DesignRequestStatus = "open" | "quoted" | "accepted" | "rejected" | "declined" | "cancelled";
 
 export const DESIGN_REQUEST_STATUS_LABELS: Record<DesignRequestStatus, string> = {
-  open: "Waiting for a price",
-  quoted: "Price received",
+  open: "Waiting for a quote",
+  quoted: "Quote received",
   accepted: "Accepted",
-  rejected: "Price turned down",
+  rejected: "Quote turned down",
   declined: "Declined",
   cancelled: "Cancelled",
 };
@@ -217,9 +220,9 @@ async function call<T>(path: string, init: { token?: string | null; method?: str
   }
 }
 
-/** "$450", "$25/m²" or "Price on request". */
+/** "$450", "$25/m²" or "Quote on request". */
 export function formatDesignPrice(design: Pick<Design, "priceType" | "price" | "currency">): string {
-  if (design.priceType === "on_request" || !design.price) return "Price on request";
+  if (design.priceType === "on_request" || !design.price) return "Quote on request";
   const amount = Math.round(design.price).toLocaleString("en-US");
   const money = design.currency === "USD" ? `$${amount}` : `${design.currency} ${amount}`;
   return design.priceType === "per_sqm" ? `${money}/m²` : money;

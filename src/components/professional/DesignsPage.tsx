@@ -23,14 +23,15 @@ import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass
 const MAX_IMAGES = 10;
 
 const MAX_FURNITURE = 40;
+const MAX_INCLUDED = 12;
 
-const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], priceType: "fixed", price: undefined, currency: "", status: "draft" };
+const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], included: [], priceType: "fixed", price: undefined, currency: "", status: "draft" };
 
 function toInput(design: Design): DesignInput {
-  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
+  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], included: design.included ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
 }
 
-/** The professional's own designs: publish interior and exterior designs, each with a price. */
+/** The professional's own designs: publish interior and exterior designs, each with a quote. */
 export default function DesignsPage() {
   const { token, isAuthReady } = useAuth();
   const { showToast } = useToast();
@@ -178,9 +179,14 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
   const save = async (status: "draft" | "published") => {
     if (!token) return;
     const price = form.priceType === "on_request" ? undefined : Number(priceText);
+    const included = form.priceType === "on_request" ? [] : form.included.map((line) => line.trim()).filter(Boolean);
+    if (status === "published" && form.priceType !== "on_request" && included.length === 0) {
+      setError("List what the quote includes before publishing.");
+      return;
+    }
     setBusy(true);
     setError("");
-    const input: DesignInput = { ...form, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: form.currency || defaultCurrency };
+    const input: DesignInput = { ...form, included, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: form.currency || defaultCurrency };
     const result = id ? await DesignsApi.update(token, id, input) : await DesignsApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -272,7 +278,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
 
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="block text-sm font-bold text-slate-700 sm:col-span-1">
-              Price
+              Quote
               <Select className={`${fieldClass} mt-1`} value={form.priceType} onChange={(e) => patch({ priceType: e.target.value as DesignPriceType })}>
                 {(Object.keys(DESIGN_PRICE_TYPE_LABELS) as DesignPriceType[]).map((t) => (
                   <option key={t} value={t}>
@@ -294,6 +300,28 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
               </>
             )}
           </div>
+          {form.priceType !== "on_request" && (
+            <div>
+              <p className="text-sm font-bold text-slate-700">
+                What&apos;s included <span className="font-normal text-slate-400">({form.included.length}/{MAX_INCLUDED})</span>
+              </p>
+              <div className="mt-2 space-y-2">
+                {form.included.map((line, index) => (
+                  <div key={index} className="grid grid-cols-[1fr_auto] gap-2">
+                    <input className={fieldClass} placeholder="e.g. 3D renders of every room" aria-label={`Included item ${index + 1}`} maxLength={120} value={line} onChange={(e) => patch({ included: form.included.map((l, i) => (i === index ? e.target.value : l)) })} />
+                    <button type="button" aria-label={`Remove included item ${index + 1}`} onClick={() => patch({ included: form.included.filter((_, i) => i !== index) })} className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-600">
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {form.included.length < MAX_INCLUDED && (
+                <button type="button" onClick={() => patch({ included: [...form.included, ""] })} className="mt-2 text-sm font-bold text-[#219b31] hover:underline">
+                  + Add item
+                </button>
+              )}
+            </div>
+          )}
           {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
         </div>
 

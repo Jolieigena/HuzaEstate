@@ -123,7 +123,7 @@ function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] 
         <section key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{request.kind === "custom_price" ? "Price request" : "Custom design"}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{request.kind === "custom_price" ? "Quote request" : "Custom design"}</p>
               <h2 className="mt-1 font-black text-slate-900">{request.designTitle || "New design for your space"}</h2>
               <p className="mt-1 text-sm text-slate-500">
                 {request.designId ? (
@@ -142,7 +142,7 @@ function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] 
           {request.quote && (
             <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
               <p className="text-sm font-black text-slate-900">
-                Price: {formatMoney(request.quote.amount, request.quote.currency)}
+                Quote: {formatMoney(request.quote.amount, request.quote.currency)}
                 {request.quote.validUntil ? <span className="font-semibold text-slate-500"> · valid until {date(request.quote.validUntil)}</span> : null}
               </p>
               {request.quote.note && <p className="mt-1 text-sm text-slate-600">{request.quote.note}</p>}
@@ -152,10 +152,10 @@ function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] 
           <div className="mt-4 flex flex-wrap gap-2">
             {request.status === "quoted" && (
               <>
-                <button type="button" className={primary} disabled={busyId === request.id} onClick={() => act(request.id, "acceptQuote", "Price accepted.")}>
-                  Accept price
+                <button type="button" className={primary} disabled={busyId === request.id} onClick={() => act(request.id, "acceptQuote", "Quote accepted.")}>
+                  Accept quote
                 </button>
-                <button type="button" className={secondary} disabled={busyId === request.id} onClick={() => act(request.id, "rejectQuote", "Price turned down.")}>
+                <button type="button" className={secondary} disabled={busyId === request.id} onClick={() => act(request.id, "rejectQuote", "Quote turned down.")}>
                   Turn down
                 </button>
               </>

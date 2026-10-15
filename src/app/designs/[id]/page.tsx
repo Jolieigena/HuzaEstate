@@ -96,7 +96,25 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
             {design.spaceType ? ` · ${design.spaceType}` : ""}
           </p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{design.title}</h1>
-          <p className="mt-4 text-2xl font-black text-slate-900">{formatDesignPrice(design)}</p>
+          <div className="mt-4">
+            {design.priceType !== "on_request" && <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Quote</p>}
+            <p className="text-2xl font-black text-slate-900">{formatDesignPrice(design)}</p>
+          </div>
+          {design.included.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-bold text-slate-800">What&apos;s included</p>
+              <ul className="mt-2 space-y-1.5">
+                {design.included.map((line) => (
+                  <li key={line} className="flex gap-2 text-sm text-slate-600">
+                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-[#2ec440]" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {!published && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
 
           {design.priceType === "per_sqm" && (
@@ -107,7 +125,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               </label>
               {estimate !== undefined && (
                 <p className="mt-3 text-sm text-slate-600">
-                  Estimated price <span className="text-lg font-black text-slate-900">{formatMoney(estimate, design.currency)}</span>
+                  Estimated quote <span className="text-lg font-black text-slate-900">{formatMoney(estimate, design.currency)}</span>
                 </p>
               )}
             </div>
@@ -118,7 +136,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
           {published && designer && !isOwner && (
             <div className="mt-6 flex flex-col gap-2">
               <button type="button" className={primary} onClick={() => ask("custom_price")}>
-                Request a custom price
+                {design.priceType === "on_request" ? "Request a quote" : "Request a different quote"}
               </button>
               <button type="button" className={secondary} onClick={() => ask("custom_design")}>
                 Request a custom design
