@@ -11,6 +11,8 @@ import { hasOrgPermission } from "@/lib/orgPermissions";
 import { useToast } from "@/lib/toast-context";
 import type { SuppliersScope } from "./SuppliersAdmin";
 
+type Tab = "balances" | "refunds" | "payouts";
+
 const BASE: Record<SuppliersScope, string> = { admin: "/admin/suppliers", org: "/org-admin/suppliers" };
 
 /** What each supplier is owed and has been paid, for the people who look after suppliers. Platform administrators can
@@ -29,6 +31,7 @@ export default function SupplierPayoutsPage({ scope }: { scope: SuppliersScope }
   const [reload, setReload] = useState(0);
   const [paying, setPaying] = useState<{ supplierId: string; supplierName: string; totals: EarningTotals } | null>(null);
   const [retrying, setRetrying] = useState("");
+  const [tab, setTab] = useState<Tab>("balances");
 
   useEffect(() => {
     if (!isAuthReady || !token || !canView) return;
@@ -74,10 +77,35 @@ export default function SupplierPayoutsPage({ scope }: { scope: SuppliersScope }
         {summary === null ? (
           !error && <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
         ) : (
-          <div className="space-y-8">
-            {summary.refundsPending.length > 0 && (
+          <div>
+            <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Supplier payouts">
+              {(
+                [
+                  { id: "balances", label: "Supplier balances", badge: undefined },
+                  { id: "refunds", label: "Refunds waiting", badge: summary.refundsPending.length > 0 ? String(summary.refundsPending.length) : undefined },
+                  { id: "payouts", label: "Payouts made", badge: undefined },
+                ] as { id: Tab; label: string; badge?: string }[]
+              ).map((t) => {
+                const active = t.id === tab;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setTab(t.id)}
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                  >
+                    {t.label}
+                    {t.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white/20 text-white" : "bg-red-50 text-red-600"}`}>{t.badge}</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {tab === "refunds" && summary.refundsPending.length === 0 && <EmptyState title="No refunds waiting" />}
+            {tab === "refunds" && summary.refundsPending.length > 0 && (
               <section>
-                <h2 className="mb-3 text-lg font-black text-slate-900">Refunds waiting</h2>
                 <Card className="divide-y divide-red-100 !border-red-100 !bg-red-50/40 !p-0">
                   {summary.refundsPending.map((r) => (
                     <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -101,8 +129,8 @@ export default function SupplierPayoutsPage({ scope }: { scope: SuppliersScope }
               </section>
             )}
 
+            {tab === "balances" && (
             <section>
-              <h2 className="mb-3 text-lg font-black text-slate-900">Supplier balances</h2>
               {rows.length === 0 ? (
                 <EmptyState title="No paid orders yet" />
               ) : (
@@ -137,9 +165,10 @@ export default function SupplierPayoutsPage({ scope }: { scope: SuppliersScope }
                 </AdminTable>
               )}
             </section>
+            )}
 
+            {tab === "payouts" && (
             <section>
-              <h2 className="mb-3 text-lg font-black text-slate-900">Payouts made</h2>
               {payouts === null ? (
                 <p className="py-6 text-center text-sm font-semibold text-slate-400">Loading…</p>
               ) : payouts.length === 0 ? (
@@ -162,6 +191,7 @@ export default function SupplierPayoutsPage({ scope }: { scope: SuppliersScope }
                 </AdminTable>
               )}
             </section>
+            )}
           </div>
         )}
       </RequirePermission>
