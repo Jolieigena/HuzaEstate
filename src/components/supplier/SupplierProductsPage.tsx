@@ -45,6 +45,19 @@ export default function SupplierProductsPage() {
     }
   };
 
+  const setAvailable = async (product: Product, available: boolean) => {
+    if (!token) return;
+    const result = await FurnitureApi.setAvailability(token, product.id, available);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      // Out because the count reached zero: the way back is to set a new count.
+      if (available && product.quantity !== undefined && product.quantity <= 0) setEditing(product);
+      return;
+    }
+    showToast(available ? "Back in stock." : "Marked out of stock.");
+    setReload((n) => n + 1);
+  };
+
   const setStatus = async (product: Product, status: "draft" | "published") => {
     if (!token) return;
     const result = await FurnitureApi.update(token, product.id, { ...toInput(product), status });
@@ -105,6 +118,9 @@ export default function SupplierProductsPage() {
                 <div className="mt-auto flex flex-wrap gap-2 pt-4">
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setEditing(product)}>
                     Edit
+                  </SecondaryButton>
+                  <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setAvailable(product, product.stock === "out_of_stock")}>
+                    {product.stock === "out_of_stock" ? "Back in stock" : "Mark out of stock"}
                   </SecondaryButton>
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setStatus(product, product.status === "published" ? "draft" : "published")}>
                     {product.status === "published" ? "Hide" : "Publish"}

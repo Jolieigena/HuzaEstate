@@ -352,6 +352,7 @@ export const FurnitureApi = {
   get: (id: string, token?: string | null) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token }),
   create: (token: string, input: ProductInput) => call<{ product: Product }>("/furniture", { token, method: "POST", body: input }),
   update: (token: string, id: string, input: ProductInput) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token, method: "PUT", body: input }),
+  setAvailability: (token: string, id: string, available: boolean) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}/availability`, { token, method: "PUT", body: { available } }),
   remove: (token: string, id: string) => call<{ deleted: boolean }>(`/furniture/${encodeURIComponent(id)}`, { token, method: "DELETE" }),
 
   createOrder: (token: string, input: OrderInput) => call<{ orders: Order[] }>("/furniture/orders", { token, method: "POST", body: input }),
