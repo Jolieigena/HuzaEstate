@@ -18,6 +18,8 @@ const STAGE_FILTERS: { value: "" | EarningStage; label: string }[] = [
   { value: "refund_pending", label: EARNING_STAGE_LABELS.refund_pending },
 ];
 
+type Tab = "balance" | "orders" | "payouts" | "details";
+
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
 
 /** The earnings as a spreadsheet file the supplier can keep or send to their accountant. */
@@ -50,6 +52,7 @@ export default function SupplierPaymentsPage() {
   const [earnings, setEarnings] = useState<Earnings | null>(null);
   const [payout, setPayout] = useState<PayoutDetails | null | undefined>(undefined);
   const [stage, setStage] = useState<"" | EarningStage>("");
+  const [tab, setTab] = useState<Tab>("balance");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -71,6 +74,12 @@ export default function SupplierPaymentsPage() {
   }, [isAuthReady, token]);
 
   const rows = (earnings?.orders ?? []).filter((o) => !stage || o.stage === stage);
+  const tabs: { id: Tab; label: string; badge?: string }[] = [
+    { id: "balance", label: "Balance" },
+    { id: "orders", label: "Orders", badge: earnings && earnings.orders.length > 0 ? String(earnings.orders.length) : undefined },
+    { id: "payouts", label: "Payouts", badge: earnings && earnings.payouts.length > 0 ? String(earnings.payouts.length) : undefined },
+    { id: "details", label: "Payout details", badge: payout === null ? "Not set" : undefined },
+  ];
 
   return (
     <PageFrame title="Payments">
@@ -78,130 +87,154 @@ export default function SupplierPaymentsPage() {
       {earnings === null || payout === undefined ? (
         !error && <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
       ) : (
-        <div className="space-y-8">
-          {earnings.totals.length === 0 ? (
-            <EmptyState title="No payments yet" />
-          ) : (
-            earnings.totals.map((t) => (
-              <section key={t.currency}>
-                {earnings.totals.length > 1 && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{t.currency}</h2>}
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <Card>
-                    <p className="text-sm font-bold text-slate-500">Awaiting delivery</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.awaitingDelivery, t.currency)}</p>
-                  </Card>
-                  <Card className={t.ready > 0 ? "!border-amber-200 !bg-amber-50/40" : ""}>
-                    <p className="text-sm font-bold text-slate-500">Ready for payout</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.ready, t.currency)}</p>
-                    {t.readyOrders > 0 && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        {t.readyOrders} order{t.readyOrders === 1 ? "" : "s"}
-                      </p>
-                    )}
-                  </Card>
-                  <Card>
-                    <p className="text-sm font-bold text-slate-500">Paid out</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.paidOut, t.currency)}</p>
-                  </Card>
-                  <Card>
-                    <p className="text-sm font-bold text-slate-500">Refunded to buyers</p>
-                    <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.refunded, t.currency)}</p>
-                  </Card>
-                </div>
-              </section>
-            ))
-          )}
+        <div>
+          <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Payments">
+            {tabs.map((t) => {
+              const active = t.id === tab;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setTab(t.id)}
+                  className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
+                >
+                  {t.label}
+                  {t.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white/20 text-white" : t.badge === "Not set" ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{t.badge}</span>}
+                </button>
+              );
+            })}
+          </div>
 
-          <section>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-slate-900">Orders and earnings</h2>
-              {earnings.orders.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select className={`${fieldClass} !w-auto min-w-44`} value={stage} onChange={(e) => setStage(e.target.value as "" | EarningStage)} aria-label="Show">
+          {tab === "balance" &&
+            (earnings.totals.length === 0 ? (
+              <EmptyState title="No payments yet" />
+            ) : (
+              <div className="space-y-8">
+                {earnings.totals.map((t) => (
+                  <section key={t.currency}>
+                    {earnings.totals.length > 1 && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{t.currency}</h2>}
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      <Card>
+                        <p className="text-sm font-bold text-slate-500">Awaiting delivery</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.awaitingDelivery, t.currency)}</p>
+                      </Card>
+                      <Card className={t.ready > 0 ? "!border-amber-200 !bg-amber-50/40" : ""}>
+                        <p className="text-sm font-bold text-slate-500">Ready for payout</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.ready, t.currency)}</p>
+                        {t.readyOrders > 0 && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {t.readyOrders} order{t.readyOrders === 1 ? "" : "s"}
+                          </p>
+                        )}
+                      </Card>
+                      <Card>
+                        <p className="text-sm font-bold text-slate-500">Paid out</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.paidOut, t.currency)}</p>
+                      </Card>
+                      <Card>
+                        <p className="text-sm font-bold text-slate-500">Refunded to buyers</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.refunded, t.currency)}</p>
+                      </Card>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ))}
+
+          {tab === "orders" &&
+            (earnings.orders.length === 0 ? (
+              <EmptyState title="No paid orders yet" />
+            ) : (
+              <>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2" role="group" aria-label="Show">
                     {STAGE_FILTERS.map((f) => (
-                      <option key={f.value} value={f.value}>
+                      <button
+                        key={f.value}
+                        type="button"
+                        aria-pressed={f.value === stage}
+                        onClick={() => setStage(f.value)}
+                        className={`min-h-9 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors ${f.value === stage ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                      >
                         {f.label}
-                      </option>
+                      </button>
                     ))}
-                  </Select>
+                  </div>
                   <SecondaryButton type="button" onClick={() => downloadCsv(earnings, false)}>
                     Export CSV
                   </SecondaryButton>
                 </div>
-              )}
-            </div>
-            {earnings.orders.length === 0 ? (
-              <EmptyState title="No paid orders yet" />
-            ) : rows.length === 0 ? (
-              <EmptyState title="Nothing in this view" />
-            ) : (
-              <Card className="overflow-x-auto !p-0">
-                <table className="w-full min-w-[40rem] text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
-                      <th className="px-5 py-3">Date</th>
-                      <th className="px-5 py-3">Customer</th>
-                      <th className="px-5 py-3 text-right">Order</th>
-                      <th className="px-5 py-3 text-right">Fee</th>
-                      <th className="px-5 py-3 text-right">You receive</th>
-                      <th className="px-5 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {rows.map((o) => (
-                      <tr key={o.id}>
-                        <td className="px-5 py-3 text-slate-500">{formatDate(o.paidAt ?? o.createdAt)}</td>
-                        <td className="px-5 py-3 font-semibold text-slate-800">
-                          {o.clientName}
-                          <span className="block text-xs font-normal text-slate-400">
-                            {o.items} item{o.items === 1 ? "" : "s"}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-right text-slate-700">{formatPrice(o.total, o.currency)}</td>
-                        <td className="px-5 py-3 text-right text-slate-500">{o.fee > 0 ? `−${formatPrice(o.fee, o.currency)}` : "—"}</td>
-                        <td className="px-5 py-3 text-right font-black text-slate-900">{o.stage === "refunded" || o.stage === "refund_pending" ? "—" : formatPrice(o.net, o.currency)}</td>
-                        <td className="px-5 py-3">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${stageTone[o.stage]}`}>{EARNING_STAGE_LABELS[o.stage]}</span>
-                          {o.stage === "paid_out" && o.paidOutAt && <span className="mt-0.5 block text-xs text-slate-400">{formatDate(o.paidOutAt)}</span>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Card>
-            )}
-          </section>
+                {rows.length === 0 ? (
+                  <EmptyState title="Nothing in this view" />
+                ) : (
+                  <Card className="overflow-x-auto !p-0">
+                    <table className="w-full min-w-[40rem] text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
+                          <th className="px-5 py-3">Date</th>
+                          <th className="px-5 py-3">Customer</th>
+                          <th className="px-5 py-3 text-right">Order</th>
+                          <th className="px-5 py-3 text-right">Fee</th>
+                          <th className="px-5 py-3 text-right">You receive</th>
+                          <th className="px-5 py-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {rows.map((o) => (
+                          <tr key={o.id}>
+                            <td className="px-5 py-3 text-slate-500">{formatDate(o.paidAt ?? o.createdAt)}</td>
+                            <td className="px-5 py-3 font-semibold text-slate-800">
+                              {o.clientName}
+                              <span className="block text-xs font-normal text-slate-400">
+                                {o.items} item{o.items === 1 ? "" : "s"}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3 text-right text-slate-700">{formatPrice(o.total, o.currency)}</td>
+                            <td className="px-5 py-3 text-right text-slate-500">{o.fee > 0 ? `\u2212${formatPrice(o.fee, o.currency)}` : "\u2014"}</td>
+                            <td className="px-5 py-3 text-right font-black text-slate-900">{o.stage === "refunded" || o.stage === "refund_pending" ? "\u2014" : formatPrice(o.net, o.currency)}</td>
+                            <td className="px-5 py-3">
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${stageTone[o.stage]}`}>{EARNING_STAGE_LABELS[o.stage]}</span>
+                              {o.stage === "paid_out" && o.paidOutAt && <span className="mt-0.5 block text-xs text-slate-400">{formatDate(o.paidOutAt)}</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Card>
+                )}
+              </>
+            ))}
 
-          <section>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-slate-900">Payouts received</h2>
-              {earnings.payouts.length > 0 && (
-                <SecondaryButton type="button" onClick={() => downloadCsv(earnings, true)}>
-                  Export CSV
-                </SecondaryButton>
-              )}
-            </div>
-            {earnings.payouts.length === 0 ? (
+          {tab === "payouts" &&
+            (earnings.payouts.length === 0 ? (
               <EmptyState title="No payouts yet" />
             ) : (
-              <Card className="divide-y divide-slate-100 !p-0">
-                {earnings.payouts.map((p) => (
-                  <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                    <div>
-                      <p className="font-black text-slate-900">{formatPrice(p.amount, p.currency)}</p>
-                      <p className="mt-0.5 text-sm text-slate-500">
-                        {formatDate(p.paidAt)} · {p.orders} order{p.orders === 1 ? "" : "s"}
-                        {p.note ? ` · ${p.note}` : ""}
-                      </p>
+              <>
+                <div className="mb-4 flex justify-end">
+                  <SecondaryButton type="button" onClick={() => downloadCsv(earnings, true)}>
+                    Export CSV
+                  </SecondaryButton>
+                </div>
+                <Card className="divide-y divide-slate-100 !p-0">
+                  {earnings.payouts.map((p) => (
+                    <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                      <div>
+                        <p className="font-black text-slate-900">{formatPrice(p.amount, p.currency)}</p>
+                        <p className="mt-0.5 text-sm text-slate-500">
+                          {formatDate(p.paidAt)} · {p.orders} order{p.orders === 1 ? "" : "s"}
+                          {p.note ? ` · ${p.note}` : ""}
+                        </p>
+                      </div>
+                      <StatusPill status={`Ref ${p.reference}`} />
                     </div>
-                    <StatusPill status={`Ref ${p.reference}`} />
-                  </div>
-                ))}
-              </Card>
-            )}
-          </section>
+                  ))}
+                </Card>
+              </>
+            ))}
 
-          <PayoutForm key={payout ? payout.method : "none"} initial={payout} onSaved={setPayout} />
+          {tab === "details" && <PayoutForm key={payout ? payout.method : "none"} initial={payout} onSaved={setPayout} />}
         </div>
       )}
     </PageFrame>
@@ -241,8 +274,6 @@ function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSav
   };
 
   return (
-    <section>
-      <h2 className="mb-3 text-lg font-black text-slate-900">Payout details</h2>
       <Card className="max-w-2xl space-y-5">
         {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
         <label className="block text-sm font-bold text-slate-700">
@@ -298,6 +329,5 @@ function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSav
           {saving ? "Saving…" : initial ? "Save changes" : "Save payout details"}
         </PrimaryButton>
       </Card>
-    </section>
   );
 }
