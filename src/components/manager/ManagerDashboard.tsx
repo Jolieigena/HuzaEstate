@@ -85,7 +85,8 @@ export default function ManagerDashboard() {
     const result = await PropertyApi.setStatus(token, property.id, status);
     if (result.ok) {
       notifyPropertiesChanged();
-      showToast(status === 'published' ? 'Listing is live again.' : status === 'archived' ? 'Listing archived.' : 'Listing removed from the market.');
+      // Relisting something that was never approved goes back to review instead of straight to the market.
+      showToast(result.data.status === 'under_review' ? 'Sent for review. It goes live when it is approved.' : status === 'published' ? 'Listing is live again.' : status === 'archived' ? 'Listing archived.' : 'Listing removed from the market.');
     } else {
       showToast(result.error, 'error');
     }
