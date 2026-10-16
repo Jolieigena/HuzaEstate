@@ -449,7 +449,7 @@ function PostPropertyForm() {
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
                 <CategorizedPhotoUpload photos={photos} onChange={setPhotos} onUploadingChange={setUploadingPhotos} disabled={submitting} />
-                <PhotoLimitNotice photoCount={photos.length} hasVideo={!!videoFile} />
+                <PhotoLimitNotice photoCount={photos.length} />
               </div>
 
               <div className="sm:col-span-2">
