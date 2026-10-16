@@ -77,7 +77,7 @@ export interface CreateUserInput {
   firstName: string;
   lastName: string;
   email: string;
-  roleType: Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin">;
+  roleType: Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin" | "seller_manager">;
   /** Required when roleType is "professional" — chosen once at creation, not editable by the
    * professional themselves afterwards (see access-service's professionals module). */
   professionalKind?: "individual" | "firm";

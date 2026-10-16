@@ -16,9 +16,10 @@ import Select from "@/components/shared/Select";
 // The only roles created from this admin form (enforced server-side too — see access-service's
 // POST /auth/admin/users). Customer only ever comes from public signup; Seller (Manager) is
 // granted self-serve via the become-a-seller flow, never here.
-type CreatableRole = Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin">;
+type CreatableRole = Extract<AccountRole, "administrator" | "professional" | "supplier" | "organization_admin" | "seller_manager">;
 const ROLE_OPTIONS: { value: CreatableRole; label: string }[] = [
   { value: "professional", label: "Professional" },
+  { value: "seller_manager", label: "Seller" },
   { value: "supplier", label: "Furniture Supplier" },
   { value: "organization_admin", label: "Organisation Admin" },
   { value: "administrator", label: "Administrator" },
@@ -74,7 +75,7 @@ function CreateUserForm() {
       setError("Please choose an organisation.");
       return;
     }
-    if ((roleType === "professional" || roleType === "supplier") && !country) {
+    if ((roleType === "professional" || roleType === "supplier" || roleType === "seller_manager") && !country) {
       setError("Please choose a country.");
       return;
     }
@@ -85,7 +86,7 @@ function CreateUserForm() {
       email,
       roleType,
       professionalKind: roleType === "professional" ? professionalKind : undefined,
-      country: roleType === "professional" || roleType === "supplier" ? country : undefined,
+      country: roleType === "professional" || roleType === "supplier" || roleType === "seller_manager" ? country : undefined,
       district: roleType === "professional" ? (district || undefined) : undefined,
       organizationId: roleType === "organization_admin" ? organizationId : undefined,
       scopeDistricts: roleType === "organization_admin" && scopeDistricts.length ? scopeDistricts : undefined,
@@ -169,7 +170,7 @@ function CreateUserForm() {
               </label>
             )}
 
-            {(roleType === "professional" || roleType === "supplier") && (
+            {(roleType === "professional" || roleType === "supplier" || roleType === "seller_manager") && (
               <div className="grid gap-4 sm:grid-cols-2">
                 {roleType === "professional" && (
                   <label className="block text-sm font-bold text-slate-700">
