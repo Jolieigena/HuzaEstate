@@ -10,10 +10,11 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081/api/access-service}
         NEXT_PUBLIC_PROPERTY_API_URL: ${NEXT_PUBLIC_PROPERTY_API_URL:-http://localhost:8081/api/property-service}
         NEXT_PUBLIC_PAYMENT_API_URL: ${NEXT_PUBLIC_PAYMENT_API_URL:-http://localhost:8081/api/payment-service}
-    image: huzaestate-frontend
-    container_name: huzaestate-frontend
+    # The names and port can be overridden so a second copy (UAT) runs beside this one; the defaults are unchanged.
+    image: ${FRONTEND_IMAGE:-huzaestate-frontend}
+    container_name: ${FRONTEND_CONTAINER:-huzaestate-frontend}
     ports:
-      - "8085:8085"
+      - "${FRONTEND_PORT:-8085}:8085"
     environment:
       NODE_ENV: production
       PORT: "8085"
