@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
+import PhotoLimitNotice from './PhotoLimitNotice';
 import { useAuth } from '@/lib/auth-context';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
@@ -225,16 +226,6 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
             </div>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
-            <input
-              type="text"
-              value={form.location}
-              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-              required
-            />
-          </div>
-          <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
             <Select
               value={form.country}
@@ -246,11 +237,22 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               ))}
             </Select>
           </div>
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
+            <input
+              type="text"
+              value={form.location}
+              onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+              required
+            />
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
           <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} />
+          <PhotoLimitNotice photoCount={form.photos.length} />
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5">

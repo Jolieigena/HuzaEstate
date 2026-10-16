@@ -9,6 +9,7 @@ import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
 import { useIsAdministrator } from '@/lib/admin/hooks';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
+import PhotoLimitNotice from '@/components/PhotoLimitNotice';
 import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
@@ -414,18 +415,6 @@ function PostPropertyForm() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Nyarutarama, Kigali"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                  required
-                />
-              </div>
-
-              <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
                 <Select
                   value={country}
@@ -445,9 +434,22 @@ function PostPropertyForm() {
                 </div>
               )}
 
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Nyarutarama, Kigali"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                  required
+                />
+              </div>
+
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
                 <CategorizedPhotoUpload photos={photos} onChange={setPhotos} onUploadingChange={setUploadingPhotos} disabled={submitting} />
+                <PhotoLimitNotice photoCount={photos.length} hasVideo={!!videoFile} />
               </div>
 
               <div className="sm:col-span-2">
