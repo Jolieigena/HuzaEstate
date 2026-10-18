@@ -156,8 +156,7 @@ function PropertiesContent() {
   // Multiple countries can be picked at once (see the checklist panel below)
   // instead of the old single free-text field, which silently matched
   // nothing when someone typed a city ("london") instead of a country name.
-  // Seeded from whatever the visitor previously picked via the (now-removed)
-  // navbar country picker, if anything — see useCurrentCountry.ts.
+  // Seeded from the visitor's detected country, see useCurrentCountry.ts.
   // Starts empty (matching SSR, which has no localStorage) and is filled in
   // by the effect further down.
   const [selectedCountryCodes, setSelectedCountryCodes] = useState<string[]>([]);
@@ -165,7 +164,11 @@ function PropertiesContent() {
   const countryButtonRef = useRef<HTMLButtonElement>(null);
   const [countryPanelPos, setCountryPanelPos] = useState<{ top: number; left: number } | null>(null);
   const [countrySearch, setCountrySearch] = useState('');
+  // Set once the visitor changes the Country filter themselves (or clears the filters): from then on their choice stands and a
+  // later detection result does not replace it.
+  const countryTouched = useRef(false);
   function toggleCountry(code: string) {
+    countryTouched.current = true;
     setSelectedCountryCodes((prev) => prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]);
   }
 
@@ -204,15 +207,13 @@ function PropertiesContent() {
     setSearchTerm(searchParams.get('q') ?? '');
   }
 
-  // Defaults the Country filter to the visitor's own country (previously
-  // picked, or geo-detected — see useCurrentCountry) instead of leaving it
-  // on "Any Country". Only fires while nothing's selected yet, so it won't
-  // stomp on a country the visitor has since picked or cleared themselves.
+  // Defaults the Country filter to the country the visitor is in now (see useCurrentCountry) instead of leaving it on "Any
+  // Country". It follows the detection result until the visitor picks or clears a country themselves, so an earlier
+  // remembered answer is replaced when a fresh lookup says they are somewhere else.
   const currentCountry = useCurrentCountry();
   useEffect(() => {
-    if (!currentCountry) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSelectedCountryCodes((prev) => (prev.length === 0 ? [currentCountry.code] : prev));
+    if (!currentCountry || countryTouched.current) return;
+    setSelectedCountryCodes([currentCountry.code]);
   }, [currentCountry]);
 
   function closeAllPanels() {
@@ -357,7 +358,7 @@ function PropertiesContent() {
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
-    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); setSelectedCountryCodes([]); setAiFilters(null);
+    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); countryTouched.current = true; setSelectedCountryCodes([]); setAiFilters(null);
     setTopPicksOnly(false);
   }
 
