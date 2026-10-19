@@ -10,11 +10,11 @@ const NAV_LINKS: { key: NavKey; href: string; label: string }[] = [
   { key: "buy", href: "/properties?type=sale", label: "Buy" },
   { key: "rent", href: "/properties?type=rent", label: "Rent" },
   { key: "sell", href: "/sell", label: "Sell" },
+  { key: "designs", href: "/designs", label: "Designs" },
   { key: "build", href: "/build", label: "Build" },
   { key: "renovate", href: "/renovate", label: "Renovate" },
-  { key: "professionals", href: "/professionals", label: "Professionals" },
-  { key: "designs", href: "/designs", label: "Designs" },
   { key: "shop", href: "/shop", label: "Shop" },
+  { key: "professionals", href: "/professionals", label: "Professionals" },
   { key: "blog", href: "/blog", label: "Blog" },
 ];
 
