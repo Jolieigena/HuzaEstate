@@ -3,6 +3,7 @@
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import { TILE_OPTIONS } from "@/lib/maps/tiles";
 import { PlotCoordinates } from "@/lib/build/types";
 
 const markerIcon = L.divIcon({
@@ -41,10 +42,7 @@ export default function PlotMapPicker({ coordinates, onChange }: PlotMapPickerPr
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden border border-slate-200 relative z-0">
       <MapContainer center={center} zoom={coordinates ? 16 : 12} scrollWheelZoom className="w-full h-full">
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
+        <TileLayer {...TILE_OPTIONS} />
         <ClickHandler onPick={onChange} />
         {coordinates && (
           <Marker

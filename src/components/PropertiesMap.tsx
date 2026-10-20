@@ -5,6 +5,7 @@ import type { Property } from '@/lib/properties/types';
 import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
+import { TILE_OPTIONS } from '@/lib/maps/tiles';
 import TourWatchBadge from '@/components/TourWatchBadge';
 import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
@@ -483,10 +484,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
         zoomControl={false}
         className="w-full h-full"
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        />
+        <TileLayer {...TILE_OPTIONS} />
         
         <MapUpdater properties={properties} viewMode={viewMode} disableAutoPan={interactionMode !== 'none' || drawnBounds !== null || pointCenter !== null} />
         <CustomMapControls />

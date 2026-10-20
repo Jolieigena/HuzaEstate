@@ -10,6 +10,9 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081/api/access-service}
         NEXT_PUBLIC_PROPERTY_API_URL: ${NEXT_PUBLIC_PROPERTY_API_URL:-http://localhost:8081/api/property-service}
         NEXT_PUBLIC_PAYMENT_API_URL: ${NEXT_PUBLIC_PAYMENT_API_URL:-http://localhost:8081/api/payment-service}
+        # The map pictures. Empty means OpenStreetMap; see src/lib/maps/tiles.ts for using a provider with a key.
+        NEXT_PUBLIC_MAP_TILE_URL: ${NEXT_PUBLIC_MAP_TILE_URL:-}
+        NEXT_PUBLIC_MAP_ATTRIBUTION: ${NEXT_PUBLIC_MAP_ATTRIBUTION:-}
     image: huzaestate-frontend
     container_name: huzaestate-frontend
     ports:

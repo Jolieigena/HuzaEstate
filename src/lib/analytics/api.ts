@@ -2,7 +2,11 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
-export type AnalyticsPeriod = 7 | 30 | 90;
+/** Visits are kept for this many days, so a report cannot reach further back. */
+export const RETENTION_DAYS = 90;
+
+/** The period a report covers: the last N days (today included), or from one day to another (both included). */
+export type AnalyticsRange = { days: number } | { from: string; to: string };
 
 export interface MapPoint {
   lat: number;
@@ -30,7 +34,10 @@ export interface CityRow {
 }
 
 export interface AnalyticsSummary {
-  days: AnalyticsPeriod;
+  /** The period actually covered, which can be shorter than asked for (never beyond the days data is kept). */
+  days: number;
+  from: string;
+  to: string;
   totals: { visits: number; uniqueVisitors: number; countries: number; cities: number; unknownLocation: number };
   countries: CountryRow[];
   cities: CityRow[];
@@ -78,10 +85,15 @@ async function get<T>(path: string, token: string): Promise<Result<T>> {
   }
 }
 
+/** "days=30" or "from=2026-10-01&to=2026-10-20". */
+export function rangeParams(range: AnalyticsRange): URLSearchParams {
+  return "days" in range ? new URLSearchParams({ days: String(range.days) }) : new URLSearchParams({ from: range.from, to: range.to });
+}
+
 export const AnalyticsApi = {
-  summary: (token: string, days: AnalyticsPeriod) => get<AnalyticsSummary>(`/analytics/summary?days=${days}`, token),
-  visitors: (token: string, query: { days: AnalyticsPeriod; search?: string; page?: number; limit?: number }) => {
-    const params = new URLSearchParams({ days: String(query.days) });
+  summary: (token: string, range: AnalyticsRange) => get<AnalyticsSummary>(`/analytics/summary?${rangeParams(range).toString()}`, token),
+  visitors: (token: string, query: { range: AnalyticsRange; search?: string; page?: number; limit?: number }) => {
+    const params = rangeParams(query.range);
     if (query.search) params.set("search", query.search);
     if (query.page) params.set("page", String(query.page));
     if (query.limit) params.set("limit", String(query.limit));
