@@ -31,9 +31,10 @@ function WheelZoomOnClick() {
   return null;
 }
 
-/** A world map with a dot for every place visitors came from, bigger where there were more visits. Must be loaded with next/dynamic
- *  and ssr: false, because the map library needs the browser. */
-export default function VisitorMap({ points }: { points: MapPoint[] }) {
+/** A world map with a dot for every place visitors came from, bigger where there were more visits. Clicking a dot opens a card with
+ *  a button that narrows the report to that place. Must be loaded with next/dynamic and ssr: false, because the map library needs the
+ *  browser. */
+export default function VisitorMap({ points, onPick }: { points: MapPoint[]; onPick?: (point: MapPoint) => void }) {
   const max = Math.max(1, ...points.map((p) => p.visits));
   return (
     <MapContainer
@@ -60,8 +61,13 @@ export default function VisitorMap({ points }: { points: MapPoint[] }) {
             <Popup>
               <p className="font-bold">{label}</p>
               <p>
-                {p.visits} visit{p.visits === 1 ? "" : "s"} from {p.unique} visitor{p.unique === 1 ? "" : "s"}
+                {p.visits} view{p.visits === 1 ? "" : "s"} from {p.unique} visitor{p.unique === 1 ? "" : "s"}
               </p>
+              {onPick && p.code && (
+                <button type="button" onClick={() => onPick(p)} className="mt-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-[#2ec440]">
+                  Show these visitors
+                </button>
+              )}
             </Popup>
           </CircleMarker>
         );

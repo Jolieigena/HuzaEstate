@@ -1,6 +1,5 @@
 "use client";
 
-import LandingVisitTracker from "@/components/analytics/LandingVisitTracker";
 import PublicPropertyGrid from "@/components/PublicPropertyGrid";
 import SearchBar from "@/components/SearchBar";
 import Reveal from "@/components/Reveal";
@@ -41,7 +40,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center w-full">
-      <LandingVisitTracker path="/home" />
       {/* Hero Section */}
       <section className="relative w-full h-[580px] sm:h-[640px] md:h-[700px] flex items-center justify-center overflow-hidden">
         <Image

@@ -4,6 +4,7 @@ import "./globals.css";
 import AppShell from "@/components/AppShell";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import NavigationTracker from "@/components/NavigationTracker";
+import VisitTracker from "@/components/analytics/VisitTracker";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       >
         <NavigationTracker />
         <AuthProvider>
+          <VisitTracker />
           <ToastProvider>
             <AppShell>{children}</AppShell>
             <ConditionalFooter />
