@@ -90,7 +90,12 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
             {switchError}
           </p>
         )}
-        <Link href="/login?add=1" onClick={onNavigate} className={itemClass}>
+        <Link href="/login?add=1" onClick={onNavigate} className={`${itemClass} flex items-center gap-3`}>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500" aria-hidden="true">
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </span>
           Add another account
         </Link>
       </div>
