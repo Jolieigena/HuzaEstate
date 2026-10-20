@@ -112,7 +112,7 @@ function SignupForm() {
                 required
               />
               <label htmlFor="terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
-                I agree to HuzaEstate&apos;s <Link href="#" className="font-bold text-[#2ec440] hover:underline">Terms of Service</Link> and <Link href="#" className="font-bold text-[#2ec440] hover:underline">Privacy Policy</Link>.
+                I agree to HuzaEstate&apos;s <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Privacy Policy</Link>.
               </label>
             </div>
 

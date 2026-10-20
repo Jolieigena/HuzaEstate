@@ -127,8 +127,9 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} HuzaEstate, Inc. All rights reserved. (Rwanda)
           </p>
           <div className="flex items-center gap-6">
-            <span className="text-slate-500 text-sm">Terms</span>
-            <span className="text-slate-500 text-sm">Privacy</span>
+            <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Terms</Link>
+            <Link href="/privacy" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Privacy</Link>
+            <Link href="/seller-terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Seller Terms</Link>
           </div>
         </div>
       </div>

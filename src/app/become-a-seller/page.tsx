@@ -343,7 +343,7 @@ function BecomeASellerForm() {
               required
             />
             <label htmlFor="seller-terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
-              I agree to HuzaEstate&apos;s <Link href="#" className="font-bold text-[#2ec440] hover:underline">Seller Terms &amp; Conditions</Link>.
+              I agree to HuzaEstate&apos;s <Link href="/seller-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Seller Terms &amp; Conditions</Link>.
             </label>
           </div>
 
