@@ -12,7 +12,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { loginWithCredentials } = useAuth();
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => (searchParams.get('email') ?? '').slice(0, 254));
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +41,7 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">{searchParams.get('add') ? 'Add an account' : 'Welcome back'}</h1>
       <p className="text-slate-500 mb-8">Please enter your details to sign in.</p>
 
       {error && (

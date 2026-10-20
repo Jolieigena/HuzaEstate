@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, type AccountRole } from "@/lib/auth-context";
@@ -28,7 +29,9 @@ function workspaceOfPath(pathname: string): AccountRole | null {
 export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { account, activeRole: storedRole, switchRole, logout } = useAuth();
+  const { account, activeRole: storedRole, switchRole, logout, logoutAll, savedAccounts, switchAccount, removeSavedAccount } = useAuth();
+  const [switchError, setSwitchError] = useState("");
+  const otherAccounts = savedAccounts.filter((saved) => !saved.active);
   const roles = availableRoles(account);
   const fromPath = workspaceOfPath(pathname);
   const activeRole = fromPath && roles.includes(fromPath) ? fromPath : storedRole;
@@ -42,12 +45,54 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
     if (switchRole(role)) router.push(roleHome(role));
   };
 
+  // A full page load on the way in, so nothing held in memory for the account being left can show up for the next one.
+  const switchToAccount = async (id: string, email: string) => {
+    setSwitchError("");
+    const result = await switchAccount(id);
+    if (result.ok) {
+      onNavigate();
+      window.location.assign(result.account.path);
+    } else if (result.needsPassword) {
+      onNavigate();
+      router.push(`/login?add=1&email=${encodeURIComponent(email)}`);
+    } else setSwitchError(result.error);
+  };
+
   return (
     <>
       <div className="mb-1 border-b border-slate-50 px-4 py-2">
         <div className="truncate text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate account"}</div>
         <div className="truncate text-xs text-slate-500">{account?.email ?? ""}</div>
         <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{ROLE_LABELS[activeRole]}</div>
+      </div>
+
+      <div className="border-b border-slate-50 pb-1">
+        {otherAccounts.map((saved) => (
+          <div key={saved.id} className="flex items-center hover:bg-slate-50">
+            <button type="button" onClick={() => switchToAccount(saved.id, saved.email)} className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2 text-left">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white" aria-hidden="true">
+                {saved.name.charAt(0).toUpperCase() || "?"}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-slate-900">{saved.name}</span>
+                <span className="block truncate text-xs text-slate-500">{saved.locked ? "Sign in again" : saved.email}</span>
+              </span>
+            </button>
+            {saved.locked && (
+              <button type="button" onClick={() => removeSavedAccount(saved.id)} aria-label={`Remove ${saved.name} from this device`} className="mr-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600">
+                <span aria-hidden="true">×</span>
+              </button>
+            )}
+          </div>
+        ))}
+        {switchError && (
+          <p role="alert" className="px-4 py-1 text-xs font-semibold text-red-600">
+            {switchError}
+          </p>
+        )}
+        <Link href="/login?add=1" onClick={onNavigate} className={itemClass}>
+          Add another account
+        </Link>
       </div>
 
       <Link href={roleHome(activeRole)} onClick={onNavigate} className={itemClass}>
@@ -112,6 +157,18 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
         >
           Log out
         </button>
+        {savedAccounts.length > 1 && (
+          <button
+            type="button"
+            onClick={() => {
+              onNavigate();
+              logoutAll();
+            }}
+            className="w-full px-4 py-2 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
+          >
+            Log out of all accounts
+          </button>
+        )}
       </div>
     </>
   );
