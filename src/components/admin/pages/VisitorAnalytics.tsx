@@ -414,6 +414,35 @@ export function VisitorAnalyticsPage() {
                     )}
                   </Card>
                 </div>
+                <Card>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h2 className="font-black text-slate-900">Latest visitors</h2>
+                    <button type="button" onClick={() => setTab("visitors")} className="text-sm font-bold text-slate-500 underline hover:text-slate-900">
+                      See all
+                    </button>
+                  </div>
+                  {!visitors || visitors.rows.length === 0 ? (
+                    <p className="text-sm font-semibold text-slate-500">Nothing in this selection.</p>
+                  ) : (
+                    <ul className="divide-y divide-slate-100">
+                      {visitors.rows.slice(0, 6).map((v) => (
+                        <li key={v.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2.5">
+                          <span className="inline-flex items-center gap-3 text-sm">
+                            <Flag code={v.countryCode} name={v.country} />
+                            <Pick label={`Open ${v.ip}`} onClick={() => setDetailId(v.id)}>
+                              {v.ip}
+                            </Pick>
+                            <span className="text-slate-500">{place(v)}</span>
+                          </span>
+                          <span className="inline-flex items-center gap-3 text-xs text-slate-500">
+                            {v.accounts.length > 0 ? v.accounts.map((a) => <AccountBadge key={a.id} account={a} />) : v.memberViews > 0 ? <span className="font-semibold text-[#219b31]">Signed in</span> : <span>Not signed in</span>}
+                            {formatDateTime(v.lastSeen)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
               </div>
             )}
 
