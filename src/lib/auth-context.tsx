@@ -45,6 +45,8 @@ export interface Account {
    * (see PUT /professionals/me) — the app should force that step next, same as mustChangePassword. */
   profileCompleted?: boolean;
   path: string;
+  /** The workspace used last (or the highest role the first time), remembered by the server across devices. */
+  activeRole?: AccountRole;
 }
 
 export interface SignupInput {
@@ -175,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const applySession = (nextToken: string, nextAccount: Account) => {
     let preferredRole: string | null = null;
     try { preferredRole = localStorage.getItem(ROLE_STORAGE_KEY); } catch { /* ignore */ }
-    const role = deriveActiveRole(nextAccount, preferredRole);
+    const role = deriveActiveRole(nextAccount, nextAccount.activeRole ?? preferredRole);
     setToken(nextToken);
     setAccount(nextAccount);
     setIsLoggedIn(true);
@@ -278,6 +280,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!account?.roles.includes(role)) return false;
     setActiveRole(role);
     try { localStorage.setItem(ROLE_STORAGE_KEY, role); } catch { /* preference remains session-only */ }
+    // Remembered by the server too, so the next sign-in (on any device) opens this workspace. Best effort: switching never waits on it.
+    if (token) {
+      fetch(`${API_URL}/auth/me/active-role`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ role }),
+      }).catch(() => { /* ignore */ });
+    }
     return true;
   };
 

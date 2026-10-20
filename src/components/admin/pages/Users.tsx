@@ -13,6 +13,7 @@ import { regionsForCountry } from "@/lib/regions";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, DistrictChecklist, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime } from "../ui";
 import Select from "@/components/shared/Select";
+import { COUNTRY_OPTIONS } from "@/lib/countries";
 
 const ALL_PERMISSIONS = new Set(ORG_PERMISSIONS.map((p) => p.value));
 
@@ -44,6 +45,8 @@ function PermissionsChecklist({ selected, onChange }: { selected: Set<OrgPermiss
 }
 
 const TYPE_LABELS: Record<UserAccountType, string> = { administrator: "Administrator", professional: "Professional", supplier: "Furniture Supplier", organization_admin: "Organisation Admin", seller_manager: "Seller / Owner", customer: "Customer" };
+// The roles an account can be given or lose after it exists; the other two are single-role staff accounts.
+const SWITCHABLE_ROLES: UserAccountType[] = ["customer", "seller_manager", "professional", "supplier"];
 const TYPE_TABS: { key: "all" | UserAccountType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "administrator", label: "Administrators" },
@@ -288,6 +291,11 @@ export function UserDetailPage({ userId }: { userId: string }) {
   const [scopeForm, setScopeForm] = useState<{ id: string; selected: string[] } | null>(null);
   const [savingScope, setSavingScope] = useState(false);
   const [orgCountries, setOrgCountries] = useState<{ id: string; countries: string[] } | null>(null);
+  const [roleToAdd, setRoleToAdd] = useState<UserAccountType | "">("");
+  const [roleKind, setRoleKind] = useState<"individual" | "firm">("individual");
+  const [roleCountry, setRoleCountry] = useState("");
+  const [savingRole, setSavingRole] = useState(false);
+  const [roleToRemove, setRoleToRemove] = useState<UserAccountType | null>(null);
 
   useEffect(() => {
     if (!isAuthReady || !token || !canView) return;
@@ -410,6 +418,24 @@ export function UserDetailPage({ userId }: { userId: string }) {
     } else showToast(result.error, "error");
   }
 
+  const roleOptions = SWITCHABLE_ROLES.filter((r) => !user.roles.includes(r));
+  const rolesEditable = canManage && !isSelf && !user.roles.includes("administrator") && !user.roles.includes("organization_admin");
+  const roleNeedsCountry = (roleToAdd === "professional" || roleToAdd === "supplier" || roleToAdd === "seller_manager") && !user.country;
+
+  async function changeRole(action: "add" | "remove", role: UserAccountType) {
+    if (!token || !user) return;
+    setSavingRole(true);
+    const result = await AdminApi.changeUserRole(token, user.id, { action, role, country: roleCountry || undefined, professionalKind: role === "professional" ? roleKind : undefined });
+    setSavingRole(false);
+    setRoleToRemove(null);
+    if (result.ok) {
+      applyUser(result.data);
+      setRoleToAdd("");
+      setRoleCountry("");
+      showToast(action === "add" ? `${TYPE_LABELS[role]} role added.` : `${TYPE_LABELS[role]} role removed.`);
+    } else showToast(result.error, "error");
+  }
+
   async function toggleStatus() {
     if (!token || !user) return;
     const result = await AdminApi.updateUser(token, user.id, { status: nextStatus });
@@ -459,6 +485,68 @@ export function UserDetailPage({ userId }: { userId: string }) {
               {user.mustChangePassword && <Field label="Password" value="Still on the emailed temporary password" />}
             </dl>
           </Card>
+
+          {rolesEditable && (
+            <Card>
+              <h3 className="text-lg font-black text-slate-900">Roles</h3>
+              <ul className="mt-4 flex flex-wrap gap-2">
+                {user.roles.map((r) => (
+                  <li key={r} className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 py-1.5 pl-4 pr-2 text-sm font-bold text-slate-700">
+                    {TYPE_LABELS[r]}
+                    {user.roles.length > 1 && (
+                      <button type="button" onClick={() => setRoleToRemove(r)} aria-label={`Remove the ${TYPE_LABELS[r]} role`} className="flex h-6 w-6 items-center justify-center rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600">
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {roleOptions.length > 0 && (
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Add a role
+                    <Select className={`${fieldClass} mt-2`} value={roleToAdd} onChange={(e) => setRoleToAdd(e.target.value as UserAccountType | "")}>
+                      <option value="">Choose a role</option>
+                      {roleOptions.map((r) => (
+                        <option key={r} value={r}>
+                          {TYPE_LABELS[r]}
+                        </option>
+                      ))}
+                    </Select>
+                  </label>
+                  {roleToAdd === "professional" && (
+                    <label className="block text-sm font-bold text-slate-700">
+                      Professional type
+                      <Select className={`${fieldClass} mt-2`} value={roleKind} onChange={(e) => setRoleKind(e.target.value as "individual" | "firm")}>
+                        <option value="individual">Individual professional</option>
+                        <option value="firm">Firm / company</option>
+                      </Select>
+                    </label>
+                  )}
+                  {roleNeedsCountry && (
+                    <label className="block text-sm font-bold text-slate-700">
+                      Country
+                      <Select className={`${fieldClass} mt-2`} value={roleCountry} onChange={(e) => setRoleCountry(e.target.value)}>
+                        <option value="" disabled>
+                          Select a country
+                        </option>
+                        {COUNTRY_OPTIONS.map((c) => (
+                          <option key={c.code} value={c.name}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  )}
+                  <div className="sm:col-span-2">
+                    <PrimaryButton type="button" disabled={!roleToAdd || savingRole || (roleNeedsCountry && !roleCountry)} onClick={() => roleToAdd && changeRole("add", roleToAdd)}>
+                      {savingRole ? "Adding…" : "Add role"}
+                    </PrimaryButton>
+                  </div>
+                </div>
+              )}
+            </Card>
+          )}
 
           <Card>
             <h3 className="text-lg font-black text-slate-900">Edit details</h3>
@@ -603,6 +691,18 @@ export function UserDetailPage({ userId }: { userId: string }) {
         title={nextStatus === "suspended" ? "Suspend this account?" : "Restore this account?"}
         description={nextStatus === "suspended" ? "They are signed out on their next request and can't sign in until restored. Their data is kept." : "The account regains normal access."}
         confirmLabel={nextStatus === "suspended" ? "Suspend account" : "Restore account"}
+      />
+
+      <ConfirmModal
+        open={roleToRemove !== null}
+        onClose={() => setRoleToRemove(null)}
+        onConfirm={async () => {
+          if (roleToRemove) await changeRole("remove", roleToRemove);
+        }}
+        destructive
+        title={roleToRemove ? `Remove the ${TYPE_LABELS[roleToRemove]} role?` : "Remove this role?"}
+        description="They lose that workspace straight away. Their data is kept, and adding the role again brings it back."
+        confirmLabel="Remove role"
       />
 
       <ConfirmModal

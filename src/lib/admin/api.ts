@@ -205,6 +205,11 @@ export const AdminApi = {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "PATCH", body: changes });
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },
+  /** Adds a role to, or takes one from, an account that already exists (platform administrators only). */
+  changeUserRole: async (token: string, id: string, change: { action: "add" | "remove"; role: UserAccountType; country?: string; professionalKind?: "individual" | "firm" }) => {
+    const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}/roles`, token, { method: "PATCH", body: change });
+    return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
+  },
   deleteUser: (token: string, id: string) =>
     call<{ deleted: boolean; cleanup: { propertiesRemoved: number | null; subscriptionRemoved: boolean | null } }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
   listSubscriptions: (token: string, query: { tier?: string; status?: string; accountId?: string; page?: number; limit?: number } = {}) =>
