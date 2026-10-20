@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
 import { PropertyApi } from "@/lib/properties/api";
 import type { Property } from "@/lib/properties/types";
@@ -37,10 +38,15 @@ export default function InquiryForm({ property }: { property: Property }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true);
     setError(null);
+    const phoneIssue = phoneProblem(phone);
+    if (phoneIssue) {
+      setError(`Phone: ${phoneIssue}`);
+      return;
+    }
+    setBusy(true);
     const result = await PropertyApi.sendInquiry(
-      { propertyId: property.id, name: (name || account?.name || "").trim(), email: (email || account?.email || "").trim(), phone: phone.trim() || undefined, message: message.trim() },
+      { propertyId: property.id, name: (name || account?.name || "").trim(), email: (email || account?.email || "").trim(), phone: cleanPhone(phone) || undefined, message: message.trim() },
       token
     );
     setBusy(false);
@@ -52,7 +58,7 @@ export default function InquiryForm({ property }: { property: Property }) {
     <form onSubmit={submit} className="flex flex-col gap-3">
       <input className={inputClass} placeholder="Your name" required value={name || account?.name || ""} onChange={(e) => setName(e.target.value)} />
       <input className={inputClass} type="email" placeholder="Your email" required value={email || account?.email || ""} onChange={(e) => setEmail(e.target.value)} />
-      <input className={inputClass} placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      <PhoneInput value={phone} onChange={setPhone} placeholder="Phone (optional)" />
       <textarea
         className={inputClass}
         rows={4}

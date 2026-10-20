@@ -20,9 +20,27 @@ import Select from "@/components/shared/Select";
 // A checklist of every country this organisation operates in — admin-assigned, and changeable
 // any time (see the Detail page below). Same checkbox-list pattern /properties' own Country
 // filter uses, just inline in a form instead of a popover.
-function CountryChecklist({ selected, onToggle }: { selected: string[]; onToggle: (name: string) => void }) {
+function CountryChecklist({ selected, onToggle, onAdd }: { selected: string[]; onToggle: (name: string) => void; onAdd: (names: string[]) => void }) {
   const [search, setSearch] = useState("");
+  const [rejected, setRejected] = useState<string[]>([]);
   const visible = COUNTRY_OPTIONS.filter((c) => c.name.toLowerCase().includes(search.trim().toLowerCase()));
+
+  // Enter or a comma turns what was typed into countries: each name that is on the list becomes a chip (once), anything else is
+  // refused by name and left in the box. Raw text is never kept as a country.
+  const commit = (raw: string) => {
+    const entries = raw.split(",").map((entry) => entry.trim()).filter(Boolean);
+    if (entries.length === 0) return;
+    const found: string[] = [];
+    const notCountries: string[] = [];
+    for (const entry of entries) {
+      const match = COUNTRY_OPTIONS.find((c) => c.name.toLowerCase() === entry.toLowerCase());
+      if (!match) notCountries.push(entry);
+      else if (!selected.includes(match.name) && !found.includes(match.name)) found.push(match.name);
+    }
+    if (found.length) onAdd(found);
+    setRejected(notCountries);
+    setSearch(notCountries.join(", "));
+  };
   return (
     <div>
       {selected.length > 0 && (
@@ -46,11 +64,26 @@ function CountryChecklist({ selected, onToggle }: { selected: string[]; onToggle
       )}
       <input
         type="text"
-        placeholder="Search countries…"
+        placeholder="Search or type a country, then press Enter…"
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          const next = e.target.value;
+          setRejected([]);
+          if (next.includes(",")) commit(next);
+          else setSearch(next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          commit(search);
+        }}
         className={`${fieldClass} mb-2`}
       />
+      {rejected.length > 0 && (
+        <p role="alert" className="mb-2 text-xs font-semibold text-red-600">
+          Not a country on the list: {rejected.join(", ")}.
+        </p>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-56 overflow-y-auto rounded-xl border border-slate-200 p-3">
         {visible.map((c) => (
           <label key={c.code} className="flex items-center gap-2 px-1 py-1 rounded-lg hover:bg-slate-50 cursor-pointer text-sm text-slate-700 font-medium">
@@ -178,10 +211,16 @@ export function CreateOrganizationPage() {
     if (removing) setRegionScopes((prev) => Object.fromEntries(Object.entries(prev).filter(([c]) => c !== name)));
   };
 
+  const addCountries = (names: string[]) => setCountries((prev) => [...prev, ...names.filter((n) => !prev.includes(n))]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token || isSubmitting) return;
     setError("");
+    if (countries.length === 0) {
+      setError("Choose at least one country.");
+      return;
+    }
     const phoneIssue = phoneProblem(contactPhone);
     if (phoneIssue) {
       setError(`Contact phone: ${phoneIssue}`);
@@ -261,7 +300,7 @@ export function CreateOrganizationPage() {
             <div className="block text-sm font-bold text-slate-700">
               Countries
               <p className="mb-2 mt-0.5 text-xs font-medium text-slate-400">Which country/countries this organisation operates in — you can change this any time.</p>
-              <CountryChecklist selected={countries} onToggle={toggleCountry} />
+              <CountryChecklist selected={countries} onToggle={toggleCountry} onAdd={addCountries} />
             </div>
             <div className="block text-sm font-bold text-slate-700">
               Property categories
@@ -371,6 +410,10 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
   async function saveDetails(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !org) return;
+    if (formValues.countries.length === 0) {
+      showToast("Choose at least one country.", "error");
+      return;
+    }
     const phoneIssue = phoneProblem(formValues.contactPhone);
     if (phoneIssue) {
       showToast(`Contact phone: ${phoneIssue}`, "error");
@@ -411,7 +454,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
     const result = await AdminApi.deleteOrganization(token, org.id);
     setDeleteOpen(false);
     if (result.ok) {
-      showToast(result.data.membersUnassigned > 0 ? `Organisation deleted. ${result.data.membersUnassigned} staff account(s) are no longer assigned to it.` : "Organisation deleted.");
+      showToast(result.data.membersSuspended > 0 ? `Organisation deleted. ${result.data.membersSuspended} staff account(s) were suspended.` : "Organisation deleted.");
       router.push("/admin/organizations");
     } else showToast(result.error, "error");
   }
@@ -503,7 +546,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
               <div className="text-sm font-bold text-slate-700">
                 Countries
                 <div className="mt-1">
-                  <CountryChecklist selected={formValues.countries} onToggle={toggleCountry} />
+                  <CountryChecklist selected={formValues.countries} onToggle={toggleCountry} onAdd={(names) => setForm({ ...formValues, countries: [...formValues.countries, ...names.filter((n) => !formValues.countries.includes(n))] })} />
                 </div>
               </div>
               <div className="text-sm font-bold text-slate-700">
@@ -567,7 +610,7 @@ export function OrganizationDetailPage({ organizationId }: { organizationId: str
         onConfirm={remove}
         destructive
         title="Delete this organisation?"
-        description={`This removes ${org.name} permanently. Its ${org.memberCount} staff account${org.memberCount === 1 ? "" : "s"} are kept — they just lose their organisation affiliation. This can't be undone.`}
+        description={`This removes ${org.name} permanently. Its ${org.memberCount} staff account${org.memberCount === 1 ? "" : "s"} are kept but suspended, and can be restored or deleted from Users. This can't be undone.`}
         confirmLabel="Delete permanently"
       />
     </PageFrame>

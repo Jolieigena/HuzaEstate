@@ -24,7 +24,6 @@ import Select from "@/components/shared/Select";
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop';
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
 function PostPropertyForm() {
@@ -175,7 +174,8 @@ function PostPropertyForm() {
     // neighborhood and the city — split it here rather than asking for two form fields.
     const [neighborhood, ...cityParts] = location.split(',');
     const city = cityParts.length ? cityParts.join(',').trim() : neighborhood.trim();
-    const { imageUrl, galleryImages } = deriveImageFields(photos, FALLBACK_IMAGE);
+    // No stand-in picture: a listing without photos is not published (checked on submit), a draft may have none yet.
+    const { imageUrl, galleryImages } = photos.length ? deriveImageFields(photos, '') : { imageUrl: '', galleryImages: [] as string[] };
     let videoUrl: string | undefined;
     if (videoFile) {
       if (!SUPPORTED_VIDEO_TYPES.has(videoFile.type)) throw new Error('Video must be MP4, WebM, or MOV.');
@@ -183,7 +183,7 @@ function PostPropertyForm() {
     }
     return {
       title,
-      description: description || (propertyTypeLabel ? `A ${propertyTypeLabel.toLowerCase()} listed in ${location}.` : ''),
+      description: description.trim(),
       price: Number(price) || 0,
       currency: listingType === 'rent' ? `${currency}/month` : currency,
       location: neighborhood.trim(),
@@ -213,6 +213,10 @@ function PostPropertyForm() {
     if (!listingType || !propertyType || submitting || savingDraft || uploadingPhotos) return;
 
     setError('');
+    // What the server also requires before a listing goes live, said here first and next to the form.
+    if (photos.length === 0) { setError('Add at least one photo of the property.'); return; }
+    if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
+    if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
     setSubmitting(true);
     try {
       const fields = await buildFields();

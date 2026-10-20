@@ -245,7 +245,7 @@ export const AdminApi = {
     return result.ok ? ({ ok: true, data: result.data.organization } as const) : result;
   },
   deleteOrganization: (token: string, id: string) =>
-    call<{ deleted: boolean; membersUnassigned: number }>(`${ACCESS_API_URL}/organizations/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
+    call<{ deleted: boolean; membersUnassigned: number; membersSuspended: number }>(`${ACCESS_API_URL}/organizations/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
   createOrgRequest: async (token: string, input: { reason: OrgRequestReason; message?: string }) => {
     const result = await call<{ request: AdminOrgRequest }>(`${ACCESS_API_URL}/org-requests`, token, { method: "POST", body: input });
     return result.ok ? ({ ok: true, data: result.data.request } as const) : result;
