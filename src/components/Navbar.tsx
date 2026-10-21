@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Logo } from './Logo';
@@ -19,8 +19,24 @@ export default function Navbar() {
   const { isLoggedIn, account } = useAuth();
   const photoUrl = useMyProfilePhoto();
 
+  // While the phone menu is open the page behind it stays still (the menu scrolls inside itself, below), and the menu closes if the
+  // window is widened to where it is no longer shown.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const widened = window.matchMedia('(min-width: 768px)');
+    const closeWhenWide = () => { if (widened.matches) setMenuOpen(false); };
+    widened.addEventListener('change', closeWhenWide);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      widened.removeEventListener('change', closeWhenWide);
+    };
+  }, [menuOpen]);
+
   return (
-    <header className="w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200">
+    // Above the floating buttons on a page (z-40) while the menu is open, so they never sit on top of it.
+    <header className={`w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 ${menuOpen ? 'z-50' : 'z-40'} bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200`}>
       {/* Brand Logo */}
       <Link href="/" aria-label="HuzaEstate Home" className="flex items-center gap-2">
         <Logo className="h-8 w-auto" />
@@ -95,7 +111,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Drawer */}
       {menuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-100 shadow-lg flex flex-col px-6 py-4 gap-1">
+        <div className="md:hidden absolute top-full left-0 w-full max-h-[calc(100dvh-5rem)] overflow-y-auto overscroll-contain bg-white border-b border-slate-100 shadow-lg flex flex-col px-6 py-4 gap-1">
           <NavLinks variant="mobile" onNavigate={() => setMenuOpen(false)} />
           <Link
             href="/properties"
