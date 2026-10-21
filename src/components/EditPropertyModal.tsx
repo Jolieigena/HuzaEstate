@@ -5,6 +5,7 @@ import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import PhotoLimitNotice from './PhotoLimitNotice';
 import { useAuth } from '@/lib/auth-context';
+import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
@@ -48,8 +49,16 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (saving) return;
-    setSaving(true);
     setError('');
+    // The owner's contact on a listing staff posted for an owner with no account.
+    if (property.listedOnBehalf) {
+      if (!form.ownerName.trim()) { setError("Enter the owner's name."); return; }
+      if (!form.ownerEmail.trim() && !form.ownerPhone.trim()) { setError('Enter an email or a phone number so buyers can reach the owner.'); return; }
+      if (form.ownerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.ownerEmail.trim())) { setError('Enter a valid email address for the owner.'); return; }
+      const phoneError = form.ownerPhone.trim() ? phoneProblem(form.ownerPhone) : null;
+      if (phoneError) { setError(phoneError); return; }
+    }
+    setSaving(true);
     const { imageUrl, galleryImages } = deriveImageFields(form.photos, property.imageUrl);
     const propertyType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket ?? 'house';
     const patch = {
@@ -70,6 +79,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       type: form.type,
       propertyType,
       propertyLabel: form.propertyTypeLabel,
+      ...(property.listedOnBehalf
+        ? { contact: { name: form.ownerName.trim(), email: form.ownerEmail.trim() || undefined, phone: form.ownerPhone.trim() ? cleanPhone(form.ownerPhone) : undefined } }
+        : {}),
     };
 
     if (!token) {
@@ -249,6 +261,34 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           </div>
         </div>
 
+        {property.listedOnBehalf && (
+          <div className="grid sm:grid-cols-3 gap-5">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Owner name</label>
+              <input
+                type="text"
+                value={form.ownerName}
+                onChange={(e) => setForm((f) => ({ ...f, ownerName: e.target.value }))}
+                maxLength={120}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Owner email</label>
+              <input
+                type="email"
+                value={form.ownerEmail}
+                onChange={(e) => setForm((f) => ({ ...f, ownerEmail: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Owner phone</label>
+              <PhoneInput value={form.ownerPhone} onChange={(ownerPhone) => setForm((f) => ({ ...f, ownerPhone }))} />
+            </div>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
           <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} />
@@ -360,6 +400,9 @@ function toFormState(property: Property | null) {
     type: (property?.type ?? 'sale') as Property['type'],
     propertyTypeLabel,
     amenities: property?.amenities ?? [],
+    ownerName: property?.ownerName ?? '',
+    ownerEmail: property?.ownerEmail ?? '',
+    ownerPhone: property?.ownerPhone ?? '',
   };
 }
 

@@ -23,6 +23,8 @@ export interface Property {
    *  existed, or by a seller who never set a phone number. */
   ownerPhone?: string;
   ownerEmail?: string;
+  /** Posted by platform or organisation staff for an owner with no account: ownerName/ownerEmail/ownerPhone are then the owner's own. */
+  listedOnBehalf?: boolean;
   title: string;
   description: string;
   // Required on every real listing. A "draft" status listing (see PropertyStatus) can actually

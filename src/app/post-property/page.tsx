@@ -8,6 +8,8 @@ import ApplyGate from '@/components/manager/ApplyGate';
 import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
 import { useIsAdministrator } from '@/lib/admin/hooks';
+import { hasOrgPermission } from '@/lib/orgPermissions';
+import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import PhotoLimitNotice from '@/components/PhotoLimitNotice';
 import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
@@ -28,8 +30,15 @@ const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://loc
 
 function PostPropertyForm() {
   const router = useRouter();
-  const { token, isApprovedSeller } = useAuth();
+  const { token, isApprovedSeller, account } = useAuth();
   const isAdmin = useIsAdministrator();
+  // Organisation admins with the Properties permission post like platform admins do: for owners who have no account here.
+  const isOrgStaff = (account?.roles.includes('organization_admin') ?? false) && hasOrgPermission(account?.permissions, 'manage_properties');
+  const isStaff = isAdmin || isOrgStaff;
+  const homePath = isAdmin ? '/admin/properties' : isOrgStaff ? '/org-admin/properties' : '/manager';
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
   const { showToast } = useToast();
   // ?edit=<id> resumes an existing draft — see ListingActionsMenu.tsx's "Submit for Review"
   // action, which is the only place this link is generated.
@@ -110,6 +119,11 @@ function PostPropertyForm() {
       setSqm(p.sqm ? String(p.sqm) : '');
       setDescription(p.description || '');
       setAmenities(p.amenities || []);
+      if (p.listedOnBehalf) {
+        setOwnerName(p.ownerName || '');
+        setOwnerEmail(p.ownerEmail || '');
+        setOwnerPhone(p.ownerPhone || '');
+      }
       setPhotos((p.photos || []).map((ph) => ({ url: ph.url, category: (ph.category as PhotoCategory) || 'interior_other' })));
       setLoadingDraft(false);
     });
@@ -118,7 +132,7 @@ function PostPropertyForm() {
     };
   }, [editId, token]);
 
-  if (!isApprovedSeller && !isAdmin) {
+  if (!isApprovedSeller && !isStaff) {
     return <ApplyGate />;
   }
 
@@ -130,7 +144,7 @@ function PostPropertyForm() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
         <p className="text-slate-600">{draftLoadError}</p>
-        <Link href={isAdmin ? '/admin/properties' : '/manager'} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{isAdmin ? 'Back to Properties' : 'Back to Manager Portal'}</Link>
+        <Link href={homePath} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{isStaff ? 'Back to Properties' : 'Back to Manager Portal'}</Link>
       </div>
     );
   }
@@ -168,7 +182,7 @@ function PostPropertyForm() {
 
   // Shared by both the full submit and the draft save — the only differences between the two
   // calls are which endpoint they hit and the `draft` flag (see handleSubmit/handleSaveDraft).
-  async function buildFields() {
+  async function buildFields(draft = false) {
     const propertyType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket;
     // The single "City / Location" input (e.g. "Nyarutarama, Kigali") carries both the
     // neighborhood and the city — split it here rather than asking for two form fields.
@@ -201,6 +215,10 @@ function PostPropertyForm() {
       country,
       district: district || undefined,
       amenities,
+      // The owner's own contact, for staff posting for an owner with no account. A draft keeps it only once it is usable.
+      ...(isStaff && ownerName.trim() && (ownerEmail.trim() || ownerPhone.trim()) || (isStaff && !draft)
+        ? { contact: { name: ownerName.trim(), email: ownerEmail.trim() || undefined, phone: ownerPhone.trim() ? cleanPhone(ownerPhone) : undefined } }
+        : {}),
     };
   }
 
@@ -217,6 +235,13 @@ function PostPropertyForm() {
     if (photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
+    if (isStaff) {
+      if (!ownerName.trim()) { setError("Enter the owner's name."); return; }
+      if (!ownerEmail.trim() && !ownerPhone.trim()) { setError('Enter an email or a phone number so buyers can reach the owner.'); return; }
+      if (ownerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())) { setError("Enter a valid email address for the owner."); return; }
+      const phoneError = ownerPhone.trim() ? phoneProblem(ownerPhone) : null;
+      if (phoneError) { setError(phoneError); return; }
+    }
     setSubmitting(true);
     try {
       const fields = await buildFields();
@@ -237,7 +262,7 @@ function PostPropertyForm() {
         body: JSON.stringify(fields),
       });
       if (!res.ok) {
-        if (res.status === 403) {
+        if (res.status === 403 && !isStaff) {
           // property-service's own quota check (via payment-service) rejected this post —
           // switch to the paywall instead of showing it as a generic form error.
           setShowPaywall(true);
@@ -270,7 +295,7 @@ function PostPropertyForm() {
     setError('');
     setSavingDraft(true);
     try {
-      const fields = await buildFields();
+      const fields = await buildFields(true);
       if (editId) {
         const res = await fetch(`${PROPERTY_API_URL}/properties/${editId}`, {
           method: 'PATCH',
@@ -298,7 +323,7 @@ function PostPropertyForm() {
       }
       notifyPropertiesChanged();
       showToast('Draft saved.');
-      router.push(isAdmin ? '/admin/properties' : '/manager');
+      router.push(homePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
       setSavingDraft(false);
@@ -449,6 +474,36 @@ function PostPropertyForm() {
                   required
                 />
               </div>
+
+              {isStaff && (
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner name</label>
+                    <input
+                      type="text"
+                      value={ownerName}
+                      onChange={(e) => setOwnerName(e.target.value)}
+                      maxLength={120}
+                      autoComplete="off"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner email</label>
+                    <input
+                      type="email"
+                      value={ownerEmail}
+                      onChange={(e) => setOwnerEmail(e.target.value)}
+                      autoComplete="off"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner phone</label>
+                    <PhoneInput value={ownerPhone} onChange={setOwnerPhone} />
+                  </div>
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
