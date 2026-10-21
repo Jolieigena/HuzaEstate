@@ -9,7 +9,7 @@ import AISearchCard from '@/components/AISearchCard';
 import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
-import CurrencyPicker from '@/components/CurrencyPicker';
+import CurrencyChips from '@/components/CurrencyChips';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
@@ -437,14 +437,16 @@ function PropertiesContent() {
                 <button
                   ref={priceButtonRef}
                   data-filter-trigger
-                  onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 288, setPricePanelPos, () => setIsPriceOpen(true)))}
+                  onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 320, setPricePanelPos, () => setIsPriceOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
-                  {customMinPrice || customMaxPrice ? `Price: ${priceSign}${customMinPrice || '0'} – ${priceSign}${customMaxPrice || 'Any'}` : 'Any Price'}
+                  {customMinPrice || customMaxPrice ? `Price: ${priceSign}${customMinPrice || '0'} – ${priceSign}${customMaxPrice || 'Any'}` : `Any Price${money.currency ? ` (${money.currency})` : ''}`}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isPriceOpen && pricePanelPos && (
-                  <div data-filter-panel style={{ position: 'fixed', top: pricePanelPos.top, left: pricePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
+                  <div data-filter-panel style={{ position: 'fixed', top: pricePanelPos.top, left: pricePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-80">
+                    <div className="px-2 mb-3"><CurrencyChips onChange={() => { setCustomMinPrice(''); setCustomMaxPrice(''); }} /></div>
+                    <div className="w-full h-px bg-slate-100 mb-3" />
                     <h3 className="font-bold text-slate-900 mb-2 px-2 text-[15px]">Price Range</h3>
                     <div className="flex flex-col gap-0.5 mb-4">
                       {priceBrackets.map(([l,mn,mx])=>(
@@ -461,8 +463,6 @@ function PropertiesContent() {
                   </div>
                 )}
               </div>
-
-              <CurrencyPicker />
 
               {/* Beds — dropdown with quick presets plus a custom number input the
                   user can type any value into, same pattern as Price/Area Size. */}
