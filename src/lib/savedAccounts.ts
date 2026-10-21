@@ -1,6 +1,6 @@
 // The accounts signed in on this device, so someone can switch between them without signing in again (like Google's account menu).
-// Kept in this browser only. A saved account holds its sign-in token while that is valid and its owner is not privileged; otherwise
-// it is "locked" (name and email only) and asks for the password again. No password is ever stored.
+// Kept in this browser only. A saved account holds its sign-in token while that is valid; once it has expired or the server
+// refuses it, the account is "locked" (name and email only) and asks for the password again. No password is ever stored.
 
 export const ACCOUNTS_STORAGE_KEY = "huzaestate_accounts";
 export const MAX_SAVED_ACCOUNTS = 5;
@@ -21,11 +21,6 @@ export interface SavedAccountView {
   email: string;
   active: boolean;
   locked: boolean;
-}
-
-/** Administrators and organisation admins are never left saved: switching away from one locks it, so getting back in needs the password. */
-export function isPrivilegedRoles(roles: readonly string[]): boolean {
-  return roles.includes("administrator") || roles.includes("organization_admin");
 }
 
 /** When a token expires, read from its payload. Only a convenience for tidying up: the server decides whether a token is valid. */

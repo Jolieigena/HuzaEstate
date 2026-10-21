@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import {
   ACCOUNTS_STORAGE_KEY,
-  isPrivilegedRoles,
   lockSaved,
   lockSavedByToken,
   readSaved,
@@ -207,10 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const applySession = (nextToken: string, nextAccount: Account) => {
-    // Signing in as someone else while a privileged account is open leaves that account locked, never saved with a live token.
-    let list = readSaved();
-    if (account && account.id !== nextAccount.id && isPrivilegedRoles(account.roles)) list = lockSaved(list, account.id);
-    saveList(upsertSaved(list, { id: nextAccount.id, name: nextAccount.name, email: nextAccount.email }, nextToken));
+    saveList(upsertSaved(readSaved(), { id: nextAccount.id, name: nextAccount.name, email: nextAccount.email }, nextToken));
     let preferredRole: string | null = null;
     try { preferredRole = localStorage.getItem(ROLE_STORAGE_KEY); } catch { /* ignore */ }
     const role = deriveActiveRole(nextAccount, nextAccount.activeRole ?? preferredRole);

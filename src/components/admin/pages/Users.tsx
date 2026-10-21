@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
-import { AdminApi, type AdminSubscription, type AdminUser, type AdminUserList, type UserAccountType, type UserStatus } from "@/lib/admin/api";
+import { AdminApi, type AdminOrganization, type AdminSubscription, type AdminUser, type AdminUserList, type UserAccountType, type UserStatus } from "@/lib/admin/api";
 import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib/professional/api";
 import { ORG_PERMISSIONS, type OrgPermission } from "@/lib/orgPermissions";
 import { regionsForCountry } from "@/lib/regions";
@@ -45,8 +45,8 @@ function PermissionsChecklist({ selected, onChange }: { selected: Set<OrgPermiss
 }
 
 const TYPE_LABELS: Record<UserAccountType, string> = { administrator: "Administrator", professional: "Professional", supplier: "Furniture Supplier", organization_admin: "Organisation Admin", seller_manager: "Seller / Owner", customer: "Customer" };
-// The roles an account can be given or lose after it exists; the other two are single-role staff accounts.
-const SWITCHABLE_ROLES: UserAccountType[] = ["customer", "seller_manager", "professional", "supplier"];
+// The roles an account can be given or lose after it exists: all of them.
+const SWITCHABLE_ROLES: UserAccountType[] = ["customer", "seller_manager", "professional", "supplier", "organization_admin", "administrator"];
 const TYPE_TABS: { key: "all" | UserAccountType; label: string }[] = [
   { key: "all", label: "All" },
   { key: "administrator", label: "Administrators" },
@@ -294,6 +294,15 @@ export function UserDetailPage({ userId }: { userId: string }) {
   const [roleToAdd, setRoleToAdd] = useState<UserAccountType | "">("");
   const [roleKind, setRoleKind] = useState<"individual" | "firm">("individual");
   const [roleCountry, setRoleCountry] = useState("");
+  const [roleOrgId, setRoleOrgId] = useState("");
+  const [roleTitle, setRoleTitle] = useState("");
+  const [orgChoices, setOrgChoices] = useState<AdminOrganization[]>([]);
+  useEffect(() => {
+    if (roleToAdd !== "organization_admin" || !token || orgChoices.length > 0) return;
+    AdminApi.listOrganizations(token).then((result) => {
+      if (result.ok) setOrgChoices(result.data);
+    });
+  }, [roleToAdd, token, orgChoices.length]);
   const [savingRole, setSavingRole] = useState(false);
   const [roleToRemove, setRoleToRemove] = useState<UserAccountType | null>(null);
 
@@ -419,19 +428,21 @@ export function UserDetailPage({ userId }: { userId: string }) {
   }
 
   const roleOptions = SWITCHABLE_ROLES.filter((r) => !user.roles.includes(r));
-  const rolesEditable = canManage && !isSelf && !user.roles.includes("administrator") && !user.roles.includes("organization_admin");
+  const rolesEditable = canManage && !isSelf;
   const roleNeedsCountry = (roleToAdd === "professional" || roleToAdd === "supplier" || roleToAdd === "seller_manager") && !user.country;
 
   async function changeRole(action: "add" | "remove", role: UserAccountType) {
     if (!token || !user) return;
     setSavingRole(true);
-    const result = await AdminApi.changeUserRole(token, user.id, { action, role, country: roleCountry || undefined, professionalKind: role === "professional" ? roleKind : undefined });
+    const result = await AdminApi.changeUserRole(token, user.id, { action, role, country: roleCountry || undefined, professionalKind: role === "professional" ? roleKind : undefined, organizationId: role === "organization_admin" ? roleOrgId || undefined : undefined, title: role === "organization_admin" ? roleTitle.trim() || undefined : undefined });
     setSavingRole(false);
     setRoleToRemove(null);
     if (result.ok) {
       applyUser(result.data);
       setRoleToAdd("");
       setRoleCountry("");
+      setRoleOrgId("");
+      setRoleTitle("");
       showToast(action === "add" ? `${TYPE_LABELS[role]} role added.` : `${TYPE_LABELS[role]} role removed.`);
     } else showToast(result.error, "error");
   }
@@ -538,8 +549,29 @@ export function UserDetailPage({ userId }: { userId: string }) {
                       </Select>
                     </label>
                   )}
+                  {roleToAdd === "organization_admin" && (
+                    <>
+                      <label className="block text-sm font-bold text-slate-700">
+                        Organisation
+                        <Select className={`${fieldClass} mt-2`} value={roleOrgId} onChange={(e) => setRoleOrgId(e.target.value)}>
+                          <option value="" disabled>
+                            Select an organisation
+                          </option>
+                          {orgChoices.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              {o.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </label>
+                      <label className="block text-sm font-bold text-slate-700">
+                        Title (optional)
+                        <input className={`${fieldClass} mt-2`} value={roleTitle} maxLength={80} onChange={(e) => setRoleTitle(e.target.value)} />
+                      </label>
+                    </>
+                  )}
                   <div className="sm:col-span-2">
-                    <PrimaryButton type="button" disabled={!roleToAdd || savingRole || (roleNeedsCountry && !roleCountry)} onClick={() => roleToAdd && changeRole("add", roleToAdd)}>
+                    <PrimaryButton type="button" disabled={!roleToAdd || savingRole || (roleNeedsCountry && !roleCountry) || (roleToAdd === "organization_admin" && !roleOrgId)} onClick={() => roleToAdd && changeRole("add", roleToAdd)}>
                       {savingRole ? "Adding…" : "Add role"}
                     </PrimaryButton>
                   </div>
