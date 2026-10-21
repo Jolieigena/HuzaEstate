@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth-context';
 import { accountDestination } from '@/lib/navigation';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import PasswordInput from '@/components/shared/PasswordInput';
+import PasswordChecklist from '@/components/shared/PasswordChecklist';
+import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 
 function SignupForm() {
@@ -32,6 +34,10 @@ function SignupForm() {
     e.preventDefault();
     if (isSubmitting) return;
     setError('');
+    if (!passwordIsAcceptable(password, { email, firstName, lastName })) {
+      setError('Please choose a password that meets every rule listed.');
+      return;
+    }
     setIsSubmitting(true);
     const result = await signup({ firstName, lastName, email, password, termsAccepted, country: detectedCountry?.name });
     if (!result.ok) {
@@ -94,13 +100,14 @@ function SignupForm() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
               <PasswordInput
-                placeholder="Create a password (min. 8 characters)"
+                placeholder="Create a password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
                 autoComplete="new-password"
                 required
               />
+              <PasswordChecklist password={password} who={{ email, firstName, lastName }} />
             </div>
 
             <div className="flex items-start gap-3 mt-4 mb-6">

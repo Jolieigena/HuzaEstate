@@ -4,6 +4,8 @@ import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import PasswordInput from "@/components/shared/PasswordInput";
+import PasswordChecklist from "@/components/shared/PasswordChecklist";
+import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from "@/lib/passwordRules";
 import { useAuth } from "@/lib/auth-context";
 import { accountDestination } from "@/lib/navigation";
 
@@ -17,6 +19,8 @@ function ChangePasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const [firstName, ...rest] = (account?.name ?? "").split(" ");
+  const who = { email: account?.email, firstName, lastName: rest.join(" ") };
   const forced = account?.mustChangePassword === true;
   const redirectParam = searchParams.get("redirect");
   const destination = account ? accountDestination(account, redirectParam) : "/login";
@@ -29,8 +33,8 @@ function ChangePasswordForm() {
       setError("New password and confirmation do not match.");
       return;
     }
-    if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
+    if (!passwordIsAcceptable(newPassword, who)) {
+      setError("Please choose a password that meets every rule listed.");
       return;
     }
     setIsSubmitting(true);
@@ -74,13 +78,14 @@ function ChangePasswordForm() {
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">New password</label>
           <PasswordInput
-            placeholder="At least 8 characters"
+            placeholder="New password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            minLength={8}
+            minLength={PASSWORD_MIN_LENGTH}
             autoComplete="new-password"
             required
           />
+          <PasswordChecklist password={newPassword} who={who} />
         </div>
 
         <div>
@@ -88,7 +93,7 @@ function ChangePasswordForm() {
           <PasswordInput
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            minLength={8}
+            minLength={PASSWORD_MIN_LENGTH}
             autoComplete="new-password"
             required
           />

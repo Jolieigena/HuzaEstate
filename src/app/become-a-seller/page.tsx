@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import PasswordInput from '@/components/shared/PasswordInput';
+import PasswordChecklist from '@/components/shared/PasswordChecklist';
+import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import PhoneInput from '@/components/shared/PhoneInput';
 import AddressInput from '@/components/shared/AddressInput';
 import Dialog from '@/components/Dialog';
@@ -130,6 +132,11 @@ function BecomeASellerForm() {
 
     if (password !== confirmPassword) {
       setError("Passwords don't match.");
+      setSubmitting(false);
+      return;
+    }
+    if (!passwordIsAcceptable(password, { email, firstName, lastName })) {
+      setError('Please choose a password that meets every rule listed.');
       setSubmitting(false);
       return;
     }
@@ -281,13 +288,14 @@ function BecomeASellerForm() {
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
                     <PasswordInput
-                      placeholder="Min. 8 characters"
+                      placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      minLength={8}
+                      minLength={PASSWORD_MIN_LENGTH}
                       autoComplete="new-password"
                       required
                     />
+                    <PasswordChecklist password={password} who={{ email, firstName, lastName }} />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
