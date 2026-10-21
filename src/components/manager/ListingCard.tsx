@@ -10,6 +10,7 @@ import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PLAN_FEATURES } from '@/lib/postingPlans/types';
 import { isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
+import { formatListingPrice } from '@/lib/properties/price';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Draft: 'bg-slate-100 text-slate-500',
@@ -151,7 +152,7 @@ export default function ListingCard({
       <div className="p-5 flex flex-col gap-4">
         <div>
           <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
-          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>${listing.rent.toLocaleString()}{listing.property.type === 'rent' ? '/mo' : ''}</div>
+          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>{formatListingPrice(listing.rent, listing.property.currency)}{listing.property.type === 'rent' ? '/mo' : ''}</div>
           {isDraft && (
             <button type="button" onClick={() => onSubmitDraft(listing.property)} className="mt-1 text-left text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
               Finish and submit this draft

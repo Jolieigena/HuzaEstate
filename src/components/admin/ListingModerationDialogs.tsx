@@ -6,7 +6,8 @@ import Dialog from "@/components/Dialog";
 import { AdminApi } from "@/lib/admin/api";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
 import { useToast } from "@/lib/toast-context";
-import { PrimaryButton, SecondaryButton, formatMoney } from "./ui";
+import { PrimaryButton, SecondaryButton } from "./ui";
+import { formatListingPrice } from "@/lib/properties/price";
 
 export type ReviewDecision = Extract<PropertyStatus, "published" | "changes_requested" | "rejected">;
 
@@ -35,7 +36,7 @@ export function ListingReviewDialog({ property, onClose, onDecide }: { property:
           </p>
           <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
             {[
-              ["Price", `${formatMoney(property.price, "USD")}${property.type === "rent" ? " /mo" : ""}`],
+              ["Price", `${formatListingPrice(property.price, property.currency)}${property.type === "rent" ? " /mo" : ""}`],
               ["Type", `${property.type === "sale" ? "For sale" : "For rent"} · ${property.propertyType}`],
               ["Size", `${property.sqm} m²`],
               ["Bedrooms", String(property.bedrooms)],
