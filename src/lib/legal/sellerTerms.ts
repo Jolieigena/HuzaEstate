@@ -4,7 +4,7 @@ export const SELLER_TERMS: LegalDocument = {
   title: "Seller Terms & Conditions",
   updated: "20 October 2026",
   intro:
-    "These terms apply to anyone who posts property on HuzaEstate to sell or let it: owners, landlords and agents. They are in addition to our Terms of Service and Privacy Policy. By becoming a seller or posting a listing you agree to them.",
+    "These terms apply to anyone who posts property on HuzaEstate, which is operated by Huzalabs, to sell or let it: owners, landlords and agents. They are in addition to our Terms of Service and Privacy Policy. By becoming a seller or posting a listing you agree to them.",
   sections: [
     {
       id: "authority",

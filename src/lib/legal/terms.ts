@@ -4,14 +4,14 @@ export const TERMS: LegalDocument = {
   title: "Terms of Service",
   updated: "20 October 2026",
   intro:
-    "These terms are the agreement between you and HuzaEstate when you use our website and services: browsing and posting property listings, contacting owners and professionals, ordering furniture, and using our design, build and renovation tools. By creating an account or using HuzaEstate you accept them. If you do not agree, please do not use the service.",
+    "These terms are the agreement between you and Huzalabs, the company that operates HuzaEstate, when you use our website, app and services: browsing and posting property listings, contacting owners and professionals, ordering furniture, and using our design, build and renovation tools. By creating an account or using HuzaEstate you accept them. If you do not agree, please do not use the service.",
   sections: [
     {
       id: "about",
       heading: "About HuzaEstate",
       body: [
-        "HuzaEstate is an online marketplace based in Rwanda. It brings together people who want to buy, rent or sell property, the professionals who design and build, and the suppliers of furniture and materials.",
-        "In these terms, “we”, “us” and “HuzaEstate” mean the company that runs the service, and “you” means the person using it.",
+        "HuzaEstate is an online marketplace operated by Huzalabs and based in Rwanda. It brings together people who want to buy, rent or sell property, the professionals who design and build, and the suppliers of furniture and materials.",
+        "In these terms, “we” and “us” mean Huzalabs, the company that operates HuzaEstate; “HuzaEstate” means the website, the mobile app and the services we run under that name; and “you” means the person using them.",
       ],
     },
     {

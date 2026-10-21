@@ -10,7 +10,7 @@ export const PRIVACY: LegalDocument = {
       id: "who",
       heading: "Who we are",
       body: [
-        "HuzaEstate is an online property, design and furniture marketplace based in Rwanda. We decide how and why the information described here is used. You can reach us through the Contact page.",
+        "HuzaEstate is an online property, design and furniture marketplace operated by Huzalabs and based in Rwanda. Huzalabs decides how and why the information described here is used, and is “we” and “us” in this policy. You can reach us through the Contact page.",
       ],
     },
     {

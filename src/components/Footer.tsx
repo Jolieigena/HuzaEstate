@@ -124,7 +124,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm text-center sm:text-left">
-            &copy; {new Date().getFullYear()} HuzaEstate, Inc. All rights reserved. (Rwanda)
+            &copy; {new Date().getFullYear()} Huzalabs. All rights reserved. HuzaEstate is operated by Huzalabs. (Rwanda)
           </p>
           <div className="flex items-center gap-6">
             <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Terms</Link>
