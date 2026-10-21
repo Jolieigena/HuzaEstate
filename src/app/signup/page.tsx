@@ -34,7 +34,7 @@ function SignupForm() {
     e.preventDefault();
     if (isSubmitting) return;
     setError('');
-    if (!passwordIsAcceptable(password, { email, firstName, lastName })) {
+    if (!passwordIsAcceptable(password)) {
       setError('Please choose a password that meets every rule listed.');
       return;
     }
@@ -107,7 +107,7 @@ function SignupForm() {
                 autoComplete="new-password"
                 required
               />
-              <PasswordChecklist password={password} who={{ email, firstName, lastName }} />
+              <PasswordChecklist password={password} />
             </div>
 
             <div className="flex items-start gap-3 mt-4 mb-6">

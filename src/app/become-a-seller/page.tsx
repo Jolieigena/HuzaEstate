@@ -135,7 +135,7 @@ function BecomeASellerForm() {
       setSubmitting(false);
       return;
     }
-    if (!passwordIsAcceptable(password, { email, firstName, lastName })) {
+    if (!passwordIsAcceptable(password)) {
       setError('Please choose a password that meets every rule listed.');
       setSubmitting(false);
       return;
@@ -295,7 +295,7 @@ function BecomeASellerForm() {
                       autoComplete="new-password"
                       required
                     />
-                    <PasswordChecklist password={password} who={{ email, firstName, lastName }} />
+                    <PasswordChecklist password={password} />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>

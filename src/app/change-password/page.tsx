@@ -19,8 +19,6 @@ function ChangePasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const [firstName, ...rest] = (account?.name ?? "").split(" ");
-  const who = { email: account?.email, firstName, lastName: rest.join(" ") };
   const forced = account?.mustChangePassword === true;
   const redirectParam = searchParams.get("redirect");
   const destination = account ? accountDestination(account, redirectParam) : "/login";
@@ -33,7 +31,7 @@ function ChangePasswordForm() {
       setError("New password and confirmation do not match.");
       return;
     }
-    if (!passwordIsAcceptable(newPassword, who)) {
+    if (!passwordIsAcceptable(newPassword)) {
       setError("Please choose a password that meets every rule listed.");
       return;
     }
@@ -85,7 +83,7 @@ function ChangePasswordForm() {
             autoComplete="new-password"
             required
           />
-          <PasswordChecklist password={newPassword} who={who} />
+          <PasswordChecklist password={newPassword} />
         </div>
 
         <div>
