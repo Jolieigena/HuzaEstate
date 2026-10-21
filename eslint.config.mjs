@@ -9,8 +9,6 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
-    "huza-estate-b/**",
-    "huzaestate-mobile-app/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

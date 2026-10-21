@@ -49,4 +49,3 @@ next-env.d.ts
 # local AI coding-agent state — not part of the app
 /.opencode/
 huza-estate-b/
-huzaestate-mobile-app/
