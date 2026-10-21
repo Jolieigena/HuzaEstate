@@ -39,6 +39,7 @@ function PostPropertyForm() {
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPhone, setOwnerPhone] = useState('');
+  const ownerFilled = !!(ownerName.trim() || ownerEmail.trim() || ownerPhone.trim());
   const { showToast } = useToast();
   // ?edit=<id> resumes an existing draft — see ListingActionsMenu.tsx's "Submit for Review"
   // action, which is the only place this link is generated.
@@ -215,8 +216,9 @@ function PostPropertyForm() {
       country,
       district: district || undefined,
       amenities,
-      // The owner's own contact, for staff posting for an owner with no account. A draft keeps it only once it is usable.
-      ...(isStaff && ownerName.trim() && (ownerEmail.trim() || ownerPhone.trim()) || (isStaff && !draft)
+      // The owner's own contact, for staff posting for an owner with no account. Optional: left empty, the listing shows the
+      // poster's own details. A draft keeps it only once it is usable.
+      ...(isStaff && (draft ? ownerName.trim() && (ownerEmail.trim() || ownerPhone.trim()) : ownerFilled)
         ? { contact: { name: ownerName.trim(), email: ownerEmail.trim() || undefined, phone: ownerPhone.trim() ? cleanPhone(ownerPhone) : undefined } }
         : {}),
     };
@@ -235,7 +237,7 @@ function PostPropertyForm() {
     if (photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
-    if (isStaff) {
+    if (isStaff && ownerFilled) {
       if (!ownerName.trim()) { setError("Enter the owner's name."); return; }
       if (!ownerEmail.trim() && !ownerPhone.trim()) { setError('Enter an email or a phone number so buyers can reach the owner.'); return; }
       if (ownerEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ownerEmail.trim())) { setError("Enter a valid email address for the owner."); return; }
