@@ -9,7 +9,8 @@ import PropertyGallery from '@/components/PropertyGallery';
 import LandlordProfileCard from '@/components/LandlordProfileCard';
 import InquiryForm from '@/components/InquiryForm';
 import BackLink from '@/components/BackLink';
-import { formatListingPrice } from '@/lib/properties/price';
+import { useDisplayCurrency } from '@/lib/currency/display';
+import CurrencyPicker from '@/components/CurrencyPicker';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -59,6 +60,7 @@ function PropertyVideoCover({ videoUrl, title }: { videoUrl: string; title: stri
 export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { property, loading } = useProperty(id);
+  const money = useDisplayCurrency();
 
   if (loading) {
     return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">Loading listing…</div>;
@@ -108,9 +110,10 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           </div>
           <div className="text-left md:text-right">
             <div className="text-2xl sm:text-3xl font-bold text-slate-900">
-              {formatListingPrice(property.price, property.currency)}
+              {money.format(property.price, property.currency)}
               {property.type === 'rent' && <span className="text-lg text-slate-400 font-medium ml-1">/mo</span>}
             </div>
+            <div className="mt-2 flex md:justify-end"><CurrencyPicker /></div>
           </div>
         </div>
       </div>

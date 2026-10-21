@@ -9,6 +9,8 @@ import AISearchCard from '@/components/AISearchCard';
 import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
+import CurrencyPicker from '@/components/CurrencyPicker';
+import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
 import { isPromotedNow } from '@/lib/promotion/types';
@@ -111,6 +113,17 @@ const STATUS_OPTIONS = ['For Sale', 'For Rent'];
 
 function PropertiesContent() {
   const searchParams = useSearchParams();
+  const money = useDisplayCurrency();
+  // Price filters are typed and shown in the currency the buyer sees prices in (US dollars until that is known).
+  const priceCode = money.currency ?? 'USD';
+  const priceSign = priceCode === 'USD' ? '$' : `${priceCode} `;
+  const priceBrackets = [['Any Price', '', ''], ...([[0, 100000], [100000, 300000], [300000, 500000], [500000, 0]] as const).map(([lo, hi]) => {
+    const edge = (usd: number) => Number(money.convert(usd, 'USD').toPrecision(2));
+    const f = (n: number) => money.format(n, priceCode);
+    const mn = lo ? String(edge(lo)) : '';
+    const mx = hi ? String(edge(hi)) : '';
+    return [!lo ? `Under ${f(edge(hi))}` : !hi ? `Over ${f(edge(lo))}` : `${f(edge(lo))} – ${f(edge(hi))}`, mn, mx];
+  })];
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') ?? '');
   const [statusInput, setStatusInput] = useState(searchParams.get('type') === 'rent' ? 'For Rent' : searchParams.get('type') === 'sale' ? 'For Sale' : '');
   // Checklist of labels (see TYPE_OPTIONS), not a typeable field — so a buyer
@@ -286,8 +299,8 @@ function PropertiesContent() {
     const matchesType = filterType === 'all' || p.type === filterType;
     const matchesPropType = selectedTypeBuckets.size === 0 || selectedTypeBuckets.has(p.propertyType);
     let matchesPrice = true;
-    if (customMinPrice) matchesPrice = matchesPrice && p.price >= Number(customMinPrice);
-    if (customMaxPrice) matchesPrice = matchesPrice && p.price <= Number(customMaxPrice);
+    if (customMinPrice) matchesPrice = matchesPrice && money.convert(p.price, p.currency) >= Number(customMinPrice);
+    if (customMaxPrice) matchesPrice = matchesPrice && money.convert(p.price, p.currency) <= Number(customMaxPrice);
     const minBeds = parseMinNumberInput(bedsInput);
     const matchesBeds = minBeds === undefined || p.bedrooms >= minBeds;
     const minBaths = parseMinNumberInput(bathsInput);
@@ -317,8 +330,8 @@ function PropertiesContent() {
       if (aiFilters.propertyType && aiFilters.propertyType !== 'all') matchesAi = matchesAi && p.propertyType === aiFilters.propertyType;
       if (aiFilters.minBedrooms !== undefined) matchesAi = matchesAi && p.bedrooms >= aiFilters.minBedrooms;
       if (aiFilters.maxBedrooms !== undefined) matchesAi = matchesAi && p.bedrooms <= aiFilters.maxBedrooms;
-      if (aiFilters.minPrice !== undefined) matchesAi = matchesAi && p.price >= aiFilters.minPrice;
-      if (aiFilters.maxPrice !== undefined) matchesAi = matchesAi && p.price <= aiFilters.maxPrice;
+      if (aiFilters.minPrice !== undefined) matchesAi = matchesAi && money.toUsd(p.price, p.currency) >= aiFilters.minPrice;
+      if (aiFilters.maxPrice !== undefined) matchesAi = matchesAi && money.toUsd(p.price, p.currency) <= aiFilters.maxPrice;
       if (aiFilters.minSqm !== undefined) matchesAi = matchesAi && p.sqm >= aiFilters.minSqm;
       if (aiFilters.maxSqm !== undefined) matchesAi = matchesAi && p.sqm <= aiFilters.maxSqm;
       if (aiFilters.city) {
@@ -341,8 +354,8 @@ function PropertiesContent() {
     const aPromoted = isPromotedNow(a);
     const bPromoted = isPromotedNow(b);
     if (aPromoted !== bPromoted) return aPromoted ? -1 : 1;
-    if (sortBy === 'price-asc') return a.price - b.price;
-    if (sortBy === 'price-desc') return b.price - a.price;
+    if (sortBy === 'price-asc') return money.toUsd(a.price, a.currency) - money.toUsd(b.price, b.currency);
+    if (sortBy === 'price-desc') return money.toUsd(b.price, b.currency) - money.toUsd(a.price, a.currency);
     if (sortBy === 'largest') return b.sqm - a.sqm;
     return 0;
   });
@@ -427,27 +440,29 @@ function PropertiesContent() {
                   onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 288, setPricePanelPos, () => setIsPriceOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
-                  {customMinPrice || customMaxPrice ? `Price: $${customMinPrice || '0'} – $${customMaxPrice || 'Any'}` : 'Any Price'}
+                  {customMinPrice || customMaxPrice ? `Price: ${priceSign}${customMinPrice || '0'} – ${priceSign}${customMaxPrice || 'Any'}` : 'Any Price'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isPriceOpen && pricePanelPos && (
                   <div data-filter-panel style={{ position: 'fixed', top: pricePanelPos.top, left: pricePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
                     <h3 className="font-bold text-slate-900 mb-2 px-2 text-[15px]">Price Range</h3>
                     <div className="flex flex-col gap-0.5 mb-4">
-                      {[['Any Price','',''],['Under $100k','','100000'],['$100k – $300k','100000','300000'],['$300k – $500k','300000','500000'],['Over $500k','500000','']].map(([l,mn,mx])=>(
+                      {priceBrackets.map(([l,mn,mx])=>(
                         <button key={l} onClick={()=>{setCustomMinPrice(mn);setCustomMaxPrice(mx);setIsPriceOpen(false);}} className="text-left px-3 py-2 hover:bg-slate-50 rounded-lg text-slate-700 font-medium text-[14px] transition-colors">{l}</button>
                       ))}
                     </div>
                     <div className="w-full h-px bg-slate-100 mb-4" />
                     <h4 className="font-bold text-slate-900 mb-2 px-2 text-[13px] uppercase tracking-wider">Custom</h4>
                     <div className="flex items-center gap-3 px-2">
-                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span><input type="number" placeholder="Min" value={customMinPrice} onChange={(e)=>setCustomMinPrice(e.target.value)} className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
+                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><input type="number" placeholder="Min" value={customMinPrice} onChange={(e)=>setCustomMinPrice(e.target.value)} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
                       <span className="text-slate-400 font-medium">–</span>
-                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span><input type="number" placeholder="Max" value={customMaxPrice} onChange={(e)=>setCustomMaxPrice(e.target.value)} className="w-full pl-7 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
+                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><input type="number" placeholder="Max" value={customMaxPrice} onChange={(e)=>setCustomMaxPrice(e.target.value)} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
                     </div>
                   </div>
                 )}
               </div>
+
+              <CurrencyPicker />
 
               {/* Beds — dropdown with quick presets plus a custom number input the
                   user can type any value into, same pattern as Price/Area Size. */}

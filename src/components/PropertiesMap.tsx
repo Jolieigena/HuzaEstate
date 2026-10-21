@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Rectangle, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Property } from '@/lib/properties/types';
-import { formatListingPrice, formatListingPriceCompact } from '@/lib/properties/price';
+import { useDisplayCurrency } from '@/lib/currency/display';
 import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
@@ -13,8 +13,7 @@ import { useToast } from '@/lib/toast-context';
 import Select from "@/components/shared/Select";
 
 // Create custom glowing price marker
-const createPriceIcon = (price: number, currency?: string) => {
-  const formattedPrice = formatListingPriceCompact(price, currency);
+const createPriceIcon = (formattedPrice: string) => {
 
   return L.divIcon({
     className: 'custom-price-marker',
@@ -371,6 +370,7 @@ function CustomMapControls() {
 /** Popup content for one marker — its own component (not inlined in the .map() below)
  *  so it can call the favorites hook per-property without breaking the rules of hooks. */
 function MapPropertyPopupCard({ property }: { property: Property }) {
+  const money = useDisplayCurrency();
   const isSaved = useIsFavorite(property.id);
   const { showToast } = useToast();
 
@@ -417,7 +417,7 @@ function MapPropertyPopupCard({ property }: { property: Property }) {
             </button>
           </div>
 
-          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">{formatListingPrice(property.price, property.currency)}</div>
+          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">{money.format(property.price, property.currency)}</div>
 
           <div className="flex items-center gap-2 text-slate-600 text-[11px] font-bold mb-1 w-full overflow-hidden">
             <div className="flex items-center gap-1 whitespace-nowrap">
@@ -450,6 +450,7 @@ interface PropertiesMapProps {
 }
 
 export default function PropertiesMap({ properties, viewMode = 'map', onBoundingBoxChange, onPointSearchChange }: PropertiesMapProps) {
+  const money = useDisplayCurrency();
   const [mounted, setMounted] = useState(false);
   const [mapId, setMapId] = useState(0);
 
@@ -504,7 +505,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
           <Marker 
             key={property.id} 
             position={[property.lat!, property.lng!]}
-            icon={createPriceIcon(property.price, property.currency)}
+            icon={createPriceIcon(money.formatCompact(property.price, property.currency))}
           >
             <Popup className="property-popup">
               <MapPropertyPopupCard property={property} />
