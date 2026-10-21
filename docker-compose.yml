@@ -13,6 +13,8 @@ services:
         # The map pictures. Empty means OpenStreetMap; see src/lib/maps/tiles.ts for using a provider with a key.
         NEXT_PUBLIC_MAP_TILE_URL: ${NEXT_PUBLIC_MAP_TILE_URL:-}
         NEXT_PUBLIC_MAP_ATTRIBUTION: ${NEXT_PUBLIC_MAP_ATTRIBUTION:-}
+        # Google OAuth web client id for "Sign in / Sign up with Google". Empty = the button explains it isn't set up.
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-}
     image: huzaestate-frontend
     container_name: huzaestate-frontend
     ports:

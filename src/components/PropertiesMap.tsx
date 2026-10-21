@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Rectangle, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Property } from '@/lib/properties/types';
+import { formatListingPrice, formatListingPriceCompact } from '@/lib/properties/price';
 import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
@@ -12,10 +13,8 @@ import { useToast } from '@/lib/toast-context';
 import Select from "@/components/shared/Select";
 
 // Create custom glowing price marker
-const createPriceIcon = (price: number) => {
-  const formattedPrice = price >= 1000000 
-    ? `$${(price / 1000000).toFixed(1)}M` 
-    : `$${(price / 1000).toFixed(0)}k`;
+const createPriceIcon = (price: number, currency?: string) => {
+  const formattedPrice = formatListingPriceCompact(price, currency);
 
   return L.divIcon({
     className: 'custom-price-marker',
@@ -418,7 +417,7 @@ function MapPropertyPopupCard({ property }: { property: Property }) {
             </button>
           </div>
 
-          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">${property.price.toLocaleString()}</div>
+          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">{formatListingPrice(property.price, property.currency)}</div>
 
           <div className="flex items-center gap-2 text-slate-600 text-[11px] font-bold mb-1 w-full overflow-hidden">
             <div className="flex items-center gap-1 whitespace-nowrap">
@@ -505,7 +504,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
           <Marker 
             key={property.id} 
             position={[property.lat!, property.lng!]}
-            icon={createPriceIcon(property.price)}
+            icon={createPriceIcon(property.price, property.currency)}
           >
             <Popup className="property-popup">
               <MapPropertyPopupCard property={property} />

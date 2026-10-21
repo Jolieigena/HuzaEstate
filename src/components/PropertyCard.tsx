@@ -10,6 +10,7 @@ import TourWatchBadge from '@/components/TourWatchBadge';
 import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 import { isPromotedNow } from '@/lib/promotion/types';
+import { formatListingPrice } from '@/lib/properties/price';
 
 interface PropertyCardProps {
   property: Property;
@@ -157,7 +158,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
             {/* Price and Status Pill */}
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-xl font-bold text-slate-900 tracking-tight">
-                ${property.price.toLocaleString()}
+                {formatListingPrice(property.price, property.currency)}
               </span>
               {property.type === 'rent' && <span className="text-slate-500 text-sm font-medium -ml-1">/mo</span>}
               <span className="px-2 py-0.5 rounded-md bg-[#2ec440]/10 text-[#2ec440] text-[11px] font-bold tracking-wide whitespace-nowrap ml-1">

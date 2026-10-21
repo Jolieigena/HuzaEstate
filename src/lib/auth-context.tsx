@@ -86,6 +86,9 @@ export interface SignupInput {
   phone?: string;
 }
 
+/** Google sign-in outcome; noAccount means no account exists for that Google identity and none was created. */
+export type GoogleAuthResult = AuthResult | { ok: false; error: string; noAccount: true };
+
 export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string };
 
 export interface CreateUserInput {
@@ -126,6 +129,8 @@ interface AuthContextValue {
   isLoggedIn: boolean;
   signup: (input: SignupInput) => Promise<AuthResult>;
   loginWithCredentials: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
+  /** Signs in with a Google ID token. A new Google identity gets a customer account only when termsAccepted is true (sign-up page). */
+  loginWithGoogle: (idToken: string, options?: { termsAccepted?: boolean; country?: string }) => Promise<GoogleAuthResult>;
   logout: () => void;
   isApprovedSeller: boolean;
   /** Re-fetches /auth/me and updates the local account — used after a backend-driven role/plan
@@ -312,6 +317,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (idToken: string, options: { termsAccepted?: boolean; country?: string } = {}): Promise<GoogleAuthResult> => {
+    try {
+      const res = await fetch(`${API_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web" },
+        body: JSON.stringify({ idToken, ...options }),
+      });
+      if (!res.ok) {
+        const data = await res.clone().json().catch(() => null);
+        if (res.status === 404 && data?.reason === "no_account") return { ok: false, error: data.message, noAccount: true };
+        return { ok: false, error: await parseErrorMessage(res) };
+      }
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      applySession(data.token as string, nextAccount);
+      return { ok: true, account: nextAccount, token: data.token as string };
+    } catch {
+      return { ok: false, error: "Could not reach the server. Please try again." };
+    }
+  };
+
   const endOnServer = (sessionToken: string | null) => {
     if (!sessionToken) return;
     // Best-effort: clears the httpOnly cookie server-side too. The token itself is
@@ -482,7 +508,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, savedAccounts: viewOf(savedList, account?.id), switchAccount, removeSavedAccount, logoutAll, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, loginWithGoogle, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, savedAccounts: viewOf(savedList, account?.id), switchAccount, removeSavedAccount, logoutAll, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
       {children}
     </AuthContext.Provider>
   );
