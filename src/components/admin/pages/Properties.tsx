@@ -8,6 +8,7 @@ import { PropertyApi } from "@/lib/properties/api";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
 import { usePropertyFilters } from "@/lib/admin/usePropertyFilters";
 import { useToast } from "@/lib/toast-context";
+import EditPropertyModal from "@/components/EditPropertyModal";
 import { ListingReviewDialog, SellerAutoPublishToggle, useSellerAutoPublish } from "../ListingModerationDialogs";
 import ReasonFormModal from "../ReasonFormModal";
 import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "../ui";
@@ -40,6 +41,7 @@ export function PropertiesListPage() {
   const { search, setSearch, type, setType, status, setStatus } = usePropertyFilters();
   const [pending, setPending] = useState<Pending | null>(null);
   const sellerAutoPublish = useSellerAutoPublish(token, canModerate);
+  const [editing, setEditing] = useState<Property | null>(null);
   const [reviewing, setReviewing] = useState<Property | null>(null);
   const [reload, setReload] = useState(0);
 
@@ -185,6 +187,9 @@ export function PropertiesListPage() {
                   <td className="px-6 py-4">
                     {canModerate ? (
                       <div className="flex flex-wrap gap-1.5">
+                        <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setEditing(property)}>
+                          Edit
+                        </SecondaryButton>
                         {current === "under_review" && (
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setReviewing(property)}>
                             Review
@@ -223,6 +228,8 @@ export function PropertiesListPage() {
           <EmptyState title="No listings found" description={properties.length ? "Try a different search or filter." : "Listings appear here once sellers post them."} />
         )}
       </RequirePermission>
+
+      <EditPropertyModal property={editing} onClose={() => { setEditing(null); setReload((n) => n + 1); }} />
 
       <ListingReviewDialog
         property={reviewing}
