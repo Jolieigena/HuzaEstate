@@ -78,6 +78,8 @@ export interface DisplayCurrency {
   toUsd: (price: number, from?: string) => number;
   format: (price: number, from?: string) => string;
   formatCompact: (price: number, from?: string) => string;
+  /** One total over amounts in different currencies, in the buyer's currency. Without rates, one total per currency. */
+  formatSum: (amounts: [number, string][]) => string[];
 }
 
 export function useDisplayCurrency(): DisplayCurrency {
@@ -129,6 +131,12 @@ export function useDisplayCurrency(): DisplayCurrency {
     return `${prefix}${Math.round(value)}`;
   }, [convert, shown]);
 
+  const formatSum = useCallback((amounts: [number, string][]) => {
+    if (!currency) return amounts.map(([amount, from]) => format(amount, from));
+    const sum = amounts.reduce((all, [amount, from]) => all + convert(amount, from), 0);
+    return [format(sum, currency)];
+  }, [currency, convert, format]);
+
   // Every currency we have a rate for and can name, with the majors and the buyer's own currency first.
   const options = (() => {
     const first = [...MAJOR_CURRENCIES as readonly string[]];
@@ -138,5 +146,5 @@ export function useDisplayCurrency(): DisplayCurrency {
     return [...first.filter((c) => rates[c]), ...rest];
   })();
 
-  return { currency, setCurrency, options, convert, toUsd, format, formatCompact };
+  return { currency, setCurrency, options, convert, toUsd, format, formatCompact, formatSum };
 }

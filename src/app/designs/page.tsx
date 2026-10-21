@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Select from "@/components/shared/Select";
+import CurrencyPicker from "@/components/CurrencyPicker";
+import { priceBracketsFor } from "@/lib/currency/brackets";
+import { useDisplayCurrency } from "@/lib/currency/display";
 import {
   DESIGN_CATEGORY_LABELS,
   DESIGN_PRICE_TYPE_LABELS,
@@ -20,20 +23,7 @@ const PAGE_SIZE = 24;
 
 const SORT_LABELS: Record<DesignSort, string> = { newest: "Newest first", price_asc: "Price: low to high", price_desc: "Price: high to low", title: "Title A to Z" };
 
-// Rough exchange rates, used only to pick sensible price brackets for a currency. Prices are never converted.
-const BRACKET_RATE: Record<string, number> = { USD: 1, EUR: 0.92, GBP: 0.79, RWF: 1400, KES: 130, UGX: 3700, TZS: 2600, ZAR: 18, NGN: 1500, GHS: 15 };
 const USD_EDGES = [500, 1000, 2500, 5000, 10000];
-
-function priceBrackets(currency: string): { label: string; min?: number; max?: number }[] {
-  const rate = BRACKET_RATE[currency] ?? 1;
-  const edges = USD_EDGES.map((usd) => Number((usd * rate).toPrecision(2)));
-  const money = (n: number) => (currency === "USD" ? `$${n.toLocaleString("en-US")}` : `${currency} ${n.toLocaleString("en-US")}`);
-  return [
-    { label: `Under ${money(edges[0])}`, max: edges[0] },
-    ...edges.slice(0, -1).map((edge, i) => ({ label: `${money(edge)} to ${money(edges[i + 1])}`, min: edge, max: edges[i + 1] })),
-    { label: `Over ${money(edges[edges.length - 1])}`, min: edges[edges.length - 1] },
-  ];
-}
 
 const ANY = "";
 
@@ -60,7 +50,6 @@ function Catalog() {
   const designer = get("designer");
   const priceType = get("priceType") as DesignPriceType | "";
   const hasFurniture = get("furniture") === "1";
-  const currencyParam = get("currency");
   const minPrice = get("min");
   const maxPrice = get("max");
   const sort = (get("sort") as DesignSort) || "newest";
@@ -100,10 +89,9 @@ function Catalog() {
     return () => clearTimeout(timer);
   }, [searchInput, search, update]);
 
-  const currencies = facets?.currencies ?? [];
-  const defaultCurrency = [...currencies].sort((a, b) => b.count - a.count)[0]?.code ?? "USD";
-  const currency = currencyParam || defaultCurrency;
-  const brackets = useMemo(() => priceBrackets(currency), [currency]);
+  const money = useDisplayCurrency();
+  const currency = money.currency ?? "USD";
+  const brackets = useMemo(() => priceBracketsFor(money, USD_EDGES), [money]);
   const activeBracket = brackets.findIndex((b) => String(b.min ?? "") === minPrice && String(b.max ?? "") === maxPrice);
   const priced = minPrice !== "" || maxPrice !== "";
 
@@ -121,7 +109,7 @@ function Catalog() {
       professionalId: designer,
       priceType,
       hasFurniture,
-      currency: priced || currencyParam ? currency : undefined,
+      inCurrency: money.currency ?? undefined,
       minPrice: minPrice === "" ? "" : Number(minPrice),
       maxPrice: maxPrice === "" ? "" : Number(maxPrice),
       sort,
@@ -134,7 +122,7 @@ function Catalog() {
       cancelled = true;
     };
     // `key` stands for every filter above: they all come from the address.
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, money.currency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const list = data?.list;
   const loading = data?.key !== key;
@@ -292,18 +280,10 @@ function Catalog() {
               ))}
             </Select>
           </label>
-          {currencies.length > 1 && (
-            <label className={labelClass}>
-              Currency
-              <Select className={`${selectClass} mt-1.5 normal-case tracking-normal`} value={currency} aria-label="Currency" onChange={(e) => update({ currency: e.target.value, min: undefined, max: undefined })}>
-                {currencies.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {withCount(c.code, c.count)}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          )}
+          <label className={labelClass}>
+            Currency
+            <div className="mt-1.5"><CurrencyPicker className={`${selectClass} normal-case tracking-normal`} onChange={() => update({ min: undefined, max: undefined, currency: undefined })} /></div>
+          </label>
           <label className={labelClass}>
             Country
             <Select className={`${selectClass} mt-1.5 normal-case tracking-normal`} value={country} aria-label="Country" onChange={(e) => update({ country: e.target.value || undefined, city: undefined })}>
@@ -405,7 +385,7 @@ function Catalog() {
                   <div className="mt-3 flex items-center justify-between gap-3 text-sm">
                     <span className="font-bold text-slate-900">
                       {design.priceType !== "on_request" && <span className="mr-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">Quote</span>}
-                      {formatDesignPrice(design)}
+                      {formatDesignPrice(design, money.format)}
                     </span>
                     {design.designer && (
                       <span className="min-w-0 text-right">

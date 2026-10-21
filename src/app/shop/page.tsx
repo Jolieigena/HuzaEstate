@@ -5,7 +5,9 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Select from "@/components/shared/Select";
 import ProductCard from "@/components/shop/ProductCard";
 import { FurnitureApi, type ProductFacets, type ProductList, type ProductSort } from "@/lib/furniture/api";
-import { priceBrackets } from "@/lib/priceBrackets";
+import CurrencyPicker from "@/components/CurrencyPicker";
+import { priceBracketsFor } from "@/lib/currency/brackets";
+import { useDisplayCurrency } from "@/lib/currency/display";
 
 const PAGE_SIZE = 24;
 const SORT_LABELS: Record<ProductSort, string> = { newest: "Newest first", price_asc: "Price: low to high", price_desc: "Price: high to low", name: "Name A to Z" };
@@ -30,7 +32,6 @@ function Catalog() {
   const supplier = get("supplier");
   const country = get("country");
   const available = get("available") === "1";
-  const currencyParam = get("currency");
   const minPrice = get("min");
   const maxPrice = get("max");
   const sort = (get("sort") as ProductSort) || "newest";
@@ -69,10 +70,9 @@ function Catalog() {
     return () => clearTimeout(timer);
   }, [searchInput, search, update]);
 
-  const currencies = facets?.currencies ?? [];
-  const defaultCurrency = [...currencies].sort((a, b) => b.count - a.count)[0]?.code ?? "USD";
-  const currency = currencyParam || defaultCurrency;
-  const brackets = useMemo(() => priceBrackets(currency, USD_EDGES), [currency]);
+  const money = useDisplayCurrency();
+  const currency = money.currency ?? "USD";
+  const brackets = useMemo(() => priceBracketsFor(money, USD_EDGES), [money]);
   const activeBracket = brackets.findIndex((b) => String(b.min ?? "") === minPrice && String(b.max ?? "") === maxPrice);
   const priced = minPrice !== "" || maxPrice !== "";
 
@@ -85,7 +85,7 @@ function Catalog() {
       supplierId: supplier,
       country,
       availability: available ? "available" : "",
-      currency: priced || currencyParam ? currency : undefined,
+      inCurrency: money.currency ?? undefined,
       minPrice: minPrice === "" ? "" : Number(minPrice),
       maxPrice: maxPrice === "" ? "" : Number(maxPrice),
       search,
@@ -99,7 +99,7 @@ function Catalog() {
       cancelled = true;
     };
     // `key` stands for every filter above: they all come from the address.
-  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, money.currency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const list = data?.list;
   const loading = data?.key !== key;
@@ -213,20 +213,10 @@ function Catalog() {
               ))}
             </Select>
           </label>
-          {currencies.length > 1 ? (
-            <label className={labelClass}>
-              Currency
-              <Select className={`${selectClass} mt-1.5 normal-case tracking-normal`} value={currency} aria-label="Currency" onChange={(e) => update({ currency: e.target.value, min: undefined, max: undefined })}>
-                {currencies.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {withCount(c.code, c.count)}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          ) : (
-            <div />
-          )}
+          <label className={labelClass}>
+            Currency
+            <div className="mt-1.5"><CurrencyPicker className={`${selectClass} normal-case tracking-normal`} onChange={() => update({ min: undefined, max: undefined, currency: undefined })} /></div>
+          </label>
           <div className="sm:col-span-2 lg:col-span-4">
             <label className="flex cursor-pointer items-center gap-3 text-sm font-bold text-slate-700">
               <input type="checkbox" className="h-4 w-4 accent-[#2ec440]" checked={available} onChange={(e) => update({ available: e.target.checked ? "1" : undefined })} />

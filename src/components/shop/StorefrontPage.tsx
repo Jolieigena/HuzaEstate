@@ -5,12 +5,14 @@ import Link from "next/link";
 import BackLink from "@/components/BackLink";
 import ProductCard from "@/components/shop/ProductCard";
 import { RatingSummary, StarRow, VerifiedBadge } from "@/components/shop/SupplierBadges";
-import { FurnitureApi, formatPrice, type Product, type Review, type Storefront } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { FurnitureApi, type Product, type Review, type Storefront } from "@/lib/furniture/api";
 
 const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 /** A supplier's public shop: who they are, how buyers rate them, and everything they sell. */
 export default function StorefrontPage({ supplierId }: { supplierId: string }) {
+  const money = useDisplayCurrency();
   const [store, setStore] = useState<Storefront | null>(null);
   const [error, setError] = useState("");
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -86,7 +88,7 @@ export default function StorefrontPage({ supplierId }: { supplierId: string }) {
           )}
           <p className="mt-3 text-sm text-slate-500">
             {store.delivery.fee > 0 && store.delivery.currency
-              ? `Delivery ${formatPrice(store.delivery.fee, store.delivery.currency)} per order${store.delivery.freeOver ? `, free above ${formatPrice(store.delivery.freeOver, store.delivery.currency)}` : ""}`
+              ? `Delivery ${money.format(store.delivery.fee, store.delivery.currency)} per order${store.delivery.freeOver ? `, free above ${money.format(store.delivery.freeOver, store.delivery.currency)}` : ""}`
               : "Free delivery"}
           </p>
         </div>

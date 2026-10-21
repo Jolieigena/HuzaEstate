@@ -131,6 +131,8 @@ export interface ProductQuery {
   country?: string;
   availability?: "available" | "";
   currency?: string;
+  /** Read min/max and the price sort in this currency, across products priced in any currency. */
+  inCurrency?: string;
   minPrice?: number | "";
   maxPrice?: number | "";
   search?: string;

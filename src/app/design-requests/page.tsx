@@ -8,7 +8,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import OrderList from "@/components/shop/OrderList";
 import { FurnitureApi, type Order } from "@/lib/furniture/api";
-import { DESIGN_REQUEST_STATUS_LABELS, DesignsApi, formatMoney, type DesignRequest, type DesignRequestStatus, type FurnitureQuote } from "@/lib/designs/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { DESIGN_REQUEST_STATUS_LABELS, DesignsApi, type DesignRequest, type DesignRequestStatus, type FurnitureQuote } from "@/lib/designs/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
 const secondary = "min-h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31] disabled:opacity-50";
@@ -98,6 +99,7 @@ function Empty({ text }: { text: string }) {
 }
 
 function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] | null; onChanged: () => void }) {
+  const money = useDisplayCurrency();
   const { token } = useAuth();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState("");
@@ -142,7 +144,7 @@ function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] 
           {request.quote && (
             <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3">
               <p className="text-sm font-black text-slate-900">
-                Quote: {formatMoney(request.quote.amount, request.quote.currency)}
+                Quote: {money.format(request.quote.amount, request.quote.currency)}
                 {request.quote.validUntil ? <span className="font-semibold text-slate-500"> · valid until {date(request.quote.validUntil)}</span> : null}
               </p>
               {request.quote.note && <p className="mt-1 text-sm text-slate-600">{request.quote.note}</p>}
@@ -173,6 +175,7 @@ function DesignRequestList({ requests, onChanged }: { requests: DesignRequest[] 
 }
 
 function FurnitureQuoteList({ quotes, onChanged }: { quotes: FurnitureQuote[] | null; onChanged: () => void }) {
+  const money = useDisplayCurrency();
   const { token } = useAuth();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState("");
@@ -246,7 +249,7 @@ function FurnitureQuoteList({ quotes, onChanged }: { quotes: FurnitureQuote[] | 
                           {sameCurrency && sorted.length > 1 && index === 0 ? <span className="ml-2 rounded-full bg-[#2ec440]/10 px-2 py-0.5 text-[11px] font-bold text-[#219b31]">Lowest</span> : null}
                           {chosen ? <span className="ml-2 rounded-full bg-slate-900 px-2 py-0.5 text-[11px] font-bold text-white">Chosen</span> : null}
                         </p>
-                        <p className="text-lg font-black text-slate-900">{formatMoney(response.total, response.currency)}</p>
+                        <p className="text-lg font-black text-slate-900">{money.format(response.total, response.currency)}</p>
                       </div>
                       <ul className="mt-2 space-y-0.5 text-sm text-slate-600">
                         {response.lines.map((line, i) => (
@@ -255,7 +258,7 @@ function FurnitureQuoteList({ quotes, onChanged }: { quotes: FurnitureQuote[] | 
                               {line.quantity} × {line.name}
                               {line.note ? <span className="text-slate-400"> ({line.note})</span> : null}
                             </span>
-                            <span className="shrink-0">{line.available && line.unitPrice !== undefined ? `${formatMoney(line.unitPrice, response.currency)} each` : "Not available"}</span>
+                            <span className="shrink-0">{line.available && line.unitPrice !== undefined ? `${money.format(line.unitPrice, response.currency)} each` : "Not available"}</span>
                           </li>
                         ))}
                       </ul>

@@ -5,12 +5,14 @@ import { use, useEffect, useState } from "react";
 import BackLink from "@/components/BackLink";
 import { FurnitureQuoteDialog, RequestDialog, SignInPrompt, type RequestTarget } from "@/components/designs/DesignRequestDialogs";
 import { useAuth } from "@/lib/auth-context";
-import { DESIGN_CATEGORY_LABELS, DesignsApi, formatDesignPrice, formatMoney, type Design } from "@/lib/designs/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { DESIGN_CATEGORY_LABELS, DesignsApi, formatDesignPrice, type Design } from "@/lib/designs/api";
 
 const primary = "min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]";
 const secondary = "min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31]";
 
 export default function DesignDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const money = useDisplayCurrency();
   const { id } = use(params);
   const { token, isAuthReady, isLoggedIn, account } = useAuth();
   const [state, setState] = useState<{ design?: Design; error?: string } | null>(null);
@@ -98,7 +100,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{design.title}</h1>
           <div className="mt-4">
             {design.priceType !== "on_request" && <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Quote</p>}
-            <p className="text-2xl font-black text-slate-900">{formatDesignPrice(design)}</p>
+            <p className="text-2xl font-black text-slate-900">{formatDesignPrice(design, money.format)}</p>
           </div>
           {design.included.length > 0 && (
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
@@ -125,7 +127,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               </label>
               {estimate !== undefined && (
                 <p className="mt-3 text-sm text-slate-600">
-                  Estimated quote <span className="text-lg font-black text-slate-900">{formatMoney(estimate, design.currency)}</span>
+                  Estimated quote <span className="text-lg font-black text-slate-900">{money.format(estimate, design.currency)}</span>
                 </p>
               )}
             </div>

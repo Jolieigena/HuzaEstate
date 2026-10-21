@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { OrderConversation, OrderReview, OrderTimeline } from "@/components/shop/OrderExtras";
-import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, paymentMethodLabel, type Order, type OrderStatus } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { FurnitureApi, ORDER_STATUS_LABELS, paymentMethodLabel, type Order, type OrderStatus } from "@/lib/furniture/api";
 
 const primary = "min-h-10 rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50";
 const secondary = "min-h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31] disabled:opacity-50";
@@ -24,6 +25,7 @@ const ORDER_STYLE: Record<OrderStatus, string> = {
 };
 
 export default function OrderList({ orders, onChanged }: { orders: Order[] | null; onChanged: () => void }) {
+  const money = useDisplayCurrency();
   const { token } = useAuth();
   const { showToast } = useToast();
   const [busyId, setBusyId] = useState("");
@@ -107,8 +109,8 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
             <div>
               <h2 className="font-black text-slate-900">{order.supplierName ?? "Supplier"}</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {formatPrice(order.total, order.currency)} · {date(order.createdAt)}
-                {order.deliveryFee > 0 && <span className="text-slate-400"> · includes {formatPrice(order.deliveryFee, order.currency)} delivery</span>}
+                {money.format(order.total, order.currency)} · {date(order.createdAt)}
+                {order.deliveryFee > 0 && <span className="text-slate-400"> · includes {money.format(order.deliveryFee, order.currency)} delivery</span>}
               </p>
             </div>
             <span className={`rounded-full px-3 py-1 text-xs font-bold ${ORDER_STYLE[order.status]}`}>{ORDER_STATUS_LABELS[order.status]}</span>
@@ -123,7 +125,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
                   {item.name}
                 </Link>
                 <span className="shrink-0 text-sm text-slate-600">
-                  {item.quantity} × {formatPrice(item.unitPrice, order.currency)}
+                  {item.quantity} × {money.format(item.unitPrice, order.currency)}
                 </span>
               </li>
             ))}
@@ -141,7 +143,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
             <div className="mt-4 flex flex-wrap gap-2">
               {order.payable && (
                 <button type="button" className={primary} disabled={busyId === order.id} onClick={() => pay(order)}>
-                  {order.paymentStatus === "pending" ? "Open payment page" : `Pay ${formatPrice(order.total, order.currency)}`}
+                  {order.paymentStatus === "pending" ? "Open payment page" : `Pay ${money.format(order.total, order.currency)}`}
                 </button>
               )}
               {order.paymentStatus === "pending" && (

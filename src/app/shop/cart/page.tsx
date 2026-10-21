@@ -5,10 +5,11 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
-import { formatPrice } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
 import { useQuote } from "@/lib/furniture/useQuote";
 
 export default function CartPage() {
+  const money = useDisplayCurrency();
   const { isLoggedIn, token } = useAuth();
   const { showToast } = useToast();
   const cart = useBasket();
@@ -69,7 +70,7 @@ export default function CartPage() {
               <section key={`${group.supplierName}|${group.currency}`} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <div className="flex items-baseline justify-between gap-3">
                   <h2 className="font-black text-slate-900">{group.supplierName}</h2>
-                  <p className="text-sm font-bold text-slate-900">{formatPrice(subtotal, group.currency)}</p>
+                  <p className="text-sm font-bold text-slate-900">{money.format(subtotal, group.currency)}</p>
                 </div>
                 <ul className="mt-3 divide-y divide-slate-100">
                   {group.lines.map((line) => (
@@ -80,7 +81,7 @@ export default function CartPage() {
                         <Link href={`/shop/${line.productId}`} className="block truncate font-bold text-slate-900 hover:underline">
                           {line.name}
                         </Link>
-                        <p className="text-sm text-slate-500">{formatPrice(line.price, line.currency)} each</p>
+                        <p className="text-sm text-slate-500">{money.format(line.price, line.currency)} each</p>
                         <div className="mt-2 flex items-center gap-3 text-xs font-bold">
                           <button
                             type="button"
@@ -107,7 +108,7 @@ export default function CartPage() {
                           +
                         </button>
                       </div>
-                      <p className="w-24 shrink-0 text-right text-sm font-bold text-slate-900">{formatPrice(line.price * line.quantity, line.currency)}</p>
+                      <p className="w-24 shrink-0 text-right text-sm font-bold text-slate-900">{money.format(line.price * line.quantity, line.currency)}</p>
                     </li>
                   ))}
                 </ul>
@@ -129,13 +130,13 @@ export default function CartPage() {
             {deliveryRows.map((g) => (
               <div key={`${g.supplierId}|${g.currency}`} className="flex justify-between gap-3">
                 <dt className="min-w-0 truncate text-slate-500">Delivery · {g.supplierName}</dt>
-                <dd className="shrink-0 font-bold text-slate-900">{g.deliveryFee > 0 ? formatPrice(g.deliveryFee, g.currency) : "Free"}</dd>
+                <dd className="shrink-0 font-bold text-slate-900">{g.deliveryFee > 0 ? money.format(g.deliveryFee, g.currency) : "Free"}</dd>
               </div>
             ))}
-            {Array.from(totals, ([currency, total]) => (
-              <div key={currency} className="flex justify-between border-t border-slate-100 pt-2">
+            {money.formatSum(Array.from(totals, ([currency, total]) => [total, currency] as [number, string])).map((text) => (
+              <div key={text} className="flex justify-between border-t border-slate-100 pt-2">
                 <dt className="font-bold text-slate-900">Total</dt>
-                <dd className="text-lg font-black text-slate-900">{formatPrice(total, currency)}</dd>
+                <dd className="text-lg font-black text-slate-900">{text}</dd>
               </div>
             ))}
           </dl>

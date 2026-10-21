@@ -5,7 +5,8 @@ import { useToast } from "@/lib/toast-context";
 import { VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useBasket } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
-import { STOCK_LABELS, formatPrice, type Product } from "@/lib/furniture/api";
+import { STOCK_LABELS, type Product } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
 
 /** The heart that saves a product for later. */
 export function SaveButton({ product, className = "" }: { product: Product; className?: string }) {
@@ -33,6 +34,7 @@ export function SaveButton({ product, className = "" }: { product: Product; clas
 
 /** A product in a grid: photo, price, supplier, a heart, and Add to cart. */
 export default function ProductCard({ product }: { product: Product }) {
+  const money = useDisplayCurrency();
   const cart = useBasket();
   const { showToast } = useToast();
   const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
@@ -59,7 +61,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </Link>
       <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
         <div className="min-w-0">
-          <p className="font-bold text-slate-900">{formatPrice(product.price, product.currency)}</p>
+          <p className="font-bold text-slate-900">{money.format(product.price, product.currency)}</p>
           {product.supplier && (
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className="truncate">{product.supplier.companyName}</span>

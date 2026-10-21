@@ -168,6 +168,8 @@ export interface DesignQuery {
   priceType?: DesignPriceType | "";
   hasFurniture?: boolean;
   currency?: string;
+  /** Read min/max and the price sort in this currency, across designs priced in any currency. */
+  inCurrency?: string;
   minPrice?: number | "";
   maxPrice?: number | "";
   sort?: DesignSort | "";
@@ -221,10 +223,10 @@ async function call<T>(path: string, init: { token?: string | null; method?: str
 }
 
 /** "$450", "$25/m²" or "Quote on request". */
-export function formatDesignPrice(design: Pick<Design, "priceType" | "price" | "currency">): string {
+export function formatDesignPrice(design: Pick<Design, "priceType" | "price" | "currency">, format?: (amount: number, currency: string) => string): string {
   if (design.priceType === "on_request" || !design.price) return "Quote on request";
   const amount = Math.round(design.price).toLocaleString("en-US");
-  const money = design.currency === "USD" ? `$${amount}` : `${design.currency} ${amount}`;
+  const money = format ? format(design.price, design.currency) : design.currency === "USD" ? `$${amount}` : `${design.currency} ${amount}`;
   return design.priceType === "per_sqm" ? `${money}/m²` : money;
 }
 

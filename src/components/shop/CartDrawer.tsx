@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useBasket } from "@/lib/furniture/basket";
-import { formatPrice } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
 
 const noop = () => () => {};
 const useIsClient = () => useSyncExternalStore(noop, () => true, () => false);
 
 /** The cart as a panel that slides in from the right: change quantities, remove items, and go to checkout. */
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const money = useDisplayCurrency();
   const cart = useBasket();
   const isClient = useIsClient();
   const panel = useRef<HTMLDivElement>(null);
@@ -75,7 +76,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                       {line.name}
                     </Link>
                     <p className="truncate text-xs text-slate-400">{line.supplierName}</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-800">{formatPrice(line.price * line.quantity, line.currency)}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{money.format(line.price * line.quantity, line.currency)}</p>
                     <div className="mt-2 flex items-center gap-2">
                       <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1) : cart.remove(line.productId))} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
                         −
@@ -93,10 +94,10 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
               ))}
             </ul>
             <div className="border-t border-slate-100 px-5 py-4">
-              {Array.from(totals, ([currency, total]) => (
-                <div key={currency} className="flex items-center justify-between text-sm">
+              {money.formatSum(Array.from(totals, ([currency, total]) => [total, currency] as [number, string])).map((text) => (
+                <div key={text} className="flex items-center justify-between text-sm">
                   <span className="font-semibold text-slate-500">Subtotal</span>
-                  <span className="text-lg font-black text-slate-900">{formatPrice(total, currency)}</span>
+                  <span className="text-lg font-black text-slate-900">{text}</span>
                 </div>
               ))}
               <Link href="/shop/checkout" onClick={onClose} className="mt-4 flex min-h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">

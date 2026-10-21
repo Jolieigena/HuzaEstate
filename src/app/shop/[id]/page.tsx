@@ -10,9 +10,11 @@ import { RatingSummary, VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket } from "@/lib/furniture/basket";
-import { FurnitureApi, STOCK_LABELS, formatPrice, type Product } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { FurnitureApi, STOCK_LABELS, type Product } from "@/lib/furniture/api";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const money = useDisplayCurrency();
   const { id } = use(params);
   const router = useRouter();
   const { token, isAuthReady } = useAuth();
@@ -94,7 +96,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{product.name}</h1>
-          <p className="mt-4 text-2xl font-black text-slate-900">{formatPrice(product.price, product.currency)}</p>
+          <p className="mt-4 text-2xl font-black text-slate-900">{money.format(product.price, product.currency)}</p>
           <p className={`mt-2 text-sm font-bold ${product.stock === "out_of_stock" ? "text-red-600" : "text-slate-600"}`}>
             {STOCK_LABELS[product.stock]}
             {product.stock === "made_to_order" && product.leadTimeDays ? ` · ready in about ${product.leadTimeDays} days` : ""}
@@ -103,7 +105,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {supplier?.delivery && (
             <p className="mt-1 text-sm text-slate-500">
               {supplier.delivery.fee > 0 && supplier.delivery.currency
-                ? `Delivery ${formatPrice(supplier.delivery.fee, supplier.delivery.currency)} per order${supplier.delivery.freeOver ? `, free above ${formatPrice(supplier.delivery.freeOver, supplier.delivery.currency)}` : ""}`
+                ? `Delivery ${money.format(supplier.delivery.fee, supplier.delivery.currency)} per order${supplier.delivery.freeOver ? `, free above ${money.format(supplier.delivery.freeOver, supplier.delivery.currency)}` : ""}`
                 : "Free delivery"}
             </p>
           )}

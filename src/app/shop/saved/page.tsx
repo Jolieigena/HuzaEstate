@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useToast } from "@/lib/toast-context";
 import { useBasket } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
-import { STOCK_LABELS, formatPrice } from "@/lib/furniture/api";
+import { STOCK_LABELS } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
 
 export default function SavedPage() {
+  const money = useDisplayCurrency();
   const saved = useSaved();
   const cart = useBasket();
   const { showToast } = useToast();
@@ -35,7 +37,7 @@ export default function SavedPage() {
                   </Link>
                   <p className="text-sm text-slate-500">{item.supplierName}</p>
                   <p className="mt-1 text-sm font-bold text-slate-900">
-                    {formatPrice(item.price, item.currency)} <span className={`font-semibold ${out ? "text-red-600" : "text-slate-400"}`}>· {STOCK_LABELS[item.stock]}</span>
+                    {money.format(item.price, item.currency)} <span className={`font-semibold ${out ? "text-red-600" : "text-slate-400"}`}>· {STOCK_LABELS[item.stock]}</span>
                   </p>
                 </div>
                 <div className="flex gap-2">

@@ -8,7 +8,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useQuote } from "@/lib/furniture/useQuote";
-import { FurnitureApi, formatPrice, type Order } from "@/lib/furniture/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { FurnitureApi, type Order } from "@/lib/furniture/api";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const label = "block text-sm font-bold text-slate-700";
@@ -22,6 +23,7 @@ export default function CheckoutPage() {
 }
 
 function Checkout() {
+  const money = useDisplayCurrency();
   const { token, account } = useAuth();
   const { showToast } = useToast();
   const cart = useBasket();
@@ -118,7 +120,7 @@ function Checkout() {
           <div className="mx-auto mt-6 max-w-md space-y-2">
             {placed.payable.map((order) => (
               <button key={order.id} type="button" disabled={!!payingId} onClick={() => pay(order.id)} className="min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-60">
-                {payingId === order.id ? "Opening payment…" : `Pay ${formatPrice(order.total, order.currency)} to ${order.supplierName ?? "the supplier"}`}
+                {payingId === order.id ? "Opening payment…" : `Pay ${money.format(order.total, order.currency)} to ${order.supplierName ?? "the supplier"}`}
               </button>
             ))}
           </div>
@@ -206,23 +208,23 @@ function Checkout() {
                       <span className="min-w-0 truncate text-slate-300">
                         {line.name} <span className="text-slate-500">× {line.quantity}</span>
                       </span>
-                      <span className="shrink-0 font-bold">{formatPrice(line.price * line.quantity, line.currency)}</span>
+                      <span className="shrink-0 font-bold">{money.format(line.price * line.quantity, line.currency)}</span>
                     </li>
                   ))}
                 </ul>
                 {feeOf(group.supplierName, group.currency) && (
                   <p className="mt-1 flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-sm">
                     <span className="text-slate-300">Delivery</span>
-                    <span className="font-bold">{(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0) > 0 ? formatPrice(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0, group.currency) : "Free"}</span>
+                    <span className="font-bold">{(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0) > 0 ? money.format(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0, group.currency) : "Free"}</span>
                   </p>
                 )}
               </div>
             ))}
           </div>
-          {Array.from(totals, ([currency, total]) => (
-            <div key={currency} className="mt-4 flex items-baseline justify-between border-t border-white/10 pt-5">
+          {money.formatSum(Array.from(totals, ([currency, total]) => [total, currency] as [number, string])).map((text) => (
+            <div key={text} className="mt-4 flex items-baseline justify-between border-t border-white/10 pt-5">
               <span className="font-black">Total due</span>
-              <span className="text-2xl font-black">{formatPrice(total, currency)}</span>
+              <span className="text-2xl font-black">{text}</span>
             </div>
           ))}
         </aside>
