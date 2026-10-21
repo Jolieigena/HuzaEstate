@@ -11,12 +11,14 @@ import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 interface ManagerHeaderProps {
   onOpenMobileSidebar: () => void;
+  /** Inside the mobile app the bottom bar replaces the menu button. */
+  hideMenuButton?: boolean;
 }
 
 /** Self-contained header for the Manager Portal — same structure and styling as
  *  AdminHeader (logo goes to the site's landing page, badge, letter-avatar account
  *  menu) so every dashboard-style area of the app looks like one product, not three. */
-export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProps) {
+export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: ManagerHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { account } = useAuth();
@@ -25,16 +27,18 @@ export default function ManagerHeader({ onOpenMobileSidebar }: ManagerHeaderProp
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onOpenMobileSidebar}
-          aria-label="Open menu"
-          className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        {!hideMenuButton && (
+          <button
+            type="button"
+            onClick={onOpenMobileSidebar}
+            aria-label="Open menu"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        )}
         <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
           <Logo className="h-8 w-auto" />
           <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Owner</span>

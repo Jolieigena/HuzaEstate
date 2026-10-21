@@ -1,6 +1,6 @@
 import type { ManagerTab } from '@/lib/manager/types';
 
-const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string }[] = [
+export const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string }[] = [
   {
     id: 'overview',
     label: 'Overview',

@@ -6,6 +6,7 @@ coverage
 .git
 .gitignore
 huza-estate-b
+huzaestate-mobile-app
 .opencode
 .tour-asset-cache
 .tour-records
