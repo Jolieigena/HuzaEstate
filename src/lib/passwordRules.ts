@@ -10,7 +10,7 @@ export interface PasswordCheck {
 export function passwordChecks(password: string): PasswordCheck[] {
   return [
     { label: `At least ${PASSWORD_MIN_LENGTH} characters`, ok: password.length >= PASSWORD_MIN_LENGTH },
-    { label: "A letter", ok: /[A-Za-z]/.test(password) },
+    { label: "A lowercase and an uppercase letter", ok: /[a-z]/.test(password) && /[A-Z]/.test(password) },
     { label: "A number", ok: /[0-9]/.test(password) },
   ];
 }
