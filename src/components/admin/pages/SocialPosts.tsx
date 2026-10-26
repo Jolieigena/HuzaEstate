@@ -141,8 +141,11 @@ export function SocialPostsPage() {
   const act = async (id: string, action: "retry" | "skip" | "remove" | "sendNow") => {
     if (!token) return;
     const result = await SocialApi[action](token, id);
-    if (!result.ok) showToast(result.error, "error");
-    else {
+    if (!result.ok) {
+      showToast(result.error, "error");
+      // The list on screen was out of date (the post had already moved on), so show what it is now.
+      setReload((n) => n + 1);
+    } else {
       showToast(action === "retry" ? "Back in the queue." : action === "skip" ? "Skipped." : action === "sendNow" ? "Sending now." : "Deleted.");
       setReload((n) => n + 1);
     }
