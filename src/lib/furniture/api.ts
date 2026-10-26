@@ -2,7 +2,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
-export const FURNITURE_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture"];
+export const FURNITURE_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture", "Wall art & paintings"];
 
 export type StockStatus = "in_stock" | "made_to_order" | "out_of_stock";
 export const STOCK_LABELS: Record<StockStatus, string> = { in_stock: "In stock", made_to_order: "Made to order", out_of_stock: "Out of stock" };
