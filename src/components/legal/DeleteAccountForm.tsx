@@ -2,8 +2,17 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Select from "@/components/shared/Select";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
+const REASONS: { value: string; label: string }[] = [
+  { value: "no_longer_use", label: "I no longer use HuzaEstate" },
+  { value: "another_account", label: "I have another account" },
+  { value: "privacy", label: "I am worried about my privacy" },
+  { value: "too_many_emails", label: "I get too many emails or notifications" },
+  { value: "not_found_what_needed", label: "I did not find what I needed" },
+  { value: "other", label: "Other" },
+];
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-colors focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/20";
 
 async function post(path: string, body: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -49,6 +58,7 @@ function Confirm({ token }: { token: string }) {
 
 function Request() {
   const [email, setEmail] = useState("");
+  const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -59,7 +69,7 @@ function Request() {
     if (busy) return;
     setBusy(true);
     setError("");
-    const result = await post("/auth/delete-account-request", { email: email.trim(), message: message.trim() || undefined });
+    const result = await post("/auth/delete-account-request", { email: email.trim(), reason, message: reason === "other" ? message.trim() : undefined });
     setBusy(false);
     if (result.ok) setSent(true);
     else setError(result.error);
@@ -77,12 +87,27 @@ function Request() {
         <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`${inputClass} mt-2 font-normal`} />
       </label>
       <label className="block text-sm font-bold text-slate-700">
-        Anything we should know (optional)
-        <textarea rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className={`${inputClass} mt-2 font-normal`} />
+        Reason
+        <Select value={reason} onChange={(e) => setReason(e.target.value)} required className={`${inputClass} mt-2 font-normal`}>
+          <option value="" disabled>
+            Choose a reason
+          </option>
+          {REASONS.map((r) => (
+            <option key={r.value} value={r.value}>
+              {r.label}
+            </option>
+          ))}
+        </Select>
       </label>
+      {reason === "other" && (
+        <label className="block text-sm font-bold text-slate-700">
+          Tell us your reason
+          <textarea rows={3} maxLength={1000} required value={message} onChange={(e) => setMessage(e.target.value)} className={`${inputClass} mt-2 font-normal`} />
+        </label>
+      )}
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || !reason}
         className="min-h-12 w-full rounded-xl bg-slate-900 px-6 text-sm font-bold text-white shadow-lg transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         {busy ? "Sending…" : "Request account deletion"}
