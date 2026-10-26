@@ -11,6 +11,7 @@ import { PLAN_FEATURES } from '@/lib/postingPlans/types';
 import { isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import { formatListingPrice } from '@/lib/properties/price';
+import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Draft: 'bg-slate-100 text-slate-500',
@@ -101,7 +102,7 @@ export default function ListingCard({
   const totalPhotos = getGalleryImages(listing.property).length;
   const hiddenPhotos = Math.max(0, totalPhotos - PUBLIC_PHOTO_LIMIT);
   const hasHiddenVideo = !!listing.property.videoUrl;
-  const hasHiddenMedia = !promoted && (hiddenPhotos > 0 || hasHiddenVideo);
+  const hasHiddenMedia = PHOTO_LIMIT_ENABLED && !promoted && (hiddenPhotos > 0 || hasHiddenVideo);
 
   return (
     <div className={`bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow ${isOffMarket ? 'opacity-75' : ''}`}>

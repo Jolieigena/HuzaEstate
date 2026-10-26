@@ -7,6 +7,7 @@ import { formatMoney } from '@/lib/finance/money';
 import { PROMOTION_PACKAGES, isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { createPromoteCheckout } from '@/lib/promotion/api';
 import { getGalleryImages } from '@/lib/properties/gallery';
+import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 import type { Property } from '@/lib/properties/types';
 
 // Kept in sync with property-service's own PUBLIC_PHOTO_LIMIT (capMedia in
@@ -43,8 +44,8 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
   const alreadyActive = isPromotedNow(property);
   const daysLeft = promotionDaysLeft(property);
   const selectedPackage = PROMOTION_PACKAGES.find((p) => p.days === selectedDays) ?? PROMOTION_PACKAGES[0];
-  const hiddenPhotos = Math.max(0, getGalleryImages(property).length - PUBLIC_PHOTO_LIMIT);
-  const hasHiddenVideo = !!property.videoUrl;
+  const hiddenPhotos = PHOTO_LIMIT_ENABLED ? Math.max(0, getGalleryImages(property).length - PUBLIC_PHOTO_LIMIT) : 0;
+  const hasHiddenVideo = PHOTO_LIMIT_ENABLED && !!property.videoUrl;
 
   const handleConfirm = async () => {
     if (!token || submitting) return;
