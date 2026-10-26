@@ -10,6 +10,7 @@ import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerList
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import CurrencyChips from '@/components/CurrencyChips';
+import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedNumberInput';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
@@ -440,7 +441,7 @@ function PropertiesContent() {
                   onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 320, setPricePanelPos, () => setIsPriceOpen(true)))}
                   className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
                 >
-                  {customMinPrice || customMaxPrice ? `Price: ${priceSign}${customMinPrice || '0'} – ${priceSign}${customMaxPrice || 'Any'}` : `Any Price${money.currency ? ` (${money.currency})` : ''}`}
+                  {customMinPrice || customMaxPrice ? `Price: ${priceSign}${withCommas(customMinPrice) || '0'} – ${priceSign}${withCommas(customMaxPrice) || 'Any'}` : `Any Price${money.currency ? ` (${money.currency})` : ''}`}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {isPriceOpen && pricePanelPos && (
@@ -456,9 +457,9 @@ function PropertiesContent() {
                     <div className="w-full h-px bg-slate-100 mb-4" />
                     <h4 className="font-bold text-slate-900 mb-2 px-2 text-[13px] uppercase tracking-wider">Custom</h4>
                     <div className="flex items-center gap-3 px-2">
-                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><input type="number" placeholder="Min" value={customMinPrice} onChange={(e)=>setCustomMinPrice(e.target.value)} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
+                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><FormattedNumberInput placeholder="Min" value={customMinPrice} onChange={setCustomMinPrice} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
                       <span className="text-slate-400 font-medium">–</span>
-                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><input type="number" placeholder="Max" value={customMaxPrice} onChange={(e)=>setCustomMaxPrice(e.target.value)} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
+                      <div className="flex-1 relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-medium text-[12px]">{priceCode === 'USD' ? '$' : priceCode}</span><FormattedNumberInput placeholder="Max" value={customMaxPrice} onChange={setCustomMaxPrice} className="w-full pl-12 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]" /></div>
                     </div>
                   </div>
                 )}

@@ -9,6 +9,7 @@ import PostingPaywall from '@/components/postingPlans/PostingPaywall';
 import { useAuth } from '@/lib/auth-context';
 import { useIsAdministrator } from '@/lib/admin/hooks';
 import { hasOrgPermission } from '@/lib/orgPermissions';
+import FormattedNumberInput from '@/components/shared/FormattedNumberInput';
 import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import PhotoLimitNotice from '@/components/PhotoLimitNotice';
@@ -423,12 +424,10 @@ function PostPropertyForm() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
                 <div className="flex gap-2">
-                  <input
-                    type="number"
+                  <FormattedNumberInput
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. 350000"
-                    min="0"
+                    onChange={setPrice}
+                    placeholder="e.g. 350,000"
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     required
                   />

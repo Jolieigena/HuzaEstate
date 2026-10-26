@@ -5,6 +5,7 @@ import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import PhotoLimitNotice from './PhotoLimitNotice';
 import { useAuth } from '@/lib/auth-context';
+import FormattedNumberInput from '@/components/shared/FormattedNumberInput';
 import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
@@ -217,11 +218,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
             <div className="flex gap-2">
-              <input
-                type="number"
-                min="0"
+              <FormattedNumberInput
                 value={form.price}
-                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                onChange={(price) => setForm((f) => ({ ...f, price }))}
                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 required
               />
