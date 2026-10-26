@@ -11,6 +11,7 @@ import TourWatchBadge from '@/components/TourWatchBadge';
 import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 import Select from "@/components/shared/Select";
+import { formatPlace } from "@/lib/properties/place";
 
 // Create custom glowing price marker
 const createPriceIcon = (formattedPrice: string) => {
@@ -434,7 +435,7 @@ function MapPropertyPopupCard({ property }: { property: Property }) {
             </div>
           </div>
 
-          <div className="text-[11px] text-slate-400 font-medium truncate mt-1">{property.location}, {property.city}</div>
+          <div className="text-[11px] text-slate-400 font-medium truncate mt-1">{formatPlace(property.location, property.city)}</div>
         </div>
       </div>
       </Link>

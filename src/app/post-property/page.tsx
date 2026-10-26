@@ -24,6 +24,7 @@ import { useCurrencyOptions } from '@/lib/currencies';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { useToast } from '@/lib/toast-context';
 import Select from "@/components/shared/Select";
+import { formatPlace } from "@/lib/properties/place";
 
 const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
@@ -113,7 +114,7 @@ function PostPropertyForm() {
         setCurrencyTouched(true);
       }
       setPrice(p.price ? String(p.price) : '');
-      setLocation(p.location ? (p.city ? `${p.location}, ${p.city}` : p.location) : '');
+      setLocation(formatPlace(p.location, p.city));
       setCountry(p.country || DEFAULT_COUNTRY.name);
       setDistrict(p.district || '');
       setBedrooms(p.bedrooms ? String(p.bedrooms) : '');

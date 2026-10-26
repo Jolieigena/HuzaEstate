@@ -8,6 +8,7 @@ import type { Property, PropertyStatus } from "@/lib/properties/types";
 import { useToast } from "@/lib/toast-context";
 import { PrimaryButton, SecondaryButton } from "./ui";
 import { formatListingPrice } from "@/lib/properties/price";
+import { formatPlace } from "@/lib/properties/place";
 
 export type ReviewDecision = Extract<PropertyStatus, "published" | "changes_requested" | "rejected">;
 
@@ -31,7 +32,7 @@ export function ListingReviewDialog({ property, onClose, onDecide }: { property:
           <ReviewGallery key={property.id} property={property} />
           <h3 className="text-lg font-bold text-slate-900">{property.title}</h3>
           <p className="mb-3 text-sm text-slate-500">
-            {property.location}, {property.city}
+            {formatPlace(property.location, property.city)}
             {property.country ? `, ${property.country}` : ""}
           </p>
           <dl className="mb-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">

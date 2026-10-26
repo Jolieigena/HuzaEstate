@@ -13,6 +13,7 @@ import { ListingReviewDialog, SellerAutoPublishToggle, useSellerAutoPublish } fr
 import ReasonFormModal from "@/components/admin/ReasonFormModal";
 import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatMoney } from "@/components/admin/ui";
 import Select from "@/components/shared/Select";
+import { formatPlace } from "@/lib/properties/place";
 
 const STATUS_FILTERS: { key: "all" | PropertyStatus; label: string }[] = [
   { key: "all", label: "All" },
@@ -157,7 +158,7 @@ export function OrgPropertiesListPage() {
                           {property.title}
                         </Link>
                         <p className="text-xs text-slate-500">
-                          {property.location}, {property.city}
+                          {formatPlace(property.location, property.city)}
                         </p>
                       </div>
                     </div>

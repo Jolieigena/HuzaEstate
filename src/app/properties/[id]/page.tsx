@@ -11,6 +11,7 @@ import InquiryForm from '@/components/InquiryForm';
 import BackLink from '@/components/BackLink';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import CurrencyPicker from '@/components/CurrencyPicker';
+import { formatPlace } from '@/lib/properties/place';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -105,7 +106,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             </h1>
             <div className="flex items-center gap-2 mt-2 text-slate-500 text-[15px] font-medium">
               <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-              {property.location}, {property.city}
+              {formatPlace(property.location, property.city)}
             </div>
           </div>
           <div className="text-left md:text-right">

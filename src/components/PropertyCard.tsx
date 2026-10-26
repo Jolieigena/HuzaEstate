@@ -11,6 +11,7 @@ import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 import { isPromotedNow } from '@/lib/promotion/types';
 import { useDisplayCurrency } from '@/lib/currency/display';
+import { formatPlace } from '@/lib/properties/place';
 
 interface PropertyCardProps {
   property: Property;
@@ -178,7 +179,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
               {property.title}
             </h3>
             <p className="text-[14px] text-slate-500 leading-snug truncate mt-0.5">
-              {property.location}, {property.city}
+              {formatPlace(property.location, property.city)}
             </p>
           </div>
 
@@ -187,7 +188,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
           <div className="flex flex-col items-end gap-1.5 shrink-0 pt-1">
             <div className="flex items-center gap-1.5">
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${property.location}, ${property.city}`)}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(formatPlace(property.location, property.city))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440] transition-all"
