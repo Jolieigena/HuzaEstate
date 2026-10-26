@@ -230,6 +230,9 @@ function PropertiesContent() {
     setSelectedCountryCodes([currentCountry.code]);
   }, [currentCountry]);
 
+  // The filter pills sit behind one "Filters" button so the page opens on the listings, not a wall of controls.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   function closeAllPanels() {
     setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false);
     setIsAmenitiesOpen(false); setIsCountryOpen(false); setIsTypeOpen(false);
@@ -288,6 +291,11 @@ function PropertiesContent() {
       : [...selectedAmenities, label];
     setKeywordsInput(next.join(', '));
   }
+
+  const activeFilterCount = [
+    statusInput.trim(), customMinPrice || customMaxPrice, bedsInput, bathsInput, selectedTypeLabels.length > 0,
+    selectedCountryCodes.length > 0, topPicksOnly, minSqm || maxSqm, cityInput.trim(), selectedAmenities.length > 0,
+  ].filter(Boolean).length;
 
   const { properties: visibleProperties, loaded: listingsLoaded, failed: listingsFailed } = useAllPropertiesState();
 
@@ -425,11 +433,29 @@ function PropertiesContent() {
               actual full width instead of leaving a trailing gap and wrapping
               early. */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative w-full sm:w-[280px]">
+            <div className="relative flex-1 sm:flex-none sm:w-[280px]">
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input type="text" placeholder="City, district or country" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
 
+            <button
+              type="button"
+              onClick={() => { closeAllPanels(); setFiltersOpen((v) => !v); }}
+              aria-expanded={filtersOpen}
+              aria-label={activeFilterCount > 0 ? `Filters (${activeFilterCount} active)` : 'Filters'}
+              className={`relative rounded-full px-4 sm:px-5 py-2.5 font-medium text-[14px] shadow-sm flex items-center gap-2 transition-all border ${
+                filtersOpen || activeFilterCount > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h18M6 12h12M10 20h4" /></svg>
+              <span className="hidden sm:inline">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-[#2ec440] text-white text-[11px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+              )}
+            </button>
+
+            {filtersOpen && (
+              <div className="w-full flex items-center gap-2 flex-wrap pt-1">
               {/* Status — typeable, with suggestions so "renting"/"buy" etc still resolve */}
               <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" showChevron />
 
@@ -710,6 +736,14 @@ function PropertiesContent() {
                   </div>
                 )}
               </div>
+
+              {activeFilterCount > 0 && (
+                <button type="button" onClick={clearAll} className="px-3 py-2.5 text-[14px] font-medium text-slate-500 hover:text-slate-900 underline underline-offset-2">
+                  Clear filters
+                </button>
+              )}
+              </div>
+            )}
           </div>
         </div>
 
