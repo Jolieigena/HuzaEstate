@@ -445,7 +445,7 @@ function PropertiesContent() {
               aria-expanded={filtersOpen}
               aria-label={activeFilterCount > 0 ? `Filters (${activeFilterCount} active)` : 'Filters'}
               className={`relative rounded-full px-4 sm:px-5 py-2.5 font-medium text-[14px] shadow-sm flex items-center gap-2 transition-all border ${
-                filtersOpen || activeFilterCount > 0 ? 'bg-white border-[#2ec440] text-slate-900' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                filtersOpen || activeFilterCount > 0 ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h18M6 12h12M10 20h4" /></svg>
