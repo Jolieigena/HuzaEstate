@@ -17,11 +17,12 @@ const OTHER_PAGES = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/seller-terms", label: "Seller Terms & Conditions" },
+  { href: "/delete-account", label: "Delete your account" },
 ];
 
 /** A long-form legal page: title, date, a numbered list of its sections that jumps to them, then the sections themselves. The text
  *  lives in src/lib/legal so it can be edited without touching the layout. */
-export default function LegalPage({ doc, path }: { doc: LegalDocument; path: string }) {
+export default function LegalPage({ doc, path, children }: { doc: LegalDocument; path: string; children?: React.ReactNode }) {
   return (
     <main className="bg-white">
       <div className="mx-auto w-full max-w-4xl px-6 py-14 sm:py-20">
@@ -65,6 +66,8 @@ export default function LegalPage({ doc, path }: { doc: LegalDocument; path: str
             </section>
           ))}
         </div>
+
+        {children && <div className="mt-8">{children}</div>}
 
         <div className="mt-16 border-t border-slate-200 pt-8">
           <p className="text-sm font-semibold text-slate-500">Also read</p>

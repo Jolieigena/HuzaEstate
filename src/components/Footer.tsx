@@ -130,6 +130,7 @@ export default function Footer() {
             <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Terms</Link>
             <Link href="/privacy" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Privacy</Link>
             <Link href="/seller-terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Seller Terms</Link>
+            <Link href="/delete-account" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Delete account</Link>
           </div>
         </div>
       </div>
