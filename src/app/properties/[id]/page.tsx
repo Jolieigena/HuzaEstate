@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useRef, useState } from 'react';
+import React, { Suspense, use, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useProperty } from '@/lib/sellerListings/hooks';
 import { getGalleryImages } from '@/lib/properties/gallery';
@@ -256,7 +256,9 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             {notPublic ? (
               <p className="text-sm text-slate-500">This listing isn&apos;t public, so it can&apos;t receive messages.</p>
             ) : (
-              <InquiryForm property={property} />
+              <Suspense fallback={null}>
+                <InquiryForm property={property} />
+              </Suspense>
             )}
           </div>
 

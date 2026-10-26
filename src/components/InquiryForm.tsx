@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
 import { PropertyApi } from "@/lib/properties/api";
@@ -14,9 +15,11 @@ const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3
  *  since most sellers here are private individuals listing their own place, not agents. */
 export default function InquiryForm({ property }: { property: Property }) {
   const { account, token } = useAuth();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  // The links in the emails about an inquiry open this form with the sender's details filled in (?name=&email=&phone=).
+  const hint = useSearchParams();
+  const [name, setName] = useState(() => (hint.get("name") ?? "").slice(0, 160));
+  const [email, setEmail] = useState(() => (hint.get("email") ?? "").slice(0, 254));
+  const [phone, setPhone] = useState(() => (hint.get("phone") ?? "").slice(0, 20));
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

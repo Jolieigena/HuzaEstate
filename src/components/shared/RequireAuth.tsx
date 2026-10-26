@@ -21,7 +21,9 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!isAuthReady) return;
     if (!isLoggedIn) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      // An emailed link carries the recipient's address (?email=), so the sign-in page it leads to has it filled in.
+      const emailHint = new URLSearchParams(window.location.search).get("email");
+      router.replace(`/login?redirect=${encodeURIComponent(pathname)}${emailHint ? `&email=${encodeURIComponent(emailHint.slice(0, 254))}` : ""}`);
       return;
     }
     if (mustChangePassword && pathname !== "/change-password") {
