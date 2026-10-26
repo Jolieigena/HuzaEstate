@@ -51,6 +51,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     e.preventDefault();
     if (saving) return;
     setError('');
+    if (form.photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     // The owner's contact on a listing staff posted for an owner with no account.
     if (property.listedOnBehalf) {
       if (!form.ownerName.trim()) { setError("Enter the owner's name."); return; }
