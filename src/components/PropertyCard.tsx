@@ -11,6 +11,8 @@ import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 import { isPromotedNow } from '@/lib/promotion/types';
 import { useDisplayCurrency } from '@/lib/currency/display';
+import { formatArea } from '@/lib/properties/area';
+import { LAND_FEATURE_OPTIONS } from '@/lib/properties/types';
 import { formatPlace } from '@/lib/properties/place';
 
 interface PropertyCardProps {
@@ -28,6 +30,8 @@ const POPULAR_INQUIRY_THRESHOLD = 5;
 export default function PropertyCard({ property, isFeatured }: PropertyCardProps) {
   const isSaved = useIsFavorite(property.id);
   const money = useDisplayCurrency();
+  // For land the footer shows the plot's size and its features (road, water, title deed...) instead of rooms.
+  const landFeatures = (property.amenities ?? []).filter((a) => LAND_FEATURE_OPTIONS.includes(a)).slice(0, 2);
   const { showToast } = useToast();
   const router = useRouter();
   const listedDate = property.createdAt ? new Date(property.createdAt) : null;
@@ -233,9 +237,16 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
               {property.propertyType !== 'land' && <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></div>}
                       <div className="flex items-center gap-1.5 shrink-0">
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-            <span><strong className="text-slate-900">{property.sqm}</strong> sqm</span>
+            <span><strong className="text-slate-900">{formatArea(property.sqm).value}</strong> {formatArea(property.sqm).unit}</span>
           </div>
             </>
+          )}
+          {property.propertyType === 'land' && landFeatures.length > 0 && (
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              {landFeatures.map((feature) => (
+                <span key={feature} className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600">{feature}</span>
+              ))}
+            </div>
           )}
           {promoted && (
             // Eyeball/interest count — unconditional on every promoted listing, even "0" on a

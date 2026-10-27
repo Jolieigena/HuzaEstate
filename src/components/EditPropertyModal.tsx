@@ -9,7 +9,7 @@ import FormattedNumberInput from '@/components/shared/FormattedNumberInput';
 import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
-import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrencyOptions } from '@/lib/currencies';
 import Select from "@/components/shared/Select";
@@ -77,7 +77,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       imageUrl,
       galleryImages,
       photos: form.photos,
-      amenities: form.amenities,
+      amenities: isLandType ? form.amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : form.amenities,
       type: form.type,
       propertyType,
       propertyLabel: form.propertyTypeLabel,
@@ -121,6 +121,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   // Same "Furnished" tag as the generic Amenities checklist, just surfaced as
   // its own toggle for apartment-style listings — see post-property/page.tsx.
   const isApartmentType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'apartment';
+  const isLandType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'land';
   const isFurnished = form.amenities.some((a) => a.toLowerCase() === 'furnished');
 
   // 5 majors + the seller's own local currency (see lib/currencies.ts), plus
@@ -352,9 +353,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Amenities</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{isLandType ? 'Land features' : 'Amenities'}</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
-            {AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished')).map((label) => (
+            {(isLandType ? LAND_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
               <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                 <input type="checkbox" checked={form.amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
                 {label}

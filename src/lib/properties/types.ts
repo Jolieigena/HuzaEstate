@@ -94,6 +94,12 @@ export interface Property {
 // Shared between the /properties Amenities filter, the post-property form,
 // and EditPropertyModal, so every place a seller can set an amenity and a
 // buyer can filter by one offers exactly the same list.
+/** What a plot of land can offer, ticked in place of the house amenities when the type is Land. Stored in the same free-form
+ *  amenities list, so nothing on the server changes. */
+export const LAND_FEATURE_OPTIONS = [
+  'Road access', 'Water', 'Electricity', 'Fenced', 'Title deed', 'Flat terrain', 'Near main road', 'Ready to build',
+];
+
 export const AMENITY_OPTIONS = [
   'Pool', 'Garden', 'Furnished', 'Parking', 'Gym', 'Security',
   'Balcony', 'Air Conditioning', 'Elevator', 'Pet Friendly',

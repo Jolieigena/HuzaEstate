@@ -15,7 +15,7 @@ import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import PhotoLimitNotice from '@/components/PhotoLimitNotice';
 import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
 import { uploadMedia } from '@/lib/media/upload';
-import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { PropertyApi } from '@/lib/properties/api';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
 import { regionsForCountry } from '@/lib/regions';
@@ -219,7 +219,8 @@ function PostPropertyForm() {
       videoUrl,
       country,
       district: district || undefined,
-      amenities,
+      // Land keeps only the land features; anything ticked for a house before switching the type is dropped.
+      amenities: propertyTypeBucket === 'land' ? amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : amenities,
       // The owner's own contact, for staff posting for an owner with no account. Optional: left empty, the listing shows the
       // poster's own details. A draft keeps it only once it is usable.
       ...(isStaff && (draft ? ownerName.trim() && (ownerEmail.trim() || ownerPhone.trim()) : ownerFilled)
@@ -602,9 +603,9 @@ function PostPropertyForm() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Amenities</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{propertyTypeBucket === 'land' ? 'Land features' : 'Amenities'}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
-                  {AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished')).map((label) => (
+                  {(propertyTypeBucket === 'land' ? LAND_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
                     <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                       <input type="checkbox" checked={amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
                       {label}
