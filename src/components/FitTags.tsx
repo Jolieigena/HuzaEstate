@@ -3,11 +3,11 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 const GAP = 6; // gap-1.5
-const PLUS_WIDTH = 56; // room kept for the "+N" tag
+const PLUS_WIDTH = 50; // room kept for the "+N" tag
 
 const chip = "shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600";
-// The "+N more" count is plain green text, not another box next to the feature tags.
-const more = "shrink-0 cursor-help whitespace-nowrap text-[13px] font-bold text-[#219b31] hover:underline";
+// The "+N more" count is quiet grey text: it is there if you look, and does not compete with the tags.
+const more = "shrink-0 cursor-help whitespace-nowrap text-[12px] font-medium text-slate-400 transition-colors hover:text-slate-600";
 
 /** One line of tags: as many as fit, then "+N" for the ones left out. The tags are measured in an invisible copy, so a tag is never
  *  cut in half, and the count updates when the card changes width. */
