@@ -224,7 +224,7 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
         </div>
 
         {/* Specs Footer */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px] mt-3 pt-3 border-t border-slate-100 text-slate-600 font-medium">
+        <div className="flex items-center gap-4 text-[14px] mt-3 pt-3 border-t border-slate-100 text-slate-600 font-medium">
           {property.propertyType !== 'land' && !isCommercial && (
             <>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -255,14 +255,14 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
             </span>
           )}
           {isCommercial && commercialFeatures.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <div className="flex flex-1 flex-wrap content-start items-center gap-1.5 min-w-0 h-5 overflow-hidden">
               {commercialFeatures.map((feature) => (
                 <span key={feature} className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600">{feature}</span>
               ))}
             </div>
           )}
           {property.propertyType === 'land' && landFeatures.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <div className="flex flex-1 flex-wrap content-start items-center gap-1.5 min-w-0 h-5 overflow-hidden">
               {landFeatures.map((feature) => (
                 <span key={feature} className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600">{feature}</span>
               ))}
