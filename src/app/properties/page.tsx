@@ -10,6 +10,7 @@ import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerList
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { CONTINENTS, COUNTRY_OPTIONS, continentOf, getPropertyCountry, type Continent } from '@/lib/countries';
 import CurrencyChips from '@/components/CurrencyChips';
+import { useIsNativeApp } from '@/lib/nativeApp';
 import { totalPriceOf } from '@/lib/properties/price';
 import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedNumberInput';
 import { useDisplayCurrency } from '@/lib/currency/display';
@@ -182,6 +183,15 @@ function PropertiesContent() {
   // A whole region (Africa, Europe...) instead of picking countries one by one. Picking one clears the country choice, so the
   // two never contradict each other.
   const [region, setRegion] = useState<Continent | ''>('');
+  // In the mobile app the filters live in a sheet opened from a button beside the search box, instead of a wall of pills.
+  const isApp = useIsNativeApp();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [sheetOpen]);
   const [isRegionOpen, setIsRegionOpen] = useState(false);
   const regionButtonRef = useRef<HTMLButtonElement>(null);
   const [regionPanelPos, setRegionPanelPos] = useState<{ top: number; left: number } | null>(null);
@@ -382,6 +392,11 @@ function PropertiesContent() {
     ? placeParts.join(', ')
     : filterType === 'sale' ? 'Homes for sale' : filterType === 'rent' ? 'Homes for rent' : 'All properties';
 
+  const activeFilterCount = [
+    filterType !== 'all', selectedTypeLabels.length > 0, !!(customMinPrice || customMaxPrice), !!bedsInput, !!bathsInput,
+    !!(minSqm || maxSqm), !!cityInput.trim(), selectedAmenities.length > 0 || !!keywordsInput.trim(), !!region, topPicksOnly,
+  ].filter(Boolean).length;
+
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
@@ -438,10 +453,43 @@ function PropertiesContent() {
               actual full width instead of leaving a trailing gap and wrapping
               early. */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative w-full sm:w-[280px]">
+            <div className={isApp ? 'relative min-w-0 flex-1' : 'relative w-full sm:w-[280px]'}>
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input type="text" placeholder="City, district or country" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
+
+              {isApp && (
+                <button
+                  type="button"
+                  onClick={() => setSheetOpen(true)}
+                  aria-label={activeFilterCount ? `Filters, ${activeFilterCount} active` : 'Filters'}
+                  className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#2ec440]/40 bg-[#2ec440]/10 text-[#219b31] shadow-sm transition-colors active:bg-[#2ec440]/20"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
+                    <circle cx="16" cy="6" r="2" strokeWidth="2" />
+                    <circle cx="10" cy="12" r="2" strokeWidth="2" />
+                    <circle cx="18" cy="18" r="2" strokeWidth="2" />
+                  </svg>
+                  {activeFilterCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2ec440] px-1 text-[11px] font-bold text-white">{activeFilterCount}</span>
+                  )}
+                </button>
+              )}
+
+              {/* In the app the filters below are a sheet; on the website this wrapper adds nothing to the layout. */}
+              <div className={isApp ? (sheetOpen ? 'fixed inset-0 z-[60] flex items-end' : 'hidden') : 'contents'}>
+                {isApp && <div className="absolute inset-0 bg-slate-900/40" onClick={() => { closeAllPanels(); setSheetOpen(false); }} aria-hidden="true" />}
+                <div className={isApp ? 'relative flex max-h-[88dvh] w-full flex-col rounded-t-3xl bg-white shadow-2xl' : 'contents'}>
+                  {isApp && (
+                    <div className="flex items-center justify-between px-5 pb-3 pt-5">
+                      <h2 className="text-lg font-bold text-slate-900">Filters</h2>
+                      <button type="button" onClick={() => { closeAllPanels(); setSheetOpen(false); }} aria-label="Close filters" className="flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100">
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  )}
+                  <div className={isApp ? 'flex flex-wrap items-center gap-2 overflow-y-auto px-5 pb-4' : 'contents'}>
 
               {/* Status — typeable, with suggestions so "renting"/"buy" etc still resolve */}
               <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" showChevron />
@@ -755,6 +803,17 @@ function PropertiesContent() {
                     <p className="text-[11px] text-slate-400 mt-1">Comma-separated — matches any one.</p>
                   </div>
                 )}
+              </div>
+                  </div>
+                  {isApp && (
+                    <div className="flex gap-3 border-t border-slate-100 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                      <button type="button" onClick={() => { clearAll(); }} className="min-h-12 rounded-xl border border-slate-200 px-5 text-sm font-bold text-slate-700">Clear all</button>
+                      <button type="button" onClick={() => { closeAllPanels(); setSheetOpen(false); }} className="min-h-12 flex-1 rounded-xl bg-[#2ec440] px-5 text-sm font-bold text-white">
+                        Show {filteredProperties.length} {filteredProperties.length === 1 ? 'result' : 'results'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
           </div>
         </div>
