@@ -245,3 +245,24 @@ export function getPropertyCountry(property: Pick<Property, "country">): Country
   }
   return DEFAULT_COUNTRY;
 }
+
+/** The regions a visitor can filter listings by. */
+export const CONTINENTS = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"] as const;
+export type Continent = (typeof CONTINENTS)[number];
+
+const CONTINENT_CODES: Record<Continent, string> = {
+  Africa: "DZ AO BJ BW BF BI CM CV CF TD KM CG CD CI DJ EG GQ ER SZ ET GA GM GH GN GW KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW",
+  Asia: "AF AM AZ BH BD BT BN KH CN GE IN ID IR IQ IL JP JO KZ KW KG LA LB MY MV MN MM NP KP OM PK PS PH QA SA SG KR LK SY TW TJ TH TL TR TM AE UZ VN YE HK",
+  Europe: "AL AD AT BY BE BA BG HR CY CZ DK EE FI FR DE GR HU IS IE IT XK LV LI LT LU MT MD MC ME NL MK NO PL PT RO RU SM RS SK SI ES SE CH UA GB VA",
+  "North America": "AG BS BB BZ CA CR CU DM DO SV GD GT HT HN JM MX NI PA KN LC VC TT US",
+  "South America": "AR BO BR CL CO EC GY PY PE SR UY VE",
+  Oceania: "AU FJ KI MH FM NR NZ PW PG WS SB TO TV VU",
+};
+
+const CONTINENT_BY_CODE: Record<string, Continent> = {};
+for (const continent of CONTINENTS) for (const code of CONTINENT_CODES[continent].split(" ")) CONTINENT_BY_CODE[code] = continent;
+
+/** The region a country (by ISO code) is in, or undefined for a country not placed in one. */
+export function continentOf(code: string): Continent | undefined {
+  return CONTINENT_BY_CODE[code];
+}

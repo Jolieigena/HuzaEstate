@@ -8,7 +8,7 @@ import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import AISearchCard from '@/components/AISearchCard';
 import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
-import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
+import { CONTINENTS, COUNTRY_OPTIONS, continentOf, getPropertyCountry, type Continent } from '@/lib/countries';
 import CurrencyChips from '@/components/CurrencyChips';
 import { totalPriceOf } from '@/lib/properties/price';
 import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedNumberInput';
@@ -179,9 +179,21 @@ function PropertiesContent() {
   const countryButtonRef = useRef<HTMLButtonElement>(null);
   const [countryPanelPos, setCountryPanelPos] = useState<{ top: number; left: number } | null>(null);
   const [countrySearch, setCountrySearch] = useState('');
+  // A whole region (Africa, Europe...) instead of picking countries one by one. Picking one clears the country choice, so the
+  // two never contradict each other.
+  const [region, setRegion] = useState<Continent | ''>('');
+  const [isRegionOpen, setIsRegionOpen] = useState(false);
+  const regionButtonRef = useRef<HTMLButtonElement>(null);
+  const [regionPanelPos, setRegionPanelPos] = useState<{ top: number; left: number } | null>(null);
   // Set once the visitor changes the Country filter themselves (or clears the filters): from then on their choice stands and a
   // later detection result does not replace it.
   const countryTouched = useRef(false);
+  function chooseRegion(next: Continent | '') {
+    countryTouched.current = true;
+    setRegion(next);
+    setSelectedCountryCodes([]);
+    setIsRegionOpen(false);
+  }
   function toggleCountry(code: string) {
     countryTouched.current = true;
     setSelectedCountryCodes((prev) => prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]);
@@ -233,7 +245,7 @@ function PropertiesContent() {
 
   function closeAllPanels() {
     setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false);
-    setIsAmenitiesOpen(false); setIsCountryOpen(false); setIsTypeOpen(false);
+    setIsAmenitiesOpen(false); setIsCountryOpen(false); setIsTypeOpen(false); setIsRegionOpen(false);
   }
 
   // A fixed-position panel doesn't track its trigger on scroll, so close it
@@ -241,7 +253,7 @@ function PropertiesContent() {
   // the button. Scrolls that happen *inside* a panel (e.g. the country list)
   // are ignored so the panel's own content stays scrollable.
   useEffect(() => {
-    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen && !isTypeOpen) return;
+    if (!isPriceOpen && !isAreaOpen && !isBedsOpen && !isBathsOpen && !isAmenitiesOpen && !isCountryOpen && !isTypeOpen && !isRegionOpen) return;
     const close = (e: Event) => {
       if (e.target instanceof Element && e.target.closest('[data-filter-panel]')) return;
       closeAllPanels();
@@ -252,7 +264,7 @@ function PropertiesContent() {
       window.removeEventListener('scroll', close, true);
       window.removeEventListener('resize', close);
     };
-  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen, isCountryOpen, isTypeOpen]);
+  }, [isPriceOpen, isAreaOpen, isBedsOpen, isBathsOpen, isAmenitiesOpen, isCountryOpen, isTypeOpen, isRegionOpen]);
 
   // Any click that lands outside every open panel and outside the pill that
   // triggers it closes all of them — panels no longer have their own Apply
@@ -325,7 +337,7 @@ function PropertiesContent() {
       const keywordHay = `${p.title} ${p.description} ${(p.amenities ?? []).join(' ')}`.toLowerCase();
       matchesKeywords = kws.length === 0 || kws.some((kw) => keywordHay.includes(kw));
     }
-    const matchesCountry = selectedCountryCodes.length === 0 || selectedCountryCodes.includes(getPropertyCountry(p).code);
+    const matchesCountry = (selectedCountryCodes.length === 0 || selectedCountryCodes.includes(getPropertyCountry(p).code)) && (!region || continentOf(getPropertyCountry(p).code) === region);
     let matchesAi = true;
     if (aiFilters) {
       if (aiFilters.type && aiFilters.type !== 'all') matchesAi = matchesAi && p.type === aiFilters.type;
@@ -373,7 +385,7 @@ function PropertiesContent() {
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
-    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); countryTouched.current = true; setSelectedCountryCodes([]); setAiFilters(null);
+    setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); countryTouched.current = true; setSelectedCountryCodes([]); setRegion(''); setAiFilters(null);
     setTopPicksOnly(false);
   }
 
@@ -575,6 +587,39 @@ function PropertiesContent() {
                   silently matched nothing if you typed a city instead of a country. */}
               <div className="relative">
                 <button
+                  ref={regionButtonRef}
+                  data-filter-trigger
+                  onClick={() => (isRegionOpen ? setIsRegionOpen(false) : openPanel(regionButtonRef, 256, setRegionPanelPos, () => setIsRegionOpen(true)))}
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                >
+                  {region || 'Any Region'}
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {isRegionOpen && regionPanelPos && (
+                  <div data-filter-panel style={{ position: 'fixed', top: regionPanelPos.top, left: regionPanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-64">
+                    <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Region</h3>
+                    <div className="flex flex-col gap-0.5">
+                      {(['', ...CONTINENTS] as (Continent | '')[]).map((name) => {
+                        const count = name ? visibleProperties.filter((p) => continentOf(getPropertyCountry(p).code) === name).length : visibleProperties.length;
+                        return (
+                          <button
+                            key={name || 'any'}
+                            type="button"
+                            onClick={() => chooseRegion(name)}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-[14px] font-medium transition-colors ${region === name ? 'bg-slate-50 text-[#2ec440]' : 'text-slate-700 hover:bg-slate-50'}`}
+                          >
+                            <span>{name || 'Any region'}</span>
+                            <span className="text-[12px] font-semibold text-slate-400">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
                   ref={countryButtonRef}
                   data-filter-trigger
                   onClick={() => (isCountryOpen ? setIsCountryOpen(false) : openPanel(countryButtonRef, 288, setCountryPanelPos, () => setIsCountryOpen(true)))}
@@ -598,7 +643,7 @@ function PropertiesContent() {
                       className="w-full mb-2 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
                     />
                     <div className="grid grid-cols-1 gap-1 max-h-56 overflow-y-auto pr-1">
-                      {COUNTRY_OPTIONS.filter((c) => c.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).map((c) => {
+                      {COUNTRY_OPTIONS.filter((c) => (!region || continentOf(c.code) === region) && c.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).map((c) => {
                         const checked = selectedCountryCodes.includes(c.code);
                         return (
                           <label key={c.code} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">

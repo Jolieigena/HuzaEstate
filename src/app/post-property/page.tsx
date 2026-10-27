@@ -252,6 +252,7 @@ function PostPropertyForm() {
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
     if (!(Number(sqm) > 0)) { setError('Enter the size of the property.'); return; }
+    if (listingType === 'sale' && propertyType !== 'land' && propertyType !== 'commercial' && !(Number(bedrooms) >= 1 && Number(bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     if (propertyType !== 'land' && propertyType !== 'commercial' && (bedrooms === '' || bathrooms === '')) { setError('Enter the number of bedrooms and bathrooms.'); return; }
     if (isStaff && ownerFilled) {
       if (!ownerName.trim()) { setError("Enter the owner's name."); return; }
@@ -559,7 +560,7 @@ function PostPropertyForm() {
                       type="number"
                       value={bedrooms}
                       onChange={(e) => setBedrooms(e.target.value)}
-                      min="0"
+                      min={listingType === 'sale' ? 1 : 0}
                       placeholder="e.g. 4"
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -572,7 +573,7 @@ function PostPropertyForm() {
                       type="number"
                       value={bathrooms}
                       onChange={(e) => setBathrooms(e.target.value)}
-                      min="0"
+                      min={listingType === 'sale' ? 1 : 0}
                       placeholder="e.g. 3"
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"

@@ -53,6 +53,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     if (saving) return;
     setError('');
     if (form.photos.length === 0) { setError('Add at least one photo of the property.'); return; }
+    if (!(Number(form.sqm) > 0)) { setError('Enter the size of the property.'); return; }
+    if (form.type === 'sale' && !isLandType && !isCommercialType && !(Number(form.bedrooms) >= 1 && Number(form.bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     // The owner's contact on a listing staff posted for an owner with no account.
     if (property.listedOnBehalf) {
       if (!form.ownerName.trim()) { setError("Enter the owner's name."); return; }
