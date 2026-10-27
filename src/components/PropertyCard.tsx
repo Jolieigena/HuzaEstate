@@ -11,6 +11,7 @@ import { useIsFavorite, useToggleFavorite } from '@/lib/favorites/hooks';
 import { useToast } from '@/lib/toast-context';
 import { isPromotedNow } from '@/lib/promotion/types';
 import { useDisplayCurrency } from '@/lib/currency/display';
+import FitTags from '@/components/FitTags';
 import { formatArea } from '@/lib/properties/area';
 import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import { COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS } from '@/lib/properties/types';
@@ -32,8 +33,8 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
   const isSaved = useIsFavorite(property.id);
   const money = useDisplayCurrency();
   // For land the footer shows the plot's size and its features (road, water, title deed...) instead of rooms.
-  const landFeatures = (property.amenities ?? []).filter((a) => LAND_FEATURE_OPTIONS.includes(a)).slice(0, 5);
-  const commercialFeatures = (property.amenities ?? []).filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a)).slice(0, 5);
+  const landFeatures = (property.amenities ?? []).filter((a) => LAND_FEATURE_OPTIONS.includes(a));
+  const commercialFeatures = (property.amenities ?? []).filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a));
   const isCommercial = property.propertyType === 'commercial';
   const { showToast } = useToast();
   const router = useRouter();
@@ -255,18 +256,10 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
             </span>
           )}
           {isCommercial && commercialFeatures.length > 0 && (
-            <div className="flex flex-1 flex-wrap content-start items-center gap-1.5 min-w-0 h-5 overflow-hidden">
-              {commercialFeatures.map((feature) => (
-                <span key={feature} className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600">{feature}</span>
-              ))}
-            </div>
+            <FitTags tags={commercialFeatures} />
           )}
           {property.propertyType === 'land' && landFeatures.length > 0 && (
-            <div className="flex flex-1 flex-wrap content-start items-center gap-1.5 min-w-0 h-5 overflow-hidden">
-              {landFeatures.map((feature) => (
-                <span key={feature} className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600">{feature}</span>
-              ))}
-            </div>
+            <FitTags tags={landFeatures} />
           )}
           {promoted && (
             // Eyeball/interest count — unconditional on every promoted listing, even "0" on a
