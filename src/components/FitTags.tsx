@@ -3,9 +3,11 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 const GAP = 6; // gap-1.5
-const PLUS_WIDTH = 38; // room kept for the "+N" tag
+const PLUS_WIDTH = 42; // room kept for the "+N" tag
 
 const chip = "shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[12px] font-semibold text-slate-600";
+// The "+N" tag stands apart from the feature tags: green outline and tint, so it reads as "more", not as another feature.
+const more = "shrink-0 cursor-help rounded-md border border-[#2ec440]/40 bg-[#2ec440]/10 px-2 py-[1px] text-[12px] font-bold text-[#219b31] transition-colors hover:bg-[#2ec440]/20";
 
 /** One line of tags: as many as fit, then "+N" for the ones left out. The tags are measured in an invisible copy, so a tag is never
  *  cut in half, and the count updates when the card changes width. */
@@ -49,7 +51,11 @@ export default function FitTags({ tags }: { tags: string[] }) {
       {tags.slice(0, visible).map((tag) => (
         <span key={tag} className={chip}>{tag}</span>
       ))}
-      {visible < tags.length && <span className={`${chip} text-slate-500`}>+{tags.length - visible}</span>}
+      {visible < tags.length && (
+        <span className={more} title={tags.slice(visible).join(", ")} aria-label={`${tags.length - visible} more: ${tags.slice(visible).join(", ")}`}>
+          +{tags.length - visible}
+        </span>
+      )}
       <div ref={measure} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 flex gap-1.5 whitespace-nowrap">
         {tags.map((tag) => (
           <span key={tag} className={chip}>{tag}</span>
