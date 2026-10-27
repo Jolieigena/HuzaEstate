@@ -72,6 +72,7 @@ function PostPropertyForm() {
   const [location, setLocation] = useState('');
   const [country, setCountry] = useState(DEFAULT_COUNTRY.name);
   const [district, setDistrict] = useState('');
+  const propertyTypeBucket = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket;
   const [bedrooms, setBedrooms] = useState('');
   const [bathrooms, setBathrooms] = useState('');
   // Always the source of truth in sqm — matches Property.sqm and the
@@ -205,9 +206,10 @@ function PostPropertyForm() {
       currency: listingType === 'rent' ? `${currency}/month` : currency,
       location: neighborhood.trim(),
       city,
-      bedrooms: Number(bedrooms) || 0,
-      bathrooms: Number(bathrooms) || 0,
-      sqm: Number(sqm) || 0,
+      // Left blank stays blank (not 0), so the server can tell "not filled in" from a real 0 (a studio).
+      bedrooms: bedrooms === '' ? undefined : Number(bedrooms),
+      bathrooms: bathrooms === '' ? undefined : Number(bathrooms),
+      sqm: sqm === '' ? undefined : Number(sqm),
       imageUrl,
       galleryImages,
       photos,
@@ -239,6 +241,8 @@ function PostPropertyForm() {
     if (photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
+    if (!(Number(sqm) > 0)) { setError('Enter the size of the property.'); return; }
+    if (propertyType !== 'land' && (bedrooms === '' || bathrooms === '')) { setError('Enter the number of bedrooms and bathrooms.'); return; }
     if (isStaff && ownerFilled) {
       if (!ownerName.trim()) { setError("Enter the owner's name."); return; }
       if (!ownerEmail.trim() && !ownerPhone.trim()) { setError('Enter an email or a phone number so buyers can reach the owner.'); return; }
@@ -531,29 +535,35 @@ function PostPropertyForm() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Bedrooms</label>
-                <input
-                  type="number"
-                  value={bedrooms}
-                  onChange={(e) => setBedrooms(e.target.value)}
-                  min="0"
-                  placeholder="e.g. 4"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                />
-              </div>
+              {propertyTypeBucket !== 'land' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Bedrooms</label>
+                    <input
+                      type="number"
+                      value={bedrooms}
+                      onChange={(e) => setBedrooms(e.target.value)}
+                      min="0"
+                      placeholder="e.g. 4"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Bathrooms</label>
-                <input
-                  type="number"
-                  value={bathrooms}
-                  onChange={(e) => setBathrooms(e.target.value)}
-                  min="0"
-                  placeholder="e.g. 3"
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Bathrooms</label>
+                    <input
+                      type="number"
+                      value={bathrooms}
+                      onChange={(e) => setBathrooms(e.target.value)}
+                      min="0"
+                      placeholder="e.g. 3"
+                      required
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">Size</label>
@@ -564,6 +574,7 @@ function PostPropertyForm() {
                     onChange={(e) => handleSqmChange(e.target.value)}
                     min="0"
                     step="any"
+                    required
                     placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   />
