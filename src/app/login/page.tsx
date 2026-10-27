@@ -67,7 +67,7 @@ function LoginForm() {
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="block text-sm font-bold text-slate-700">Password</label>
-            <Link href="#" className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Forgot password?</Link>
+            <Link href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ''}`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Forgot password?</Link>
           </div>
           <PasswordInput
             placeholder="••••••••"
