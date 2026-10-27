@@ -10,6 +10,7 @@ import LandlordProfileCard from '@/components/LandlordProfileCard';
 import InquiryForm from '@/components/InquiryForm';
 import BackLink from '@/components/BackLink';
 import { useDisplayCurrency } from '@/lib/currency/display';
+import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import CurrencyPicker from '@/components/CurrencyPicker';
 import { formatPlace } from '@/lib/properties/place';
 
@@ -112,8 +113,11 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           <div className="text-left md:text-right">
             <div className="text-2xl sm:text-3xl font-bold text-slate-900">
               {money.format(property.price, property.currency)}
-              {property.type === 'rent' && <span className="text-lg text-slate-400 font-medium ml-1">/mo</span>}
+              {(isPerSqm(property) || property.type === 'rent') && <span className="text-lg text-slate-400 font-medium ml-1">{isPerSqm(property) ? '/sqm' : ''}{property.type === 'rent' ? '/mo' : ''}</span>}
             </div>
+            {isPerSqm(property) && property.sqm > 0 && (
+              <div className="mt-1 text-base font-semibold text-slate-600">{money.format(totalPriceOf(property), property.currency)}{property.type === 'rent' ? '/mo' : ''} total</div>
+            )}
             <div className="mt-2 flex md:justify-end"><CurrencyPicker /></div>
           </div>
         </div>
@@ -141,7 +145,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
         <div className="lg:col-span-8">
           {/* Specs */}
           <div className="flex flex-wrap items-center gap-8 sm:gap-12 py-6 border-y border-gray-100 mb-10">
-            {property.propertyType !== 'land' && (
+            {property.propertyType !== 'land' && property.propertyType !== 'commercial' && (
               <>
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center text-slate-700">

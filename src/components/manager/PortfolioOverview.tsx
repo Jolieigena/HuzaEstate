@@ -15,6 +15,7 @@ const TYPE_ROWS: { type: Property['propertyType'] | 'unspecified'; label: string
   { type: 'apartment', label: 'Apartments' },
   { type: 'house', label: 'Houses' },
   { type: 'land', label: 'Land' },
+  { type: 'commercial', label: 'Commercial' },
   // A draft can be saved before a type is chosen.
   { type: 'unspecified', label: 'Type not set' },
 ];

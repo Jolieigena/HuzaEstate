@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, Rectangle, Circle } fro
 import 'leaflet/dist/leaflet.css';
 import type { Property } from '@/lib/properties/types';
 import { useDisplayCurrency } from '@/lib/currency/display';
+import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import Link from 'next/link';
 import Image from '@/components/PropertyImage';
 import L from 'leaflet';
@@ -418,7 +419,7 @@ function MapPropertyPopupCard({ property }: { property: Property }) {
             </button>
           </div>
 
-          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">{money.format(property.price, property.currency)}</div>
+          <div className="font-bold text-slate-900 text-[18px] tracking-tight mb-2">{money.format(property.price, property.currency)}{isPerSqm(property) ? ' /sqm' : ''}</div>
 
           <div className="flex items-center gap-2 text-slate-600 text-[11px] font-bold mb-1 w-full overflow-hidden">
             <div className="flex items-center gap-1 whitespace-nowrap">
@@ -506,7 +507,7 @@ export default function PropertiesMap({ properties, viewMode = 'map', onBounding
           <Marker 
             key={property.id} 
             position={[property.lat!, property.lng!]}
-            icon={createPriceIcon(money.formatCompact(property.price, property.currency))}
+            icon={createPriceIcon(money.formatCompact(totalPriceOf(property), property.currency))}
           >
             <Popup className="property-popup">
               <MapPropertyPopupCard property={property} />

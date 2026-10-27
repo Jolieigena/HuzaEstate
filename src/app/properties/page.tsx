@@ -10,6 +10,7 @@ import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerList
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import CurrencyChips from '@/components/CurrencyChips';
+import { totalPriceOf } from '@/lib/properties/price';
 import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedNumberInput';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
@@ -138,7 +139,7 @@ function PropertiesContent() {
     setSelectedTypeLabels((prev) => prev.includes(label) ? prev.filter((v) => v !== label) : [...prev, label]);
   }
   const selectedTypeBuckets = new Set(
-    selectedTypeLabels.map((label) => TYPE_OPTIONS.find((o) => o.label === label)?.bucket).filter((b): b is 'house' | 'apartment' | 'land' => Boolean(b))
+    selectedTypeLabels.map((label) => TYPE_OPTIONS.find((o) => o.label === label)?.bucket).filter((b): b is 'house' | 'apartment' | 'land' | 'commercial' => Boolean(b))
   );
   const [bedsInput, setBedsInput] = useState('');
   const [bathsInput, setBathsInput] = useState('');
@@ -300,8 +301,8 @@ function PropertiesContent() {
     const matchesType = filterType === 'all' || p.type === filterType;
     const matchesPropType = selectedTypeBuckets.size === 0 || selectedTypeBuckets.has(p.propertyType);
     let matchesPrice = true;
-    if (customMinPrice) matchesPrice = matchesPrice && money.convert(p.price, p.currency) >= Number(customMinPrice);
-    if (customMaxPrice) matchesPrice = matchesPrice && money.convert(p.price, p.currency) <= Number(customMaxPrice);
+    if (customMinPrice) matchesPrice = matchesPrice && money.convert(totalPriceOf(p), p.currency) >= Number(customMinPrice);
+    if (customMaxPrice) matchesPrice = matchesPrice && money.convert(totalPriceOf(p), p.currency) <= Number(customMaxPrice);
     const minBeds = parseMinNumberInput(bedsInput);
     const matchesBeds = minBeds === undefined || p.bedrooms >= minBeds;
     const minBaths = parseMinNumberInput(bathsInput);
@@ -331,8 +332,8 @@ function PropertiesContent() {
       if (aiFilters.propertyType && aiFilters.propertyType !== 'all') matchesAi = matchesAi && p.propertyType === aiFilters.propertyType;
       if (aiFilters.minBedrooms !== undefined) matchesAi = matchesAi && p.bedrooms >= aiFilters.minBedrooms;
       if (aiFilters.maxBedrooms !== undefined) matchesAi = matchesAi && p.bedrooms <= aiFilters.maxBedrooms;
-      if (aiFilters.minPrice !== undefined) matchesAi = matchesAi && money.toUsd(p.price, p.currency) >= aiFilters.minPrice;
-      if (aiFilters.maxPrice !== undefined) matchesAi = matchesAi && money.toUsd(p.price, p.currency) <= aiFilters.maxPrice;
+      if (aiFilters.minPrice !== undefined) matchesAi = matchesAi && money.toUsd(totalPriceOf(p), p.currency) >= aiFilters.minPrice;
+      if (aiFilters.maxPrice !== undefined) matchesAi = matchesAi && money.toUsd(totalPriceOf(p), p.currency) <= aiFilters.maxPrice;
       if (aiFilters.minSqm !== undefined) matchesAi = matchesAi && p.sqm >= aiFilters.minSqm;
       if (aiFilters.maxSqm !== undefined) matchesAi = matchesAi && p.sqm <= aiFilters.maxSqm;
       if (aiFilters.city) {
@@ -355,8 +356,8 @@ function PropertiesContent() {
     const aPromoted = isPromotedNow(a);
     const bPromoted = isPromotedNow(b);
     if (aPromoted !== bPromoted) return aPromoted ? -1 : 1;
-    if (sortBy === 'price-asc') return money.toUsd(a.price, a.currency) - money.toUsd(b.price, b.currency);
-    if (sortBy === 'price-desc') return money.toUsd(b.price, b.currency) - money.toUsd(a.price, a.currency);
+    if (sortBy === 'price-asc') return money.toUsd(totalPriceOf(a), a.currency) - money.toUsd(totalPriceOf(b), b.currency);
+    if (sortBy === 'price-desc') return money.toUsd(totalPriceOf(b), b.currency) - money.toUsd(totalPriceOf(a), a.currency);
     if (sortBy === 'largest') return b.sqm - a.sqm;
     return 0;
   });

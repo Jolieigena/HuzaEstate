@@ -9,7 +9,8 @@ import FormattedNumberInput from '@/components/shared/FormattedNumberInput';
 import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
-import { AMENITY_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
+import { AMENITY_OPTIONS, COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
+import { FloorsParkingFields, PriceBasisToggle } from '@/components/shared/CommercialFields';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrencyOptions } from '@/lib/currencies';
 import Select from "@/components/shared/Select";
@@ -77,7 +78,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       imageUrl,
       galleryImages,
       photos: form.photos,
-      amenities: isLandType ? form.amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : form.amenities,
+      amenities: isLandType ? form.amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : isCommercialType ? form.amenities.filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a)) : form.amenities,
+      ...(isCommercialType ? { priceBasis: form.priceBasis, floors: form.floors === '' ? 0 : Number(form.floors), parkingSpaces: form.parkingSpaces === '' ? 0 : Number(form.parkingSpaces) } : {}),
       type: form.type,
       propertyType,
       propertyLabel: form.propertyTypeLabel,
@@ -122,6 +124,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   // its own toggle for apartment-style listings — see post-property/page.tsx.
   const isApartmentType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'apartment';
   const isLandType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'land';
+  const isCommercialType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'commercial';
   const isFurnished = form.amenities.some((a) => a.toLowerCase() === 'furnished');
 
   // 5 majors + the seller's own local currency (see lib/currencies.ts), plus
@@ -238,6 +241,11 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               </Select>
             </div>
           </div>
+          {isCommercialType && (
+            <div className="sm:col-span-2">
+              <PriceBasisToggle value={form.priceBasis} onChange={(priceBasis) => setForm((f) => ({ ...f, priceBasis }))} />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
             <Select
@@ -297,6 +305,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5">
+          {!isLandType && !isCommercialType && (
+          <>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Bedrooms</label>
             <input
@@ -317,6 +327,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
             />
           </div>
+          </>
+          )}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-2">Size</label>
             <div className="flex gap-2">
@@ -353,9 +365,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">{isLandType ? 'Land features' : 'Amenities'}</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{isLandType ? 'Land features' : isCommercialType ? 'Features' : 'Amenities'}</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
-            {(isLandType ? LAND_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
+            {(isLandType ? LAND_FEATURE_OPTIONS : isCommercialType ? COMMERCIAL_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
               <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                 <input type="checkbox" checked={form.amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
                 {label}
@@ -381,7 +393,9 @@ function toFormState(property: Property | null) {
   // The backend only ever stores the bucket (house/apartment/land), so which
   // specific label (e.g. "Villa" vs "House") the seller originally picked
   // isn't recoverable — default to that bucket's first/plainest label.
-  const propertyTypeLabel = property?.propertyLabel ?? PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === (property?.propertyType ?? 'house'))?.label ?? 'House';
+  // A label no longer offered (older listings posted as plain "Commercial") falls back to its bucket's first label.
+  const knownLabel = PROPERTY_TYPE_OPTIONS.some((o) => o.label === property?.propertyLabel) ? property?.propertyLabel : undefined;
+  const propertyTypeLabel = knownLabel ?? PROPERTY_TYPE_OPTIONS.find((o) => o.bucket === (property?.propertyType ?? 'house'))?.label ?? 'House';
   // Preserved as-is, whatever it is — the currency dropdown always includes
   // the listing's actual current value (see currencyOptions above), so this
   // no longer needs to coerce an unrecognized currency down to USD.
@@ -401,6 +415,9 @@ function toFormState(property: Property | null) {
     type: (property?.type ?? 'sale') as Property['type'],
     propertyTypeLabel,
     amenities: property?.amenities ?? [],
+    priceBasis: (property?.priceBasis === 'per_sqm' ? 'per_sqm' : 'total') as 'total' | 'per_sqm',
+    floors: property?.floors ? String(property.floors) : '',
+    parkingSpaces: property?.parkingSpaces ? String(property.parkingSpaces) : '',
     ownerName: property?.ownerName ?? '',
     ownerEmail: property?.ownerEmail ?? '',
     ownerPhone: property?.ownerPhone ?? '',

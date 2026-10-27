@@ -46,7 +46,7 @@ export interface Property {
   galleryImages?: string[];
   photos?: { url: string; category?: string }[];
   type: "sale" | "rent";
-  propertyType: "house" | "apartment" | "land";
+  propertyType: "house" | "apartment" | "land" | "commercial";
   /** The exact type the seller picked (one of PROPERTY_TYPE_OPTIONS' labels, e.g. "Villa"). Listings
    *  posted before this existed only have the bucket above. */
   propertyLabel?: string;
@@ -66,6 +66,10 @@ export interface Property {
    *  restricted to it (see the Amenities filter's own free-text field) —
    *  optional because every listing before this field predates it. */
   amenities?: string[];
+  /** Commercial only: whether `price` is the total, or per square metre (per month when rented). Absent means total. */
+  priceBasis?: 'total' | 'per_sqm';
+  floors?: number;
+  parkingSpaces?: number;
   /** Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS) —
    *  optional because listings from before this field existed have none. Public browse/search
    *  and GET-by-id already exclude anything past this on the backend; `expired` is a
@@ -100,6 +104,11 @@ export const LAND_FEATURE_OPTIONS = [
   'Road access', 'Water', 'Electricity', 'Fenced', 'Title deed', 'Flat terrain', 'Near main road', 'Ready to build',
 ];
 
+/** What commercial space can offer, ticked in place of the house amenities when the type is commercial. */
+export const COMMERCIAL_FEATURE_OPTIONS = [
+  'Parking', 'Loading bay', 'Power backup', 'Fibre internet', 'Elevator', 'Security', 'CCTV', 'Air conditioning', 'Visible from main road', '24-hour access',
+];
+
 export const AMENITY_OPTIONS = [
   'Pool', 'Garden', 'Furnished', 'Parking', 'Gym', 'Security',
   'Balcony', 'Air Conditioning', 'Elevator', 'Pet Friendly',
@@ -118,7 +127,7 @@ export const PROPERTY_LABEL_GROUPS: { label: string; options: string[] }[] = [
   { label: 'Houses', options: ['House', 'Villa', 'Townhouse', 'Duplex', 'Bungalow', 'Cottage', 'Mansion'] },
   { label: 'Apartments', options: ['Apartment', 'Condo', 'Studio'] },
   { label: 'Land', options: ['Land'] },
-  { label: 'Commercial', options: ['Commercial'] },
+  { label: 'Commercial', options: ['Office', 'Shop', 'Warehouse', 'Industrial', 'Commercial building'] },
 ];
 
 export const PROPERTY_TYPE_OPTIONS: { label: string; bucket: Property["propertyType"] }[] = [
@@ -133,5 +142,9 @@ export const PROPERTY_TYPE_OPTIONS: { label: string; bucket: Property["propertyT
   { label: 'Bungalow', bucket: 'house' },
   { label: 'Cottage', bucket: 'house' },
   { label: 'Mansion', bucket: 'house' },
-  { label: 'Commercial', bucket: 'house' },
+  { label: 'Office', bucket: 'commercial' },
+  { label: 'Shop', bucket: 'commercial' },
+  { label: 'Warehouse', bucket: 'commercial' },
+  { label: 'Industrial', bucket: 'commercial' },
+  { label: 'Commercial building', bucket: 'commercial' },
 ];

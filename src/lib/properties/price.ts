@@ -20,3 +20,12 @@ export function formatListingPriceCompact(price: number, currency?: string): str
   if (price >= 1000) return `${prefix}${(price / 1000).toFixed(0)}k`;
   return `${prefix}${Math.round(price)}`;
 }
+
+/** Commercial space can be priced per square metre; this is what a whole listing costs either way (per month when rented). */
+export function totalPriceOf(property: { price: number; sqm?: number; priceBasis?: string }): number {
+  return property.priceBasis === "per_sqm" ? property.price * (property.sqm ?? 0) : property.price;
+}
+
+export function isPerSqm(property: { priceBasis?: string }): boolean {
+  return property.priceBasis === "per_sqm";
+}
