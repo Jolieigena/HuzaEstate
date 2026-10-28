@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { allowsFullPayment, describePlan, installmentsOf } from "@/lib/properties/paymentOptions";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
 import { PropertyApi } from "@/lib/properties/api";
@@ -22,6 +23,9 @@ export default function InquiryForm({ property }: { property: Property }) {
   const [phone, setPhone] = useState(() => (hint.get("phone") ?? "").slice(0, 20));
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const plan = installmentsOf(property);
+  const bothWays = !!plan && allowsFullPayment(property);
+  const [payWith, setPayWith] = useState<"full" | "installments">("full");
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
@@ -49,7 +53,7 @@ export default function InquiryForm({ property }: { property: Property }) {
     }
     setBusy(true);
     const result = await PropertyApi.sendInquiry(
-      { propertyId: property.id, name: (name || account?.name || "").trim(), email: (email || account?.email || "").trim(), phone: cleanPhone(phone) || undefined, message: message.trim() },
+      { propertyId: property.id, name: (name || account?.name || "").trim(), email: (email || account?.email || "").trim(), phone: cleanPhone(phone) || undefined, message: plan && (bothWays || !allowsFullPayment(property)) ? `${message.trim()}\n\nPayment preference: ${bothWays && payWith === "full" ? "in full" : `in installments (${describePlan(plan)})`}` : message.trim() },
       token
     );
     setBusy(false);
@@ -70,6 +74,22 @@ export default function InquiryForm({ property }: { property: Property }) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
       />
+      {bothWays && (
+        <div role="radiogroup" aria-label="How you would pay" className="grid grid-cols-2 gap-2">
+          {([["full", "Pay in full"], ["installments", "Installments"]] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={payWith === value}
+              onClick={() => setPayWith(value)}
+              className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition-colors ${payWith === value ? "border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {error && <p className="text-sm font-semibold text-red-600">{error}</p>}
       <button type="submit" disabled={busy} className="w-full rounded-xl bg-slate-900 py-3.5 font-bold text-white shadow-sm transition-colors hover:bg-[#2ec440] disabled:opacity-60">
         {busy ? "Sending…" : `Message the ${posterLabel}`}

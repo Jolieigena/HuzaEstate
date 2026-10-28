@@ -12,6 +12,7 @@ import { CONTINENTS, COUNTRY_OPTIONS, continentOf, getPropertyCountry, type Cont
 import CurrencyChips from '@/components/CurrencyChips';
 import { useIsNativeApp } from '@/lib/nativeApp';
 import { totalPriceOf } from '@/lib/properties/price';
+import { installmentsOf } from '@/lib/properties/paymentOptions';
 import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedNumberInput';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
@@ -233,6 +234,7 @@ function PropertiesContent() {
   // just lets them narrow the grid to only those, without ever calling them "promoted"
   // anywhere in the UI.
   const [topPicksOnly, setTopPicksOnly] = useState(false);
+  const [installmentsOnly, setInstallmentsOnly] = useState(false);
 
   // Reset URL-backed fields during navigation, before rendering stale results.
   const query = searchParams.toString();
@@ -369,7 +371,8 @@ function PropertiesContent() {
       }
     }
     const matchesTopPicks = !topPicksOnly || isPromotedNow(p);
-    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesCountry && matchesAi && matchesTopPicks;
+    const matchesInstallments = !installmentsOnly || !!installmentsOf(p);
+    return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesCountry && matchesAi && matchesTopPicks && matchesInstallments;
   }).sort((a, b) => {
     // Listings a seller paid to promote (see lib/promotion) always lead the
     // first row, the same "boosted ads always come first" convention
@@ -394,14 +397,14 @@ function PropertiesContent() {
 
   const activeFilterCount = [
     filterType !== 'all', selectedTypeLabels.length > 0, !!(customMinPrice || customMaxPrice), !!bedsInput, !!bathsInput,
-    !!(minSqm || maxSqm), !!cityInput.trim(), selectedAmenities.length > 0 || !!keywordsInput.trim(), !!region, topPicksOnly,
+    !!(minSqm || maxSqm), !!cityInput.trim(), selectedAmenities.length > 0 || !!keywordsInput.trim(), !!region, topPicksOnly, installmentsOnly,
   ].filter(Boolean).length;
 
   function clearAll() {
     setSearchTerm(''); setStatusInput(''); setSelectedTypeLabels([]);
     setCustomMinPrice(''); setCustomMaxPrice(''); setBedsInput(''); setBathsInput('');
     setMinSqm(''); setMaxSqm(''); setCityInput(''); setKeywordsInput(''); countryTouched.current = true; setSelectedCountryCodes([]); setRegion(''); setAiFilters(null);
-    setTopPicksOnly(false);
+    setTopPicksOnly(false); setInstallmentsOnly(false);
   }
 
   function saveCurrentSearch() {
@@ -720,6 +723,17 @@ function PropertiesContent() {
               >
                 <svg className="w-4 h-4" fill={topPicksOnly ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.539 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.784.57-1.838-.196-1.539-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                 Top Picks
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setInstallmentsOnly((v) => !v)}
+                aria-pressed={installmentsOnly}
+                className={`rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm transition-all border ${
+                  installmentsOnly ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                Installments
               </button>
 
               {/* Area Size — a pill button matching Status/Price/Beds/etc, opening a

@@ -68,6 +68,8 @@ export interface Property {
   amenities?: string[];
   /** Commercial only: whether `price` is the total, or per square metre (per month when rented). Absent means total. */
   priceBasis?: 'total' | 'per_sqm';
+  /** Homes for sale: how the buyer may pay. Terms the seller offers and settles directly; the platform does not collect the money. */
+  paymentOptions?: { full: boolean; installments?: { count: 2 | 3; months: number; firstPercent: number } };
   floors?: number;
   parkingSpaces?: number;
   /** Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS) —

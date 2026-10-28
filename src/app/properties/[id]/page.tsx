@@ -12,6 +12,7 @@ import BackLink from '@/components/BackLink';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import CurrencyPicker from '@/components/CurrencyPicker';
+import PaymentOptionsInfo from '@/components/PaymentOptionsInfo';
 import { formatPlace } from '@/lib/properties/place';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
@@ -194,6 +195,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
               </div>
             )}
           </div>
+
+          <PaymentOptionsInfo property={property} />
 
           {/* Description */}
           <h2 className="text-2xl font-bold text-slate-900 mb-6">About this {property.propertyType}</h2>

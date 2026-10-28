@@ -13,6 +13,7 @@ import { isPromotedNow } from '@/lib/promotion/types';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import FitTags from '@/components/FitTags';
 import { formatArea } from '@/lib/properties/area';
+import { installmentsOf } from '@/lib/properties/paymentOptions';
 import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import { COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS } from '@/lib/properties/types';
 import { formatPlace } from '@/lib/properties/place';
@@ -174,6 +175,9 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
               <span className="px-2 py-0.5 rounded-md bg-[#2ec440]/10 text-[#2ec440] text-[11px] font-bold tracking-wide whitespace-nowrap ml-1">
                 For {property.type}
               </span>
+              {installmentsOf(property) && (
+                <span className="px-2 py-0.5 rounded-md bg-slate-900/5 text-slate-700 text-[11px] font-bold tracking-wide whitespace-nowrap">Installments</span>
+              )}
               {isFurnished && (
                 <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900/5 text-slate-700 text-[11px] font-bold tracking-wide whitespace-nowrap">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7a2 2 0 012-2h14a2 2 0 012 2v3a2 2 0 01-2 2H5a2 2 0 01-2-2V7zm0 5h18v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z" /></svg>

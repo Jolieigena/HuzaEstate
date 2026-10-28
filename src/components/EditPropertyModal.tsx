@@ -11,6 +11,7 @@ import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { deriveImageFields, isPhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 import { AMENITY_OPTIONS, COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { FloorsParkingFields, PriceBasisToggle } from '@/components/shared/CommercialFields';
+import PaymentOptionsFields, { paymentOptionsBody, paymentOptionsProblem, toPaymentOptionsState, type PaymentOptionsState } from '@/components/shared/PaymentOptionsFields';
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrencyOptions } from '@/lib/currencies';
 import Select from "@/components/shared/Select";
@@ -54,6 +55,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     setError('');
     if (form.photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     if (!(Number(form.sqm) > 0)) { setError('Enter the size of the property.'); return; }
+    if (offersPayment) { const problem = paymentOptionsProblem(form.paymentOptions); if (problem) { setError(problem); return; } }
     if (form.type === 'sale' && !isLandType && !isCommercialType && !(Number(form.bedrooms) >= 1 && Number(form.bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     // The owner's contact on a listing staff posted for an owner with no account.
     if (property.listedOnBehalf) {
@@ -81,6 +83,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       galleryImages,
       photos: form.photos,
       amenities: isLandType ? form.amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : isCommercialType ? form.amenities.filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a)) : form.amenities,
+      ...(offersPayment ? { paymentOptions: paymentOptionsBody(form.paymentOptions) } : {}),
       ...(isCommercialType ? { priceBasis: form.priceBasis, floors: form.floors === '' ? 0 : Number(form.floors), parkingSpaces: form.parkingSpaces === '' ? 0 : Number(form.parkingSpaces) } : {}),
       type: form.type,
       propertyType,
@@ -127,6 +130,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   const isApartmentType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'apartment';
   const isLandType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'land';
   const isCommercialType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket === 'commercial';
+  const offersPayment = form.type === 'sale' && !isLandType && !isCommercialType;
   const isFurnished = form.amenities.some((a) => a.toLowerCase() === 'furnished');
 
   // 5 majors + the seller's own local currency (see lib/currencies.ts), plus
@@ -246,6 +250,12 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           {isCommercialType && (
             <div className="sm:col-span-2">
               <PriceBasisToggle value={form.priceBasis} onChange={(priceBasis) => setForm((f) => ({ ...f, priceBasis }))} />
+            </div>
+          )}
+          {offersPayment && (
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-bold text-slate-700 mb-2">Payment options</label>
+              <PaymentOptionsFields value={form.paymentOptions} onChange={(paymentOptions) => setForm((f) => ({ ...f, paymentOptions }))} />
             </div>
           )}
           <div>
@@ -417,6 +427,7 @@ function toFormState(property: Property | null) {
     type: (property?.type ?? 'sale') as Property['type'],
     propertyTypeLabel,
     amenities: property?.amenities ?? [],
+    paymentOptions: toPaymentOptionsState(property?.paymentOptions) as PaymentOptionsState,
     priceBasis: (property?.priceBasis === 'per_sqm' ? 'per_sqm' : 'total') as 'total' | 'per_sqm',
     floors: property?.floors ? String(property.floors) : '',
     parkingSpaces: property?.parkingSpaces ? String(property.parkingSpaces) : '',

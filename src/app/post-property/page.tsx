@@ -17,6 +17,7 @@ import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/
 import { uploadMedia } from '@/lib/media/upload';
 import { AMENITY_OPTIONS, COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { FloorsParkingFields, PriceBasisToggle } from '@/components/shared/CommercialFields';
+import PaymentOptionsFields, { DEFAULT_PAYMENT_OPTIONS, paymentOptionsBody, paymentOptionsProblem, toPaymentOptionsState, type PaymentOptionsState } from '@/components/shared/PaymentOptionsFields';
 import { PropertyApi } from '@/lib/properties/api';
 import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from '@/lib/countries';
 import { regionsForCountry } from '@/lib/regions';
@@ -75,6 +76,9 @@ function PostPropertyForm() {
   const [district, setDistrict] = useState('');
   const propertyTypeBucket = PROPERTY_TYPE_OPTIONS.find((o) => o.label === propertyTypeLabel)?.bucket;
   const isCommercialType = propertyTypeBucket === 'commercial';
+  // Homes for sale say how a buyer may pay: in full and/or in installments.
+  const offersPayment = listingType === 'sale' && (propertyTypeBucket === 'house' || propertyTypeBucket === 'apartment');
+  const [paymentOptions, setPaymentOptions] = useState<PaymentOptionsState>(DEFAULT_PAYMENT_OPTIONS);
   const [priceBasis, setPriceBasis] = useState<'total' | 'per_sqm'>('total');
   const [floors, setFloors] = useState('');
   const [parking, setParking] = useState('');
@@ -124,6 +128,7 @@ function PostPropertyForm() {
       setCountry(p.country || DEFAULT_COUNTRY.name);
       setDistrict(p.district || '');
       setPriceBasis(p.priceBasis === 'per_sqm' ? 'per_sqm' : 'total');
+      setPaymentOptions(toPaymentOptionsState(p.paymentOptions));
       setFloors(p.floors ? String(p.floors) : '');
       setParking(p.parkingSpaces ? String(p.parkingSpaces) : '');
       setBedrooms(p.bedrooms ? String(p.bedrooms) : '');
@@ -229,6 +234,7 @@ function PostPropertyForm() {
       district: district || undefined,
       // Land keeps only the land features; anything ticked for a house before switching the type is dropped.
       amenities: propertyTypeBucket === 'land' ? amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : isCommercialType ? amenities.filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a)) : amenities,
+      ...(offersPayment ? { paymentOptions: paymentOptionsBody(paymentOptions) } : {}),
       ...(isCommercialType ? { priceBasis, floors: floors === '' ? undefined : Number(floors), parkingSpaces: parking === '' ? undefined : Number(parking) } : {}),
       // The owner's own contact, for staff posting for an owner with no account. Optional: left empty, the listing shows the
       // poster's own details. A draft keeps it only once it is usable.
@@ -252,6 +258,7 @@ function PostPropertyForm() {
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
     if (!(Number(sqm) > 0)) { setError('Enter the size of the property.'); return; }
+    if (offersPayment) { const problem = paymentOptionsProblem(paymentOptions); if (problem) { setError(problem); return; } }
     if (listingType === 'sale' && propertyType !== 'land' && propertyType !== 'commercial' && !(Number(bedrooms) >= 1 && Number(bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     if (propertyType !== 'land' && propertyType !== 'commercial' && (bedrooms === '' || bathrooms === '')) { setError('Enter the number of bedrooms and bathrooms.'); return; }
     if (isStaff && ownerFilled) {
@@ -463,6 +470,13 @@ function PostPropertyForm() {
               {isCommercialType && (
                 <div className="sm:col-span-2">
                   <PriceBasisToggle value={priceBasis} onChange={setPriceBasis} />
+                </div>
+              )}
+
+              {offersPayment && (
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Payment options</label>
+                  <PaymentOptionsFields value={paymentOptions} onChange={setPaymentOptions} />
                 </div>
               )}
 
