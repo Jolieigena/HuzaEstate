@@ -22,6 +22,7 @@ import { useSavedSearches } from '@/lib/savedSearches/hooks';
 import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
 import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
 import { useToast } from '@/lib/toast-context';
+import LanguagePicker from '@/components/LanguagePicker';
 
 type SortOption = 'default' | 'price-asc' | 'price-desc' | 'largest';
 
@@ -830,6 +831,11 @@ function PropertiesContent() {
                 </div>
               </div>
           </div>
+        </div>
+
+        {/* Language switch, above the Save search / Sort row. */}
+        <div className="flex justify-end mb-3">
+          <LanguagePicker />
         </div>
 
         {/* ── Title row ──────────────────────────────────────────────────── */}
