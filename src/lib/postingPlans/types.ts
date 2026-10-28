@@ -40,7 +40,7 @@ export const PLAN_EXPIRY_DAYS: Record<PlanTier, number> = {
  *  not specified by the source pricing, set to match Silver's own
  *  effective per-post rate ($15 / 3 posts = $5/post) so it's consistent
  *  with the numbers that were given rather than an arbitrary pick. */
-export const PER_POST_PRICE: Money = money(5, "USD");
+export const PER_POST_PRICE: Money = money(3, "USD");
 
 /** What a seller actually sees in Manager Portal differs by tier — this is
  *  the single place that decides it, so PostingPlanCard's feature list
