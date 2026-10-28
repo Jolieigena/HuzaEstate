@@ -8,6 +8,7 @@ import { DESIGN_CATEGORY_LABELS, DesignsApi, type DesignCategory } from "@/lib/d
 import { CurrencySelect, SpaceSelect } from "@/components/designs/fields";
 import { useCurrencyOptions } from "@/lib/currencies";
 import { SERVICE_PRICE_TYPE_LABELS, fetchMyProfessionalProfile, formatServicePrice, saveMyProfessionalProfile, uploadProfessionalImage, type PortfolioItemInput, type ServiceOfferingInput, type ServicePriceType } from "@/lib/professional/api";
+import { MAX_VIDEO_BYTES, videoContentType } from "@/lib/media/upload";
 import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
 import MultiSelectCombobox from "@/components/shared/MultiSelectCombobox";
@@ -39,7 +40,6 @@ interface NewProject {
   included: string;
 }
 const EMPTY_PROJECT: NewProject = { title: "", description: "", year: "", images: [], videoUrl: "", toDesigns: false, category: "interior", spaceType: "", priceType: "on_request", price: "", currency: "", included: "" };
-const SUPPORTED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
 
 /** One titled block of the profile form: a numbered heading and a one-line purpose, then the fields. */
 function Section({ id, step, title, description, children }: { id: string; step?: number; title?: string; description?: string; children: React.ReactNode }) {
@@ -243,14 +243,19 @@ export default function ProfessionalProfileForm() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !token) return;
-    if (!SUPPORTED_VIDEO_TYPES.has(file.type)) {
+    const videoType = videoContentType(file);
+    if (!videoType) {
       showToast("Please choose an MP4, WebM, or MOV video.", "error");
+      return;
+    }
+    if (file.size > MAX_VIDEO_BYTES) {
+      showToast("That video is too large. Choose one under 150 MB.", "error");
       return;
     }
     setProjectVideoUploading(true);
     setError("");
     try {
-      const url = await uploadProfessionalImage(file, file.type, token);
+      const url = await uploadProfessionalImage(file, videoType, token);
       setNewProject((p) => ({ ...p, videoUrl: url }));
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Could not upload video.", "error");
@@ -508,7 +513,7 @@ export default function ProfessionalProfileForm() {
                             </label>
                             <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                               {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}
-                              <input type="file" accept="video/mp4,video/webm,video/quicktime" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
+                              <input type="file" accept="video/*,.mp4,.m4v,.mov,.webm" className="hidden" disabled={projectVideoUploading} onChange={handleProjectVideoChange} />
                             </label>
                             {newProject.videoUrl && (
                               <button type="button" onClick={() => setNewProject((v) => ({ ...v, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">Remove video</button>

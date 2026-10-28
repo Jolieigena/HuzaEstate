@@ -14,7 +14,7 @@ import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneI
 import CategorizedPhotoUpload from '@/components/CategorizedPhotoUpload';
 import PhotoLimitNotice from '@/components/PhotoLimitNotice';
 import { deriveImageFields, type CategorizedPhoto, type PhotoCategory } from '@/lib/photoCategories';
-import { uploadMedia } from '@/lib/media/upload';
+import { MAX_VIDEO_BYTES, uploadMedia, videoContentType } from '@/lib/media/upload';
 import { AMENITY_OPTIONS, COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS, PROPERTY_TYPE_OPTIONS, type Property } from '@/lib/properties/types';
 import { FloorsParkingFields, PriceBasisToggle } from '@/components/shared/CommercialFields';
 import PaymentOptionsFields, { DEFAULT_PAYMENT_OPTIONS, paymentOptionsBody, paymentOptionsProblem, toPaymentOptionsState, type PaymentOptionsState } from '@/components/shared/PaymentOptionsFields';
@@ -27,8 +27,6 @@ import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { useToast } from '@/lib/toast-context';
 import Select from "@/components/shared/Select";
 import { formatPlace } from "@/lib/properties/place";
-
-const SUPPORTED_VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime']);
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
@@ -209,8 +207,10 @@ function PostPropertyForm() {
     const { imageUrl, galleryImages } = photos.length ? deriveImageFields(photos, '') : { imageUrl: '', galleryImages: [] as string[] };
     let videoUrl: string | undefined;
     if (videoFile) {
-      if (!SUPPORTED_VIDEO_TYPES.has(videoFile.type)) throw new Error('Video must be MP4, WebM, or MOV.');
-      videoUrl = await uploadMedia(videoFile, videoFile.type, token);
+      const videoType = videoContentType(videoFile);
+      if (!videoType) throw new Error('Video must be MP4, WebM, or MOV.');
+      if (videoFile.size > MAX_VIDEO_BYTES) throw new Error('That video is too large. Choose one under 150 MB, or record it in a lower quality.');
+      videoUrl = await uploadMedia(videoFile, videoType, token);
     }
     return {
       title,
@@ -557,7 +557,7 @@ function PostPropertyForm() {
                   <div className="flex-grow min-w-0">
                     <input 
                       type="file" 
-                      accept="video/mp4,video/webm,video/quicktime"
+                      accept="video/*,.mp4,.m4v,.mov,.webm"
                       onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2ec440]/10 file:text-[#2ec440] hover:file:bg-[#2ec440]/20 transition-colors" 
                     />
