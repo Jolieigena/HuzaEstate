@@ -252,7 +252,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         if (!res.ok) throw new Error("unauthenticated");
         const data = await res.json();
-        applySession(storedToken as string, data.account as Account);
+        // A fresh token comes back when the account's roles changed since this one was issued.
+        applySession((data.token as string | undefined) ?? (storedToken as string), data.account as Account);
       } catch {
         // The stored session no longer works: its saved account asks for the password next time.
         saveList(lockSavedByToken(readSaved(), storedToken as string));
@@ -426,6 +427,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!res.ok) return;
       const data = await res.json();
       const nextAccount = data.account as Account;
+      // A new role (an access code, an administrator) needs a new token: the other services read the roles from it.
+      if (data.token) {
+        setToken(data.token as string);
+        saveList(upsertSaved(readSaved(), { id: nextAccount.id, name: nextAccount.name, email: nextAccount.email }, data.token as string));
+        try { localStorage.setItem(TOKEN_STORAGE_KEY, data.token as string); } catch { /* ignore */ }
+      }
       setAccount(nextAccount);
       setIsApprovedSeller(nextAccount.isApprovedSeller);
     } catch {
