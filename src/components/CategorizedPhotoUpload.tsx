@@ -56,9 +56,9 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
     setProcessingCategory(category);
     onUploadingChange?.(true);
     try {
-      const { urls, failedCount } = await filesToUploadedUrls(toProcess, token);
+      const { urls, failedCount, reasons } = await filesToUploadedUrls(toProcess, token);
       onChange([...photos, ...urls.map((url) => ({ url, category }))]);
-      if (failedCount > 0) setError(`${failedCount} photo(s) couldn't be uploaded and were skipped.`);
+      if (failedCount > 0) setError(`${failedCount} photo(s) couldn't be uploaded and were skipped. ${reasons.join(' ')}`);
     } finally {
       setProcessingCategory(null);
       onUploadingChange?.(false);

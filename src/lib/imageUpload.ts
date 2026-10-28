@@ -47,14 +47,37 @@ export async function fileToUploadedUrl(file: File, token: string | null): Promi
 
 /** Uploads multiple files independently, skipping (rather than aborting on) any that fail
  *  to read/decode/upload so one bad file doesn't block the rest. */
-export async function filesToUploadedUrls(files: File[], token: string | null): Promise<{ urls: string[]; failedCount: number }> {
+export async function filesToUploadedUrls(files: File[], token: string | null): Promise<{ urls: string[]; failedCount: number; reasons: string[] }> {
   const results = await Promise.all(
     files.map((file) =>
-      fileToUploadedUrl(file, token)
+      uploadWithRetry(file, token)
         .then((url) => ({ ok: true as const, url }))
-        .catch(() => ({ ok: false as const }))
+        .catch((error: unknown) => ({ ok: false as const, reason: failureReason(file, error) }))
     )
   );
   const urls = results.filter((r): r is { ok: true; url: string } => r.ok).map((r) => r.url);
-  return { urls, failedCount: results.length - urls.length };
+  const reasons = [...new Set(results.flatMap((r) => (r.ok ? [] : [r.reason])))];
+  return { urls, failedCount: results.length - urls.length, reasons };
+}
+
+/** A weak mobile connection often fails the first try, so a failed upload is tried once more. A sign-in problem is not retried. */
+async function uploadWithRetry(file: File, token: string | null): Promise<string> {
+  try {
+    return await fileToUploadedUrl(file, token);
+  } catch (error) {
+    if (error instanceof Error && /sign in/i.test(error.message)) throw error;
+    return fileToUploadedUrl(file, token);
+  }
+}
+
+function failureReason(file: File, error: unknown): string {
+  const message = error instanceof Error ? error.message : '';
+  if (/sign in/i.test(message)) return 'Your session has expired. Sign in again.';
+  if (message === 'Failed to decode image' || message === 'Failed to read file') {
+    return /hei[cf]/i.test(`${file.type} ${file.name}`)
+      ? 'HEIC photos are not supported. Take the photo as JPEG or choose another one.'
+      : 'That photo could not be opened. Try a JPEG or PNG.';
+  }
+  if (message === 'Upload failed. Please try again.' || /failed to fetch|networkerror|load failed/i.test(message)) return 'The connection dropped. Check your internet and try again.';
+  return message || 'Try again.';
 }
