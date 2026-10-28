@@ -66,7 +66,6 @@ export default function Navbar() {
         >
           {t('Browse Properties')}
         </Link>
-        <LanguagePicker className="hidden md:inline-flex" />
 
         {/* Conditional Auth Actions */}
         {isLoggedIn ? (
