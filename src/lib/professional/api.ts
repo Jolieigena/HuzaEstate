@@ -1,6 +1,8 @@
 // access-service client for a professional's public profile (displayName, bio, specialisation,
 // services, portfolio, photo) and the public contact form.
 
+import { imageForUpload } from "@/lib/imageUpload";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
@@ -75,6 +77,8 @@ export interface RealProfessionalProfile {
 // property-service's shared MinIO presign endpoint — same flow as src/lib/media/upload.ts uses
 // for property photos, just under the "professionals" storage folder instead of "properties".
 export async function uploadProfessionalImage(file: Blob, contentType: string, token: string): Promise<string> {
+  // A photo in any format is accepted: what the server does not take (HEIC, GIF, BMP...) is turned into a JPEG here. Videos go as they are.
+  if (!contentType.startsWith("video/")) ({ blob: file, contentType } = await imageForUpload(file));
   const presignRes = await fetch(`${PROPERTY_API_URL}/media/upload-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },

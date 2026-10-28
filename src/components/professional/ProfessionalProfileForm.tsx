@@ -397,7 +397,7 @@ export default function ProfessionalProfileForm() {
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <label className={`${photoUploading ? "opacity-50" : ""} inline-block cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                     {photoUploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
-                    <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={photoUploading} onChange={handlePhotoChange} />
+                    <input type="file" accept="image/*" className="hidden" disabled={photoUploading} onChange={handlePhotoChange} />
                   </label>
                   {photoUrl && (
                     <button type="button" disabled={photoUploading} onClick={() => setPhotoUrl(undefined)} className="rounded-xl px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
@@ -509,7 +509,7 @@ export default function ProfessionalProfileForm() {
                           <div className="mt-3 flex flex-wrap items-center gap-3">
                             <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                               {projectImagesUploading ? "Uploading…" : `Add photos (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
-                              <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
+                              <input type="file" accept="image/*" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
                             </label>
                             <label className={`${projectVideoUploading ? "opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                               {projectVideoUploading ? "Uploading…" : newProject.videoUrl ? "Change video" : "Add video"}

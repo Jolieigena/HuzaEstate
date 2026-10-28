@@ -245,7 +245,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
               </button>
             )}
           </div>
-          <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
+          <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
         </div>
 
         {name.trim() !== "" && (
