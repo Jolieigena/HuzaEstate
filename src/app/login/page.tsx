@@ -23,7 +23,11 @@ function LoginForm() {
   const [error, setError] = useState('');
 
   const redirectParam = searchParams.get('redirect');
-  const signupHref = redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : '/signup';
+  // Everything to do with an access code is for sellers, so someone who came here from the access-code page signs up as a seller (code kept), not as a customer.
+  const fromAccessCode = redirectParam?.startsWith('/redeem-code') ?? false;
+  const signupHref = fromAccessCode
+    ? `/become-a-seller${redirectParam!.includes('?') ? redirectParam!.slice(redirectParam!.indexOf('?')) : ''}`
+    : redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : '/signup';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
