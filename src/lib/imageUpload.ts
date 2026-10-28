@@ -40,8 +40,18 @@ function compressImage(file: File): Promise<Blob> {
   });
 }
 
+const isHeic = (file: File) => /hei[cf]/i.test(file.type) || /\.hei[cf]$/i.test(file.name);
+
+/** iPhones and some Samsung phones save HEIC, which browsers cannot open; it is turned into JPEG first. The converter loads only when needed. */
+async function readableImage(file: File): Promise<File | Blob> {
+  if (!isHeic(file)) return file;
+  const { default: heic2any } = await import('heic2any');
+  const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: JPEG_QUALITY });
+  return Array.isArray(converted) ? converted[0] : converted;
+}
+
 export async function fileToUploadedUrl(file: File, token: string | null): Promise<string> {
-  const blob = await compressImage(file);
+  const blob = await compressImage((await readableImage(file)) as File);
   return uploadMedia(blob, COMPRESSED_CONTENT_TYPE, token);
 }
 
@@ -74,10 +84,9 @@ function failureReason(file: File, error: unknown): string {
   const message = error instanceof Error ? error.message : '';
   if (/sign in/i.test(message)) return 'Your session has expired. Sign in again.';
   if (message === 'Failed to decode image' || message === 'Failed to read file') {
-    return /hei[cf]/i.test(`${file.type} ${file.name}`)
-      ? 'HEIC photos are not supported. Take the photo as JPEG or choose another one.'
-      : 'That photo could not be opened. Try a JPEG or PNG.';
+    return 'That photo could not be opened. Try a JPEG or PNG.';
   }
+  if (isHeic(file)) return 'That HEIC photo could not be converted. Take the photo as JPEG or choose another one.';
   if (message === 'Upload failed. Please try again.' || /failed to fetch|networkerror|load failed/i.test(message)) return 'The connection dropped. Check your internet and try again.';
   return message || 'Try again.';
 }
