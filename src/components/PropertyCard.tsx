@@ -226,28 +226,35 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
 
         {/* Specs Footer */}
         <div className="flex items-center gap-4 text-[14px] mt-3 pt-3 border-t border-slate-100 text-slate-600 font-medium">
-          {property.propertyType !== 'land' && !isCommercial && (
-            <>
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Only what has a value: a bedroom, bathroom or size of 0 is left out, and the dots between what remains are drawn for them. */}
+          {(() => {
+            const withRooms = property.propertyType !== 'land' && !isCommercial;
+            const specs: React.ReactNode[] = [];
+            if (withRooms && property.bedrooms > 0) specs.push(
+              <div key="bed" className="flex items-center gap-1.5 shrink-0">
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
             <span><strong className="text-slate-900">{property.bedrooms}</strong> bed</span>
           </div>
-          <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></div>
-          <div className="flex items-center gap-1.5 shrink-0">
+            );
+            if (withRooms && property.bathrooms > 0) specs.push(
+              <div key="bath" className="flex items-center gap-1.5 shrink-0">
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
             <span><strong className="text-slate-900">{property.bathrooms}</strong> bath</span>
           </div>
-            </>
-          )}
-          {property.sqm > 0 && (
-            <>
-              {property.propertyType !== 'land' && !isCommercial && <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></div>}
-                      <div className="flex items-center gap-1.5 shrink-0">
+            );
+            if (property.sqm > 0) specs.push(
+              <div key="size" className="flex items-center gap-1.5 shrink-0">
             <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
             <span><strong className="text-slate-900">{formatArea(property.sqm).value}</strong> {formatArea(property.sqm).unit}</span>
           </div>
-            </>
-          )}
+            );
+            return specs.map((spec, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && <div className="w-1 h-1 rounded-full bg-slate-300 shrink-0"></div>}
+                {spec}
+              </React.Fragment>
+            ));
+          })()}
           {isCommercial && ((property.floors ?? 0) > 0 || (property.parkingSpaces ?? 0) > 0) && (
             <span className="shrink-0 text-[13px] text-slate-500">
               {(property.floors ?? 0) > 0 ? `${property.floors} floor${property.floors === 1 ? '' : 's'}` : ''}
