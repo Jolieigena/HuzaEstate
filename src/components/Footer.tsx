@@ -1,5 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import { Logo } from './Logo';
+import { useLanguage } from '@/lib/i18n/language';
+import LanguagePicker from './LanguagePicker';
 
 // Real handles/URLs pending — update these hrefs once each account exists.
 const SOCIAL_LINKS = [
@@ -73,6 +77,7 @@ const FOOTER_LINKS = [
 ];
 
 export default function Footer() {
+  const { t } = useLanguage();
   return (
     <footer className="w-full bg-slate-900 text-white mt-12">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 py-16">
@@ -81,7 +86,7 @@ export default function Footer() {
           <div className="md:col-span-4">
             <Logo className="h-8 w-auto" dark />
             <p className="text-slate-400 text-[15px] leading-relaxed mt-4 max-w-xs">
-              Rwanda&apos;s home for premium, verified real estate — buy, rent, or sell with confidence.
+              {t('Rwanda\'s home for premium, verified real estate — buy, rent, or sell with confidence.')}
             </p>
             <div className="flex items-center gap-3 mt-6">
               {SOCIAL_LINKS.map(social => (
@@ -105,13 +110,13 @@ export default function Footer() {
             {FOOTER_LINKS.map(group => (
               <div key={group.heading}>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-                  {group.heading}
+                  {t(group.heading)}
                 </h3>
                 <ul className="flex flex-col gap-3">
                   {group.links.map(link => (
                     <li key={link.href}>
                       <Link href={link.href} className="text-slate-400 hover:text-[#2ec440] text-[15px] transition-colors">
-                        {link.label}
+                        {t(link.label)}
                       </Link>
                     </li>
                   ))}
@@ -124,13 +129,14 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-16 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-slate-500 text-sm text-center sm:text-left">
-            &copy; {new Date().getFullYear()} Huzalabs. All rights reserved. HuzaEstate is operated by Huzalabs. (Rwanda)
+            &copy; {new Date().getFullYear()} {t('Huzalabs. All rights reserved. HuzaEstate is operated by Huzalabs. (Rwanda)')}
           </p>
-          <div className="flex items-center gap-6">
-            <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Terms</Link>
-            <Link href="/privacy" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Privacy</Link>
-            <Link href="/seller-terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Seller Terms</Link>
-            <Link href="/delete-account" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">Delete account</Link>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+            <LanguagePicker dark />
+            <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Terms')}</Link>
+            <Link href="/privacy" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Privacy')}</Link>
+            <Link href="/seller-terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Seller Terms')}</Link>
+            <Link href="/delete-account" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Delete account')}</Link>
           </div>
         </div>
       </div>

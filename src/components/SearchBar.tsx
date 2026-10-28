@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/language";
 
 type SearchMode = "sale" | "rent";
 
@@ -9,6 +10,7 @@ export default function SearchBar() {
   const [query, setQuery] = useState("");
   const mode: SearchMode = "sale";
   const router = useRouter();
+  const { t } = useLanguage();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function SearchBar() {
           </svg>
           <input
             type="text"
-            placeholder="City, neighbourhood or area…"
+            placeholder={t('City, neighbourhood or area…')}
             className="flex-grow py-3.5 text-slate-900 placeholder:text-slate-400 focus:outline-none bg-transparent text-base font-medium"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -45,7 +47,7 @@ export default function SearchBar() {
           type="submit"
           className="bg-[#2ec440] hover:bg-[#28b039] text-white px-8 py-3.5 rounded-xl transition-colors font-bold text-base whitespace-nowrap shadow-sm"
         >
-          Search
+          {t('Search')}
         </button>
       </form>
     </div>

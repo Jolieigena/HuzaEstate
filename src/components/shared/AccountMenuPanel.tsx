@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth, type AccountRole } from "@/lib/auth-context";
 import { ROLE_LABELS, availableRoles, roleHome } from "@/lib/navigation";
+import { useLanguage } from "@/lib/i18n/language";
 
 const itemClass = "block w-full px-4 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900";
 const groupClass = "mt-1 border-t border-slate-50 pt-1";
@@ -29,6 +30,7 @@ function workspaceOfPath(pathname: string): AccountRole | null {
 export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useLanguage();
   const { account, activeRole: storedRole, switchRole, logout, logoutAll, savedAccounts, switchAccount, removeSavedAccount } = useAuth();
   const [switchError, setSwitchError] = useState("");
   const otherAccounts = savedAccounts.filter((saved) => !saved.active);
@@ -61,9 +63,9 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
   return (
     <>
       <div className="mb-1 border-b border-slate-50 px-4 py-2">
-        <div className="truncate text-sm font-bold text-slate-900">{account?.name ?? "HuzaEstate account"}</div>
+        <div className="truncate text-sm font-bold text-slate-900">{account?.name ?? t("HuzaEstate account")}</div>
         <div className="truncate text-xs text-slate-500">{account?.email ?? ""}</div>
-        <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{ROLE_LABELS[activeRole]}</div>
+        <div className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t(ROLE_LABELS[activeRole])}</div>
       </div>
 
       <div className="border-b border-slate-50 pb-1">
@@ -75,7 +77,7 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-bold text-slate-900">{saved.name}</span>
-                <span className="block truncate text-xs text-slate-500">{saved.locked ? "Sign in again" : saved.email}</span>
+                <span className="block truncate text-xs text-slate-500">{saved.locked ? t("Sign in again") : saved.email}</span>
               </span>
             </button>
             {saved.locked && (
@@ -96,15 +98,15 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
               <path d="M12 5v14M5 12h14" />
             </svg>
           </span>
-          Add another account
+          {t("Add another account")}
         </Link>
       </div>
 
       <Link href={roleHome(activeRole)} onClick={onNavigate} className={itemClass}>
-        My Dashboard
+        {t("My Dashboard")}
       </Link>
       <Link href="/properties" onClick={onNavigate} className={itemClass}>
-        Browse Properties
+        {t("Browse Properties")}
       </Link>
 
       {(isCustomer || canOrder) && (
@@ -112,22 +114,22 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
           {isCustomer && (
             <>
               <Link href="/dashboard?tab=saved" onClick={onNavigate} className={itemClass}>
-                Saved Homes
+                {t("Saved Homes")}
               </Link>
               <Link href="/studio/build" onClick={onNavigate} className={itemClass}>
-                Build Projects
+                {t("Build Projects")}
               </Link>
               <Link href="/studio/renovate" onClick={onNavigate} className={itemClass}>
-                Renovation Projects
+                {t("Renovation Projects")}
               </Link>
               <Link href="/design-requests" onClick={onNavigate} className={itemClass}>
-                My design requests
+                {t("My design requests")}
               </Link>
             </>
           )}
           {canOrder && (
             <Link href="/shop/orders" onClick={onNavigate} className={itemClass}>
-              My Orders
+              {t("My Orders")}
             </Link>
           )}
         </div>
@@ -137,7 +139,7 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
         <div className={groupClass}>
           {otherWorkspaces.map((role) => (
             <button key={role} type="button" onClick={() => switchTo(role)} className={itemClass}>
-              {ROLE_LABELS[role]}
+              {t(ROLE_LABELS[role])}
             </button>
           ))}
         </div>
@@ -146,11 +148,11 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
       <div className={groupClass}>
         {isCustomer && (
           <Link href="/dashboard/settings" onClick={onNavigate} className={itemClass}>
-            Settings
+            {t("Settings")}
           </Link>
         )}
         <Link href="/change-password" onClick={onNavigate} className={itemClass}>
-          Change password
+          {t("Change password")}
         </Link>
         <button
           type="button"
@@ -160,7 +162,7 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
           }}
           className="w-full px-4 py-2 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
         >
-          Log out
+          {t("Log out")}
         </button>
         {savedAccounts.length > 1 && (
           <button
@@ -171,7 +173,7 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
             }}
             className="w-full px-4 py-2 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-50"
           >
-            Log out of all accounts
+            {t("Log out of all accounts")}
           </button>
         )}
       </div>

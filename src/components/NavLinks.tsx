@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { activeNavKey, type NavKey } from "@/lib/navigation/activeNav";
+import { useLanguage } from "@/lib/i18n/language";
 
 const NAV_LINKS: { key: NavKey; href: string; label: string }[] = [
   { key: "home", href: "/home", label: "Home" },
@@ -19,6 +20,7 @@ const NAV_LINKS: { key: NavKey; href: string; label: string }[] = [
 ];
 
 function Links({ variant, active, onNavigate }: { variant: "desktop" | "mobile"; active: NavKey | null; onNavigate?: () => void }) {
+  const { t } = useLanguage();
   return (
     <>
       {NAV_LINKS.map((link) => {
@@ -32,7 +34,7 @@ function Links({ variant, active, onNavigate }: { variant: "desktop" | "mobile";
               isActive ? "text-slate-900 font-semibold after:w-full" : "hover:text-slate-900 after:w-0 hover:after:w-full"
             }`}
           >
-            {link.label}
+            {t(link.label)}
           </Link>
         ) : (
           <Link
@@ -44,7 +46,7 @@ function Links({ variant, active, onNavigate }: { variant: "desktop" | "mobile";
               isActive ? "text-[#2ec440]" : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
-            {link.label}
+            {t(link.label)}
           </Link>
         );
       })}

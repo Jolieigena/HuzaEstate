@@ -11,12 +11,15 @@ import CartButton from './shop/CartButton';
 import NavLinks from './NavLinks';
 import { useDismiss } from "@/lib/useDismiss";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
+import { useLanguage } from "@/lib/i18n/language";
+import LanguagePicker from "./LanguagePicker";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useDismiss(profileOpen, () => setProfileOpen(false));
   const { isLoggedIn, account } = useAuth();
+  const { t } = useLanguage();
   const photoUrl = useMyProfilePhoto();
 
   // While the phone menu is open the page behind it stays still (the menu scrolls inside itself, below), and the menu closes if the
@@ -55,8 +58,9 @@ export default function Navbar() {
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
         >
-          Browse Properties
+          {t('Browse Properties')}
         </Link>
+        <LanguagePicker className="hidden md:inline-flex" />
 
         {/* Conditional Auth Actions */}
         {isLoggedIn ? (
@@ -64,7 +68,7 @@ export default function Navbar() {
             <button
               onClick={() => setProfileOpen(!profileOpen)}
               className="block relative rounded-full border border-slate-200 hover:ring-2 hover:ring-[#2ec440] hover:border-[#2ec440] transition-all w-10 h-10 shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
-              title="Profile Menu"
+              title={t('Profile Menu')}
             >
               <div className="absolute inset-0 rounded-full overflow-hidden bg-slate-900 flex items-center justify-center">
                 {photoUrl ? (
@@ -88,7 +92,7 @@ export default function Navbar() {
               href="/login"
               className="bg-slate-900 hover:bg-[#2ec440] text-white font-medium text-sm px-6 py-2.5 rounded-full transition-all inline-block"
             >
-              Get Started
+              {t('Get Started')}
             </Link>
           </div>
         )}
@@ -98,7 +102,7 @@ export default function Navbar() {
           type="button"
           onClick={() => setMenuOpen(open => !open)}
           className="md:hidden w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-label={menuOpen ? t('Close menu') : t('Open menu')}
           aria-expanded={menuOpen}
         >
           {menuOpen ? (
@@ -118,15 +122,16 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}
             className="mt-3 text-center bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
-            Browse Properties
+            {t('Browse Properties')}
           </Link>
           <Link
             href="/post-property"
             onClick={() => setMenuOpen(false)}
             className="mt-2 text-center bg-slate-900 hover:bg-[#2ec440] active:bg-[#28b039] text-white font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
           >
-            Post a property
+            {t('Post a property')}
           </Link>
+          <LanguagePicker className="mt-3 self-start" />
           {isLoggedIn ? (
             <div className="mt-3 rounded-2xl border border-slate-100 py-2">
               <AccountMenuPanel onNavigate={() => setMenuOpen(false)} />
@@ -137,7 +142,7 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
             >
-              Get Started
+              {t('Get Started')}
             </Link>
           )}
         </div>

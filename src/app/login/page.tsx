@@ -8,10 +8,13 @@ import { useAuth } from '@/lib/auth-context';
 import { accountDestination } from '@/lib/navigation';
 import PasswordInput from '@/components/shared/PasswordInput';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import { useLanguage } from '@/lib/i18n/language';
+import LanguagePicker from '@/components/LanguagePicker';
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const { loginWithCredentials } = useAuth();
   const [email, setEmail] = useState(() => (searchParams.get('email') ?? '').slice(0, 254));
   const [password, setPassword] = useState('');
@@ -42,8 +45,8 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">{searchParams.get('add') ? 'Add an account' : 'Welcome back'}</h1>
-      <p className="text-slate-500 mb-8">Please enter your details to sign in.</p>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">{searchParams.get('add') ? t('Add an account') : t('Welcome back')}</h1>
+      <p className="text-slate-500 mb-8">{t('Please enter your details to sign in.')}</p>
 
       {error && (
         <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
@@ -53,10 +56,10 @@ function LoginForm() {
 
       <form className="space-y-5" onSubmit={handleSubmit}>
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{t('Email Address')}</label>
           <input
             type="email"
-            placeholder="Enter your email"
+            placeholder={t('Enter your email')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -66,8 +69,8 @@ function LoginForm() {
 
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="block text-sm font-bold text-slate-700">Password</label>
-            <Link href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ''}`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Forgot password?</Link>
+            <label className="block text-sm font-bold text-slate-700">{t('Password')}</label>
+            <Link href={`/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ''}`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{t('Forgot password?')}</Link>
           </div>
           <PasswordInput
             placeholder="••••••••"
@@ -86,11 +89,11 @@ function LoginForm() {
             onChange={(e) => setRememberMe(e.target.checked)}
             className="accent-[#2ec440] w-4 h-4 cursor-pointer"
           />
-          <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">Remember me for 30 days</label>
+          <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">{t('Remember me for 30 days')}</label>
         </div>
 
         <button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
-          {isSubmitting ? 'Signing in…' : 'Sign In'}
+          {isSubmitting ? t('Signing in…') : t('Sign In')}
         </button>
 
       </form>
@@ -108,7 +111,7 @@ function LoginForm() {
       />
 
       <p className="mt-8 text-center text-slate-500 text-sm">
-        Don&apos;t have an account? <Link href={signupHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Sign up for free</Link>
+        {t("Don't have an account?")} <Link href={signupHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{t('Sign up for free')}</Link>
       </p>
     </>
   );
@@ -186,6 +189,7 @@ export default function LoginPage() {
       {/* Right Side: Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 z-20 bg-white">
         <div className="w-full max-w-[440px]">
+          <LanguagePicker className="mb-6" />
           <Suspense fallback={<LoginFormFallback />}>
             <LoginForm />
           </Suspense>
