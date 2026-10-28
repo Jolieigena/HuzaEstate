@@ -16,6 +16,7 @@ export const RW: Record<string, string> = {
   "Browse Properties": "Reba imitungo",
   "Get Started": "Tangira",
   "Post a property": "Tangaza umutungo",
+  "+ Post": "+ Tangaza",
   "Profile Menu": "Konti yanjye",
   "Open menu": "Fungura menu",
   "Close menu": "Funga menu",

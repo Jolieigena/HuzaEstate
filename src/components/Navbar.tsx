@@ -55,6 +55,12 @@ export default function Navbar() {
       <div className="flex items-center gap-2 sm:gap-3">
         <CartButton />
         <Link
+          href="/post-property"
+          className="sm:hidden inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2 rounded-full whitespace-nowrap transition-colors"
+        >
+          {t('+ Post')}
+        </Link>
+        <Link
           href="/properties"
           className="hidden sm:inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium text-sm px-5 py-2.5 rounded-full transition-all duration-200"
         >

@@ -46,8 +46,10 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
       </div>
 
       <div className="flex items-center gap-2">
-        <Link href="/post-property" className="hidden sm:inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors">
-          + Add Property
+        {/* On a phone in the app the bottom bar already has "Post a property", so the header button is for the website and for larger screens. */}
+        <Link href="/post-property" className={`${hideMenuButton ? "hidden sm:inline-flex" : "inline-flex"} items-center whitespace-nowrap bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-3 sm:px-4 py-2.5 rounded-xl transition-colors`}>
+          <span className="sm:hidden">+ Post</span>
+          <span className="hidden sm:inline">+ Add Property</span>
         </Link>
         <NotificationBell />
         <div className="relative" ref={menuRef}>
