@@ -132,7 +132,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} {t('Huzalabs. All rights reserved. HuzaEstate is operated by Huzalabs. (Rwanda)')}
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
-            <LanguagePicker dark />
+            <LanguagePicker dark up />
             <Link href="/terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Terms')}</Link>
             <Link href="/privacy" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Privacy')}</Link>
             <Link href="/seller-terms" className="text-slate-500 hover:text-[#2ec440] text-sm transition-colors">{t('Seller Terms')}</Link>
