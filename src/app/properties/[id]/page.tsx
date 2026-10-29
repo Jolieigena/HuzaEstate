@@ -231,7 +231,9 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
 
         {/* Right Column: Contact Info */}
         <div className="lg:col-span-4">
-          <div className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-8 sticky top-28">
+          {/* The message form and the landlord card stay together while the page scrolls. */}
+          <div className="lg:sticky lg:top-28">
+          <div className="bg-[#f8fafc] border border-slate-200 rounded-3xl p-8">
             {property.companyLogoUrl && (
               <div className="flex items-center gap-3 mb-4">
                 <div className="h-11 w-11 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -277,6 +279,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           </div>
 
           {property.type === 'rent' && <LandlordProfileCard ownerId={property.ownerId} />}
+          </div>
         </div>
       </div>
     </div>
