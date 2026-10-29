@@ -2,6 +2,7 @@
 
 import { regionsForCountry } from "@/lib/regions";
 import Select from "@/components/shared/Select";
+import { useLanguage } from "@/lib/i18n/language";
 
 const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 
@@ -10,11 +11,12 @@ const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py
  *  country except Rwanda, at launch) — the caller just doesn't render a district field at all
  *  for those, same as today. */
 export default function DistrictSelect({ country, value, onChange, className = "" }: { country: string; value: string; onChange: (district: string) => void; className?: string }) {
+  const { t } = useLanguage();
   const regions = regionsForCountry(country);
   if (!regions) return null;
   return (
     <Select value={value} onChange={(e) => onChange(e.target.value)} className={`${fieldClass} ${className}`}>
-      <option value="">Select a district…</option>
+      <option value="">{t("Select a district…")}</option>
       {regions.map((r) => (
         <optgroup key={r.region} label={r.region}>
           {r.districts.map((d) => (

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useLanguage } from '@/lib/i18n/language';
 import { filesToUploadedUrls, MAX_IMAGES_PER_PROPERTY } from '@/lib/imageUpload';
 import { PHOTO_CATEGORIES, type PhotoCategory, type CategorizedPhoto } from '@/lib/photoCategories';
 
@@ -28,6 +29,7 @@ const PRIMARY_CATEGORIES: PhotoCategory[] = ['exterior_front', 'living_room'];
  * gallery either way.
  */
 export default function CategorizedPhotoUpload({ photos, onChange, onUploadingChange, disabled = false }: CategorizedPhotoUploadProps) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const [error, setError] = useState('');
   const [processingCategory, setProcessingCategory] = useState<PhotoCategory | null>(null);
@@ -47,18 +49,18 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
 
     const remainingSlots = MAX_IMAGES_PER_PROPERTY - totalCount;
     if (remainingSlots <= 0) {
-      setError(`You can upload up to ${MAX_IMAGES_PER_PROPERTY} photos in total.`);
+      setError(t('You can upload up to {max} photos in total.', { max: MAX_IMAGES_PER_PROPERTY }));
       return;
     }
 
     const toProcess = files.slice(0, remainingSlots);
-    setError(files.length > toProcess.length ? `Only ${toProcess.length} of those were added — ${MAX_IMAGES_PER_PROPERTY} photo limit reached.` : '');
+    setError(files.length > toProcess.length ? t('Only {added} of those were added — {max} photo limit reached.', { added: toProcess.length, max: MAX_IMAGES_PER_PROPERTY }) : '');
     setProcessingCategory(category);
     onUploadingChange?.(true);
     try {
       const { urls, failedCount, reasons } = await filesToUploadedUrls(toProcess, token);
       onChange([...photos, ...urls.map((url) => ({ url, category }))]);
-      if (failedCount > 0) setError(`${failedCount} photo(s) couldn't be uploaded and were skipped. ${reasons.join(' ')}`);
+      if (failedCount > 0) setError(`${t("{count} photo(s) couldn't be uploaded and were skipped.", { count: failedCount })} ${reasons.map((r) => t(r)).join(' ')}`);
     } finally {
       setProcessingCategory(null);
       onUploadingChange?.(false);
@@ -75,19 +77,19 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
 
     return (
       <div key={category}>
-        <div className="text-xs font-semibold text-slate-600 mb-1.5">{label}</div>
+        <div className="text-xs font-semibold text-slate-600 mb-1.5">{t(label)}</div>
         <div className="flex flex-wrap gap-2">
           {categoryPhotos.map((photo) => (
             <div key={photo.url} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 group">
               {/* eslint-disable-next-line @next/next/no-img-element -- MinIO-hosted URL, not a domain configured for next/image */}
-              <img src={photo.url} alt={label} className="w-full h-full object-cover" />
+              <img src={photo.url} alt={t(label)} className="w-full h-full object-cover" />
               <button
                 type="button"
                 disabled={disabled || processingCategory !== null}
                 onClick={() => removePhoto(category, photo.url)}
                 className="absolute inset-0 bg-black/0 group-hover:bg-black/50 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center"
               >
-                Remove
+                {t('Remove')}
               </button>
             </div>
           ))}
@@ -95,7 +97,7 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
           {totalCount < MAX_IMAGES_PER_PROPERTY && (
             <label className="w-20 h-20 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-200 hover:border-[#2ec440] hover:bg-[#2ec440]/5 transition-colors cursor-pointer text-center px-1">
               <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-              <span className="text-[10px] font-semibold text-slate-500 leading-tight">{processing ? '…' : 'Add'}</span>
+              <span className="text-[10px] font-semibold text-slate-500 leading-tight">{processing ? '…' : t('Add')}</span>
               <input
                 type="file"
                 accept="image/*"
@@ -118,7 +120,7 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
   if (!showAll) {
     return (
       <div className="space-y-4">
-        <p className="text-xs text-slate-400">Start with these two — the rest will show up right after, including more angles for a better 3D tour.</p>
+        <p className="text-xs text-slate-400">{t('Start with these two — the rest will show up right after, including more angles for a better 3D tour.')}</p>
         <div className="grid grid-cols-2 gap-4">
           {PRIMARY_CATEGORIES.map((id) => renderCategory(id, PHOTO_CATEGORIES.find((c) => c.id === id)!.label))}
         </div>
@@ -127,7 +129,7 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
           onClick={() => setManuallyExpanded(true)}
           className="text-xs font-bold text-[#2ec440] hover:text-[#28b039] transition-colors"
         >
-          + Show all photo types
+          {t('+ Show all photo types')}
         </button>
         {error && <p className="text-xs text-red-500">{error}</p>}
       </div>
@@ -137,15 +139,15 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
   return (
     <div className="space-y-6">
       <div>
-        <div className="text-sm font-bold text-slate-700 mb-1">Exterior Photos</div>
-        <p className="text-xs text-slate-400 mb-3">Front, side, and back views also power the 3D tour — the more angles you add, the better the generated tour.</p>
+        <div className="text-sm font-bold text-slate-700 mb-1">{t('Exterior Photos')}</div>
+        <p className="text-xs text-slate-400 mb-3">{t('Front, side, and back views also power the 3D tour — the more angles you add, the better the generated tour.')}</p>
         <div className="grid sm:grid-cols-2 gap-4">
           {PHOTO_CATEGORIES.filter((c) => c.group === 'exterior').map((c) => renderCategory(c.id, c.label))}
         </div>
       </div>
 
       <div>
-        <div className="text-sm font-bold text-slate-700 mb-3">Interior Photos</div>
+        <div className="text-sm font-bold text-slate-700 mb-3">{t('Interior Photos')}</div>
         <div className="grid sm:grid-cols-2 gap-4">
           {PHOTO_CATEGORIES.filter((c) => c.group === 'interior').map((c) => renderCategory(c.id, c.label))}
         </div>

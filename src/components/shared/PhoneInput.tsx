@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AsYouType, isValidPhoneNumber, getCountryCallingCode, validatePhoneNumberLength, type CountryCode } from "libphonenumber-js";
 import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { COUNTRY_OPTIONS, countryFlagUrl, type CountryOption } from "@/lib/countries";
+import { useLanguage } from "@/lib/i18n/language";
 
 // Maps a dial-code digit string (no "+") to the country it belongs to, e.g.
 // "256" -> Uganda. Built once at module load, not per render. Where several
@@ -87,6 +88,7 @@ interface PhoneInputProps {
  *  explicit dropdown to pick a country directly rather than relying on
  *  typing the right digits. */
 export default function PhoneInput({ value, onChange, id, required, placeholder, className }: PhoneInputProps) {
+  const { t } = useLanguage();
   const current = useCurrentCountry();
   // Explicit pick from the dropdown wins over both the typed-digits guess and
   // geo-detection; typed-digits guess wins over geo-detection; geo-detection
@@ -186,7 +188,7 @@ export default function PhoneInput({ value, onChange, id, required, placeholder,
         <button
           type="button"
           onClick={() => setIsPickerOpen((o) => !o)}
-          aria-label="Choose country"
+          aria-label={t("Choose country")}
           className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1 py-1 rounded-lg hover:bg-slate-100 transition-colors"
         >
           {activeCountry ? (
@@ -220,7 +222,7 @@ export default function PhoneInput({ value, onChange, id, required, placeholder,
               <input
                 type="text"
                 autoFocus
-                placeholder="Search countries…"
+                placeholder={t("Search countries…")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full px-3 py-2 mb-1 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] text-[13px]"

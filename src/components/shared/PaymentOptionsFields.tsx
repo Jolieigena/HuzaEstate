@@ -1,6 +1,7 @@
 "use client";
 
 import Select from "@/components/shared/Select";
+import { useLanguage } from "@/lib/i18n/language";
 import { MAX_INSTALLMENT_MONTHS, MAX_INSTALLMENTS, minMonths } from "@/lib/properties/paymentOptions";
 
 export interface PaymentOptionsState {
@@ -22,12 +23,12 @@ export function paymentOptionsBody(state: PaymentOptionsState) {
 }
 
 /** Why these choices cannot be saved, or null when they can. */
-export function paymentOptionsProblem(state: PaymentOptionsState): string | null {
-  if (!state.full && !state.installments) return "Choose at least one way to pay: in full or in installments.";
+export function paymentOptionsProblem(state: PaymentOptionsState, t: (text: string, values?: Record<string, string | number>) => string = (text) => text): string | null {
+  if (!state.full && !state.installments) return t("Choose at least one way to pay: in full or in installments.");
   if (state.installments) {
     const percent = Number(state.firstPercent);
-    if (!Number.isFinite(percent) || percent < 10 || percent > 90) return "The first payment can be 10% to 90% of the price.";
-    if (state.months < minMonths(state.count)) return `${state.count} payments need at least ${minMonths(state.count)} months.`;
+    if (!Number.isFinite(percent) || percent < 10 || percent > 90) return t("The first payment can be 10% to 90% of the price.");
+    if (state.months < minMonths(state.count)) return t("{count} payments need at least {months} months.", { count: state.count, months: minMonths(state.count) });
   }
   return null;
 }
@@ -56,6 +57,7 @@ function Choice({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 /** For a house or apartment for sale: how a buyer may pay, in full and/or in installments (at most 3, over at most 6 months). */
 export default function PaymentOptionsFields({ value, onChange }: { value: PaymentOptionsState; onChange: (next: PaymentOptionsState) => void }) {
+  const { t } = useLanguage();
   const set = (changes: Partial<PaymentOptionsState>) => onChange({ ...value, ...changes });
   const first = Number(value.firstPercent);
   const restEach = value.installments && first >= 10 && first <= 90 ? Number(((100 - first) / (value.count - 1)).toFixed(1)) : null;
@@ -64,14 +66,14 @@ export default function PaymentOptionsFields({ value, onChange }: { value: Payme
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Choice checked={value.full} onChange={(full) => set({ full })} label="Buy in full" />
-        <Choice checked={value.installments} onChange={(installments) => set({ installments })} label="Buy in installments" />
+        <Choice checked={value.full} onChange={(full) => set({ full })} label={t("Buy in full")} />
+        <Choice checked={value.installments} onChange={(installments) => set({ installments })} label={t("Buy in installments")} />
       </div>
       {value.installments && (
         <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Payments</label>
-            <div role="radiogroup" aria-label="Number of payments" className="flex gap-2">
+            <label className="mb-2 block text-sm font-bold text-slate-700">{t("Payments")}</label>
+            <div role="radiogroup" aria-label={t("Number of payments")} className="flex gap-2">
               {([2, 3] as const).filter((n) => n <= MAX_INSTALLMENTS).map((n) => (
                 <button
                   key={n}
@@ -87,20 +89,20 @@ export default function PaymentOptionsFields({ value, onChange }: { value: Payme
             </div>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">Over</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">{t("Over")}</label>
             <Select value={String(value.months)} onChange={(e) => set({ months: Number(e.target.value) })} className={inputClass}>
               {months.map((m) => (
-                <option key={m} value={m}>{m} month{m === 1 ? "" : "s"}</option>
+                <option key={m} value={m}>{t(m === 1 ? "{count} month" : "{count} months", { count: m })}</option>
               ))}
             </Select>
           </div>
           <div>
-            <label className="mb-2 block text-sm font-bold text-slate-700">First payment (%)</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">{t("First payment (%)")}</label>
             <input type="number" min="10" max="90" value={value.firstPercent} onChange={(e) => set({ firstPercent: e.target.value })} className={inputClass} />
           </div>
           {restEach !== null && (
             <p className="sm:col-span-3 text-sm font-semibold text-slate-600">
-              {first}% at purchase, then {Array.from({ length: value.count - 1 }, () => `${restEach}%`).join(" + ")} within {value.months} month{value.months === 1 ? "" : "s"}.
+              {t(value.months === 1 ? "{first}% at purchase, then {rest} within {months} month." : "{first}% at purchase, then {rest} within {months} months.", { first, rest: Array.from({ length: value.count - 1 }, () => `${restEach}%`).join(" + "), months: value.months })}
             </p>
           )}
         </div>

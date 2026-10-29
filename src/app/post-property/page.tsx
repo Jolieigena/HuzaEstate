@@ -25,12 +25,14 @@ import DistrictSelect from '@/components/shared/DistrictSelect';
 import { useCurrencyOptions } from '@/lib/currencies';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
 import { useToast } from '@/lib/toast-context';
+import { useLanguage } from '@/lib/i18n/language';
 import Select from "@/components/shared/Select";
 import { formatPlace } from "@/lib/properties/place";
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
 function PostPropertyForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const { token, isApprovedSeller, account } = useAuth();
   const isAdmin = useIsAdministrator();
@@ -152,14 +154,14 @@ function PostPropertyForm() {
   }
 
   if (loadingDraft) {
-    return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">Loading your draft…</div>;
+    return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">{t('Loading your draft…')}</div>;
   }
 
   if (draftLoadError) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-slate-600">{draftLoadError}</p>
-        <Link href={homePath} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{isStaff ? 'Back to Properties' : 'Back to Manager Portal'}</Link>
+        <p className="text-slate-600">{t(draftLoadError)}</p>
+        <Link href={homePath} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{isStaff ? t('Back to Properties') : t('Back to Owner Portal')}</Link>
       </div>
     );
   }
@@ -258,7 +260,7 @@ function PostPropertyForm() {
     if (description.trim().length < 20) { setError('Describe the property in at least 20 characters.'); return; }
     if (!(Number(price) > 0)) { setError('Enter the price.'); return; }
     if (!(Number(sqm) > 0)) { setError('Enter the size of the property.'); return; }
-    if (offersPayment) { const problem = paymentOptionsProblem(paymentOptions); if (problem) { setError(problem); return; } }
+    if (offersPayment) { const problem = paymentOptionsProblem(paymentOptions, t); if (problem) { setError(problem); return; } }
     if (listingType === 'sale' && propertyType !== 'land' && propertyType !== 'commercial' && !(Number(bedrooms) >= 1 && Number(bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     if (propertyType !== 'land' && propertyType !== 'commercial' && (bedrooms === '' || bathrooms === '')) { setError('Enter the number of bedrooms and bathrooms.'); return; }
     if (isStaff && ownerFilled) {
@@ -348,7 +350,7 @@ function PostPropertyForm() {
         }
       }
       notifyPropertiesChanged();
-      showToast('Draft saved.');
+      showToast(t('Draft saved.'));
       router.push(homePath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not reach the server. Please try again.');
@@ -361,66 +363,66 @@ function PostPropertyForm() {
       {/* Form */}
       <section className="max-w-3xl mx-auto px-6 sm:px-10 pt-32 pb-20">
         <div className="mb-10">
-          <h1 className="text-2xl font-bold text-slate-900 mb-3">{editId ? 'Finish your draft' : 'List your property'}</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">{editId ? t('Finish your draft') : t('List your property')}</h1>
           <p className="text-slate-500">
             {editId
-              ? "Fill in what's missing, then submit it for review."
-              : "Fill in the details below. Most listings are reviewed before going live — save as a draft if you're not ready to submit yet."}
+              ? t("Fill in what's missing, then submit it for review.")
+              : t("Fill in the details below. Most listings are reviewed before going live — save as a draft if you're not ready to submit yet.")}
           </p>
         </div>
         {error && (
           <p className="mb-6 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
-            {error}
+            {t(error)}
           </p>
         )}
         <form className="space-y-8" onSubmit={handleSubmit}>
           <div>
-            <h2 className="text-xl font-bold text-slate-900 mb-5">Property details</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-5">{t('Property details')}</h2>
             <div className="grid sm:grid-cols-2 gap-5">
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Property Title</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Title')}</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Luxury Villa with Pool in Nyarutarama"
+                  placeholder={t('e.g. Luxury Villa with Pool in Nyarutarama')}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Listing Type</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Listing Type')}</label>
                 <Select
                   value={listingType}
                   onChange={(e) => setListingType(e.target.value as Property['type'])}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                   required
                 >
-                  <option value="" disabled>Select type</option>
-                  <option value="sale">For Sale</option>
-                  <option value="rent">For Rent</option>
+                  <option value="" disabled>{t('Select type')}</option>
+                  <option value="sale">{t('For Sale')}</option>
+                  <option value="rent">{t('For Rent')}</option>
                 </Select>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Property Type</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Type')}</label>
                 <Select
                   value={propertyTypeLabel}
                   onChange={(e) => setPropertyTypeLabel(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                   required
                 >
-                  <option value="" disabled>Select type</option>
+                  <option value="" disabled>{t('Select type')}</option>
                   {PROPERTY_TYPE_OPTIONS.map(({ label }) => (
-                    <option key={label} value={label}>{label}</option>
+                    <option key={label} value={label}>{t(label)}</option>
                   ))}
                 </Select>
               </div>
 
               {isApartmentType && (
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Furnishing</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('Furnishing')}</label>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -429,7 +431,7 @@ function PostPropertyForm() {
                         isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      Fully Furnished
+                      {t('Fully Furnished')}
                     </button>
                     <button
                       type="button"
@@ -438,26 +440,26 @@ function PostPropertyForm() {
                         !isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      Unfurnished
+                      {t('Unfurnished')}
                     </button>
                   </div>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Price')}</label>
                 <div className="flex gap-2">
                   <FormattedNumberInput
                     value={price}
                     onChange={setPrice}
-                    placeholder="e.g. 350,000"
+                    placeholder={t('e.g. 350,000')}
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     required
                   />
                   <Select
                     value={currency}
                     onChange={(e) => { setCurrency(e.target.value); setCurrencyTouched(true); }}
-                    aria-label="Currency"
+                    aria-label={t('Currency')}
                     className="w-24 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                   >
                     {currencyOptions.map((c) => (
@@ -475,13 +477,13 @@ function PostPropertyForm() {
 
               {offersPayment && (
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Payment options</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('Payment options')}</label>
                   <PaymentOptionsFields value={paymentOptions} onChange={setPaymentOptions} />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Country')}</label>
                 <Select
                   value={country}
                   onChange={(e) => { setCountry(e.target.value); setDistrict(''); }}
@@ -495,18 +497,18 @@ function PostPropertyForm() {
 
               {regionsForCountry(country) && (
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">District</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('District')}</label>
                   <DistrictSelect country={country} value={district} onChange={setDistrict} />
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('City / Location')}</label>
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. Nyarutarama, Kigali"
+                  placeholder={t('e.g. Nyarutarama, Kigali')}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   required
                 />
@@ -515,7 +517,7 @@ function PostPropertyForm() {
               {isStaff && (
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner name</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner name')}</label>
                     <input
                       type="text"
                       value={ownerName}
@@ -526,7 +528,7 @@ function PostPropertyForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner email</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner email')}</label>
                     <input
                       type="email"
                       value={ownerEmail}
@@ -536,20 +538,20 @@ function PostPropertyForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Owner phone</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner phone')}</label>
                     <PhoneInput value={ownerPhone} onChange={setOwnerPhone} />
                   </div>
                 </div>
               )}
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Photos')}</label>
                 <CategorizedPhotoUpload photos={photos} onChange={setPhotos} onUploadingChange={setUploadingPhotos} disabled={submitting} />
                 <PhotoLimitNotice photoCount={photos.length} />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Property Video (Optional)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Video (Optional)')}</label>
                 <div className="flex items-center gap-4 p-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                   <div className="flex-shrink-0 w-12 h-12 bg-[#2ec440]/10 text-[#2ec440] rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -561,7 +563,7 @@ function PostPropertyForm() {
                       onChange={(e) => setVideoFile(e.target.files?.[0] || null)}
                       className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2ec440]/10 file:text-[#2ec440] hover:file:bg-[#2ec440]/20 transition-colors" 
                     />
-                    {videoFile && <p className="text-xs text-slate-500 mt-2 truncate">Selected: {videoFile.name}</p>}
+                    {videoFile && <p className="text-xs text-slate-500 mt-2 truncate">{t('Selected')}: {videoFile.name}</p>}
                   </div>
                 </div>
               </div>
@@ -569,26 +571,26 @@ function PostPropertyForm() {
               {propertyTypeBucket !== 'land' && !isCommercialType && (
                 <>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Bedrooms</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bedrooms')}</label>
                     <input
                       type="number"
                       value={bedrooms}
                       onChange={(e) => setBedrooms(e.target.value)}
                       min={listingType === 'sale' ? 1 : 0}
-                      placeholder="e.g. 4"
+                      placeholder={t('e.g. 4')}
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Bathrooms</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bathrooms')}</label>
                     <input
                       type="number"
                       value={bathrooms}
                       onChange={(e) => setBathrooms(e.target.value)}
                       min={listingType === 'sale' ? 1 : 0}
-                      placeholder="e.g. 3"
+                      placeholder={t('e.g. 3')}
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     />
@@ -597,7 +599,7 @@ function PostPropertyForm() {
               )}
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Size</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Size')}</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -606,13 +608,13 @@ function PostPropertyForm() {
                     min="0"
                     step="any"
                     required
-                    placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
+                    placeholder={sqmUnit === 'sqkm' ? t('e.g. 0.5') : t('e.g. 450')}
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                   />
                   <Select
                     value={sqmUnit}
                     onChange={(e) => setSqmUnit(e.target.value as 'sqm' | 'sqkm')}
-                    aria-label="Size unit"
+                    aria-label={t('Size unit')}
                     className="w-28 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                   >
                     <option value="sqm">sqm</option>
@@ -628,23 +630,23 @@ function PostPropertyForm() {
               )}
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Description')}</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
-                  placeholder="Tell buyers or renters what makes this property special..."
+                  placeholder={t('Tell buyers or renters what makes this property special...')}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-2">{propertyTypeBucket === 'land' ? 'Land features' : isCommercialType ? 'Features' : 'Amenities'}</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{propertyTypeBucket === 'land' ? t('Land features') : isCommercialType ? t('Features') : t('Amenities')}</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
                   {(propertyTypeBucket === 'land' ? LAND_FEATURE_OPTIONS : isCommercialType ? COMMERCIAL_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
                     <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                       <input type="checkbox" checked={amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
-                      {label}
+                      {t(label)}
                     </label>
                   ))}
                 </div>
@@ -659,16 +661,16 @@ function PostPropertyForm() {
               disabled={submitting || savingDraft || uploadingPhotos}
               className="w-full sm:w-auto sm:px-8 border-2 border-slate-200 text-slate-700 font-bold py-4 rounded-xl transition-colors hover:border-slate-300 disabled:opacity-60"
             >
-              {savingDraft ? 'Saving…' : 'Save as Draft'}
+              {savingDraft ? t('Saving…') : t('Save as Draft')}
             </button>
             <button type="submit" disabled={submitting || savingDraft || uploadingPhotos} className="w-full flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-4 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-              {submitting ? 'Submitting…' : uploadingPhotos ? 'Uploading photos…' : editId ? 'Submit for Review' : 'Publish Listing'}
+              {submitting ? t('Submitting…') : uploadingPhotos ? t('Uploading photos…') : editId ? t('Submit for Review') : t('Publish Listing')}
             </button>
           </div>
 
           <p className="text-center text-slate-500 text-sm">
-            Submitted listings are reviewed before going live, unless auto-publish applies to your area. Track its status from your{' '}
-            <Link href="/manager" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Manager Portal</Link>.
+            {t('Submitted listings are reviewed before going live, unless auto-publish applies to your area. Track its status from your')}{' '}
+            <Link href="/manager" className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{t('Owner Portal')}</Link>.
           </p>
         </form>
       </section>
