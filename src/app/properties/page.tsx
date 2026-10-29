@@ -455,7 +455,7 @@ function PropertiesContent() {
       <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 md:px-8 flex-shrink-0">
 
         {/* ── Filter bar ─────────────────────────────────────────────────── */}
-        <div className="pb-6 pt-2 border-b border-slate-100 mb-3">
+        <div className="pb-3 pt-2 border-b border-slate-100 mb-2">
           {/* Search box and every filter share one flex-wrap flow (not nested
               in a separate row) so wrapping fills each line to the container's
               actual full width instead of leaving a trailing gap and wrapping
@@ -838,7 +838,7 @@ function PropertiesContent() {
         </div>
 
         {/* ── Title row ──────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-baseline gap-1 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {heading}
