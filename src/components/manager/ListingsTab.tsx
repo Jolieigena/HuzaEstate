@@ -1,3 +1,6 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language';
 import type { Property, PropertyStatus } from '@/lib/properties/types';
 import type { Listing, ListingStatusCounts, ListingStatusFilter } from '@/lib/manager/types';
 import ListingCard from './ListingCard';
@@ -16,6 +19,7 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
   onPromote: (property: Property) => void;
   onSubmitDraft: (property: Property) => void;
 }) {
+  const { t } = useLanguage();
   return (
     <div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -37,7 +41,7 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
                 isActive ? `border-transparent ring-2 ${tile.ring}` : 'border-slate-100'
               }`}
             >
-              <div className={`text-xs font-bold uppercase tracking-wide mb-1 ${tile.labelColor}`}>{tile.label}</div>
+              <div className={`text-xs font-bold uppercase tracking-wide mb-1 ${tile.labelColor}`}>{t(tile.label)}</div>
               <div className="text-2xl font-black text-slate-900">{tile.count}</div>
             </button>
           );
@@ -46,14 +50,14 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
 
       <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
         <div className="flex items-center gap-3">
-          <h2 className="text-2xl font-bold text-slate-900">{statusFilter === 'all' ? 'All Listings' : `${statusFilter} Listings`}</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{statusFilter === 'all' ? t('All Listings') : t('{status} Listings', { status: t(statusFilter) })}</h2>
           {statusFilter !== 'all' && (
             <button
               type="button"
               onClick={() => setStatusFilter('all')}
               className="text-xs font-bold text-slate-400 hover:text-slate-900 transition-colors"
             >
-              Clear filter
+              {t('Clear filter')}
             </button>
           )}
         </div>
@@ -63,7 +67,7 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
             type="text"
             value={listingSearch}
             onChange={(e) => setListingSearch(e.target.value)}
-            placeholder="Search all listings by title or location…"
+            placeholder={t('Search all listings by title or location…')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-colors"
           />
         </div>
@@ -86,7 +90,7 @@ export default function ListingsTab({ statusCounts, statusFilter, setStatusFilte
         </div>
       ) : (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm py-16 px-6 text-center text-slate-400 text-sm">
-          {listingSearch.trim() || statusFilter !== 'all' ? <>No listings match your filters.</> : <>You haven&apos;t posted any listings yet.</>}
+          {listingSearch.trim() || statusFilter !== 'all' ? t('No listings match your filters.') : t("You haven't posted any listings yet.")}
         </div>
       )}
     </div>

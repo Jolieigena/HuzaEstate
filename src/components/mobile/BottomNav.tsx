@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/language";
 
 export interface BottomNavItem {
   key: string;
@@ -28,6 +29,7 @@ function Icon({ path, strong }: { path: string; strong?: boolean }) {
 }
 
 function Tab({ item, onDone }: { item: BottomNavItem; onDone?: () => void }) {
+  const { t } = useLanguage();
   const body = item.primary ? (
     <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg">
       <Icon path={item.iconPath} />
@@ -40,18 +42,18 @@ function Tab({ item, onDone }: { item: BottomNavItem; onDone?: () => void }) {
           <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white">{item.badge > 99 ? "99+" : item.badge}</span>
         ) : null}
       </span>
-      <span className="text-[11px] font-semibold leading-none">{item.label}</span>
+      <span className="text-[11px] font-semibold leading-none">{t(item.label)}</span>
     </>
   );
   const className = `flex h-full w-full flex-col items-center justify-center gap-1 ${item.primary ? "" : item.active ? "text-[#2ec440]" : "text-slate-500"}`;
   return item.href ? (
-    <Link href={item.href} aria-label={item.label} aria-current={item.active ? "page" : undefined} className={className} onClick={onDone}>
+    <Link href={item.href} aria-label={t(item.label)} aria-current={item.active ? "page" : undefined} className={className} onClick={onDone}>
       {body}
     </Link>
   ) : (
     <button
       type="button"
-      aria-label={item.label}
+      aria-label={t(item.label)}
       aria-current={item.active ? "page" : undefined}
       className={className}
       onClick={() => {
@@ -67,6 +69,7 @@ function Tab({ item, onDone }: { item: BottomNavItem; onDone?: () => void }) {
 /** The bottom navigation bar of the mobile app: up to five places that are always one tap away, with an optional "More" tab that
  *  opens the rest in a sheet. It is fixed to the bottom of the screen; the page it sits on needs room for it (see BOTTOM_NAV_SPACE). */
 export default function BottomNav({ label, items, more = [] }: { label: string; items: BottomNavItem[]; more?: BottomNavItem[] }) {
+  const { t } = useLanguage();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreActive = more.some((item) => item.active);
   const slots = items.length + (more.length ? 1 : 0);
@@ -91,7 +94,7 @@ export default function BottomNav({ label, items, more = [] }: { label: string; 
       {moreOpen && (
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-slate-900/50" aria-hidden="true" onClick={() => setMoreOpen(false)} />
-          <div role="dialog" aria-modal="true" aria-label="More" className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-white px-4 pb-6 pt-3 shadow-2xl">
+          <div role="dialog" aria-modal="true" aria-label={t("More")} className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-white px-4 pb-6 pt-3 shadow-2xl">
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" aria-hidden="true" />
             <ul className="flex flex-col">
               {more.map((item) => {
@@ -99,7 +102,7 @@ export default function BottomNav({ label, items, more = [] }: { label: string; 
                 const content = (
                   <>
                     <Icon path={item.iconPath} />
-                    <span className="flex-1">{item.label}</span>
+                    <span className="flex-1">{t(item.label)}</span>
                     {item.badge ? <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">{item.badge}</span> : null}
                   </>
                 );

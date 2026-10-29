@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useLanguage } from '@/lib/i18n/language';
 import type { Property, PropertyStatus } from '@/lib/properties/types';
 import { PropertyApi, type Inquiry } from '@/lib/properties/api';
 import type { Listing, ManagerTab } from '@/lib/manager/types';
@@ -31,6 +32,7 @@ import LandlordProfileTab from './LandlordProfileTab';
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
 export default function ManagerDashboard() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<ManagerTab>('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [listingSearch, setListingSearch] = useState('');
@@ -72,10 +74,10 @@ export default function ManagerDashboard() {
     reconciledRef.current = true;
     reconcileCheckout(token, sessionId).then(() => {
       notifyPropertiesChanged();
-      showToast('Listing promoted!');
+      showToast(t('Listing promoted!'));
       router.replace('/manager');
     });
-  }, [token, searchParams, router, showToast]);
+  }, [token, searchParams, router, showToast, t]);
 
   if (!isApprovedSeller) {
     return <ApplyGate />;
@@ -89,7 +91,7 @@ export default function ManagerDashboard() {
     if (result.ok) {
       notifyPropertiesChanged();
       // Relisting something that was never approved goes back to review instead of straight to the market.
-      showToast(result.data.status === 'under_review' ? 'Sent for review. It goes live when it is approved.' : status === 'published' ? 'Listing is live again.' : status === 'archived' ? 'Listing archived.' : 'Listing removed from the market.');
+      showToast(result.data.status === 'under_review' ? t('Sent for review. It goes live when it is approved.') : status === 'published' ? t('Listing is live again.') : status === 'archived' ? t('Listing archived.') : t('Listing removed from the market.'));
     } else {
       showToast(result.error, 'error');
     }
@@ -159,7 +161,7 @@ export default function ManagerDashboard() {
         {/* Main Content Area */}
         <main className={`flex-grow min-w-0 ${isNativeApp ? BOTTOM_NAV_SPACE : ''}`}>
           <PageFrame
-            title="Property Manager"
+            title={t('Property Manager')}
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (
@@ -218,7 +220,7 @@ export default function ManagerDashboard() {
         </main>
       </div>
 
-      {isNativeApp && <BottomNav label="Owner navigation" items={bottomItems} more={bottomMore} />}
+      {isNativeApp && <BottomNav label={t('Owner navigation')} items={bottomItems} more={bottomMore} />}
 
       <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />
       <PromoteListingModal property={promotingProperty} onClose={() => setPromotingProperty(null)} />
@@ -236,11 +238,11 @@ export default function ManagerDashboard() {
               });
               if (!res.ok) {
                 const data = await res.json().catch(() => null);
-                setDeleteError(data?.message || 'Could not delete this listing. Please try again.');
+                setDeleteError(data?.message || t('Could not delete this listing. Please try again.'));
                 return;
               }
             } catch {
-              setDeleteError('Could not reach the server. Please try again.');
+              setDeleteError(t('Could not reach the server. Please try again.'));
               return;
             }
           }
@@ -248,15 +250,14 @@ export default function ManagerDashboard() {
           setDeletingProperty(null);
           setDeleteError(null);
         }}
-        title="Delete this listing?"
+        title={t('Delete this listing?')}
         description={
           <>
             {deleteError ? (
               <span className="text-red-600 font-semibold">{deleteError}</span>
             ) : (
               <>
-                <span className="font-semibold text-slate-700">{deletingProperty?.title}</span> will be removed from HuzaEstate immediately. Buyers will no
-                longer be able to view it, and this can&apos;t be undone.
+                <span className="font-semibold text-slate-700">{deletingProperty?.title}</span> {t("will be removed from HuzaEstate immediately. Buyers will no longer be able to view it, and this can't be undone.")}
               </>
             )}
           </>
@@ -272,19 +273,19 @@ export default function ManagerDashboard() {
           if (!attachingProperty) return;
           const worldId = attachWorldId.trim();
           if (!worldId) {
-            setAttachError('Enter a world ID.');
+            setAttachError(t('Enter a world ID.'));
             return;
           }
           setAttachError(null);
           await TourService.attachExisting(attachingProperty.id, worldId);
           const result = TourService.getForProperty(attachingProperty.id);
           if (result?.status === 'failed') {
-            setAttachError(result.error ?? 'Could not attach that world.');
+            setAttachError(result.error ?? t('Could not attach that world.'));
             return;
           }
           setAttachingProperty(null);
         }}
-        title="Attach an existing 3D tour"
+        title={t('Attach an existing 3D tour')}
         description={
           <>
             Link <span className="font-semibold text-slate-700">{attachingProperty?.title}</span> to a world that was already generated on the World Labs

@@ -1,5 +1,7 @@
 "use client";
 
+import { useLanguage } from "@/lib/i18n/language";
+
 import { useId, useState, ReactNode } from "react";
 import Dialog from "@/components/Dialog";
 
@@ -22,6 +24,7 @@ interface ConfirmModalProps {
  * dark/green pattern.
  */
 export default function ConfirmModal({ open, onClose, onConfirm, title, description, confirmLabel, cancelLabel = "Cancel", destructive = false, children }: ConfirmModalProps) {
+  const { t } = useLanguage();
   const titleId = useId();
   const descId = useId();
   const [busy, setBusy] = useState(false);
@@ -39,7 +42,7 @@ export default function ConfirmModal({ open, onClose, onConfirm, title, descript
     <Dialog open={open} onClose={onClose} labelledBy={titleId} describedBy={descId} panelClassName="max-w-md">
       <div className="p-6 sm:p-8">
         <h2 id={titleId} className="text-xl font-black text-slate-900 mb-2 pr-6">
-          {title}
+          {typeof title === "string" ? t(title) : title}
         </h2>
         <div id={descId} className="text-slate-500 text-sm leading-relaxed mb-6">
           {description}
@@ -52,7 +55,7 @@ export default function ConfirmModal({ open, onClose, onConfirm, title, descript
             disabled={busy}
             className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-60"
           >
-            {cancelLabel}
+            {t(cancelLabel)}
           </button>
           <button
             type="button"
@@ -63,7 +66,7 @@ export default function ConfirmModal({ open, onClose, onConfirm, title, descript
               destructive ? "bg-red-600 hover:bg-red-700" : "bg-slate-900 hover:bg-[#2ec440]"
             }`}
           >
-            {busy ? "Working…" : confirmLabel}
+            {busy ? t("Working…") : t(confirmLabel)}
           </button>
         </div>
       </div>

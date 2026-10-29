@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { useLanguage } from "@/lib/i18n/language";
 import type { ManagerTab } from "@/lib/manager/types";
 import { ManagerNavLinks } from "./ManagerSidebar";
 
@@ -17,6 +18,7 @@ interface ManagerMobileDrawerProps {
 
 /** Off-canvas manager nav for small screens — same behavior/structure as AdminMobileDrawer. */
 export default function ManagerMobileDrawer({ open, onClose, ...navProps }: ManagerMobileDrawerProps) {
+  const { t } = useLanguage();
   const pathname = usePathname();
   const [lastPathname, setLastPathname] = useState(pathname);
 
@@ -44,13 +46,13 @@ export default function ManagerMobileDrawer({ open, onClose, ...navProps }: Mana
   return (
     <div className="lg:hidden fixed inset-0 z-50">
       <div className="absolute inset-0 bg-slate-900/60" aria-hidden="true" onClick={onClose} />
-      <div role="dialog" aria-modal="true" aria-label="Manager navigation" className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl flex flex-col animate-[fadeIn_0.15s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label={t("Manager navigation")} className="absolute left-0 top-0 h-full w-72 bg-white shadow-2xl flex flex-col animate-[fadeIn_0.15s_ease-out]">
         <div className="flex items-center justify-between px-4 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Logo className="h-7 w-auto" />
-            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Manager</span>
+            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{t("Manager")}</span>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close menu" className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+          <button type="button" onClick={onClose} aria-label={t("Close menu")} className="w-9 h-9 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>

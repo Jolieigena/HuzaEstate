@@ -1,3 +1,6 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language';
 import type { Listing, ListingStatus, ListingStatusCounts } from '@/lib/manager/types';
 import type { Property } from '@/lib/properties/types';
 
@@ -21,6 +24,7 @@ const TYPE_ROWS: { type: Property['propertyType'] | 'unspecified'; label: string
 ];
 
 function Row({ label, count, total, color, detail, onClick }: { label: string; count: number; total: number; color: string; detail?: string; onClick?: () => void }) {
+  const { t } = useLanguage();
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
   const content = (
     <>
@@ -42,7 +46,7 @@ function Row({ label, count, total, color, detail, onClick }: { label: string; c
   );
   const className = '-mx-2 px-2 py-1.5 rounded-lg block w-full text-left';
   return onClick ? (
-    <button type="button" onClick={onClick} className={`${className} hover:bg-slate-50 transition-colors`} title={`Show ${label.toLowerCase()} listings`}>
+    <button type="button" onClick={onClick} className={`${className} hover:bg-slate-50 transition-colors`} title={t('Show {label} listings', { label: label.toLowerCase() })}>
       {content}
     </button>
   ) : (
@@ -58,13 +62,14 @@ export default function PortfolioOverview({ listings, statusCounts, onOpenListin
   statusCounts: ListingStatusCounts;
   onOpenListings: (status: ListingStatus | 'all') => void;
 }) {
+  const { t } = useLanguage();
   const total = listings.length;
 
   const types = TYPE_ROWS.map(({ type, label }) => {
     const matching = listings.filter((l) => (l.property.propertyType ?? 'unspecified') === type);
     const forSale = matching.filter((l) => l.property.type === 'sale').length;
     const forRent = matching.filter((l) => l.property.type === 'rent').length;
-    const parts = [forSale ? `${forSale} for sale` : '', forRent ? `${forRent} for rent` : ''].filter(Boolean);
+    const parts = [forSale ? t('{count} for sale', { count: forSale }) : '', forRent ? t('{count} for rent', { count: forRent }) : ''].filter(Boolean);
     return { type, label, count: matching.length, detail: parts.join(' · ') };
   }).filter((row) => row.count > 0);
 
@@ -73,36 +78,36 @@ export default function PortfolioOverview({ listings, statusCounts, onOpenListin
 
   return (
     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 md:p-8">
-      <h3 className="font-bold text-slate-900 text-lg mb-1">Portfolio Overview</h3>
+      <h3 className="font-bold text-slate-900 text-lg mb-1">{t('Portfolio Overview')}</h3>
       <p className="text-sm text-slate-500 mb-6">
-        {total} total {total === 1 ? 'listing' : 'listings'}
+        {t(total === 1 ? '{count} total listing' : '{count} total listings', { count: total })}
       </p>
 
       {total === 0 ? (
-        <p className="text-sm text-slate-500">Your listings will be broken down by type and status here once you post one.</p>
+        <p className="text-sm text-slate-500">{t('Your listings will be broken down by type and status here once you post one.')}</p>
       ) : (
         <div className="flex flex-col gap-7">
-          <section aria-label="Listings by type">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">By type</h4>
+          <section aria-label={t('Listings by type')}>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">{t('By type')}</h4>
             <div className="flex flex-col gap-2">
               {types.map((row) => (
-                <Row key={row.type} label={row.label} count={row.count} total={total} color="#334155" detail={row.detail} />
+                <Row key={row.type} label={t(row.label)} count={row.count} total={total} color="#334155" detail={row.detail} />
               ))}
             </div>
           </section>
 
-          <section aria-label="Listings by status">
-            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">By status</h4>
+          <section aria-label={t('Listings by status')}>
+            <h4 className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-2">{t('By status')}</h4>
             <div className="flex flex-col gap-2">
               {statuses.map((row) => (
-                <Row key={row.status} label={row.status} count={statusCounts[row.status]} total={total} color={row.color} onClick={() => onOpenListings(row.status)} />
+                <Row key={row.status} label={t(row.status)} count={statusCounts[row.status]} total={total} color={row.color} onClick={() => onOpenListings(row.status)} />
               ))}
             </div>
             {needsAttention > 0 && (
               <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-                A moderator asked for changes to, or rejected, {needsAttention} {needsAttention === 1 ? 'listing' : 'listings'}.{' '}
+                {t(needsAttention === 1 ? 'A moderator asked for changes to, or rejected, {count} listing.' : 'A moderator asked for changes to, or rejected, {count} listings.', { count: needsAttention })}{' '}
                 <button type="button" onClick={() => onOpenListings('Needs attention')} className="font-bold underline">
-                  See what they said
+                  {t('See what they said')}
                 </button>
               </p>
             )}

@@ -1,4 +1,5 @@
 import type { ManagerTab } from '@/lib/manager/types';
+import { useLanguage } from '@/lib/i18n/language';
 
 export const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string }[] = [
   {
@@ -45,10 +46,11 @@ interface ManagerNavLinksProps {
  *  should look identical to every other dashboard-style nav in the app. Exported
  *  separately so the mobile drawer can reuse it, matching AdminSidebar's pattern. */
 export function ManagerNavLinks({ activeTab, setActiveTab, listingCount, inquiryCount }: ManagerNavLinksProps) {
+  const { t } = useLanguage();
   const countFor = (id: ManagerTab) => (id === 'listings' ? listingCount : id === 'inquiries' ? inquiryCount : undefined);
 
   return (
-    <nav aria-label="Manager navigation" className="flex flex-col gap-1 px-2">
+    <nav aria-label={t('Manager navigation')} className="flex flex-col gap-1 px-2">
       {NAV_ITEMS.map((item) => {
         const active = activeTab === item.id;
         const count = countFor(item.id);
@@ -64,7 +66,7 @@ export function ManagerNavLinks({ activeTab, setActiveTab, listingCount, inquiry
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
               </svg>
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{t(item.label)}</span>
             </span>
             {count !== undefined && (
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${active ? "bg-[#2ec440] text-white" : "bg-slate-200 text-slate-600"}`}>

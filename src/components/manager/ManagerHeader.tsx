@@ -8,6 +8,7 @@ import { useMyProfilePhoto } from "@/lib/profilePhoto";
 import NotificationBell from "@/components/shared/NotificationBell";
 import { useDismiss } from "@/lib/useDismiss";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
+import { useLanguage } from "@/lib/i18n/language";
 
 interface ManagerHeaderProps {
   onOpenMobileSidebar: () => void;
@@ -19,6 +20,7 @@ interface ManagerHeaderProps {
  *  AdminHeader (logo goes to the site's landing page, badge, letter-avatar account
  *  menu) so every dashboard-style area of the app looks like one product, not three. */
 export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: ManagerHeaderProps) {
+  const { t } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { account } = useAuth();
@@ -31,7 +33,7 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
           <button
             type="button"
             onClick={onOpenMobileSidebar}
-            aria-label="Open menu"
+            aria-label={t("Open menu")}
             className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,24 +41,24 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
             </svg>
           </button>
         )}
-        <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
+        <Link href="/" aria-label={t("Go to HuzaEstate home")} className="flex items-center gap-2.5">
           <Logo className="h-8 w-auto" />
-          <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Owner</span>
+          <span className="hidden sm:inline rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">{t("Owner")}</span>
         </Link>
       </div>
 
       <div className="flex items-center gap-2">
         {/* On a phone in the app the bottom bar already has "Post a property", so the header button is for the website and for larger screens. */}
         <Link href="/post-property" className={`${hideMenuButton ? "hidden sm:inline-flex" : "inline-flex"} items-center whitespace-nowrap bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-3 sm:px-4 py-2.5 rounded-xl transition-colors`}>
-          <span className="sm:hidden">+ Post</span>
-          <span className="hidden sm:inline">+ Add Property</span>
+          <span className="sm:hidden">{t("+ Post")}</span>
+          <span className="hidden sm:inline">{t("+ Add Property")}</span>
         </Link>
         <NotificationBell />
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-full border border-slate-200 pl-1.5 pr-3 py-1.5 hover:border-[#2ec440] transition-colors focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
-            title="Account menu"
+            title={t("Account menu")}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
           >
@@ -69,8 +71,8 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
               )}
             </span>
             <span className="hidden text-left sm:block">
-              <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Manager"}</span>
-              <span className="block text-[11px] text-slate-500">Owner Portal</span>
+              <span className="block text-xs font-bold text-slate-900">{account?.name ?? t("Manager")}</span>
+              <span className="block text-[11px] text-slate-500">{t("Owner Portal")}</span>
             </span>
           </button>
 

@@ -6,6 +6,7 @@ import type { Property } from '@/lib/properties/types';
 import type { PropertyStatus } from '@/lib/properties/types';
 import SellerTourControl from '@/components/SellerTourControl';
 import ListingActionsMenu from './ListingActionsMenu';
+import { useLanguage } from '@/lib/i18n/language';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PLAN_FEATURES } from '@/lib/postingPlans/types';
 import { isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
@@ -60,12 +61,12 @@ const MARKET_STATUS_BADGE: Partial<Record<PropertyStatus, string>> = {
 const PROBLEM_STATUSES: PropertyStatus[] = ['unpublished', 'archived', 'changes_requested', 'rejected'];
 
 // Set at posting time from the poster's plan tier (see payment-service's PLAN_EXPIRY_DAYS).
-function expiryLabel(expiresAt?: string): string | null {
+function expiryLabel(expiresAt: string | undefined, t: (text: string, values?: Record<string, string | number>) => string): string | null {
   if (!expiresAt) return null;
   const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
-  if (daysLeft <= 0) return 'Expired';
-  if (daysLeft === 1) return 'Expires tomorrow';
-  return `Expires in ${daysLeft} days`;
+  if (daysLeft <= 0) return t('Expired');
+  if (daysLeft === 1) return t('Expires tomorrow');
+  return t('Expires in {count} days', { count: daysLeft });
 }
 
 export default function ListingCard({
@@ -85,6 +86,7 @@ export default function ListingCard({
   onPromote: (property: Property) => void;
   onSubmitDraft: (property: Property) => void;
 }) {
+  const { t } = useLanguage();
   const isLeased = listing.status === 'Off market';
   const marketStatus: PropertyStatus = listing.property.status ?? 'published';
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
@@ -93,7 +95,7 @@ export default function ListingCard({
   const reason = listing.property.statusReason;
   const subscription = useSubscription();
   const isPriority = PLAN_FEATURES[subscription.tier].priorityPlacement;
-  const expiry = expiryLabel(listing.property.expiresAt);
+  const expiry = expiryLabel(listing.property.expiresAt, t);
   const promoted = isPromotedNow(listing.property);
   // Buyers only ever see 2 photos and no video on an unpromoted listing (enforced server-side,
   // see property-service's capMedia) — this is the seller's own view (always the full,
@@ -113,7 +115,7 @@ export default function ListingCard({
             muted
             playsInline
             preload="metadata"
-            aria-label={`Video walkthrough of ${listing.title}`}
+            aria-label={t('Video walkthrough of {title}', { title: listing.title })}
             className="w-full h-full object-cover"
           />
         ) : listing.image ? (
@@ -135,17 +137,17 @@ export default function ListingCard({
           </div>
         )}
         <span className={`absolute top-3 left-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${STATUS_BADGE[listing.status]}`}>
-          {listing.status}
+          {t(listing.status)}
         </span>
         {isPriority && (
           <span className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm bg-amber-400 text-amber-900">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-            Priority
+            {t('Priority')}
           </span>
         )}
         {marketBadge && (
           <span className="absolute top-3 right-3 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm bg-slate-900/80 text-white">
-            {marketBadge}
+            {t(marketBadge)}
           </span>
         )}
       </Link>
@@ -153,20 +155,20 @@ export default function ListingCard({
       <div className="p-5 flex flex-col gap-4">
         <div>
           <Link href={`/properties/${listing.id}`} className={`block font-bold leading-snug hover:text-blue-600 transition-colors ${isLeased ? 'text-slate-400' : 'text-slate-900'}`}>{listing.title}</Link>
-          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>{formatListingPrice(listing.rent, listing.property.currency)}{listing.property.type === 'rent' ? '/mo' : ''}</div>
+          <div className={`text-xs mt-0.5 ${isLeased ? 'text-slate-400' : 'text-slate-500'}`}>{formatListingPrice(listing.rent, listing.property.currency)}{listing.property.type === 'rent' ? t('/mo') : ''}</div>
           {isDraft && (
             <button type="button" onClick={() => onSubmitDraft(listing.property)} className="mt-1 text-left text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">
-              Finish and submit this draft
+              {t('Finish and submit this draft')}
             </button>
           )}
           {reason && marketStatus !== 'published' && (
             <div className="text-xs mt-1 font-semibold text-red-600">{reason}</div>
           )}
           {expiry && (
-            <div className={`text-xs mt-1 font-semibold ${expiry === 'Expired' ? 'text-red-600' : 'text-slate-400'}`}>{expiry}</div>
+            <div className={`text-xs mt-1 font-semibold ${expiry === t('Expired') ? 'text-red-600' : 'text-slate-400'}`}>{expiry}</div>
           )}
           {promoted && (
-            <div className="text-xs mt-1 font-semibold text-amber-600">Promoted · {promotionDaysLeft(listing.property)}d left</div>
+            <div className="text-xs mt-1 font-semibold text-amber-600">{t('Promoted · {days}d left', { days: promotionDaysLeft(listing.property) })}</div>
           )}
           {hasHiddenMedia && (
             <button
@@ -175,10 +177,10 @@ export default function ListingCard({
               className="mt-1 text-left text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline"
             >
               {hiddenPhotos > 0 && hasHiddenVideo
-                ? `Buyers see 2 of ${totalPhotos} photos, no video — promote to show it all`
+                ? t('Buyers see 2 of {total} photos, no video — promote to show it all', { total: totalPhotos })
                 : hiddenPhotos > 0
-                  ? `Buyers see 2 of ${totalPhotos} photos — promote to show them all`
-                  : 'Buyers can\'t see your video yet — promote to show it'}
+                  ? t('Buyers see 2 of {total} photos — promote to show them all', { total: totalPhotos })
+                  : t("Buyers can't see your video yet — promote to show it")}
             </button>
           )}
         </div>
@@ -187,15 +189,15 @@ export default function ListingCard({
           <div className="flex items-center gap-4 text-sm">
             <div>
               <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.views.toLocaleString()}</div>
-              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Views</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{t('Views')}</div>
             </div>
             <div>
               <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-slate-700'}`}>{listing.saves}</div>
-              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Saves</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{t('Saves')}</div>
             </div>
             <div>
               <div className={`font-bold ${isLeased ? 'text-slate-400' : 'text-blue-600'}`}>{listing.leads}</div>
-              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">Leads</div>
+              <div className="text-[11px] text-slate-400 font-medium uppercase tracking-wide">{t('Leads')}</div>
             </div>
           </div>
         </div>

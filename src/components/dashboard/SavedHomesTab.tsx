@@ -1,24 +1,28 @@
+'use client';
+
+import { useLanguage } from '@/lib/i18n/language';
 import PropertyCard from '@/components/PropertyCard';
 import { useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import { useFavoriteProperties } from '@/lib/favorites/hooks';
 
 export default function SavedHomesTab() {
+  const { t } = useLanguage();
   const { properties: allProperties, loaded } = useAllPropertiesState();
   const savedProperties = useFavoriteProperties(allProperties);
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-slate-900">Saved Homes</h2>
+        <h2 className="text-2xl font-bold text-slate-900">{t('Saved Homes')}</h2>
       </div>
 
       {!loaded ? (
         <PropertyGridSkeleton count={2} className="grid md:grid-cols-2 gap-6" />
       ) : savedProperties.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-slate-200">
-          <h3 className="text-lg font-bold text-slate-900 mb-2">No saved homes yet</h3>
-          <p className="text-slate-500 text-sm">Tap the heart icon on any listing to save it here.</p>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">{t('No saved homes yet')}</h3>
+          <p className="text-slate-500 text-sm">{t('Tap the heart icon on any listing to save it here.')}</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">

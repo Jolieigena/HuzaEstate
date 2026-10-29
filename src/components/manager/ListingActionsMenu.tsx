@@ -4,6 +4,7 @@ import type { Property } from '@/lib/properties/types';
 import type { PropertyStatus } from '@/lib/properties/types';
 import { useTourForProperty } from '@/lib/tours/hooks';
 import { TourService } from '@/lib/tours/tourService';
+import { useLanguage } from '@/lib/i18n/language';
 
 export default function ListingActionsMenu({
   listing,
@@ -24,6 +25,7 @@ export default function ListingActionsMenu({
   onPromote: (property: Property) => void;
   onSubmitDraft: (property: Property) => void;
 }) {
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
@@ -56,7 +58,7 @@ export default function ListingActionsMenu({
         tone === 'danger' ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-50'
       }`}
     >
-      {label}
+      {t(label)}
     </button>
   );
 
@@ -66,7 +68,7 @@ export default function ListingActionsMenu({
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-        aria-label="More actions"
+        aria-label={t('More actions')}
         aria-expanded={open}
       >
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4zm0 6a2 2 0 100-4 2 2 0 000 4z"></path></svg>
