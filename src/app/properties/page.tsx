@@ -837,11 +837,6 @@ function PropertiesContent() {
           </div>
         </div>
 
-        {/* Language switch, above the Save search / Sort row. */}
-        <div className="flex justify-end mb-3">
-          <LanguagePicker />
-        </div>
-
         {/* ── Title row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-baseline gap-1 flex-wrap">
@@ -854,6 +849,7 @@ function PropertiesContent() {
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <LanguagePicker className="mr-1" />
             {/* Saved searches — only appears once there's at least one, so it never crowds a
              *  first-time visitor's view. Subtle on purpose, same treatment as Save search
              *  below: plain text/icon, no border or shadow, until hovered. */}
