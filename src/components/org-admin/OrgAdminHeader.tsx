@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { AdminApi } from "@/lib/admin/api";
 import NotificationBell from "@/components/shared/NotificationBell";
+import LanguagePicker from "@/components/LanguagePicker";
 import { useDismiss } from "@/lib/useDismiss";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
@@ -59,6 +60,7 @@ export default function OrgAdminHeader({ onOpenMobileSidebar }: OrgAdminHeaderPr
       </div>
 
       <div className="flex items-center gap-2">
+        <LanguagePicker align="right" compact />
         <NotificationBell />
         <div className="relative" ref={menuRef}>
           <button

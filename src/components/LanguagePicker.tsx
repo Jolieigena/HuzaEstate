@@ -5,7 +5,8 @@ import { LANGUAGES, useLanguage } from "@/lib/i18n/language";
 import { useDismiss } from "@/lib/useDismiss";
 
 /** Chooses the site's language from a list (Kinyarwanda and English first). `dark` is for the dark footer, `up` opens the list above the button. */
-export default function LanguagePicker({ dark = false, up = false, className = "" }: { dark?: boolean; up?: boolean; className?: string }) {
+/** `align="right"` opens the list towards the left (for a picker at the right edge of a header); `compact` shows only the short code on a phone. */
+export default function LanguagePicker({ dark = false, up = false, className = "", align = "left", compact = false }: { dark?: boolean; up?: boolean; className?: string; align?: "left" | "right"; compact?: boolean }) {
   const { language, setLanguage } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useDismiss(open, () => setOpen(false));
@@ -25,13 +26,18 @@ export default function LanguagePicker({ dark = false, up = false, className = "
           <circle cx="12" cy="12" r="9" strokeWidth="1.8" />
           <path strokeWidth="1.8" strokeLinecap="round" d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z" />
         </svg>
-        {current.label}
+        {compact ? (
+          <>
+            <span className="sm:hidden">{current.short}</span>
+            <span className="hidden sm:inline">{current.label}</span>
+          </>
+        ) : current.label}
         <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       {open && (
-        <ul role="listbox" aria-label="Language" className={`absolute z-50 max-h-72 w-48 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-1.5 shadow-xl ${up ? "bottom-full mb-2" : "top-full mt-2"} left-0`}>
+        <ul role="listbox" aria-label="Language" className={`absolute z-50 max-h-72 w-48 overflow-y-auto rounded-2xl border border-slate-100 bg-white py-1.5 shadow-xl ${up ? "bottom-full mb-2" : "top-full mt-2"} ${align === "right" ? "right-0" : "left-0"}`}>
           {LANGUAGES.map((option, index) => {
             const active = option.code === language;
             return (

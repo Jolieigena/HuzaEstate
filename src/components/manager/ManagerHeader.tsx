@@ -6,6 +6,7 @@ import { Logo } from "@/components/Logo";
 import { useAuth } from "@/lib/auth-context";
 import { useMyProfilePhoto } from "@/lib/profilePhoto";
 import NotificationBell from "@/components/shared/NotificationBell";
+import LanguagePicker from "@/components/LanguagePicker";
 import { useDismiss } from "@/lib/useDismiss";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 import { useLanguage } from "@/lib/i18n/language";
@@ -53,6 +54,7 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
           <span className="sm:hidden">{t("+ Post")}</span>
           <span className="hidden sm:inline">{t("+ Add Property")}</span>
         </Link>
+        <LanguagePicker align="right" compact />
         <NotificationBell />
         <div className="relative" ref={menuRef}>
           <button

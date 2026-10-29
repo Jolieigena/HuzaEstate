@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
 import RequireAuth from "@/components/shared/RequireAuth";
 import NotificationBell from "@/components/shared/NotificationBell";
+import LanguagePicker from "@/components/LanguagePicker";
 import { useAuth } from "@/lib/auth-context";
 import { roleHome } from "@/lib/navigation";
 import { useDismiss } from "@/lib/useDismiss";
@@ -59,6 +60,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
             <span className="hidden rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white sm:inline">Supplier</span>
           </Link>
           <div className="flex items-center gap-2">
+            <LanguagePicker align="right" compact />
             <NotificationBell />
             <div className="relative" ref={menuRef}>
               <button
