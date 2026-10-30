@@ -9,6 +9,7 @@ import { createPromoteCheckout } from '@/lib/promotion/api';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 import type { Property } from '@/lib/properties/types';
+import { useLanguage } from '@/lib/i18n/language';
 
 // Kept in sync with property-service's own PUBLIC_PHOTO_LIMIT (capMedia in
 // modules/properties/service.ts) — buyers see this many photos, no video, until promoted.
@@ -25,6 +26,7 @@ interface PromoteListingModalProps {
  *  ManagerDashboard's own reconcile effect). promotedUntil itself is only ever set by
  *  property-service's internal, payment-verified endpoint — never directly by this page. */
 export default function PromoteListingModal({ property, onClose }: PromoteListingModalProps) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const [selectedDays, setSelectedDays] = useState(PROMOTION_PACKAGES[1].days);
   const [submitting, setSubmitting] = useState(false);
@@ -70,12 +72,12 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
   if (demoMode) {
     return (
       <Dialog open onClose={onClose} labelledBy="promote-demo-title" panelClassName="max-w-md p-6 sm:p-8" backdropClassName="bg-slate-900/25">
-        <h2 id="promote-demo-title" className="text-lg font-black text-slate-900 mb-3">Payments aren&apos;t configured yet</h2>
+        <h2 id="promote-demo-title" className="text-lg font-black text-slate-900 mb-3">{t("Payments aren't configured yet")}</h2>
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Checkout for promoting a listing isn&apos;t available in this environment yet — no charge was made. An administrator can promote it manually in the meantime.
+          {t("Checkout for promoting a listing isn't available in this environment yet — no charge was made. An administrator can promote it manually in the meantime.")}
         </div>
         <button onClick={onClose} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors">
-          Close
+          {t('Close')}
         </button>
       </Dialog>
     );
@@ -84,13 +86,13 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
   return (
     <Dialog open={Boolean(property)} onClose={onClose} labelledBy="promote-listing-title" panelClassName="max-w-lg p-6 sm:p-8" backdropClassName="bg-slate-900/25">
       <div className="flex items-center justify-between mb-2">
-        <h2 id="promote-listing-title" className="text-xl font-bold text-slate-900">Promote this listing</h2>
-        <button onClick={onClose} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label="Close">
+        <h2 id="promote-listing-title" className="text-xl font-bold text-slate-900">{t('Promote this listing')}</h2>
+        <button onClick={onClose} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label={t('Close')}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
       <p className="text-sm text-slate-500 mb-5">
-        Pin <span className="font-semibold text-slate-700">{property.title}</span> to the top row of Browse Properties for buyers, with an eye-catching badge on the card
+        <span className="font-semibold text-slate-700">{property.title}</span> — {t('shown on the top row of Browse Properties for buyers, with an eye-catching badge on the card')}
         {!alreadyActive && (hiddenPhotos > 0 || hasHiddenVideo) ? (
           <>
             {' '}— and show buyers {hiddenPhotos > 0 ? `all ${hiddenPhotos + PUBLIC_PHOTO_LIMIT} of your photos` : ''}
@@ -102,12 +104,12 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
 
       {alreadyActive && (
         <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 font-medium">
-          Already promoted — {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left. Confirming below extends it from today.
+          {t(daysLeft === 1 ? 'Already promoted — {days} day left. Confirming below extends it from today.' : 'Already promoted — {days} days left. Confirming below extends it from today.', { days: daysLeft })}
         </div>
       )}
 
       {error && (
-        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{error}</p>
+        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{t(error)}</p>
       )}
 
       <div className="grid grid-cols-3 gap-3 mb-5">
@@ -120,13 +122,13 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
               selectedDays === pkg.days ? 'border-[#2ec440] bg-[#2ec440]/5' : 'border-slate-200 hover:border-slate-300'
             }`}
           >
-            <div className="text-lg font-black text-slate-900">{pkg.days}d</div>
+            <div className="text-lg font-black text-slate-900">{t('{days}d', { days: pkg.days })}</div>
             <div className="text-sm font-bold text-slate-700 mt-1">{formatMoney(pkg.price)}</div>
           </button>
         ))}
       </div>
 
-      <p className="text-xs text-slate-400 mb-2">You&apos;ll complete payment securely with Stripe next.</p>
+      <p className="text-xs text-slate-400 mb-2">{t("You'll complete payment securely with Stripe next.")}</p>
 
       <div className="flex items-center gap-3">
         <button
@@ -135,10 +137,10 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
           disabled={submitting}
           className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60 whitespace-nowrap"
         >
-          {submitting ? 'Redirecting…' : `Continue to Payment — ${formatMoney(selectedPackage.price)}`}
+          {submitting ? t('Redirecting…') : t('Continue to Payment — {price}', { price: formatMoney(selectedPackage.price) })}
         </button>
         <button type="button" onClick={onClose} className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
-          Cancel
+          {t('Cancel')}
         </button>
       </div>
     </Dialog>

@@ -15,6 +15,7 @@ import PaymentOptionsFields, { paymentOptionsBody, paymentOptionsProblem, toPaym
 import { COUNTRY_OPTIONS, getPropertyCountry } from '@/lib/countries';
 import { useCurrencyOptions } from '@/lib/currencies';
 import Select from "@/components/shared/Select";
+import { useLanguage } from "@/lib/i18n/language";
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || 'http://localhost:8081/api/property-service';
 
@@ -25,6 +26,7 @@ interface EditPropertyModalProps {
 
 /** Edits a listing by PATCHing property-service; the owner-or-administrator check happens server-side. */
 export default function EditPropertyModal({ property, onClose }: EditPropertyModalProps) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const [form, setForm] = useState(() => toFormState(property));
   const [saving, setSaving] = useState(false);
@@ -55,7 +57,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     setError('');
     if (form.photos.length === 0) { setError('Add at least one photo of the property.'); return; }
     if (!(Number(form.sqm) > 0)) { setError('Enter the size of the property.'); return; }
-    if (offersPayment) { const problem = paymentOptionsProblem(form.paymentOptions); if (problem) { setError(problem); return; } }
+    if (offersPayment) { const problem = paymentOptionsProblem(form.paymentOptions, t); if (problem) { setError(problem); return; } }
     if (form.type === 'sale' && !isLandType && !isCommercialType && !(Number(form.bedrooms) >= 1 && Number(form.bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
     // The owner's contact on a listing staff posted for an owner with no account.
     if (property.listedOnBehalf) {
@@ -106,7 +108,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.message || 'Could not save your changes. Please try again.');
+        setError(data?.message || t('Could not save your changes. Please try again.'));
         setSaving(false);
         return;
       }
@@ -151,19 +153,19 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   return (
     <Dialog open={Boolean(property)} onClose={onClose} labelledBy="edit-property-title" panelClassName="max-w-2xl p-6 sm:p-8">
       <div className="flex items-center justify-between mb-6">
-        <h2 id="edit-property-title" className="text-xl font-bold text-slate-900">Edit Property</h2>
-        <button onClick={onClose} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label="Close">
+        <h2 id="edit-property-title" className="text-xl font-bold text-slate-900">{t('Edit Property')}</h2>
+        <button onClick={onClose} data-dialog-close className="text-slate-400 hover:text-slate-900 transition-colors" aria-label={t('Close')}>
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
 
       {error && (
-        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{error}</p>
+        <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">{t(error)}</p>
       )}
 
       <form onSubmit={handleSave} className="space-y-5">
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Property Title</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Title')}</label>
           <input
             type="text"
             value={form.title}
@@ -175,25 +177,25 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Listing Type</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Listing Type')}</label>
             <Select
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as Property['type'] }))}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
             >
-              <option value="sale">For Sale</option>
-              <option value="rent">For Rent</option>
+              <option value="sale">{t('For Sale')}</option>
+              <option value="rent">{t('For Rent')}</option>
             </Select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Property Type</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Type')}</label>
             <Select
               value={form.propertyTypeLabel}
               onChange={(e) => setForm((f) => ({ ...f, propertyTypeLabel: e.target.value }))}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
             >
               {PROPERTY_TYPE_OPTIONS.map(({ label }) => (
-                <option key={label} value={label}>{label}</option>
+                <option key={label} value={label}>{t(label)}</option>
               ))}
             </Select>
           </div>
@@ -201,7 +203,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         {isApartmentType && (
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Furnishing</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Furnishing')}</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -210,7 +212,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                   isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                Fully Furnished
+                {t('Fully Furnished')}
               </button>
               <button
                 type="button"
@@ -219,7 +221,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                   !isFurnished ? 'border-[#2ec440] bg-[#2ec440]/5 text-[#2ec440]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
-                Unfurnished
+                {t('Unfurnished')}
               </button>
             </div>
           </div>
@@ -227,7 +229,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         <div className="grid sm:grid-cols-2 gap-5">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Price</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Price')}</label>
             <div className="flex gap-2">
               <FormattedNumberInput
                 value={form.price}
@@ -238,7 +240,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               <Select
                 value={form.currency}
                 onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))}
-                aria-label="Currency"
+                aria-label={t('Currency')}
                 className="w-24 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
               >
                 {currencyOptions.map((c) => (
@@ -254,12 +256,12 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           )}
           {offersPayment && (
             <div className="sm:col-span-2">
-              <label className="block text-sm font-bold text-slate-700 mb-2">Payment options</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Payment options')}</label>
               <PaymentOptionsFields value={form.paymentOptions} onChange={(paymentOptions) => setForm((f) => ({ ...f, paymentOptions }))} />
             </div>
           )}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Country</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Country')}</label>
             <Select
               value={form.country}
               onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
@@ -271,7 +273,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
             </Select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">City / Location</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('City / Location')}</label>
             <input
               type="text"
               value={form.location}
@@ -285,7 +287,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         {property.listedOnBehalf && (
           <div className="grid sm:grid-cols-3 gap-5">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Owner name</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner name')}</label>
               <input
                 type="text"
                 value={form.ownerName}
@@ -295,7 +297,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Owner email</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner email')}</label>
               <input
                 type="email"
                 value={form.ownerEmail}
@@ -304,14 +306,14 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Owner phone</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Owner phone')}</label>
               <PhoneInput value={form.ownerPhone} onChange={(ownerPhone) => setForm((f) => ({ ...f, ownerPhone }))} />
             </div>
           </div>
         )}
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Property Photos</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Photos')}</label>
           <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} />
           <PhotoLimitNotice photoCount={form.photos.length} />
         </div>
@@ -320,7 +322,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           {!isLandType && !isCommercialType && (
           <>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Bedrooms</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bedrooms')}</label>
             <input
               type="number"
               min="0"
@@ -330,7 +332,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Bathrooms</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bathrooms')}</label>
             <input
               type="number"
               min="0"
@@ -342,7 +344,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
           </>
           )}
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Size</label>
+            <label className="block text-sm font-bold text-slate-700 mb-2">{t('Size')}</label>
             <div className="flex gap-2">
               <input
                 type="number"
@@ -350,13 +352,13 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
                 step="any"
                 value={sqmDisplayValue}
                 onChange={(e) => handleSqmChange(e.target.value)}
-                placeholder={sqmUnit === 'sqkm' ? 'e.g. 0.5' : 'e.g. 450'}
+                placeholder={sqmUnit === 'sqkm' ? t('e.g. 0.5') : t('e.g. 450')}
                 className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
               />
               <Select
                 value={sqmUnit}
                 onChange={(e) => setSqmUnit(e.target.value as 'sqm' | 'sqkm')}
-                aria-label="Size unit"
+                aria-label={t('Size unit')}
                 className="w-28 px-3 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
               >
                 <option value="sqm">sqm</option>
@@ -367,7 +369,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{t('Description')}</label>
           <textarea
             rows={4}
             value={form.description}
@@ -377,12 +379,12 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div>
-          <label className="block text-sm font-bold text-slate-700 mb-2">{isLandType ? 'Land features' : isCommercialType ? 'Features' : 'Amenities'}</label>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{isLandType ? t('Land features') : isCommercialType ? t('Features') : t('Amenities')}</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-4 border border-slate-200 rounded-xl">
             {(isLandType ? LAND_FEATURE_OPTIONS : isCommercialType ? COMMERCIAL_FEATURE_OPTIONS : AMENITY_OPTIONS.filter((label) => !(isApartmentType && label === 'Furnished'))).map((label) => (
               <label key={label} className="flex items-center gap-2 text-sm text-slate-700 font-medium cursor-pointer">
                 <input type="checkbox" checked={form.amenities.includes(label)} onChange={() => toggleAmenity(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
-                {label}
+                {t(label)}
               </label>
             ))}
           </div>
@@ -390,10 +392,10 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         <div className="flex items-center gap-3 pt-2">
           <button type="submit" disabled={saving} className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? t('Saving…') : t('Save Changes')}
           </button>
           <button type="button" onClick={onClose} className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
-            Cancel
+            {t('Cancel')}
           </button>
         </div>
       </form>
