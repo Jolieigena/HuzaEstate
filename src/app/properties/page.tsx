@@ -823,6 +823,8 @@ function PropertiesContent() {
                   </div>
                 )}
               </div>
+
+              {!sheet && <LanguagePicker />}
                   </div>
                   {sheet && (
                     <div className="flex gap-3 border-t border-slate-100 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -849,7 +851,7 @@ function PropertiesContent() {
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <LanguagePicker className="mr-1" />
+            {sheet && <LanguagePicker className="mr-1" />}
             {/* Saved searches — only appears once there's at least one, so it never crowds a
              *  first-time visitor's view. Subtle on purpose, same treatment as Save search
              *  below: plain text/icon, no border or shadow, until hovered. */}
