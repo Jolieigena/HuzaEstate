@@ -6,6 +6,7 @@ import { StarRow } from "@/components/shop/SupplierBadges";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { FurnitureApi, type Rating, type Review } from "@/lib/furniture/api";
+import { useLanguage } from "@/lib/i18n/language";
 
 interface Data {
   reviews: Review[];
@@ -16,6 +17,7 @@ interface Data {
 
 /** What buyers said about delivered orders, with a place to answer each one. */
 export default function SupplierReviewsPage() {
+  const { t } = useLanguage();
   const { token, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const [data, setData] = useState<Data | null>(null);
@@ -47,19 +49,19 @@ export default function SupplierReviewsPage() {
       showToast(result.error, "error");
       return;
     }
-    showToast("Reply sent.");
+    showToast(t("Reply sent."));
     setEditing(null);
     setData((prev) => (prev ? { ...prev, reviews: prev.reviews.map((r) => (r.id === review.id ? result.data.review : r)), unanswered: prev.unanswered - (review.reply ? 0 : 1) } : prev));
   }
 
   return (
-    <PageFrame title="Reviews">
+    <PageFrame title={t("Reviews")}>
       {error ? (
         <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
       ) : !data ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : data.reviews.length === 0 ? (
-        <EmptyState title="No reviews yet" />
+        <EmptyState title={t("No reviews yet")} />
       ) : (
         <div className="space-y-6">
           <Card className="flex flex-wrap items-center gap-8">
@@ -101,7 +103,7 @@ export default function SupplierReviewsPage() {
 
                   {review.reply && editing !== review.id ? (
                     <div className="mt-4 rounded-xl bg-slate-50 p-4">
-                      <p className="text-xs font-bold text-slate-500">Your reply</p>
+                      <p className="text-xs font-bold text-slate-500">{t("Your reply")}</p>
                       <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-700">{review.reply}</p>
                       <button
                         type="button"
@@ -111,14 +113,14 @@ export default function SupplierReviewsPage() {
                           setEditing(review.id);
                         }}
                       >
-                        Edit reply
+                        {t("Edit reply")}
                       </button>
                     </div>
                   ) : (
                     <div className="mt-4">
-                      <textarea className={fieldClass} rows={2} maxLength={1000} placeholder="Reply" aria-label="Reply" value={drafts[review.id] ?? ""} onChange={(e) => setDrafts((d) => ({ ...d, [review.id]: e.target.value }))} />
+                      <textarea className={fieldClass} rows={2} maxLength={1000} placeholder={t("Reply")} aria-label={t("Reply")} value={drafts[review.id] ?? ""} onChange={(e) => setDrafts((d) => ({ ...d, [review.id]: e.target.value }))} />
                       <PrimaryButton type="button" className="mt-2" disabled={busyId === review.id || !(drafts[review.id] ?? "").trim()} onClick={() => reply(review)}>
-                        {busyId === review.id ? "Sending…" : "Send reply"}
+                        {busyId === review.id ? t("Sending…") : t("Send reply")}
                       </PrimaryButton>
                     </div>
                   )}

@@ -5,6 +5,7 @@ import { Card, EmptyState, PageFrame } from "@/components/professional/ui";
 import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { FurnitureApi, formatPrice, type Insights } from "@/lib/furniture/api";
+import { useLanguage } from "@/lib/i18n/language";
 
 const RANGES = [
   { days: 30, label: "Last 30 days" },
@@ -33,13 +34,14 @@ function label(key: string, granularity: "day" | "month") {
 }
 
 function RevenueChart({ data, currency }: { data: Insights; currency: string }) {
+  const { t } = useLanguage();
   const keys = buckets(data.days, data.granularity);
   const byKey = new Map(data.series.filter((s) => s.currency === currency).map((s) => [s.date, s]));
   const max = Math.max(1, ...keys.map((k) => byKey.get(k)?.revenue ?? 0));
   const step = Math.ceil(keys.length / 6);
   return (
     <div>
-      <div className="flex h-44 items-end gap-px sm:gap-0.5" role="img" aria-label={`Paid revenue in ${currency}`}>
+      <div className="flex h-44 items-end gap-px sm:gap-0.5" role="img" aria-label={t("Paid revenue in {currency}", { currency })}>
         {keys.map((k) => {
           const point = byKey.get(k);
           const height = point ? Math.max(4, (point.revenue / max) * 100) : 0;
@@ -61,6 +63,7 @@ function RevenueChart({ data, currency }: { data: Insights; currency: string }) 
 
 /** Sales over time and what sells best, from the supplier's own orders. */
 export default function SupplierInsightsPage() {
+  const { t } = useLanguage();
   const { token, isAuthReady } = useAuth();
   const [days, setDays] = useState(30);
   const [data, setData] = useState<Insights | null>(null);
@@ -88,12 +91,12 @@ export default function SupplierInsightsPage() {
 
   return (
     <PageFrame
-      title="Insights"
+      title={t("Insights")}
       action={
-        <Select className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700" value={String(days)} aria-label="Period" onChange={(e) => setDays(Number(e.target.value))}>
+        <Select className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700" value={String(days)} aria-label={t("Period")} onChange={(e) => setDays(Number(e.target.value))}>
           {RANGES.map((r) => (
             <option key={r.days} value={String(r.days)}>
-              {r.label}
+              {t(r.label)}
             </option>
           ))}
         </Select>
@@ -102,13 +105,13 @@ export default function SupplierInsightsPage() {
       {error ? (
         <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
       ) : !data ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : data.currencies.length === 0 ? (
-        <EmptyState title="No orders in this period" />
+        <EmptyState title={t("No orders in this period")} />
       ) : (
         <div className="space-y-6">
           {data.currencies.length > 1 && (
-            <div className="flex gap-2" role="tablist" aria-label="Currency">
+            <div className="flex gap-2" role="tablist" aria-label={t("Currency")}>
               {data.currencies.map((c) => (
                 <button key={c} type="button" role="tab" aria-selected={c === currency} onClick={() => setCurrency(c)} className={`min-h-9 rounded-full px-4 py-1.5 text-sm font-bold ${c === currency ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-600"}`}>
                   {c}
@@ -119,20 +122,20 @@ export default function SupplierInsightsPage() {
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Card>
-              <p className="text-sm font-bold text-slate-500">Paid revenue</p>
+              <p className="text-sm font-bold text-slate-500">{t("Paid revenue")}</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(totals?.paidValue ?? 0, currency)}</p>
             </Card>
             <Card>
-              <p className="text-sm font-bold text-slate-500">Orders</p>
+              <p className="text-sm font-bold text-slate-500">{t("Orders")}</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{totals?.orders ?? 0}</p>
               <p className="mt-1 text-xs text-slate-500">{totals?.paidOrders ?? 0} paid</p>
             </Card>
             <Card>
-              <p className="text-sm font-bold text-slate-500">Average order</p>
+              <p className="text-sm font-bold text-slate-500">{t("Average order")}</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(totals?.averageOrder ?? 0, currency)}</p>
             </Card>
             <Card>
-              <p className="text-sm font-bold text-slate-500">Delivered</p>
+              <p className="text-sm font-bold text-slate-500">{t("Delivered")}</p>
               <p className="mt-2 text-2xl font-black text-slate-900">{status.completed ?? 0}</p>
               <p className="mt-1 text-xs text-slate-500">
                 {status.declined ?? 0} declined · {status.cancelled ?? 0} cancelled
@@ -141,14 +144,14 @@ export default function SupplierInsightsPage() {
           </div>
 
           <Card>
-            <h2 className="mb-4 font-black text-slate-900">Paid revenue</h2>
+            <h2 className="mb-4 font-black text-slate-900">{t("Paid revenue")}</h2>
             <RevenueChart data={data} currency={currency} />
           </Card>
 
           <Card>
-            <h2 className="mb-3 font-black text-slate-900">Best sellers</h2>
+            <h2 className="mb-3 font-black text-slate-900">{t("Best sellers")}</h2>
             {best.length === 0 ? (
-              <p className="text-sm font-semibold text-slate-500">Nothing sold in this currency yet.</p>
+              <p className="text-sm font-semibold text-slate-500">{t("Nothing sold in this currency yet.")}</p>
             ) : (
               <ol className="divide-y divide-slate-100">
                 {best.map((item, i) => (

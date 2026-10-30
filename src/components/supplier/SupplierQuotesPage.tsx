@@ -7,10 +7,12 @@ import { useToast } from "@/lib/toast-context";
 import { CurrencySelect, DaysSelect, useCurrencyChoice } from "@/components/designs/fields";
 import { DesignsApi, formatMoney, type FurnitureQuote } from "@/lib/designs/api";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, StatusPill, fieldClass, formatDate } from "@/components/professional/ui";
+import { useLanguage } from "@/lib/i18n/language";
 
 /** Furniture quote requests. "open" lists what a supplier can still answer; "answered" lists what they
  *  have priced already, with its outcome, and lets them revise an answer while the request is open. */
 export default function SupplierQuotesPage({ filter }: { filter: "open" | "answered" }) {
+  const { t } = useLanguage();
   const { token, isAuthReady, account } = useAuth();
   const [quotes, setQuotes] = useState<FurnitureQuote[] | null>(null);
   const [error, setError] = useState("");
@@ -32,18 +34,18 @@ export default function SupplierQuotesPage({ filter }: { filter: "open" | "answe
   }, [isAuthReady, token, filter, reload]);
 
   return (
-    <PageFrame title={filter === "open" ? "Quote requests" : "My quotes"}>
+    <PageFrame title={filter === "open" ? t("Quote requests") : t("My quotes")}>
       {error ? (
         <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
       ) : quotes === null ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : quotes.length === 0 ? (
-        <EmptyState title={filter === "open" ? "No open requests" : "You haven't answered any requests yet"} />
+        <EmptyState title={filter === "open" ? t("No open requests") : t("You haven't answered any requests yet")} />
       ) : (
         <div className="space-y-5">
           {quotes.map((quote) => {
             const mine = quote.responses.find((r) => r.supplierId === supplierId);
-            const outcome = quote.status === "accepted" ? (quote.acceptedSupplierId === supplierId ? "Accepted" : "Another supplier was chosen") : quote.status === "closed" ? "Closed" : mine ? "Waiting for the client" : "Open";
+            const outcome = quote.status === "accepted" ? (quote.acceptedSupplierId === supplierId ? t("Accepted") : t("Another supplier was chosen")) : quote.status === "closed" ? t("Closed") : mine ? t("Waiting for the client") : t("Open");
             return (
               <Card key={quote.id} className="flex flex-col gap-5 sm:flex-row">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -69,13 +71,13 @@ export default function SupplierQuotesPage({ filter }: { filter: "open" | "answe
                   {mine && (
                     <p className="mt-3 text-sm font-bold text-slate-900">
                       Your quote: {formatMoney(mine.total, mine.currency)}
-                      {mine.leadTimeDays !== undefined ? ` · ${mine.leadTimeDays} days` : ""}
+                      {mine.leadTimeDays !== undefined ? ` · ${t("{count} days", { count: mine.leadTimeDays })}` : ""}
                     </p>
                   )}
                   {quote.status === "open" && (
                     <div className="mt-4">
                       <PrimaryButton type="button" onClick={() => setAnswering(quote)}>
-                        {mine ? "Revise quote" : "Give a quote"}
+                        {mine ? t("Revise quote") : t("Give a quote")}
                       </PrimaryButton>
                     </div>
                   )}
@@ -109,6 +111,7 @@ function AnswerDialog({ quote, supplierId, onClose, onSaved }: { quote: Furnitur
 }
 
 function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId: string; quote: FurnitureQuote; supplierId: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const { showToast } = useToast();
   const previous = quote.responses.find((r) => r.supplierId === supplierId);
@@ -144,7 +147,7 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
       setError(result.error);
       return;
     }
-    showToast("Quote sent.");
+    showToast(t("Quote sent."));
     onSaved();
   };
 
@@ -163,34 +166,34 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
                 </p>
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-600">
                   <input type="checkbox" className="h-4 w-4 accent-[#2ec440]" checked={lines[index].available} onChange={(e) => patch(index, { available: e.target.checked })} />
-                  Available
+                  {t("Available")}
                 </label>
               </div>
               {item.notes && <p className="text-xs text-slate-400">{item.notes}</p>}
               {lines[index].available && (
-                <input className={`${fieldClass} mt-2 sm:max-w-[12rem]`} inputMode="decimal" placeholder="Price each" aria-label={`Price each for ${item.name}`} value={lines[index].price} onChange={(e) => patch(index, { price: e.target.value.replace(/[^\d.]/g, "") })} />
+                <input className={`${fieldClass} mt-2 sm:max-w-[12rem]`} inputMode="decimal" placeholder={t("Price each")} aria-label={t("Price each for {name}", { name: item.name })} value={lines[index].price} onChange={(e) => patch(index, { price: e.target.value.replace(/[^\d.]/g, "") })} />
               )}
             </div>
           ))}
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <label className="block text-sm font-bold text-slate-700">
-            Currency
+            {t("Currency")}
             <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
           </label>
           <label className="block text-sm font-bold text-slate-700">
-            Delivery
+            {t("Delivery")}
             <DaysSelect
               className={`${fieldClass} mt-1`}
-              ariaLabel="Delivery"
+              ariaLabel={t("Delivery")}
               value={leadTime}
               onChange={setLeadTime}
-              options={[{ value: "", label: "Not stated" }, { value: "0", label: "In stock" }, ...[3, 7, 14, 21, 30, 45, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }))]}
+              options={[{ value: "", label: t("Not stated") }, { value: "0", label: t("In stock") }, ...[3, 7, 14, 21, 30, 45, 60, 90].map((d) => ({ value: String(d), label: t("{count} days", { count: d }) }))]}
             />
           </label>
         </div>
         <label className="block text-sm font-bold text-slate-700">
-          Message to the client
+          {t("Message to the client")}
           <textarea className={`${fieldClass} mt-1 min-h-20 resize-y font-normal`} maxLength={2000} value={note} onChange={(e) => setNote(e.target.value)} />
         </label>
         {error && <p className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
@@ -199,10 +202,10 @@ function AnswerForm({ titleId, quote, supplierId, onClose, onSaved }: { titleId:
         <p className="text-sm font-bold text-slate-900">Total {formatMoney(total, currency)}</p>
         <div className="flex gap-2">
           <SecondaryButton type="button" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </SecondaryButton>
           <PrimaryButton type="button" disabled={busy || total <= 0} onClick={submit}>
-            {busy ? "Sending…" : previous ? "Update quote" : "Send quote"}
+            {busy ? t("Sending…") : previous ? t("Update quote") : t("Send quote")}
           </PrimaryButton>
         </div>
       </div>

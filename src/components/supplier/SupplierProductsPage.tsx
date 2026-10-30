@@ -9,12 +9,13 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
 import { FURNITURE_CATEGORIES, FurnitureApi, STOCK_LABELS, formatPrice, type Product, type ProductInput, type StockStatus } from "@/lib/furniture/api";
+import { useLanguage } from "@/lib/i18n/language";
 
 const MAX_IMAGES = 6;
-const MAKING_TIMES = [3, 7, 14, 21, 30, 45, 60, 90].map((d) => ({ value: String(d), label: `${d} days` }));
 
 /** What a supplier sells: list furniture with photos and a price, and publish it to the catalogue. */
 export default function SupplierProductsPage() {
+  const { t } = useLanguage();
   const { token, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const [products, setProducts] = useState<Product[] | null>(null);
@@ -36,11 +37,11 @@ export default function SupplierProductsPage() {
   }, [isAuthReady, token, reload]);
 
   const remove = async (product: Product) => {
-    if (!token || !window.confirm(`Delete "${product.name}"?`)) return;
+    if (!token || !window.confirm(t("Delete \"{name}\"?", { name: product.name }))) return;
     const result = await FurnitureApi.remove(token, product.id);
     if (!result.ok) showToast(result.error, "error");
     else {
-      showToast("Product deleted.");
+      showToast(t("Product deleted."));
       setReload((n) => n + 1);
     }
   };
@@ -54,7 +55,7 @@ export default function SupplierProductsPage() {
       if (available && product.quantity !== undefined && product.quantity <= 0) setEditing(product);
       return;
     }
-    showToast(available ? "Back in stock." : "Marked out of stock.");
+    showToast(available ? t("Back in stock.") : t("Marked out of stock."));
     setReload((n) => n + 1);
   };
 
@@ -70,23 +71,23 @@ export default function SupplierProductsPage() {
 
   return (
     <PageFrame
-      title="Products"
+      title={t("Products")}
       action={
         <PrimaryButton type="button" onClick={() => setEditing("new")}>
-          Add a product
+          {t("Add a product")}
         </PrimaryButton>
       }
     >
       {error ? (
         <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
       ) : products === null ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : products.length === 0 ? (
         <EmptyState
-          title="No products yet"
+          title={t("No products yet")}
           action={
             <PrimaryButton type="button" onClick={() => setEditing("new")}>
-              Add a product
+              {t("Add a product")}
             </PrimaryButton>
           }
         />
@@ -100,9 +101,9 @@ export default function SupplierProductsPage() {
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</span>
                   {product.hidden ? (
-                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">Taken down</span>
+                    <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">{t("Taken down")}</span>
                   ) : (
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? "Published" : "Draft"}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? t("Published") : t("Draft")}</span>
                   )}
                 </div>
                 <h3 className="font-black text-slate-900">{product.name}</h3>
@@ -112,21 +113,21 @@ export default function SupplierProductsPage() {
                 {product.hidden && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{product.hiddenReason || "Taken down by the platform."}</p>}
                 {product.quantity !== undefined && (
                   <p className={`mt-1 text-xs font-bold ${product.quantity === 0 ? "text-red-600" : product.quantity <= (product.lowStockAt ?? 3) ? "text-amber-600" : "text-slate-500"}`}>
-                    {product.quantity === 0 ? "Sold out" : product.quantity <= (product.lowStockAt ?? 3) ? `Running low: ${product.quantity} left` : `${product.quantity} in stock`}
+                    {product.quantity === 0 ? t("Sold out") : product.quantity <= (product.lowStockAt ?? 3) ? t("Running low: {count} left", { count: product.quantity }) : t("{count} in stock", { count: product.quantity })}
                   </p>
                 )}
                 <div className="mt-auto flex flex-wrap gap-2 pt-4">
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setEditing(product)}>
-                    Edit
+                    {t("Edit")}
                   </SecondaryButton>
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setAvailable(product, product.stock === "out_of_stock")}>
-                    {product.stock === "out_of_stock" ? "Back in stock" : "Mark out of stock"}
+                    {product.stock === "out_of_stock" ? t("Back in stock") : t("Mark out of stock")}
                   </SecondaryButton>
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5" onClick={() => setStatus(product, product.status === "published" ? "draft" : "published")}>
-                    {product.status === "published" ? "Hide" : "Publish"}
+                    {product.status === "published" ? t("Hide") : t("Publish")}
                   </SecondaryButton>
                   <SecondaryButton type="button" className="min-h-9 px-3 py-1.5 hover:!border-red-300 hover:!text-red-600" onClick={() => remove(product)}>
-                    Delete
+                    {t("Delete")}
                   </SecondaryButton>
                 </div>
               </div>
@@ -161,8 +162,10 @@ function ProductDialog({ editing, onClose, onSaved }: { editing: Product | "new"
 }
 
 function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; product: Product | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const { showToast } = useToast();
+  const MAKING_TIMES = [3, 7, 14, 21, 30, 45, 60, 90].map((d) => ({ value: String(d), label: t("{count} days", { count: d }) }));
   const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
@@ -181,7 +184,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   const addImages = async (files: FileList | null) => {
     if (!files || !token) return;
     const room = MAX_IMAGES - images.length;
-    if (files.length > room) showToast(`Only ${room} more ${room === 1 ? "photo fits" : "photos fit"} (${MAX_IMAGES} per product). The rest were skipped.`, "error");
+    if (files.length > room) showToast(t(room === 1 ? "Only {room} more photo fits ({max} per product). The rest were skipped." : "Only {room} more photos fit ({max} per product). The rest were skipped.", { room, max: MAX_IMAGES }), "error");
     setUploading(true);
     setError("");
     try {
@@ -189,7 +192,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
       for (const file of Array.from(files).slice(0, room)) urls.push(await uploadProfessionalImage(file, file.type || "image/jpeg", token));
       setImages((current) => [...current, ...urls]);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : "Upload failed. Please try again.", "error");
+      showToast(e instanceof Error ? e.message : t("Upload failed. Please try again."), "error");
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -207,7 +210,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
       setError(result.error);
       return;
     }
-    showToast(status === "published" ? "Product published." : "Product saved.");
+    showToast(status === "published" ? t("Product published.") : t("Product saved."));
     onSaved();
   };
 
@@ -216,11 +219,11 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   return (
     <div className="flex max-h-[88vh] flex-col p-6">
       <h2 id={titleId} className="mb-4 pr-6 text-lg font-semibold text-slate-900">
-        {product ? "Edit product" : "Add a product"}
+        {product ? t("Edit product") : t("Add a product")}
       </h2>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
         <label className="block text-sm font-bold text-slate-700">
-          Name
+          {t("Name")}
           <input className={`${fieldClass} mt-1`} value={name} maxLength={120} autoFocus onChange={(e) => setName(e.target.value)} />
         </label>
 
@@ -233,15 +236,15 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
               <div key={url} className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={url} alt="" className="h-24 w-full rounded-lg object-cover" />
-                <button type="button" aria-label="Remove photo" onClick={() => setImages((current) => current.filter((_, i) => i !== index))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900/80 text-xs font-bold text-white hover:bg-red-600">
+                <button type="button" aria-label={t("Remove photo")} onClick={() => setImages((current) => current.filter((_, i) => i !== index))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-slate-900/80 text-xs font-bold text-white hover:bg-red-600">
                   ×
                 </button>
-                {index === 0 && <span className="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white">Cover</span>}
+                {index === 0 && <span className="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[10px] font-bold text-white">{t("Cover")}</span>}
               </div>
             ))}
             {images.length < MAX_IMAGES && (
               <button type="button" disabled={uploading} onClick={() => fileInput.current?.click()} className="flex h-24 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 text-sm font-bold text-slate-500 hover:border-[#2ec440] hover:text-[#219b31] disabled:opacity-50">
-                {uploading ? "Uploading…" : "+ Add"}
+                {uploading ? t("Uploading…") : "+ Add"}
               </button>
             )}
           </div>
@@ -251,9 +254,9 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
         {name.trim() !== "" && (
           <>
             <label className="block text-sm font-bold text-slate-700">
-              Category
-              <Select className={`${fieldClass} mt-1`} value={category} aria-label="Category" onChange={(e) => setCategory(e.target.value)}>
-                <option value="">Choose a category</option>
+              {t("Category")}
+              <Select className={`${fieldClass} mt-1`} value={category} aria-label={t("Category")} onChange={(e) => setCategory(e.target.value)}>
+                <option value="">{t("Choose a category")}</option>
                 {FURNITURE_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c}
@@ -265,18 +268,18 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
               <>
                 <div className="grid grid-cols-[1fr_7rem] gap-3">
                   <label className="block text-sm font-bold text-slate-700">
-                    Price
+                    {t("Price")}
                     <input className={`${fieldClass} mt-1`} inputMode="decimal" value={priceText} onChange={(e) => setPriceText(e.target.value.replace(/[^\d.]/g, ""))} />
                   </label>
                   <label className="block text-sm font-bold text-slate-700">
-                    Currency
+                    {t("Currency")}
                     <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
                   </label>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-sm font-bold text-slate-700">
-                    Availability
-                    <Select className={`${fieldClass} mt-1`} value={stock} aria-label="Availability" onChange={(e) => setStock(e.target.value as StockStatus)}>
+                    {t("Availability")}
+                    <Select className={`${fieldClass} mt-1`} value={stock} aria-label={t("Availability")} onChange={(e) => setStock(e.target.value as StockStatus)}>
                       {(Object.keys(STOCK_LABELS) as StockStatus[]).map((s) => (
                         <option key={s} value={s}>
                           {STOCK_LABELS[s]}
@@ -286,8 +289,8 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
                   </label>
                   {stock === "made_to_order" && (
                     <label className="block text-sm font-bold text-slate-700">
-                      Ready in
-                      <DaysSelect className={`${fieldClass} mt-1`} ariaLabel="Ready in" value={leadTime} onChange={setLeadTime} options={MAKING_TIMES} />
+                      {t("Ready in")}
+                      <DaysSelect className={`${fieldClass} mt-1`} ariaLabel={t("Ready in")} value={leadTime} onChange={setLeadTime} options={MAKING_TIMES} />
                     </label>
                   )}
                   {stock === "in_stock" && (
@@ -299,7 +302,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
                 </div>
                 {stock === "in_stock" && quantityText.trim() !== "" && (
                   <label className="block text-sm font-bold text-slate-700 sm:max-w-xs">
-                    Warn me when this many are left
+                    {t("Warn me when this many are left")}
                     <input className={`${fieldClass} mt-1`} inputMode="numeric" value={lowText} maxLength={4} onChange={(e) => setLowText(e.target.value.replace(/\D/g, ""))} />
                   </label>
                 )}
@@ -316,13 +319,13 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
 
       <div className="mt-5 flex flex-wrap justify-end gap-2">
         <SecondaryButton type="button" onClick={onClose}>
-          Cancel
+          {t("Cancel")}
         </SecondaryButton>
         <SecondaryButton type="button" disabled={busy || uploading || !complete} onClick={() => save("draft")}>
-          Save as draft
+          {t("Save as draft")}
         </SecondaryButton>
         <PrimaryButton type="button" disabled={busy || uploading || !complete || images.length === 0} onClick={() => save("published")}>
-          {busy ? "Saving…" : "Publish"}
+          {busy ? t("Saving…") : t("Publish")}
         </PrimaryButton>
       </div>
     </div>

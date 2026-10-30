@@ -8,9 +8,10 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { EARNING_STAGE_LABELS, FurnitureApi, formatPrice, type EarningStage, type Earnings } from "@/lib/furniture/api";
 import { MOBILE_MONEY_PROVIDERS, SuppliersApi, type Payout as PayoutDetails, type PayoutMethod } from "@/lib/suppliers/api";
+import { useLanguage } from "@/lib/i18n/language";
 
 const STAGE_FILTERS: { value: "" | EarningStage; label: string }[] = [
-  { value: "", label: "All orders" },
+  { value: "", label: ("All orders") },
   { value: "awaiting_delivery", label: EARNING_STAGE_LABELS.awaiting_delivery },
   { value: "ready", label: EARNING_STAGE_LABELS.ready },
   { value: "paid_out", label: EARNING_STAGE_LABELS.paid_out },
@@ -48,6 +49,7 @@ const stageTone: Record<EarningStage, string> = {
 /** What customers paid for the supplier's orders and where each order's money stands, what has been paid to them, and
  *  where they want to be paid. */
 export default function SupplierPaymentsPage() {
+  const { t } = useLanguage();
   const { token, isAuthReady } = useAuth();
   const [earnings, setEarnings] = useState<Earnings | null>(null);
   const [payout, setPayout] = useState<PayoutDetails | null | undefined>(undefined);
@@ -75,33 +77,33 @@ export default function SupplierPaymentsPage() {
 
   const rows = (earnings?.orders ?? []).filter((o) => !stage || o.stage === stage);
   const tabs: { id: Tab; label: string; badge?: string }[] = [
-    { id: "balance", label: "Balance" },
-    { id: "orders", label: "Orders", badge: earnings && earnings.orders.length > 0 ? String(earnings.orders.length) : undefined },
-    { id: "payouts", label: "Payouts", badge: earnings && earnings.payouts.length > 0 ? String(earnings.payouts.length) : undefined },
-    { id: "details", label: "Payout details", badge: payout === null ? "Not set" : undefined },
+    { id: "balance", label: t("Balance") },
+    { id: "orders", label: t("Orders"), badge: earnings && earnings.orders.length > 0 ? String(earnings.orders.length) : undefined },
+    { id: "payouts", label: t("Payouts"), badge: earnings && earnings.payouts.length > 0 ? String(earnings.payouts.length) : undefined },
+    { id: "details", label: t("Payout details"), badge: payout === null ? t("Not set") : undefined },
   ];
 
   return (
-    <PageFrame title="Payments">
+    <PageFrame title={t("Payments")}>
       {error && <p className="mb-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
       {earnings === null || payout === undefined ? (
-        !error && <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        !error && <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : (
         <div>
-          <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label="Payments">
-            {tabs.map((t) => {
-              const active = t.id === tab;
+          <div className="mb-6 flex flex-wrap gap-2" role="tablist" aria-label={t("Payments")}>
+            {tabs.map((tb) => {
+              const active = tb.id === tab;
               return (
                 <button
-                  key={t.id}
+                  key={tb.id}
                   type="button"
                   role="tab"
                   aria-selected={active}
-                  onClick={() => setTab(t.id)}
+                  onClick={() => setTab(tb.id)}
                   className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"}`}
                 >
-                  {t.label}
-                  {t.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white/20 text-white" : t.badge === "Not set" ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{t.badge}</span>}
+                  {t(tb.label)}
+                  {tb.badge && <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? "bg-white/20 text-white" : tb.badge === "Not set" ? "bg-amber-50 text-amber-700" : "bg-slate-100 text-slate-500"}`}>{t(tb.badge)}</span>}
                 </button>
               );
             })}
@@ -109,33 +111,33 @@ export default function SupplierPaymentsPage() {
 
           {tab === "balance" &&
             (earnings.totals.length === 0 ? (
-              <EmptyState title="No payments yet" />
+              <EmptyState title={t("No payments yet")} />
             ) : (
               <div className="space-y-8">
-                {earnings.totals.map((t) => (
-                  <section key={t.currency}>
-                    {earnings.totals.length > 1 && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{t.currency}</h2>}
+                {earnings.totals.map((tot) => (
+                  <section key={tot.currency}>
+                    {earnings.totals.length > 1 && <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">{tot.currency}</h2>}
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       <Card>
-                        <p className="text-sm font-bold text-slate-500">Awaiting delivery</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.awaitingDelivery, t.currency)}</p>
+                        <p className="text-sm font-bold text-slate-500">{t("Awaiting delivery")}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(tot.awaitingDelivery, tot.currency)}</p>
                       </Card>
-                      <Card className={t.ready > 0 ? "!border-amber-200 !bg-amber-50/40" : ""}>
-                        <p className="text-sm font-bold text-slate-500">Ready for payout</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.ready, t.currency)}</p>
-                        {t.readyOrders > 0 && (
+                      <Card className={tot.ready > 0 ? "!border-amber-200 !bg-amber-50/40" : ""}>
+                        <p className="text-sm font-bold text-slate-500">{t("Ready for payout")}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(tot.ready, tot.currency)}</p>
+                        {tot.readyOrders > 0 && (
                           <p className="mt-1 text-xs text-slate-500">
-                            {t.readyOrders} order{t.readyOrders === 1 ? "" : "s"}
+                            {t(tot.readyOrders === 1 ? "{count} order" : "{count} orders", { count: tot.readyOrders })}
                           </p>
                         )}
                       </Card>
                       <Card>
-                        <p className="text-sm font-bold text-slate-500">Paid out</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.paidOut, t.currency)}</p>
+                        <p className="text-sm font-bold text-slate-500">{t("Paid out")}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(tot.paidOut, tot.currency)}</p>
                       </Card>
                       <Card>
-                        <p className="text-sm font-bold text-slate-500">Refunded to buyers</p>
-                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(t.refunded, t.currency)}</p>
+                        <p className="text-sm font-bold text-slate-500">{t("Refunded to buyers")}</p>
+                        <p className="mt-2 text-2xl font-black text-slate-900">{formatPrice(tot.refunded, tot.currency)}</p>
                       </Card>
                     </div>
                   </section>
@@ -145,11 +147,11 @@ export default function SupplierPaymentsPage() {
 
           {tab === "orders" &&
             (earnings.orders.length === 0 ? (
-              <EmptyState title="No paid orders yet" />
+              <EmptyState title={t("No paid orders yet")} />
             ) : (
               <>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap gap-2" role="group" aria-label="Show">
+                  <div className="flex flex-wrap gap-2" role="group" aria-label={t("Show")}>
                     {STAGE_FILTERS.map((f) => (
                       <button
                         key={f.value}
@@ -158,27 +160,27 @@ export default function SupplierPaymentsPage() {
                         onClick={() => setStage(f.value)}
                         className={`min-h-9 rounded-full border px-4 py-1.5 text-sm font-bold transition-colors ${f.value === stage ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
                       >
-                        {f.label}
+                        {t(f.label)}
                       </button>
                     ))}
                   </div>
                   <SecondaryButton type="button" onClick={() => downloadCsv(earnings, false)}>
-                    Export CSV
+                    {t("Export CSV")}
                   </SecondaryButton>
                 </div>
                 {rows.length === 0 ? (
-                  <EmptyState title="Nothing in this view" />
+                  <EmptyState title={t("Nothing in this view")} />
                 ) : (
                   <Card className="overflow-x-auto !p-0">
                     <table className="w-full min-w-[40rem] text-left text-sm">
                       <thead>
                         <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
-                          <th className="px-5 py-3">Date</th>
-                          <th className="px-5 py-3">Customer</th>
-                          <th className="px-5 py-3 text-right">Order</th>
-                          <th className="px-5 py-3 text-right">Fee</th>
-                          <th className="px-5 py-3 text-right">You receive</th>
-                          <th className="px-5 py-3">Status</th>
+                          <th className="px-5 py-3">{t("Date")}</th>
+                          <th className="px-5 py-3">{t("Customer")}</th>
+                          <th className="px-5 py-3 text-right">{t("Order")}</th>
+                          <th className="px-5 py-3 text-right">{t("Fee")}</th>
+                          <th className="px-5 py-3 text-right">{t("You receive")}</th>
+                          <th className="px-5 py-3">{t("Status")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -195,7 +197,7 @@ export default function SupplierPaymentsPage() {
                             <td className="px-5 py-3 text-right text-slate-500">{o.fee > 0 ? `\u2212${formatPrice(o.fee, o.currency)}` : "\u2014"}</td>
                             <td className="px-5 py-3 text-right font-black text-slate-900">{o.stage === "refunded" || o.stage === "refund_pending" ? "\u2014" : formatPrice(o.net, o.currency)}</td>
                             <td className="px-5 py-3">
-                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${stageTone[o.stage]}`}>{EARNING_STAGE_LABELS[o.stage]}</span>
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${stageTone[o.stage]}`}>{t(EARNING_STAGE_LABELS[o.stage])}</span>
                               {o.stage === "paid_out" && o.paidOutAt && <span className="mt-0.5 block text-xs text-slate-400">{formatDate(o.paidOutAt)}</span>}
                             </td>
                           </tr>
@@ -209,12 +211,12 @@ export default function SupplierPaymentsPage() {
 
           {tab === "payouts" &&
             (earnings.payouts.length === 0 ? (
-              <EmptyState title="No payouts yet" />
+              <EmptyState title={t("No payouts yet")} />
             ) : (
               <>
                 <div className="mb-4 flex justify-end">
                   <SecondaryButton type="button" onClick={() => downloadCsv(earnings, true)}>
-                    Export CSV
+                    {t("Export CSV")}
                   </SecondaryButton>
                 </div>
                 <Card className="divide-y divide-slate-100 !p-0">
@@ -227,7 +229,7 @@ export default function SupplierPaymentsPage() {
                           {p.note ? ` · ${p.note}` : ""}
                         </p>
                       </div>
-                      <StatusPill status={`Ref ${p.reference}`} />
+                      <StatusPill status={t("Ref {reference}", { reference: p.reference })} />
                     </div>
                   ))}
                 </Card>
@@ -242,6 +244,7 @@ export default function SupplierPaymentsPage() {
 }
 
 function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSaved: (payout: PayoutDetails) => void }) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const { showToast } = useToast();
   const [method, setMethod] = useState<PayoutMethod>(initial?.method ?? "mobile_money");
@@ -270,26 +273,26 @@ function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSav
       return;
     }
     onSaved(result.data.payout);
-    showToast("Payout details saved.");
+    showToast(t("Payout details saved."));
   };
 
   return (
       <Card className="max-w-2xl space-y-5">
         {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
         <label className="block text-sm font-bold text-slate-700">
-          Receive money by
+          {t("Receive money by")}
           <Select className={`${fieldClass} mt-1`} value={method} onChange={(e) => setMethod(e.target.value as PayoutMethod)}>
-            <option value="mobile_money">Mobile money</option>
-            <option value="bank">Bank account</option>
+            <option value="mobile_money">{t("Mobile money")}</option>
+            <option value="bank">{t("Bank account")}</option>
           </Select>
         </label>
 
         {method === "mobile_money" ? (
           <>
             <label className="block text-sm font-bold text-slate-700">
-              Provider
+              {t("Provider")}
               <Select className={`${fieldClass} mt-1`} value={provider} onChange={(e) => setProvider(e.target.value)}>
-                <option value="">Choose…</option>
+                <option value="">{t("Choose…")}</option>
                 {MOBILE_MONEY_PROVIDERS.map((p) => (
                   <option key={p} value={p}>
                     {p}
@@ -298,11 +301,11 @@ function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSav
               </Select>
             </label>
             <label className="block text-sm font-bold text-slate-700">
-              Name on the account
+              {t("Name on the account")}
               <input className={`${fieldClass} mt-1`} value={accountName} maxLength={120} onChange={(e) => setAccountName(e.target.value)} />
             </label>
             <label className="block text-sm font-bold text-slate-700">
-              Mobile money number
+              {t("Mobile money number")}
               <div className="mt-1">
                 <PhoneInput value={phone} onChange={setPhone} required />
               </div>
@@ -311,22 +314,22 @@ function PayoutForm({ initial, onSaved }: { initial: PayoutDetails | null; onSav
         ) : (
           <>
             <label className="block text-sm font-bold text-slate-700">
-              Bank
+              {t("Bank")}
               <input className={`${fieldClass} mt-1`} value={bankName} maxLength={120} onChange={(e) => setBankName(e.target.value)} />
             </label>
             <label className="block text-sm font-bold text-slate-700">
-              Name on the account
+              {t("Name on the account")}
               <input className={`${fieldClass} mt-1`} value={accountName} maxLength={120} onChange={(e) => setAccountName(e.target.value)} />
             </label>
             <label className="block text-sm font-bold text-slate-700">
-              Account number
+              {t("Account number")}
               <input className={`${fieldClass} mt-1`} value={accountNumber} maxLength={40} inputMode="numeric" onChange={(e) => setAccountNumber(e.target.value)} />
             </label>
           </>
         )}
 
         <PrimaryButton type="button" disabled={!complete || saving} onClick={save}>
-          {saving ? "Saving…" : initial ? "Save changes" : "Save payout details"}
+          {saving ? t("Saving…") : initial ? t("Save changes") : t("Save payout details")}
         </PrimaryButton>
       </Card>
   );

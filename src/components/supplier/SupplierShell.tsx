@@ -10,6 +10,7 @@ import LanguagePicker from "@/components/LanguagePicker";
 import { useAuth } from "@/lib/auth-context";
 import { roleHome } from "@/lib/navigation";
 import { useDismiss } from "@/lib/useDismiss";
+import { useLanguage } from "@/lib/i18n/language";
 import AccountMenuPanel from "@/components/shared/AccountMenuPanel";
 
 const NAV_ITEMS = [
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
 /** The furniture supplier portal's own chrome: header, a sidebar on desktop and a tab row on phones. A
  *  supplier is sent to their company profile first, until it has been saved. */
 export default function SupplierShell({ children }: { children: React.ReactNode }) {
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const { account, isAuthReady } = useAuth();
@@ -44,7 +46,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
   if (!isSupplier) {
     return (
       <RequireAuth>
-        <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-500">Redirecting…</div>
+        <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-500">{t("Redirecting…")}</div>
       </RequireAuth>
     );
   }
@@ -55,9 +57,9 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
     <RequireAuth>
       <div className="min-h-full bg-slate-50">
         <header className="sticky top-0 z-40 flex w-full print:hidden items-center justify-between border-b border-slate-100 bg-white/95 px-6 py-4 backdrop-blur-sm sm:px-10">
-          <Link href="/" aria-label="Go to HuzaEstate home" className="flex items-center gap-2.5">
+          <Link href="/" aria-label={t("Go to HuzaEstate home")} className="flex items-center gap-2.5">
             <Logo className="h-8 w-auto" />
-            <span className="hidden rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white sm:inline">Supplier</span>
+            <span className="hidden rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white sm:inline">{t("Supplier")}</span>
           </Link>
           <div className="flex items-center gap-2">
             <LanguagePicker align="right" compact />
@@ -66,14 +68,14 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
               <button
                 onClick={() => setMenuOpen((v) => !v)}
                 className="flex items-center gap-2 rounded-full border border-slate-200 py-1.5 pl-1.5 pr-3 transition-colors hover:border-[#2ec440] focus:outline-none focus:ring-2 focus:ring-[#2ec440]"
-                title="Account menu"
+                title={t("Account menu")}
                 aria-haspopup="menu"
                 aria-expanded={menuOpen}
               >
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">{(account?.name ?? "S").slice(0, 1)}</span>
                 <span className="hidden text-left sm:block">
-                  <span className="block text-xs font-bold text-slate-900">{account?.name ?? "Supplier"}</span>
-                  <span className="block text-[11px] text-slate-500">Furniture supplier</span>
+                  <span className="block text-xs font-bold text-slate-900">{account?.name ?? t("Supplier")}</span>
+                  <span className="block text-[11px] text-slate-500">{t("Furniture supplier")}</span>
                 </span>
               </button>
               {menuOpen && (
@@ -87,7 +89,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
 
         <div className="flex min-h-[calc(100vh-65px)]">
           <aside className="sticky top-[65px] hidden print:!hidden h-[calc(100vh-65px)] w-64 shrink-0 flex-col border-r border-slate-100 bg-white lg:flex">
-            <nav aria-label="Supplier navigation" className="flex grow flex-col gap-1 overflow-y-auto px-2 py-4">
+            <nav aria-label={t("Supplier navigation")} className="flex grow flex-col gap-1 overflow-y-auto px-2 py-4">
               {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
@@ -98,16 +100,16 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
                   <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
                   </svg>
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate">{t(item.label)}</span>
                 </Link>
               ))}
             </nav>
           </aside>
           <main className="min-w-0 flex-grow">
-            <nav aria-label="Supplier navigation" className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 py-3 lg:hidden print:hidden">
+            <nav aria-label={t("Supplier navigation")} className="flex gap-2 overflow-x-auto border-b border-slate-100 bg-white px-4 py-3 lg:hidden print:hidden">
               {NAV_ITEMS.map((item) => (
                 <Link key={item.href} href={item.href} className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold ${isActive(item.href) ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               ))}
             </nav>

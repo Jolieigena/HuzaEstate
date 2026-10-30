@@ -10,6 +10,7 @@ import { SUPPLIER_CATEGORIES, SuppliersApi, type SupplierProfile } from "@/lib/s
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import DeliverySettings from "@/components/supplier/DeliverySettings";
 import { Card, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "@/components/professional/ui";
+import { useLanguage } from "@/lib/i18n/language";
 
 /** A number saved without its country code (like "0782345678") gets the one for the supplier's country, so it passes
  *  the same check as a newly typed one. A number that cannot be read is left as it was. */
@@ -23,6 +24,7 @@ function withCountryCode(value: string, country?: string): string {
 
 /** A supplier's company profile. Saving it is what unlocks the rest of the portal. */
 export default function SupplierProfileForm() {
+  const { t } = useLanguage();
   const { token, isAuthReady, account, refreshAccount } = useAuth();
   const { showToast } = useToast();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -80,7 +82,7 @@ export default function SupplierProfileForm() {
     try {
       setLogoUrl(await uploadProfessionalImage(file, file.type || "image/jpeg", token));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed. Please try again.");
+      setError(e instanceof Error ? e.message : t("Upload failed. Please try again."));
     } finally {
       setUploading(false);
       if (fileInput.current) fileInput.current.value = "";
@@ -89,12 +91,12 @@ export default function SupplierProfileForm() {
 
   // The first thing still missing, in words, so Save never fails silently.
   const problem = !companyName.trim()
-    ? "Enter your company name."
+    ? t("Enter your company name.")
     : !city.trim()
-      ? "Enter your city."
+      ? t("Enter your city.")
       : !cleanPhone(phone)
-        ? "Enter your phone number."
-        : (phoneProblem(phone) ?? (categories.length === 0 ? "Choose at least one thing you sell." : ""));
+        ? t("Enter your phone number.")
+        : (phoneProblem(phone) ?? (categories.length === 0 ? t("Choose at least one thing you sell.") : ""));
 
   const save = async () => {
     if (!token) return;
@@ -111,7 +113,7 @@ export default function SupplierProfileForm() {
       return;
     }
     setProfile(result.data.profile);
-    showToast("Profile saved.");
+    showToast(t("Profile saved."));
     await refreshAccount();
   };
 
@@ -119,12 +121,12 @@ export default function SupplierProfileForm() {
   const extra = categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c));
 
   return (
-    <PageFrame title="Company profile">
+    <PageFrame title={t("Company profile")}>
       {!loaded ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : (
         <Card className="max-w-2xl space-y-5">
-          {incomplete && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">Save your company profile to start answering quote requests.</p>}
+          {incomplete && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{t("Save your company profile to start answering quote requests.")}</p>}
           {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
           <div className="flex items-center gap-4">
@@ -132,11 +134,11 @@ export default function SupplierProfileForm() {
             {logoUrl ? <img src={logoUrl} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-xl font-black text-slate-400">{(companyName || "S").slice(0, 1)}</div>}
             <div className="flex gap-2">
               <SecondaryButton type="button" disabled={uploading} onClick={() => fileInput.current?.click()}>
-                {uploading ? "Uploading…" : logoUrl ? "Change logo" : "Add logo"}
+                {uploading ? t("Uploading…") : logoUrl ? t("Change logo") : t("Add logo")}
               </SecondaryButton>
               {logoUrl && (
                 <SecondaryButton type="button" onClick={() => setLogoUrl("")}>
-                  Remove
+                  {t("Remove")}
                 </SecondaryButton>
               )}
             </div>
@@ -144,20 +146,20 @@ export default function SupplierProfileForm() {
           </div>
 
           <label className="block text-sm font-bold text-slate-700">
-            Company name
+            {t("Company name")}
             <input className={`${fieldClass} mt-1`} value={companyName} maxLength={160} onChange={(e) => setCompanyName(e.target.value)} />
           </label>
           <label className="block text-sm font-bold text-slate-700">
-            About
+            {t("About")}
             <textarea className={`${fieldClass} mt-1 min-h-28 resize-y font-normal`} value={bio} maxLength={4000} onChange={(e) => setBio(e.target.value)} />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block text-sm font-bold text-slate-700">
-              City
+              {t("City")}
               <input className={`${fieldClass} mt-1`} value={city} maxLength={120} onChange={(e) => setCity(e.target.value)} />
             </label>
             <label className="block text-sm font-bold text-slate-700">
-              Phone
+              {t("Phone")}
               <div className="mt-1">
                 <PhoneInput value={phone} onChange={setPhone} required />
               </div>
@@ -165,7 +167,7 @@ export default function SupplierProfileForm() {
           </div>
 
           <div>
-            <p className="text-sm font-bold text-slate-700">What you sell</p>
+            <p className="text-sm font-bold text-slate-700">{t("What you sell")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {[...SUPPLIER_CATEGORIES, ...extra].map((name) => (
                 <button key={name} type="button" onClick={() => toggle(name)} aria-pressed={categories.includes(name)} className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${categories.includes(name) ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
@@ -174,7 +176,7 @@ export default function SupplierProfileForm() {
               ))}
             </div>
             <div className="mt-3 flex gap-2">
-              <input className={fieldClass} placeholder="Something else" value={custom} maxLength={60} onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }} />
+              <input className={fieldClass} placeholder={t("Something else")} value={custom} maxLength={60} onChange={(e) => setCustom(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }} />
               <SecondaryButton type="button" onClick={addCustom}>
                 Add
               </SecondaryButton>
@@ -182,7 +184,7 @@ export default function SupplierProfileForm() {
           </div>
 
           <PrimaryButton type="button" disabled={saving || uploading} onClick={save}>
-            {saving ? "Saving…" : profile?.completedAt ? "Save changes" : "Save profile"}
+            {saving ? t("Saving…") : profile?.completedAt ? t("Save changes") : t("Save profile")}
           </PrimaryButton>
         </Card>
       )}

@@ -6,10 +6,12 @@ import { Card, PrimaryButton, fieldClass } from "@/components/professional/ui";
 import { useAuth } from "@/lib/auth-context";
 import { SuppliersApi } from "@/lib/suppliers/api";
 import { useToast } from "@/lib/toast-context";
+import { useLanguage } from "@/lib/i18n/language";
 
 /** What the supplier charges for delivery: a flat fee per order, free above an order value. Zero means delivery is free.
  *  Buyers see it before they order, and it is added to their total. */
 export default function DeliverySettings() {
+  const { t } = useLanguage();
   const { token, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const [loaded, setLoaded] = useState(false);
@@ -48,7 +50,7 @@ export default function DeliverySettings() {
   const save = async () => {
     if (!token || saving) return;
     if (!Number.isFinite(fee) || fee < 0) {
-      setError("Enter the delivery fee, or 0 if delivery is free.");
+      setError(t("Enter the delivery fee, or 0 if delivery is free."));
       return;
     }
     setSaving(true);
@@ -61,23 +63,23 @@ export default function DeliverySettings() {
     }
     const d = result.data.delivery;
     setSaved({ fee: d.fee > 0 ? String(d.fee) : "0", freeOver: d.freeOver ? String(d.freeOver) : "", currency: d.currency ?? "" });
-    showToast("Delivery settings saved.");
+    showToast(t("Delivery settings saved."));
   };
 
   if (!loaded) return null;
   return (
     <section className="mt-8 max-w-2xl">
-      <h2 className="mb-3 text-lg font-black text-slate-900">Delivery</h2>
+      <h2 className="mb-3 text-lg font-black text-slate-900">{t("Delivery")}</h2>
       <Card className="space-y-5">
         {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-bold text-slate-700">
-            Delivery fee per order
+            {t("Delivery fee per order")}
             <input className={`${fieldClass} mt-1`} inputMode="decimal" value={feeText} onChange={(e) => setFeeText(e.target.value.replace(/[^\d.]/g, ""))} />
           </label>
           {charging && (
             <label className="block text-sm font-bold text-slate-700">
-              Currency
+              {t("Currency")}
               <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
             </label>
           )}
@@ -89,7 +91,7 @@ export default function DeliverySettings() {
           </label>
         )}
         <PrimaryButton type="button" disabled={saving || !changed} onClick={save}>
-          {saving ? "Saving…" : "Save delivery settings"}
+          {saving ? t("Saving…") : t("Save delivery settings")}
         </PrimaryButton>
       </Card>
     </section>

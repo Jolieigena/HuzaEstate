@@ -9,6 +9,7 @@ import { DesignsApi } from "@/lib/designs/api";
 import { SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
 import { useToast } from "@/lib/toast-context";
 import { FurnitureApi, ORDER_STATUS_LABELS, formatPrice, type Earnings, type Order, type Product, type Rating } from "@/lib/furniture/api";
+import { useLanguage } from "@/lib/i18n/language";
 
 interface Data {
   orders: Order[];
@@ -31,6 +32,7 @@ function Tile({ href, label, value, note, attention }: { href: string; label: st
 
 /** The supplier's home: what needs doing today, in one place, with the orders that came in last. */
 export default function SupplierDashboard() {
+  const { t } = useLanguage();
   const { token, isAuthReady, account } = useAuth();
   const { showToast } = useToast();
   const [switching, setSwitching] = useState(false);
@@ -64,7 +66,7 @@ export default function SupplierDashboard() {
       return;
     }
     setData((prev) => (prev && prev.profile ? { ...prev, profile: { ...prev.profile, paused: next } } : prev));
-    showToast(next ? "Shop paused." : "Shop is open again.");
+    showToast(next ? t("Shop paused.") : t("Shop is open again."));
   }
 
   const toConfirm = data?.orders.filter((o) => o.status === "requested") ?? [];
@@ -76,49 +78,49 @@ export default function SupplierDashboard() {
   const firstName = account?.name?.split(" ")[0];
 
   return (
-    <PageFrame title={firstName ? `Welcome, ${firstName}` : "Overview"}>
+    <PageFrame title={firstName ? t("Welcome, {name}", { name: firstName }) : t("Overview")}>
       {error ? (
-        <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
+        <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{t(error)}</p>
       ) : data === null ? (
-        <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading…</p>
+        <p className="py-10 text-center text-sm font-semibold text-slate-400">{t("Loading…")}</p>
       ) : (
         <div className="space-y-8">
           {data.profile && (
             <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-5 py-4 ${data.profile.paused ? "border-amber-300 bg-amber-50" : "border-slate-200 bg-white"}`}>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
-                <p className={`font-black ${data.profile.paused ? "text-amber-800" : "text-slate-900"}`}>{data.profile.paused ? "Shop paused" : "Shop open"}</p>
+                <p className={`font-black ${data.profile.paused ? "text-amber-800" : "text-slate-900"}`}>{data.profile.paused ? t("Shop paused") : t("Shop open")}</p>
                 <RatingSummary rating={data.rating} />
-                {data.profile.verified && <span className="text-sm font-bold text-[#219b31]">Verified</span>}
+                {data.profile.verified && <span className="text-sm font-bold text-[#219b31]">{t("Verified")}</span>}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link href={`/shop/supplier/${data.profile.accountId}`} className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
-                  View my shop
+                  {t("View my shop")}
                 </Link>
                 <button type="button" disabled={switching} onClick={togglePaused} className="min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
-                  {data.profile.paused ? "Open shop" : "Pause shop"}
+                  {data.profile.paused ? t("Open shop") : t("Pause shop")}
                 </button>
               </div>
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <Tile href="/supplier/orders" label="Orders to confirm" value={String(toConfirm.length)} attention={toConfirm.length > 0} note={toConfirm.length > 0 ? "Waiting for your answer" : undefined} />
-            <Tile href="/supplier/orders" label="To deliver" value={String(toDeliver.length)} note={toDeliver.length > 0 ? `${paidToDeliver} paid` : undefined} />
-            <Tile href="/supplier/payments" label="Ready for payout" value={ready.length ? ready.join(" · ") : "—"} />
-            <Tile href="/supplier/requests" label="Quote requests" value={String(data.openRequests)} attention={data.openRequests > 0} note={data.openRequests > 0 ? "Open for your price" : undefined} />
-            <Tile href="/supplier/products" label="Running low" value={String(lowStock.length)} attention={lowStock.length > 0} note={lowStock.slice(0, 2).map((p) => `${p.name} (${p.quantity})`).join(", ") || undefined} />
+            <Tile href="/supplier/orders" label={t("Orders to confirm")} value={String(toConfirm.length)} attention={toConfirm.length > 0} note={toConfirm.length > 0 ? t("Waiting for your answer") : undefined} />
+            <Tile href="/supplier/orders" label={t("To deliver")} value={String(toDeliver.length)} note={toDeliver.length > 0 ? t("{count} paid", { count: paidToDeliver }) : undefined} />
+            <Tile href="/supplier/payments" label={t("Ready for payout")} value={ready.length ? ready.join(" · ") : "—"} />
+            <Tile href="/supplier/requests" label={t("Quote requests")} value={String(data.openRequests)} attention={data.openRequests > 0} note={data.openRequests > 0 ? t("Open for your price") : undefined} />
+            <Tile href="/supplier/products" label={t("Running low")} value={String(lowStock.length)} attention={lowStock.length > 0} note={lowStock.slice(0, 2).map((p) => `${p.name} (${p.quantity})`).join(", ") || undefined} />
           </div>
 
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-black text-slate-900">Latest orders</h2>
+              <h2 className="text-lg font-black text-slate-900">{t("Latest orders")}</h2>
               {data.orders.length > 5 && (
                 <Link href="/supplier/orders" className="text-sm font-bold text-[#219b31] hover:underline">
-                  See all
+                  {t("See all")}
                 </Link>
               )}
             </div>
             {recent.length === 0 ? (
-              <EmptyState title="No orders yet" />
+              <EmptyState title={t("No orders yet")} />
             ) : (
               <Card className="divide-y divide-slate-100 !p-0">
                 {recent.map((order) => (
@@ -126,11 +128,11 @@ export default function SupplierDashboard() {
                     <div className="min-w-0">
                       <p className="font-black text-slate-900">{formatPrice(order.total, order.currency)}</p>
                       <p className="mt-0.5 truncate text-sm text-slate-500">
-                        {order.clientName} · {order.items.length} item{order.items.length === 1 ? "" : "s"} · {formatDate(order.createdAt)}
+                        {order.clientName} · {t(order.items.length === 1 ? "{count} item" : "{count} items", { count: order.items.length })} · {formatDate(order.createdAt)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {order.paymentStatus === "paid" && <span className="rounded-full bg-[#2ec440]/10 px-2.5 py-1 text-xs font-bold text-[#219b31]">Paid</span>}
+                      {order.paymentStatus === "paid" && <span className="rounded-full bg-[#2ec440]/10 px-2.5 py-1 text-xs font-bold text-[#219b31]">{t("Paid")}</span>}
                       <StatusPill status={ORDER_STATUS_LABELS[order.status]} />
                     </div>
                   </Link>

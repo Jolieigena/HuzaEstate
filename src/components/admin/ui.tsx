@@ -2,14 +2,15 @@ import Link from "next/link";
 import React, { useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { regionsForCountry } from "@/lib/regions";
+import Tr from "@/components/Tr";
 
 export function PageFrame({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-10 sm:px-10 lg:px-12">
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between pb-6 border-b border-slate-200/70">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">{title}</h2>
-          {description && <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-500">{description}</p>}
+          <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl"><Tr text={title} /></h2>
+          {description && <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-500"><Tr text={description} /></p>}
         </div>
         {action && <div>{action}</div>}
       </div>
@@ -35,7 +36,7 @@ export function StatusPill({ status }: { status: string }) {
   
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-wider font-bold ${style}`}>
-      {status.replace(/_/g, " ")}
+      <Tr text={status.replace(/_/g, " ")} />
     </span>
   ); 
 }
@@ -72,8 +73,8 @@ export function EmptyState({ title, description, action }: { title: string; desc
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-3-3v6m9-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <h3 className="text-xl font-bold tracking-tight text-slate-900">{title}</h3>
-      {description && <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">{description}</p>}
+      <h3 className="text-xl font-bold tracking-tight text-slate-900"><Tr text={title} /></h3>
+      {description && <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500"><Tr text={description} /></p>}
       {action && <div className="mt-8">{action}</div>}
     </Card>
   ); 
@@ -161,7 +162,7 @@ export function AdminTable({ headers, children }: { headers: string[], children:
         <thead className="border-b border-slate-200/80 bg-slate-50/80">
           <tr>
             {headers.map((h, i) => (
-              <th key={i} className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]">{h}</th>
+              <th key={i} className="px-6 py-4 font-bold text-slate-600 uppercase tracking-wider text-[11px]"><Tr text={h} /></th>
             ))}
           </tr>
         </thead>
