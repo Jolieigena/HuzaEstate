@@ -11,8 +11,10 @@ import PasswordInput from '@/components/shared/PasswordInput';
 import PasswordChecklist from '@/components/shared/PasswordChecklist';
 import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import { useLanguage } from '@/lib/i18n/language';
 
 function SignupForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
@@ -35,7 +37,7 @@ function SignupForm() {
     if (isSubmitting) return;
     setError('');
     if (!passwordIsAcceptable(password)) {
-      setError('Please choose a password that meets every rule listed.');
+      setError(t('Please choose a password that meets every rule listed.'));
       return;
     }
     setIsSubmitting(true);
@@ -50,22 +52,22 @@ function SignupForm() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Create an account</h1>
-      <p className="text-slate-500 mb-8">Sign up in seconds to save your favorite properties and book tours.</p>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('Create an account')}</h1>
+      <p className="text-slate-500 mb-8">{t('Sign up in seconds to save your favorite properties and book tours.')}</p>
 
       {error && (
         <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
-          {error}
+          {t(error)}
         </p>
       )}
 
       <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">First Name</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('First Name')}</label>
                 <input
                   type="text"
-                  placeholder="Jane"
+                  placeholder={t('Jane')}
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -73,10 +75,10 @@ function SignupForm() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-2">Last Name</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">{t('Last Name')}</label>
                 <input
                   type="text"
-                  placeholder="Doe"
+                  placeholder={t('Doe')}
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -86,10 +88,10 @@ function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Email Address')}</label>
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t('Enter your email')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -98,9 +100,9 @@ function SignupForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Password')}</label>
               <PasswordInput
-                placeholder="Create a password"
+                placeholder={t('Create a password')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={PASSWORD_MIN_LENGTH}
@@ -120,12 +122,12 @@ function SignupForm() {
                 required
               />
               <label htmlFor="terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
-                I agree to HuzaEstate&apos;s <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Terms of Service</Link> and <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Privacy Policy</Link>.
+                {t("I agree to HuzaEstate's")} <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">{t('Terms of Service')}</Link> {t('and')} <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">{t('Privacy Policy')}</Link>.
               </label>
             </div>
 
             <button type="submit" disabled={isSubmitting} className="w-full bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
-              {isSubmitting ? 'Creating account…' : 'Create Account'}
+              {isSubmitting ? t('Creating account…') : t('Create Account')}
             </button>
 
       </form>
@@ -134,13 +136,13 @@ function SignupForm() {
         text="signup_with"
         allowCreate
         country={detectedCountry?.name}
-        beforeSubmit={() => (termsAccepted ? null : 'Please accept the Terms of Service and Privacy Policy to sign up with Google.')}
+        beforeSubmit={() => (termsAccepted ? null : t('Please accept the Terms of Service and Privacy Policy to sign up with Google.'))}
         onError={setError}
         onSuccess={(account) => router.push(accountDestination(account, redirectParam))}
       />
 
       <p className="mt-8 text-center text-slate-500 text-sm">
-        Already have an account? <Link href={loginHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">Sign in</Link>
+        {t('Already have an account?')} <Link href={loginHref} className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors">{t('Sign in')}</Link>
       </p>
     </>
   );
@@ -183,6 +185,7 @@ const SIGNUP_IMAGES = [
 ];
 
 export default function SignupPage() {
+  const { t } = useLanguage();
   const [currentIdx, setCurrentIdx] = useState(0);
 
   React.useEffect(() => {
@@ -205,15 +208,15 @@ export default function SignupPage() {
           >
             <Image
               src={img.src}
-              alt="Luxury Real Estate"
+              alt={t('Luxury Real Estate')}
               fill
               className="object-cover"
               priority={idx === 0}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
             <div className="absolute bottom-12 left-12 right-12">
-              <h2 className="text-3xl font-bold text-white mb-4 leading-tight">{img.title}</h2>
-              <p className="text-slate-300 text-lg">{img.desc}</p>
+              <h2 className="text-3xl font-bold text-white mb-4 leading-tight">{t(img.title)}</h2>
+              <p className="text-slate-300 text-lg">{t(img.desc)}</p>
             </div>
           </div>
         ))}

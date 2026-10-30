@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from "@/lib/i18n/language";
 
 interface PasswordInputProps {
   id?: string;
@@ -17,6 +18,7 @@ interface PasswordInputProps {
  *  pass a className: baking the right padding in here avoids relying on Tailwind's
  *  unordered utility cascade to override px-4 with a wider pr- for the toggle button. */
 export default function PasswordInput({ id, value, onChange, placeholder, required, minLength, autoComplete }: PasswordInputProps) {
+  const { t } = useLanguage();
   const [visible, setVisible] = useState(false);
 
   return (
@@ -36,7 +38,7 @@ export default function PasswordInput({ id, value, onChange, placeholder, requir
         type="button"
         onClick={() => setVisible((v) => !v)}
         tabIndex={-1}
-        aria-label={visible ? "Hide password" : "Show password"}
+        aria-label={t(visible ? "Hide password" : "Show password")}
         className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
       >
         {visible ? (

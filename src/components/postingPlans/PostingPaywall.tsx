@@ -7,6 +7,7 @@ import RedeemAccessCode from "./RedeemAccessCode";
 import { useSubscription } from "@/lib/postingPlans/hooks";
 import { formatMoney } from "@/lib/finance/money";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
+import { useLanguage } from "@/lib/i18n/language";
 
 type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "per_post" } | null;
 
@@ -16,6 +17,7 @@ type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { k
 // more — after payment, Stripe redirects back to the same page and the next post attempt is
 // checked fresh against the now-updated quota.
 export default function PostingPaywall({ onClose }: { onClose: () => void }) {
+  const { t } = useLanguage();
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<CheckoutMode>(null);
 
@@ -30,8 +32,8 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
   return (
     <div className="max-w-4xl mx-auto py-10">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-black text-slate-900 mb-2">You&apos;ve used your free posts this month</h2>
-        <p className="text-slate-500">Pick a plan below, or pay once to publish just this listing.</p>
+        <h2 className="text-2xl font-black text-slate-900 mb-2">{t("You've used your free posts this month")}</h2>
+        <p className="text-slate-500">{t("Pick a plan below, or pay once to publish just this listing.")}</p>
       </div>
 
       <PricingCards
@@ -48,19 +50,19 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
 
       <div className="mt-8 flex flex-col items-center gap-2">
         <div className="w-full max-w-sm border-t border-slate-200 pt-6 text-center">
-          <p className="text-sm text-slate-500 mb-3">Just this once</p>
+          <p className="text-sm text-slate-500 mb-3">{t("Just this once")}</p>
           <button
             onClick={() => setCheckout({ kind: "per_post" })}
             className="bg-white border border-slate-300 hover:border-slate-900 text-slate-900 font-bold px-6 py-3 rounded-xl transition-colors"
           >
-            Pay {formatMoney(PER_POST_PRICE)} to post once
+            {t("Pay {price} to post once", { price: formatMoney(PER_POST_PRICE) })}
           </button>
         </div>
       </div>
 
       <div className="mt-6 text-center">
         <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-slate-800">
-          Back to the form
+          {t("Back to the form")}
         </button>
       </div>
     </div>

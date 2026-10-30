@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { redeemAccessCode, type RedeemedAccess } from "@/lib/accessCodes/api";
 import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
+import { useLanguage } from "@/lib/i18n/language";
 
 export function formatLongDate(value: string | Date): string {
   return new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -20,6 +21,7 @@ const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py
  *  access to a paid plan without paying, and works for brand-new sellers (it also makes them one) and for
  *  existing sellers upgrading. Used wherever a plan is chosen. */
 export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, initialCode = "" }: { onRedeemed?: (result: RedeemedAccess) => void; defaultOpen?: boolean; initialCode?: string }) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const inputId = useId();
   const [open, setOpen] = useState(defaultOpen);
@@ -47,11 +49,11 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, init
   if (done) {
     return (
       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status">
-        <p className="font-bold">{done.tierLabel} access is active.</p>
+        <p className="font-bold">{t("{plan} access is active.", { plan: t(done.tierLabel) })}</p>
         <p className="mt-0.5">
-          You can use it until {formatLongDate(done.accessEndsAt)} ({done.days} day{done.days === 1 ? "" : "s"}). After that you go back to your usual plan, or you can subscribe to keep it.
+          {t(done.days === 1 ? "You can use it until {date} ({days} day). After that you go back to your usual plan, or you can subscribe to keep it." : "You can use it until {date} ({days} days). After that you go back to your usual plan, or you can subscribe to keep it.", { date: formatLongDate(done.accessEndsAt), days: done.days })}
         </p>
-        {!done.sellerRoleGranted && <p className="mt-1 text-xs">Sign out and back in if your seller tools don&apos;t appear straight away.</p>}
+        {!done.sellerRoleGranted && <p className="mt-1 text-xs">{t("Sign out and back in if your seller tools don't appear straight away.")}</p>}
       </div>
     );
   }
@@ -59,7 +61,7 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, init
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} className="text-sm font-bold text-[#219b31] underline-offset-2 hover:underline">
-        Have an access code?
+        {t("Have an access code?")}
       </button>
     );
   }
@@ -67,7 +69,7 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, init
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-4">
       <label htmlFor={inputId} className="block text-sm font-bold text-slate-700">
-        Access code
+        {t("Access code")}
       </label>
       <div className="mt-1.5 flex gap-2">
         <input
@@ -91,11 +93,11 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, init
           spellCheck={false}
         />
         <button type="button" onClick={apply} disabled={busy || !code.trim()} className="shrink-0 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:opacity-50">
-          {busy ? "Applying…" : "Apply"}
+          {busy ? t("Applying…") : t("Apply")}
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Use the email address your code was sent to.</p>
-      {error && <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{error}</p>}
+      <p className="mt-2 text-xs text-slate-500">{t("Use the email address your code was sent to.")}</p>
+      {error && <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">{t(error)}</p>}
     </div>
   );
 }
@@ -103,14 +105,15 @@ export default function RedeemAccessCode({ onRedeemed, defaultOpen = false, init
 /** The same code, as a plain field inside a form (the become-a-seller page applies it after the account
  *  is created, so there's no Apply button here). Always visible, so nobody has to find a link first. */
 export function AccessCodeField({ value, onChange, autoFocus = false }: { value: string; onChange: (next: string) => void; autoFocus?: boolean }) {
+  const { t } = useLanguage();
   const inputId = useId();
   return (
     <div>
       <label htmlFor={inputId} className="block text-sm font-bold text-slate-700">
-        Have an access code? <span className="font-medium text-slate-400">(optional)</span>
+        {t("Have an access code?")} <span className="font-medium text-slate-400">({t("optional")})</span>
       </label>
       <input id={inputId} className={`${inputClass} mt-2`} value={value} onChange={(e) => onChange(tidy(e.target.value))} placeholder="HZE-XXXXXXXX" autoComplete="off" autoFocus={autoFocus} maxLength={20} spellCheck={false} />
-      <p className="mt-2 text-xs text-slate-500">Sign up with the email address your code was sent to.</p>
+      <p className="mt-2 text-xs text-slate-500">{t("Sign up with the email address your code was sent to.")}</p>
     </div>
   );
 }

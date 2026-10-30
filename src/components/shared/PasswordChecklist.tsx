@@ -1,9 +1,11 @@
 "use client";
 
 import { passwordChecks } from "@/lib/passwordRules";
+import { useLanguage } from "@/lib/i18n/language";
 
 /** Live list of the password rules, shown once the person starts typing. Each line turns green when met. */
 export default function PasswordChecklist({ password }: { password: string }) {
+  const { t } = useLanguage();
   if (!password) return null;
   return (
     <ul className="mt-2 space-y-1" aria-live="polite">
@@ -12,7 +14,7 @@ export default function PasswordChecklist({ password }: { password: string }) {
           <svg className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             {check.ok ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /> : <circle cx="12" cy="12" r="8" strokeWidth="2" />}
           </svg>
-          {check.label}
+          {t(check.label)}
         </li>
       ))}
     </ul>

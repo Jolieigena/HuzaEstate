@@ -8,20 +8,22 @@ import { notifySubscriptionChanged, useSubscription } from "@/lib/postingPlans/h
 import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PLAN_PRICES, type PlanTier } from "@/lib/postingPlans/types";
 import { useToast } from "@/lib/toast-context";
 import { formatLongDate } from "./RedeemAccessCode";
+import { useLanguage } from "@/lib/i18n/language";
 
 /** "Your plan": what the seller is on, how much of this month's posting they've used, and the billing
  *  controls that go with a paid plan (automatic monthly payment, card and invoices, cancelling). */
 /** The plan the upgrade button offers: the next one up from what the seller pays for. Free goes to Gold, the
  *  one most sellers pick; someone on an access code is offered a subscription to the plan the code gives, to
  *  keep it once the code ends. Nothing is offered on Diamond, the top plan. */
-function upgradeTarget(paidTier: PlanTier, effectiveTier: PlanTier, onCode: boolean): { tier: Exclude<PlanTier, "free">; label: string } | null {
-  if (onCode && effectiveTier !== "free") return { tier: effectiveTier as Exclude<PlanTier, "free">, label: `Subscribe to keep ${PLAN_LABELS[effectiveTier]}` };
+function upgradeTarget(paidTier: PlanTier, effectiveTier: PlanTier, onCode: boolean, t: (text: string, values?: Record<string, string | number>) => string): { tier: Exclude<PlanTier, "free">; label: string } | null {
+  if (onCode && effectiveTier !== "free") return { tier: effectiveTier as Exclude<PlanTier, "free">, label: t("Subscribe to keep {plan}", { plan: t(PLAN_LABELS[effectiveTier]) }) };
   const next: Partial<Record<PlanTier, Exclude<PlanTier, "free">>> = { free: "gold", silver: "gold", gold: "diamond" };
   const tier = next[paidTier];
-  return tier ? { tier, label: `Upgrade to ${PLAN_LABELS[tier]}` } : null;
+  return tier ? { tier, label: t("Upgrade to {plan}", { plan: t(PLAN_LABELS[tier]) }) } : null;
 }
 
 export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: () => void; onUpgrade: (tier: Exclude<PlanTier, "free">) => void }) {
+  const { t } = useLanguage();
   const { token } = useAuth();
   const { showToast } = useToast();
   const subscription = useSubscription();
@@ -37,7 +39,7 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
   const used = subscription.postsUsed;
   const percent = cap === null || cap === 0 ? 0 : Math.min(Math.round((used / cap) * 100), 100);
   const features = PLAN_FEATURES[tier];
-  const upgrade = upgradeTarget(subscription.paidTier, tier, subscription.source === "code");
+  const upgrade = upgradeTarget(subscription.paidTier, tier, subscription.source === "code", t);
 
   const turnOn = async () => {
     if (!token || busy) return;
@@ -49,7 +51,7 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
       return;
     }
     notifySubscriptionChanged();
-    showToast("Automatic monthly payment is on.");
+    showToast(t("Automatic monthly payment is on."));
   };
 
   const managePayment = async () => {
@@ -64,40 +66,40 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
     window.location.href = result.url;
   };
 
-  const status = pastDue ? { label: "Payment failed", style: "bg-amber-50 text-amber-700" } : paid && !autoRenew ? { label: "Ends soon", style: "bg-amber-50 text-amber-700" } : { label: "Active", style: "bg-emerald-50 text-emerald-700" };
+  const status = pastDue ? { label: t("Payment failed"), style: "bg-amber-50 text-amber-700" } : paid && !autoRenew ? { label: t("Ends soon"), style: "bg-amber-50 text-amber-700" } : { label: t("Active"), style: "bg-emerald-50 text-emerald-700" };
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white">
       <div className="grid gap-6 p-6 md:grid-cols-[1fr_auto] md:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-xl font-semibold text-slate-900">{PLAN_LABELS[tier]}</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{t(PLAN_LABELS[tier])}</h2>
             <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.style}`}>{status.label}</span>
-            {subscription.source === "code" && <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">Access code</span>}
+            {subscription.source === "code" && <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">{t("Access code")}</span>}
           </div>
 
           <p className="mt-1 text-sm text-slate-500">
             {subscription.source === "code" && subscription.accessGrant
-              ? `Included until ${formatLongDate(subscription.accessGrant.endsAt)}`
+              ? t("Included until {date}", { date: formatLongDate(subscription.accessGrant.endsAt) })
               : paid
-                ? `${formatMoney(PLAN_PRICES[subscription.paidTier as keyof typeof PLAN_PRICES])} per month · ${autoRenew ? (renewDate ? `renews ${renewDate}` : "renews monthly") : renewDate ? `ends ${renewDate}` : "ends this period"}`
-                : "Free forever. Upgrade any time."}
+                ? `${t("{price} per month", { price: formatMoney(PLAN_PRICES[subscription.paidTier as keyof typeof PLAN_PRICES]) })} · ${autoRenew ? (renewDate ? t("renews {date}", { date: renewDate }) : t("renews monthly")) : renewDate ? t("ends {date}", { date: renewDate }) : t("ends this period")}`
+                : t("Free forever. Upgrade any time.")}
           </p>
 
           <div className="mt-5 max-w-md">
             <div className="flex items-baseline justify-between text-sm">
-              <span className="font-medium text-slate-700">Posts this month</span>
-              <span className="text-slate-500">{cap === null ? `${used} used · unlimited` : `${used} of ${cap} used`}</span>
+              <span className="font-medium text-slate-700">{t("Posts this month")}</span>
+              <span className="text-slate-500">{cap === null ? t("{used} used · unlimited", { used }) : t("{used} of {cap} used", { used, cap })}</span>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={cap ?? undefined} aria-valuenow={used} aria-label="Posts used this month">
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuemin={0} aria-valuemax={cap ?? undefined} aria-valuenow={used} aria-label={t("Posts used this month")}>
               <div className={`h-full rounded-full transition-all ${percent >= 100 ? "bg-red-400" : percent >= 80 ? "bg-amber-400" : "bg-[#2ec440]"}`} style={{ width: cap === null ? "8%" : `${percent}%` }} />
             </div>
           </div>
 
           <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-slate-600">
-            <li>Listings live {PLAN_EXPIRY_DAYS[tier]} days</li>
-            {features.priorityPlacement && <li>Priority placement</li>}
-            {features.marketInsights && <li>Market Insights</li>}
+            <li>{t("Listings live {days} days", { days: PLAN_EXPIRY_DAYS[tier] })}</li>
+            {features.priorityPlacement && <li>{t("Priority placement")}</li>}
+            {features.marketInsights && <li>{t("Market Insights")}</li>}
           </ul>
 
           {upgrade && (
@@ -111,8 +113,8 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
           <div className="md:w-72">
             <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3">
               <span>
-                <span className="block text-sm font-medium text-slate-800">Automatic monthly payment</span>
-                <span className="block text-xs text-slate-500">{autoRenew ? "On" : "Off"}</span>
+                <span className="block text-sm font-medium text-slate-800">{t("Automatic monthly payment")}</span>
+                <span className="block text-xs text-slate-500">{autoRenew ? t("On") : t("Off")}</span>
               </span>
               <button
                 type="button"
@@ -127,11 +129,11 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
             </label>
             <div className="mt-3 flex flex-col items-start gap-1.5 text-sm font-medium">
               <button type="button" onClick={managePayment} disabled={busy === "portal"} className="text-[#219b31] hover:underline disabled:opacity-50">
-                {busy === "portal" ? "Opening…" : "Update payment method & invoices"}
+                {busy === "portal" ? t("Opening…") : t("Update payment method & invoices")}
               </button>
               {autoRenew && (
                 <button type="button" onClick={onCancel} className="text-red-600 hover:underline">
-                  Cancel subscription
+                  {t("Cancel subscription")}
                 </button>
               )}
             </div>
@@ -139,7 +141,7 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
         )}
       </div>
 
-      {pastDue && <p className="border-t border-amber-100 bg-amber-50 px-6 py-3 text-sm text-amber-800">Your last payment didn&apos;t go through. Update your payment method to keep your plan.</p>}
+      {pastDue && <p className="border-t border-amber-100 bg-amber-50 px-6 py-3 text-sm text-amber-800">{t("Your last payment didn't go through. Update your payment method to keep your plan.")}</p>}
     </section>
   );
 }

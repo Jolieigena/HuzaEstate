@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n/language";
 
 interface AddressSuggestion {
   label: string;
@@ -23,6 +24,7 @@ interface AddressInputProps {
  *  (Nominatim's coverage of rural addresses isn't exhaustive), same permissive fallback the
  *  /properties filter bar's own SuggestInput already uses for the same reason. */
 export default function AddressInput({ value, onChange, id, placeholder, required }: AddressInputProps) {
+  const { t } = useLanguage();
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,7 @@ export default function AddressInput({ value, onChange, id, placeholder, require
         id={id}
         type="text"
         autoComplete="off"
-        placeholder={placeholder ?? "Start typing your address…"}
+        placeholder={placeholder ?? t("Start typing your address…")}
         value={value}
         onChange={(e) => { onChange(e.target.value); setIsOpen(true); }}
         onFocus={() => setIsOpen(true)}

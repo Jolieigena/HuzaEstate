@@ -17,6 +17,7 @@ import { redeemAccessCode } from '@/lib/accessCodes/api';
 import { AccessCodeField } from '@/components/postingPlans/RedeemAccessCode';
 import { formatMoney } from '@/lib/finance/money';
 import Select from "@/components/shared/Select";
+import { useLanguage } from '@/lib/i18n/language';
 
 function isPlanTier(value: string | null): value is PlanTier {
   return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
@@ -27,6 +28,7 @@ function isPaidTier(value: PlanTier | null): value is Exclude<PlanTier, 'free'> 
 }
 
 function BecomeASellerForm() {
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { token, signup, logout, isLoggedIn, isAuthReady, account } = useAuth();
@@ -74,7 +76,7 @@ function BecomeASellerForm() {
       // The code replaces payment: it makes this account a seller on the code's plan for its days.
       const redeemed = await redeemAccessCode(freshToken, accessCode);
       if (!redeemed.ok) {
-        setError(`Your account is ready, but the access code couldn't be applied: ${redeemed.error}`);
+        setError(t("Your account is ready, but the access code couldn't be applied: {error}", { error: redeemed.error }));
         setSubmitting(false);
         return;
       }
@@ -120,7 +122,7 @@ function BecomeASellerForm() {
     setError('');
 
     if (!termsAccepted) {
-      setError("Please agree to HuzaEstate's seller terms to continue.");
+      setError(t("Please agree to HuzaEstate's seller terms to continue."));
       return;
     }
     setSubmitting(true);
@@ -131,12 +133,12 @@ function BecomeASellerForm() {
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords don't match.");
+      setError(t("Passwords don't match."));
       setSubmitting(false);
       return;
     }
     if (!passwordIsAcceptable(password)) {
-      setError('Please choose a password that meets every rule listed.');
+      setError(t('Please choose a password that meets every rule listed.'));
       setSubmitting(false);
       return;
     }
@@ -158,7 +160,7 @@ function BecomeASellerForm() {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
           </svg>
-          <p className="text-sm font-medium">Checking your session…</p>
+          <p className="text-sm font-medium">{t('Checking your session…')}</p>
         </div>
       </div>
     );
@@ -167,12 +169,12 @@ function BecomeASellerForm() {
   if (demoMode && paidTier) {
     return (
       <Dialog open onClose={goToLogin} labelledBy="demo-checkout-title" panelClassName="max-w-lg p-6 sm:p-8">
-        <h2 id="demo-checkout-title" className="text-lg font-black text-slate-900 mb-3">Payments aren&apos;t configured yet</h2>
+        <h2 id="demo-checkout-title" className="text-lg font-black text-slate-900 mb-3">{t("Payments aren't configured yet")}</h2>
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Checkout for the {PLAN_LABELS[paidTier]} plan isn&apos;t available in this environment yet — no charge was made. Your account was created; an administrator can upgrade your plan manually in the meantime.
+          {t("Checkout for the {plan} plan isn't available in this environment yet — no charge was made. Your account was created; an administrator can upgrade your plan manually in the meantime.", { plan: t(PLAN_LABELS[paidTier]) })}
         </div>
         <button onClick={goToLogin} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3 rounded-xl transition-colors">
-          Continue to Sign In
+          {t('Continue to Sign In')}
         </button>
       </Dialog>
     );
@@ -182,37 +184,37 @@ function BecomeASellerForm() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 py-24 px-4 sm:px-6">
       <div className="w-full max-w-[500px]">
         <div className="flex items-center justify-between gap-3 flex-wrap mb-4 w-full">
-          <h1 className="text-2xl font-bold text-slate-900 leading-none">Become a seller</h1>
+          <h1 className="text-2xl font-bold text-slate-900 leading-none">{t('Become a seller')}</h1>
           {selectedTier && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs leading-none">
-              {usingCode ? 'Access code: no payment needed' : `Selected plan: ${PLAN_LABELS[selectedTier]}${paidTier ? ` — ${formatMoney(PLAN_PRICES[paidTier])}/month` : ' — $0'}`}
+              {usingCode ? t('Access code: no payment needed') : paidTier ? t('Selected plan: {plan} — {price}/month', { plan: t(PLAN_LABELS[selectedTier]), price: formatMoney(PLAN_PRICES[paidTier]) }) : t('Selected plan: {plan} — $0', { plan: t(PLAN_LABELS[selectedTier]) })}
             </div>
           )}
         </div>
-        {paidTier && !usingCode && <p className="text-slate-500 mb-4">You&apos;ll complete payment securely with Stripe next.</p>}
+        {paidTier && !usingCode && <p className="text-slate-500 mb-4">{t("You'll complete payment securely with Stripe next.")}</p>}
 
         {error && (
           <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
-            {error}
+            {t(error)}
           </p>
         )}
 
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide">Contact Information</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('Contact Information')}</h2>
 
             {isLoggedIn ? (
               <p className="text-sm text-slate-600">
-                Continuing as <span className="font-bold text-slate-900">{account?.name}</span> ({account?.email})
+                {t('Continuing as')} <span className="font-bold text-slate-900">{account?.name}</span> ({account?.email})
               </p>
             ) : (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">First Name</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('First Name')}</label>
                     <input
                       type="text"
-                      placeholder="Jane"
+                      placeholder={t('Jane')}
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -220,10 +222,10 @@ function BecomeASellerForm() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Last Name</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Last Name')}</label>
                     <input
                       type="text"
-                      placeholder="Doe"
+                      placeholder={t('Doe')}
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -233,10 +235,10 @@ function BecomeASellerForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('Email Address')}</label>
                   <input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={t('Enter your email')}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -245,50 +247,50 @@ function BecomeASellerForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Address</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('Address')}</label>
                   <AddressInput value={address} onChange={setAddress} required />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Are you the property owner, or a licensed agent?</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">{t('Are you the property owner, or a licensed agent?')}</label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setSellerType('owner')}
                       className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${sellerType === 'owner' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
                     >
-                      I&apos;m the owner
+                      {t("I'm the owner")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setSellerType('agent')}
                       className={`rounded-xl border px-4 py-3 text-sm font-bold transition-colors ${sellerType === 'agent' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'}`}
                     >
-                      I&apos;m an agent/realtor
+                      {t("I'm an agent/realtor")}
                     </button>
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">This is what buyers and renters see when they message you about a listing.</p>
+                  <p className="mt-2 text-xs text-slate-400">{t('This is what buyers and renters see when they message you about a listing.')}</p>
                 </div>
 
                 {sellerType === 'agent' && (
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Company / brokerage name <span className="font-medium text-slate-400">(optional)</span></label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Company / brokerage name')} <span className="font-medium text-slate-400">({t('optional')})</span></label>
                     <input
                       type="text"
-                      placeholder="e.g. Kigali Realty Group"
+                      placeholder={t('e.g. Kigali Realty Group')}
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                     />
-                    <p className="mt-2 text-xs text-slate-400">Shown on your listings. Add a logo later from your Manager Portal.</p>
+                    <p className="mt-2 text-xs text-slate-400">{t('Shown on your listings. Add a logo later from your Owner Portal.')}</p>
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Password')}</label>
                     <PasswordInput
-                      placeholder="Password"
+                      placeholder={t('Password')}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       minLength={PASSWORD_MIN_LENGTH}
@@ -298,9 +300,9 @@ function BecomeASellerForm() {
                     <PasswordChecklist password={password} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">Confirm Password</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">{t('Confirm Password')}</label>
                     <PasswordInput
-                      placeholder="Re-enter password"
+                      placeholder={t('Re-enter password')}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       minLength={8}
@@ -313,31 +315,31 @@ function BecomeASellerForm() {
             )}
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Phone Number</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Phone Number')}</label>
               <PhoneInput value={phone} onChange={setPhone} required />
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5">Listing Preferences</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5">{t('Listing Preferences')}</h2>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">I want to</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('I want to')}</label>
               <Select
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors text-slate-900"
                 required
                 defaultValue=""
               >
-                <option value="" disabled>Select an option</option>
-                <option value="sell">Sell my properties</option>
-                <option value="rent">Rent out my properties</option>
-                <option value="both">Both sell and rent out properties</option>
+                <option value="" disabled>{t('Select an option')}</option>
+                <option value="sell">{t('Sell my properties')}</option>
+                <option value="rent">{t('Rent out my properties')}</option>
+                <option value="both">{t('Both sell and rent out properties')}</option>
               </Select>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5">Access Code</h2>
+            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-5">{t('Access Code')}</h2>
             <AccessCodeField value={accessCode} onChange={setAccessCode} autoFocus={wantsCode} />
           </div>
 
@@ -351,30 +353,30 @@ function BecomeASellerForm() {
               required
             />
             <label htmlFor="seller-terms" className="text-sm text-slate-600 leading-relaxed cursor-pointer">
-              I agree to HuzaEstate&apos;s <Link href="/seller-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">Seller Terms &amp; Conditions</Link>.
+              {t("I agree to HuzaEstate's")} <Link href="/seller-terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">{t('Seller Terms & Conditions')}</Link>.
             </label>
           </div>
 
           {paidTier && !usingCode && (
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <span className="text-sm font-bold text-slate-700">{PLAN_LABELS[paidTier]} plan</span>
-              <span className="text-sm font-bold text-slate-900">{formatMoney(PLAN_PRICES[paidTier])}/month</span>
+              <span className="text-sm font-bold text-slate-700">{t('{plan} plan', { plan: t(PLAN_LABELS[paidTier]) })}</span>
+              <span className="text-sm font-bold text-slate-900">{t('{price}/month', { price: formatMoney(PLAN_PRICES[paidTier]) })}</span>
             </div>
           )}
 
           <button type="submit" disabled={submitting || !termsAccepted} className="w-full bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60 disabled:cursor-not-allowed">
-            {submitting ? 'Submitting…' : usingCode ? 'Apply Code & Create Seller Account' : paidTier ? 'Continue to Payment' : 'Create Seller Account'}
+            {submitting ? t('Submitting…') : usingCode ? t('Apply Code & Create Seller Account') : paidTier ? t('Continue to Payment') : t('Create Seller Account')}
           </button>
         </form>
 
         {!isLoggedIn && (
           <p className="mt-6 text-center text-slate-500 text-sm">
-            Already have an account?{' '}
+            {t('Already have an account?')}{' '}
             <Link
               href={`/login?redirect=${encodeURIComponent(`/become-a-seller${planParam ? `?plan=${planParam}` : ''}`)}`}
               className="font-bold text-[#2ec440] hover:text-[#28b039] transition-colors"
             >
-              Sign in
+              {t('Sign in')}
             </Link>
           </p>
         )}

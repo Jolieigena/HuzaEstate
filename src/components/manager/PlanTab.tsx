@@ -8,6 +8,7 @@ import RedeemAccessCode from '@/components/postingPlans/RedeemAccessCode';
 import { formatMoney } from '@/lib/finance/money';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PER_POST_PRICE, type PlanTier } from '@/lib/postingPlans/types';
+import { useLanguage } from '@/lib/i18n/language';
 
 type Checkout = { kind: 'subscribe'; tier: Exclude<PlanTier, 'free'> } | { kind: 'per_post' } | null;
 
@@ -15,6 +16,7 @@ type Checkout = { kind: 'subscribe'; tier: Exclude<PlanTier, 'free'> } | { kind:
  *  own (not a pop-up) because there's a lot on it: the current plan, four plans to compare, an access
  *  code, and billing controls. Only the short steps (paying, confirming a cancellation) open as dialogs. */
 export default function PlanTab() {
+  const { t } = useLanguage();
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<Checkout>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -26,8 +28,8 @@ export default function PlanTab() {
       <section>
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Plans</h3>
-            <p className="text-sm text-slate-500">Change plan any time. Upgrades apply straight away.</p>
+            <h3 className="text-lg font-semibold text-slate-900">{t('Plans')}</h3>
+            <p className="text-sm text-slate-500">{t('Change plan any time. Upgrades apply straight away.')}</p>
           </div>
         </div>
         <PricingCards
@@ -44,15 +46,15 @@ export default function PlanTab() {
 
       <section className="grid gap-4 md:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="text-base font-semibold text-slate-900">Access code</h3>
-          <p className="mb-3 text-sm text-slate-500">Redeem a code to use a paid plan for a set number of days.</p>
+          <h3 className="text-base font-semibold text-slate-900">{t('Access code')}</h3>
+          <p className="mb-3 text-sm text-slate-500">{t('Redeem a code to use a paid plan for a set number of days.')}</p>
           <RedeemAccessCode defaultOpen />
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
-          <h3 className="text-base font-semibold text-slate-900">Just one more post?</h3>
-          <p className="mb-3 text-sm text-slate-500">Pay {formatMoney(PER_POST_PRICE)} for a single extra listing without changing plan.</p>
+          <h3 className="text-base font-semibold text-slate-900">{t('Just one more post?')}</h3>
+          <p className="mb-3 text-sm text-slate-500">{t('Pay {price} for a single extra listing without changing plan.', { price: formatMoney(PER_POST_PRICE) })}</p>
           <button type="button" onClick={() => setCheckout({ kind: 'per_post' })} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-900">
-            Buy one extra post
+            {t('Buy one extra post')}
           </button>
         </div>
       </section>
