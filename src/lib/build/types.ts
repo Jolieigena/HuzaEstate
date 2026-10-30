@@ -334,6 +334,7 @@ export type ManualRoomType =
   | "garage"
   | "balcony"
   | "terrace"
+  | "open_space"
   | "hallway"
   | "staircase"
   | "custom";
@@ -351,10 +352,24 @@ export const MANUAL_ROOM_TYPE_LABELS: Record<ManualRoomType, string> = {
   garage: "Garage",
   balcony: "Balcony",
   terrace: "Terrace",
+  open_space: "Open space",
   hallway: "Hallway",
   staircase: "Staircase",
   custom: "Custom room",
 };
+
+/** A door or a window set into one wall of a room. `offset` is the distance in metres from the start of that wall (the left end of the
+ *  top and bottom walls, the top end of the left and right walls) to the near edge of the opening. */
+export type OpeningKind = "door" | "window";
+export type WallSide = "top" | "right" | "bottom" | "left";
+
+export interface ManualOpening {
+  id: string;
+  kind: OpeningKind;
+  wall: WallSide;
+  offset: number;
+  width: number;
+}
 
 export interface ManualRoom {
   id: string;
@@ -365,6 +380,7 @@ export interface ManualRoom {
   w: number;
   h: number;
   notes?: string;
+  openings?: ManualOpening[];
 }
 
 export interface ManualFloor {

@@ -7,7 +7,8 @@ import { BuildProjectService } from "@/lib/build/projectService";
 import { DESIGN_TEMPLATES } from "@/lib/build/templates";
 import { newId } from "@/lib/build/factory";
 import { validateManualDesign } from "@/lib/build/designerValidation";
-import { ManualDesign, ManualFloor, ManualRoom, ManualRoomType, MANUAL_ROOM_TYPE_LABELS } from "@/lib/build/types";
+import { ManualDesign, ManualFloor, ManualOpening, ManualRoom, ManualRoomType, MANUAL_ROOM_TYPE_LABELS, OpeningKind, WallSide } from "@/lib/build/types";
+import { OPENING_LABELS, WALLS, WALL_LABELS, clampOpening, newOpening, wallLength } from "@/lib/build/openings";
 import { useToast } from "@/lib/toast-context";
 import FloorPlanSvg from "@/components/build/FloorPlanSvg";
 import Dialog from "@/components/Dialog";
@@ -16,6 +17,7 @@ import PromptModal from "@/components/shared/PromptModal";
 import Select from "@/components/shared/Select";
 
 const ROOM_LIBRARY = Object.entries(MANUAL_ROOM_TYPE_LABELS) as [ManualRoomType, string][];
+const OPENING_KINDS: OpeningKind[] = ["door", "window"];
 
 const SUGGESTIONS = [
   { id: "add-staircase", label: "Add a staircase for circulation", apply: (d: ManualDesign) => addRoomToFirstFloor(d, "staircase", "Staircase", 6) },
@@ -162,9 +164,26 @@ function DesignerContent() {
     else applyLive(next);
   };
 
+  // Doors and windows belong to a room's wall, so they go onto the room that is selected.
+  const addOpening = (kind: OpeningKind) => {
+    if (!selectedRoom) {
+      showToast(`Select a room first, then add the ${OPENING_LABELS[kind].toLowerCase()} to it.`, "error");
+      return;
+    }
+    updateRoom(selectedRoom.id, { openings: [...(selectedRoom.openings ?? []), newOpening(selectedRoom, kind)] });
+  };
+
+  const updateOpening = (room: ManualRoom, openingId: string, patch: Partial<ManualOpening>) => {
+    updateRoom(room.id, { openings: (room.openings ?? []).map((o) => (o.id === openingId ? clampOpening(room, { ...o, ...patch }) : o)) });
+  };
+
+  const removeOpening = (room: ManualRoom, openingId: string) => {
+    updateRoom(room.id, { openings: (room.openings ?? []).filter((o) => o.id !== openingId) });
+  };
+
   const duplicateRoom = (room: ManualRoom) => {
     if (!selectedFloor) return;
-    const copy: ManualRoom = { ...room, id: newId("room"), name: `${room.name} (Copy)`, x: room.x + room.w + 0.5, y: room.y };
+    const copy: ManualRoom = { ...room, id: newId("room"), name: `${room.name} (Copy)`, x: room.x + room.w + 0.5, y: room.y, openings: (room.openings ?? []).map((o) => ({ ...o, id: newId("opening") })) };
     const next = { ...design, floors: design.floors.map((f) => (f.id === selectedFloor.id ? { ...f, rooms: [...f.rooms, copy] } : f)) };
     commit(next);
     setSelectedRoomId(copy.id);
@@ -307,6 +326,13 @@ function DesignerContent() {
                 + {label}
               </button>
             ))}
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide pt-3 pb-1">Doors &amp; windows</p>
+            {OPENING_KINDS.map((kind) => (
+              <button key={kind} type="button" onClick={() => addOpening(kind)} className="w-full text-left px-3 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                + {OPENING_LABELS[kind]}
+              </button>
+            ))}
+            <p className="text-xs text-slate-400 px-1 pt-1">Select a room, then add a door or window to one of its walls.</p>
           </div>
         )}
 
@@ -328,9 +354,14 @@ function DesignerContent() {
           <div className="lg:hidden mt-4 bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Add a room</p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {ROOM_LIBRARY.slice(0, 8).map(([type, label]) => (
+              {ROOM_LIBRARY.map(([type, label]) => (
                 <button key={type} type="button" onClick={() => addRoom(type)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600">
                   + {label}
+                </button>
+              ))}
+              {OPENING_KINDS.map((kind) => (
+                <button key={kind} type="button" onClick={() => addOpening(kind)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700">
+                  + {OPENING_LABELS[kind]}
                 </button>
               ))}
             </div>
@@ -400,6 +431,72 @@ function DesignerContent() {
                   </div>
                 </div>
                 <p className="text-xs text-slate-400">Area: {(selectedRoom.w * selectedRoom.h).toFixed(1)} sqm</p>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-500">Doors &amp; windows</label>
+                    <div className="flex gap-1">
+                      {OPENING_KINDS.map((kind) => (
+                        <button key={kind} type="button" onClick={() => addOpening(kind)} className="text-[11px] font-bold px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600">
+                          + {OPENING_LABELS[kind]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {(selectedRoom.openings ?? []).length === 0 ? (
+                    <p className="text-xs text-slate-400">None yet.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {(selectedRoom.openings ?? []).map((opening) => (
+                        <li key={opening.id} className="rounded-lg border border-slate-200 p-2 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-700">{OPENING_LABELS[opening.kind]}</span>
+                            <button type="button" onClick={() => removeOpening(selectedRoom, opening.id)} className="text-[11px] font-bold text-red-500 hover:text-red-700">
+                              Remove
+                            </button>
+                          </div>
+                          <Select
+                            value={opening.wall}
+                            onChange={(e) => updateOpening(selectedRoom, opening.id, { wall: e.target.value as WallSide })}
+                            aria-label="Wall"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20"
+                          >
+                            {WALLS.map((wall) => (
+                              <option key={wall} value={wall}>
+                                {WALL_LABELS[wall]}
+                              </option>
+                            ))}
+                          </Select>
+                          <div className="grid grid-cols-2 gap-2">
+                            <label className="block text-[11px] font-bold text-slate-500">
+                              Position (m)
+                              <input
+                                type="number"
+                                min={0}
+                                max={Math.max(0, wallLength(selectedRoom, opening.wall) - opening.width)}
+                                step={0.1}
+                                value={Number(opening.offset.toFixed(2))}
+                                onChange={(e) => updateOpening(selectedRoom, opening.id, { offset: Number(e.target.value) || 0 })}
+                                className="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-normal focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20"
+                              />
+                            </label>
+                            <label className="block text-[11px] font-bold text-slate-500">
+                              Width (m)
+                              <input
+                                type="number"
+                                min={0.4}
+                                max={wallLength(selectedRoom, opening.wall)}
+                                step={0.1}
+                                value={opening.width}
+                                onChange={(e) => updateOpening(selectedRoom, opening.id, { width: Number(e.target.value) || 0.4 })}
+                                className="mt-1 w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs font-normal focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20"
+                              />
+                            </label>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">Notes</label>
                   <textarea
