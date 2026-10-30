@@ -1,6 +1,7 @@
 import type { PlanTier } from "@/lib/postingPlans/types";
-import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
-import { formatMoney } from "@/lib/finance/money";
+import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PER_POST_PRICE, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
+import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
+import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { useLanguage } from "@/lib/i18n/language";
 
 const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
@@ -9,9 +10,9 @@ const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
 // the two perks. Everything else is kept off the cards.
 const PRIORITY = "Priority placement: shown above standard listings";
 const FEATURES: Record<PlanTier, string[]> = {
-  free: ["2 listing posts / month", "Listings stay live {days} days", "Extra posts: $3 each"],
-  silver: ["3 listing posts / month", "Listings stay live {days} days", "Extra posts: $3 each"],
-  gold: ["10 listing posts / month", "Listings stay live {days} days", PRIORITY, "Market Insights access", "Extra posts: $3 each"],
+  free: ["2 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
+  silver: ["3 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
+  gold: ["10 listing posts / month", "Listings stay live {days} days", PRIORITY, "Market Insights access", "Extra posts: {price} each"],
   diamond: ["Unlimited listing posts", "Listings stay live {days} days", PRIORITY, "Market Insights access"],
 };
 
@@ -40,9 +41,13 @@ export default function PricingCards({
   onSelect: (tier: PlanTier) => void;
 }) {
   const { t } = useLanguage();
+  const { show } = usePlanMoney();
   const yesNo = (value: boolean) => (value ? t("Yes") : "—");
   return (
     <div>
+      <div className="mb-3 flex justify-end">
+        <PlanCurrencyToggle />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {TIERS.map((tier) => {
           const isCurrent = currentTier !== undefined && tier === currentTier;
@@ -62,7 +67,7 @@ export default function PricingCards({
 
               <h3 className="font-bold text-slate-900 text-[15px]">{t(PLAN_LABELS[tier])}</h3>
               <div className="mt-2 mb-4">
-                <span className="text-2xl font-black text-slate-900">{price ? formatMoney(price) : "$0"}</span>
+                <span className="text-2xl font-black text-slate-900">{price ? show(price) : "$0"}</span>
                 <span className="text-slate-500 text-sm font-medium">{tier === "free" ? "" : t("/month")}</span>
               </div>
 
@@ -72,7 +77,7 @@ export default function PricingCards({
                     <svg className="w-4 h-4 text-[#2ec440] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    {t(f, { days: PLAN_EXPIRY_DAYS[tier] })}
+                    {t(f, { days: PLAN_EXPIRY_DAYS[tier], price: show(PER_POST_PRICE) })}
                   </li>
                 ))}
               </ul>
@@ -126,7 +131,7 @@ export default function PricingCards({
                 <th className="px-3 py-2.5 font-semibold text-slate-700">{t("Price")}</th>
                 {TIERS.map((tier) => (
                   <td key={tier} className="px-3 py-2.5">
-                    {tier === "free" ? "$0" : `${formatMoney(PLAN_PRICES[tier])}${t("/month")}`}
+                    {tier === "free" ? "$0" : `${show(PLAN_PRICES[tier])}${t("/month")}`}
                   </td>
                 ))}
               </tr>

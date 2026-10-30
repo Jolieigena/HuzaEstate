@@ -15,7 +15,7 @@ import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/type
 import { createSellerFreeCheckout, createSubscribeCheckout } from '@/lib/postingPlans/api';
 import { redeemAccessCode } from '@/lib/accessCodes/api';
 import { AccessCodeField } from '@/components/postingPlans/RedeemAccessCode';
-import { formatMoney } from '@/lib/finance/money';
+import { usePlanMoney } from '@/lib/postingPlans/usePlanMoney';
 import Select from "@/components/shared/Select";
 import { useLanguage } from '@/lib/i18n/language';
 
@@ -28,6 +28,7 @@ function isPaidTier(value: PlanTier | null): value is Exclude<PlanTier, 'free'> 
 }
 
 function BecomeASellerForm() {
+  const { show } = usePlanMoney();
   const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -187,7 +188,7 @@ function BecomeASellerForm() {
           <h1 className="text-2xl font-bold text-slate-900 leading-none">{t('Become a seller')}</h1>
           {selectedTier && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs leading-none">
-              {usingCode ? t('Access code: no payment needed') : paidTier ? t('Selected plan: {plan} — {price}/month', { plan: t(PLAN_LABELS[selectedTier]), price: formatMoney(PLAN_PRICES[paidTier]) }) : t('Selected plan: {plan} — $0', { plan: t(PLAN_LABELS[selectedTier]) })}
+              {usingCode ? t('Access code: no payment needed') : paidTier ? t('Selected plan: {plan} — {price}/month', { plan: t(PLAN_LABELS[selectedTier]), price: show(PLAN_PRICES[paidTier]) }) : t('Selected plan: {plan} — $0', { plan: t(PLAN_LABELS[selectedTier]) })}
             </div>
           )}
         </div>
@@ -360,7 +361,7 @@ function BecomeASellerForm() {
           {paidTier && !usingCode && (
             <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <span className="text-sm font-bold text-slate-700">{t('{plan} plan', { plan: t(PLAN_LABELS[paidTier]) })}</span>
-              <span className="text-sm font-bold text-slate-900">{t('{price}/month', { price: formatMoney(PLAN_PRICES[paidTier]) })}</span>
+              <span className="text-sm font-bold text-slate-900">{t('{price}/month', { price: show(PLAN_PRICES[paidTier]) })}</span>
             </div>
           )}
 

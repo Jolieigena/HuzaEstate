@@ -5,7 +5,7 @@ import PricingCards from "./PricingCards";
 import PlanCheckout from "./PlanCheckout";
 import RedeemAccessCode from "./RedeemAccessCode";
 import { useSubscription } from "@/lib/postingPlans/hooks";
-import { formatMoney } from "@/lib/finance/money";
+import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { useLanguage } from "@/lib/i18n/language";
 
@@ -18,6 +18,7 @@ type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { k
 // checked fresh against the now-updated quota.
 export default function PostingPaywall({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
+  const { show } = usePlanMoney();
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<CheckoutMode>(null);
 
@@ -55,7 +56,7 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
             onClick={() => setCheckout({ kind: "per_post" })}
             className="bg-white border border-slate-300 hover:border-slate-900 text-slate-900 font-bold px-6 py-3 rounded-xl transition-colors"
           >
-            {t("Pay {price} to post once", { price: formatMoney(PER_POST_PRICE) })}
+            {t("Pay {price} to post once", { price: show(PER_POST_PRICE) })}
           </button>
         </div>
       </div>

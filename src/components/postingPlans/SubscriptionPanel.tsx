@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { formatMoney } from "@/lib/finance/money";
+import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import { openBillingPortal, resumeSubscription } from "@/lib/postingPlans/api";
 import { notifySubscriptionChanged, useSubscription } from "@/lib/postingPlans/hooks";
 import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PLAN_PRICES, type PlanTier } from "@/lib/postingPlans/types";
@@ -24,6 +24,7 @@ function upgradeTarget(paidTier: PlanTier, effectiveTier: PlanTier, onCode: bool
 
 export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: () => void; onUpgrade: (tier: Exclude<PlanTier, "free">) => void }) {
   const { t } = useLanguage();
+  const { show } = usePlanMoney();
   const { token } = useAuth();
   const { showToast } = useToast();
   const subscription = useSubscription();
@@ -82,7 +83,7 @@ export default function SubscriptionPanel({ onCancel, onUpgrade }: { onCancel: (
             {subscription.source === "code" && subscription.accessGrant
               ? t("Included until {date}", { date: formatLongDate(subscription.accessGrant.endsAt) })
               : paid
-                ? `${t("{price} per month", { price: formatMoney(PLAN_PRICES[subscription.paidTier as keyof typeof PLAN_PRICES]) })} · ${autoRenew ? (renewDate ? t("renews {date}", { date: renewDate }) : t("renews monthly")) : renewDate ? t("ends {date}", { date: renewDate }) : t("ends this period")}`
+                ? `${t("{price} per month", { price: show(PLAN_PRICES[subscription.paidTier as keyof typeof PLAN_PRICES]) })} · ${autoRenew ? (renewDate ? t("renews {date}", { date: renewDate }) : t("renews monthly")) : renewDate ? t("ends {date}", { date: renewDate }) : t("ends this period")}`
                 : t("Free forever. Upgrade any time.")}
           </p>
 

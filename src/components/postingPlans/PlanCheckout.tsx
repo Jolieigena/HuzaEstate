@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { formatMoney } from "@/lib/finance/money";
+import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
+import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { PLAN_LABELS, PLAN_PRICES, PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { createPerPostCheckout, createSubscribeCheckout } from "@/lib/postingPlans/api";
 import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
@@ -23,6 +25,7 @@ type Mode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "pe
 // that case shows an inline success message instead of navigating away.
 export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: () => void }) {
   const { t } = useLanguage();
+  const { show, converted } = usePlanMoney();
   const { token } = useAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -83,10 +86,14 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
       </div>
 
       <div className="space-y-4">
-        <p className="text-2xl font-black text-slate-900">
-          {formatMoney(amount)}
-          {mode.kind === "subscribe" && <span className="text-sm font-semibold text-slate-500">{t("/month")}</span>}
-        </p>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-2xl font-black text-slate-900">
+            {show(amount)}
+            {mode.kind === "subscribe" && <span className="text-sm font-semibold text-slate-500">{t("/month")}</span>}
+          </p>
+          <PlanCurrencyToggle />
+        </div>
+        {converted && <p className="text-sm font-semibold text-slate-600">{t("You will be charged {price} in US dollars. The amount above is an estimate.", { price: formatMoney(amount) })}</p>}
         <p className="text-sm text-slate-500">{t("You'll complete payment securely with Stripe next.")}</p>
         {mode.kind === "subscribe" && <RedeemAccessCode defaultOpen onRedeemed={() => setTimeout(onClose, 2500)} />}
 
