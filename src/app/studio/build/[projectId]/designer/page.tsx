@@ -218,7 +218,10 @@ function DesignerContent() {
     setSelectedFloorId(next.floors[0]?.id ?? null);
     setTemplateModalOpen(false);
     setPendingReplace(null);
-    showToast(`Applied the "${template.name}" template.`);
+    const wanted = Math.max(1, project.brief.household.floors);
+    const has = next.floors.length;
+    if (has !== wanted) showToast(`Applied the "${template.name}" template. It has ${has} ${has === 1 ? "floor" : "floors"}, but your brief asks for ${wanted}. Add or delete floors to match.`, "error");
+    else showToast(`Applied the "${template.name}" template.`);
   };
 
   const applyConceptNow = () => {
@@ -619,6 +622,16 @@ function DesignerContent() {
                 <p className="text-xs text-slate-400">
                   {t.bedrooms} bed · {t.approxDimensions} · ~{t.approxAreaSqm} sqm
                 </p>
+                {(() => {
+                  const floorCount = t.floors().length;
+                  const wanted = Math.max(1, project.brief.household.floors);
+                  return (
+                    <p className={`text-xs mt-1 font-semibold ${floorCount === wanted ? "text-[#219b31]" : "text-amber-600"}`}>
+                      {floorCount} {floorCount === 1 ? "floor" : "floors"}
+                      {floorCount === wanted ? " · matches your brief" : ` · your brief asks for ${wanted}`}
+                    </p>
+                  );
+                })()}
               </button>
             ))}
           </div>

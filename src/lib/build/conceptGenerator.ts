@@ -1,5 +1,6 @@
 import { newId } from "./factory";
 import { calculateBudget } from "./budget";
+import { addDefaultOpenings } from "./openings";
 import { Concept, ConceptDirection, DesignBrief, ManualFloor, ManualRoom, ManualRoomType } from "./types";
 
 const DIRECTION_META: Record<ConceptDirection, { name: string; rationale: string; advantages: string[]; compromises: string[]; areaFactor: number; sustainability: number; efficiency: number; costFactor: number; widthM: number; parkingDelta: number }> = {
@@ -149,7 +150,9 @@ function totalFloorArea(floors: ManualFloor[]): number {
 
 export function generateConcept(brief: DesignBrief, direction: ConceptDirection): Concept {
   const meta = DIRECTION_META[direction];
-  const floors = buildFloorsForDirection(brief, direction);
+  const floors = addDefaultOpenings(buildFloorsForDirection(brief, direction));
+  const singleStorey = floors.length === 1;
+  const storeyWord = singleStorey ? "single-storey" : floors.length === 2 ? "two-storey" : `${floors.length}-storey`;
   const floorAreaSqm = Math.max(30, totalFloorArea(floors));
   const bedrooms = floors.reduce((sum, f) => sum + f.rooms.filter((r) => r.type === "bedroom").length, 0);
   const bathrooms = floors.reduce((sum, f) => sum + f.rooms.filter((r) => r.type === "bathroom").length, 0);
@@ -170,7 +173,7 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
     id: newId("concept"),
     direction,
     name: meta.name,
-    rationale: meta.rationale,
+    rationale: `${meta.rationale} It is a ${storeyWord} home.`,
     previewImage: direction === "efficient" ? PLACEHOLDER_IMAGES.white : direction === "balanced" ? PLACEHOLDER_IMAGES.final : PLACEHOLDER_IMAGES.spacious,
     metrics: {
       floorAreaSqm,
@@ -183,8 +186,8 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
       sustainabilityScore: meta.sustainability,
       efficiencyScore: meta.efficiency,
     },
-    advantages: meta.advantages,
-    compromises: meta.compromises,
+    advantages: singleStorey ? [...meta.advantages, "Everything is on one level, with no stairs to climb at any age"] : [...meta.advantages, `Living spaces below and bedrooms above, over ${floors.length} floors`],
+    compromises: singleStorey ? [...meta.compromises, "A single level needs a wider footprint and more of the plot"] : [...meta.compromises, "A staircase takes floor area on every level"],
     generatedAt,
     version: 1,
     floors,
@@ -199,21 +202,21 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
     interiorDirections: [
       { room: "Living Room", image: PLACEHOLDER_IMAGES.final, note: "Open-plan living oriented toward the plot's most open side." },
       { room: "Kitchen", image: PLACEHOLDER_IMAGES.white, note: "Kitchen positioned close to the dining area for easy service." },
-      { room: "Primary Bedroom", image: PLACEHOLDER_IMAGES.spacious, note: "Primary bedroom set apart from shared living spaces for privacy." },
+      { room: "Primary Bedroom", image: PLACEHOLDER_IMAGES.spacious, note: singleStorey ? "Primary bedroom on the quiet side of the plan, away from shared living spaces." : "Primary bedroom upstairs, set apart from shared living spaces for privacy." },
       { room: "Bathroom", image: PLACEHOLDER_IMAGES.ai, note: "Bright, ventilated bathroom with simple, durable finishes." },
     ],
     decisions: {
-      grouping: floors.length > 1 ? "Bedrooms are grouped upstairs, away from shared living spaces on the ground floor." : "Private and shared spaces are grouped on opposite sides of the plan for a clearer separation.",
+      grouping: floors.length > 1 ? "Bedrooms are grouped upstairs, away from shared living spaces on the ground floor." : "All rooms are on one level. Private and shared spaces are grouped on opposite sides of the plan for a clearer separation.",
       privacy: "Bedrooms are positioned away from entertainment and guest areas for better acoustic privacy.",
       naturalLight: "Living and dining areas face the plot's most open side to maximise daylight through the day.",
-      plotResponse: brief.plot.areaSqm ? `The footprint targets roughly ${Math.round((floorAreaSqm / floors.length / brief.plot.areaSqm) * 100)}% plot coverage per floor, leaving room for parking and outdoor space.` : "The footprint assumes a typical residential plot until your exact plot size is confirmed.",
+      plotResponse: brief.plot.areaSqm ? (singleStorey ? `The single level covers roughly ${Math.round((floorAreaSqm / brief.plot.areaSqm) * 100)}% of the plot, leaving room for parking and outdoor space.` : `The footprint targets roughly ${Math.round((floorAreaSqm / floors.length / brief.plot.areaSqm) * 100)}% plot coverage per floor, leaving room for parking and outdoor space.`) : "The footprint assumes a typical residential plot until your exact plot size is confirmed.",
       budgetResponse: `This direction targets the ${meta.name.toLowerCase()} end of your budget range by adjusting room sizes rather than removing required rooms.`,
-      futureExpansion: "The structural grid on the ground floor leaves room for a rear extension if more space is needed later.",
+      futureExpansion: singleStorey ? "The single level can be extended at the rear or the side, and a first floor can be added later if the foundations and walls are designed for it." : "The structural grid on the ground floor leaves room for a rear extension if more space is needed later.",
     },
     risks: {
       missingSiteInfo: brief.plot.areaSqm ? [] : ["Plot area was not provided — this concept assumes a typical residential plot size."],
       planningAssumptions: ["Assumes standard residential setback requirements for the stated location."],
-      structuralAssumptions: ["Assumes a conventional block-and-slab structural system."],
+      structuralAssumptions: [singleStorey ? "Assumes a conventional block-and-slab structural system on a single level." : "Assumes a conventional block-and-slab structural system with a slab between floors."],
       budgetAssumptions: ["Material costs assume standard, locally available finishes at the selected finish level."],
       needsProfessionalValidation: ["Structural design", "Final electrical and plumbing layout", "Permit drawings"],
     },

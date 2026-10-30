@@ -1,5 +1,6 @@
 import { ManualFloor, ManualRoom, ManualRoomType } from "./types";
 import { newId } from "./factory";
+import { addDefaultOpenings } from "./openings";
 
 // Grid units below are approximately metres. Templates are simple prototype
 // starting points for the manual designer, not architecturally validated
@@ -18,7 +19,7 @@ export interface DesignTemplate {
   floors: () => ManualFloor[];
 }
 
-export const DESIGN_TEMPLATES: DesignTemplate[] = [
+const TEMPLATE_DEFINITIONS: DesignTemplate[] = [
   {
     id: "compact-two-bedroom",
     name: "Compact two-bedroom",
@@ -177,6 +178,9 @@ export const DESIGN_TEMPLATES: DesignTemplate[] = [
     ],
   },
 ];
+
+// Every template comes with its doors and windows, so a plan is never a set of bare boxes.
+export const DESIGN_TEMPLATES: DesignTemplate[] = TEMPLATE_DEFINITIONS.map((template) => ({ ...template, floors: () => addDefaultOpenings(template.floors()) }));
 
 export function getTemplate(id: string): DesignTemplate | undefined {
   return DESIGN_TEMPLATES.find((t) => t.id === id);
