@@ -78,15 +78,16 @@ interface FloorPlanSvgProps {
   zoom?: number;
 }
 
-export default function FloorPlanSvg({ floor, selectedRoomId, onSelectRoom, interactive = false, onDragRoom, onDragEnd, zoom = 1 }: FloorPlanSvgProps) {
-  if (floor.rooms.length === 0) {
-    return <div className="flex items-center justify-center h-64 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-sm">No rooms on this floor yet.</div>;
-  }
+/** The size in pixels of a floor's drawing at zoom 1 (used to lay several floors out in one downloaded picture). */
+export function floorPlanSize(floor: ManualFloor): { width: number; height: number } {
+  const maxX = Math.max(1, ...floor.rooms.map((r) => r.x + r.w)) + 1;
+  const maxY = Math.max(1, ...floor.rooms.map((r) => r.y + r.h)) + 1;
+  return { width: maxX * UNIT, height: maxY * UNIT };
+}
 
-  const maxX = Math.max(...floor.rooms.map((r) => r.x + r.w)) + 1;
-  const maxY = Math.max(...floor.rooms.map((r) => r.y + r.h)) + 1;
-  const width = maxX * UNIT;
-  const height = maxY * UNIT;
+/** Just the drawing of one floor, with no frame around it. */
+export function FloorPlanGraphic({ floor, selectedRoomId, onSelectRoom, interactive = false, onDragRoom, onDragEnd, zoom = 1 }: FloorPlanSvgProps) {
+  const { width, height } = floorPlanSize(floor);
 
   const handlePointerDown = (room: ManualRoom, e: React.PointerEvent<SVGGElement>) => {
     if (!interactive || !onDragRoom) return;
@@ -119,7 +120,6 @@ export default function FloorPlanSvg({ floor, selectedRoomId, onSelectRoom, inte
   };
 
   return (
-    <div className="overflow-auto bg-slate-50 rounded-2xl border border-slate-200 p-4">
       <svg
         width={width * zoom}
         height={height * zoom}
@@ -161,6 +161,16 @@ export default function FloorPlanSvg({ floor, selectedRoomId, onSelectRoom, inte
           );
         })}
       </svg>
+  );
+}
+
+export default function FloorPlanSvg(props: FloorPlanSvgProps) {
+  if (props.floor.rooms.length === 0) {
+    return <div className="flex items-center justify-center h-64 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-sm">No rooms on this floor yet.</div>;
+  }
+  return (
+    <div className="overflow-auto bg-slate-50 rounded-2xl border border-slate-200 p-4">
+      <FloorPlanGraphic {...props} />
       <p className="text-xs text-slate-400 mt-3">Conceptual layout — not a measured technical drawing.</p>
     </div>
   );

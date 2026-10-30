@@ -10,6 +10,11 @@ import { validateManualDesign } from "@/lib/build/designerValidation";
 import { ManualDesign, ManualFloor, ManualOpening, ManualRoom, ManualRoomType, MANUAL_ROOM_TYPE_LABELS, OpeningKind, WallSide } from "@/lib/build/types";
 import { OPENING_LABELS, WALLS, WALL_LABELS, clampOpening, newOpening, wallLength } from "@/lib/build/openings";
 import { useToast } from "@/lib/toast-context";
+import { useAuth } from "@/lib/auth-context";
+import Link from "next/link";
+import { HouseDesignsApi } from "@/lib/houseDesigns/api";
+import { downloadDesignPng, downloadDesignSvg } from "@/lib/build/exportPlan";
+import { formatCurrency } from "@/lib/build/format";
 import FloorPlanSvg from "@/components/build/FloorPlanSvg";
 import Dialog from "@/components/Dialog";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -63,6 +68,7 @@ function DesignerContent() {
   const project = useBuildProjectContext();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { token } = useAuth();
 
   const fromConceptId = searchParams?.get("fromConcept");
   const pickTemplateParam = searchParams?.get("pickTemplate");
@@ -89,6 +95,14 @@ function DesignerContent() {
   const [renameFloorOpen, setRenameFloorOpen] = useState(false);
   const [saveVersionOpen, setSaveVersionOpen] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [sendTitle, setSendTitle] = useState(project.name);
+  const [sendPhone, setSendPhone] = useState("");
+  const [sendNotes, setSendNotes] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const [sentId, setSentId] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!dirty) return;
@@ -222,6 +236,64 @@ function DesignerContent() {
     showToast(asNewVersion ? "Saved as a new version." : "Design saved.");
   };
 
+  const roomTotal = design.floors.reduce((sum, f) => sum + f.rooms.length, 0);
+  const subtitle = [project.brief.plot.address, project.brief.plot.areaSqm ? `Plot ${project.brief.plot.areaSqm} sqm` : ""].filter(Boolean).join(" · ") || undefined;
+
+  const handleDownload = async (format: "png" | "svg") => {
+    if (roomTotal === 0) {
+      showToast("Add at least one room before downloading.", "error");
+      return;
+    }
+    setDownloading(true);
+    try {
+      if (format === "svg") downloadDesignSvg(design, project.name, subtitle);
+      else await downloadDesignPng(design, project.name, subtitle);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not download the design.", "error");
+    }
+    setDownloading(false);
+  };
+
+  const openSend = () => {
+    if (roomTotal === 0) {
+      showToast("Add at least one room before sending your design.", "error");
+      return;
+    }
+    setSendError("");
+    setSentId(null);
+    setSendOpen(true);
+  };
+
+  const handleSend = async () => {
+    if (!token || sending) return;
+    if (!sendTitle.trim()) {
+      setSendError("Give your design a name.");
+      return;
+    }
+    setSending(true);
+    setSendError("");
+    const budget = project.brief.budget;
+    const budgetSummary = budget.targetBudget ? `Target ${formatCurrency(budget.targetBudget, budget.currency)}` : budget.maxBudget ? `Up to ${formatCurrency(budget.maxBudget, budget.currency)}` : undefined;
+    const result = await HouseDesignsApi.submit(token, {
+      title: sendTitle.trim(),
+      projectId: project.id,
+      notes: sendNotes.trim() || undefined,
+      phone: sendPhone.trim() || undefined,
+      plotSummary: subtitle,
+      budgetSummary,
+      design,
+    });
+    setSending(false);
+    if (!result.ok) {
+      setSendError(result.error);
+      return;
+    }
+    // What was sent is what is saved here too.
+    BuildProjectService.saveManualDesign(project.id, design, "Saved manual design changes.", false);
+    setDirty(false);
+    setSentId(result.data.id);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-slate-100 rounded-2xl shadow-sm p-3 sm:p-4">
@@ -254,8 +326,14 @@ function DesignerContent() {
           <button type="button" onClick={() => setSuggestOpen(true)} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100">
             Ask Huza AI for Suggestions
           </button>
+          <button type="button" onClick={() => handleDownload("png")} disabled={downloading} className="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50">
+            {downloading ? "Preparing…" : "Download"}
+          </button>
           <button type="button" onClick={() => handleSave(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
             Save
+          </button>
+          <button type="button" onClick={openSend} className="px-4 py-2.5 rounded-xl text-sm font-bold bg-[#2ec440] hover:bg-[#28b039] text-white shadow-lg">
+            Send to HuzaEstate
           </button>
           <button type="button" onClick={() => setSaveVersionOpen(true)} className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 hover:bg-[#2ec440] text-white shadow-lg">
             Save as New Version
@@ -589,6 +667,59 @@ function DesignerContent() {
           <button type="button" onClick={() => setSuggestOpen(false)} className="mt-5 text-sm font-bold text-slate-500 hover:text-slate-800">
             Close
           </button>
+        </div>
+      </Dialog>
+
+      <Dialog open={sendOpen} onClose={() => setSendOpen(false)} labelledBy="send-design-title" panelClassName="max-w-md">
+        <div className="p-6 sm:p-8">
+          {sentId ? (
+            <>
+              <h2 id="send-design-title" className="text-xl font-black text-slate-900 mb-2">
+                Your design was sent
+              </h2>
+              <p className="text-sm text-slate-500 mb-5">The HuzaEstate team will look at it and contact you. You can follow where it stands, and download it, from your sent designs.</p>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/studio/build/sent" className="px-4 py-2.5 rounded-xl text-sm font-bold bg-slate-900 hover:bg-[#2ec440] text-white">
+                  See my sent designs
+                </Link>
+                <button type="button" onClick={() => setSendOpen(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
+                  Close
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 id="send-design-title" className="text-xl font-black text-slate-900 mb-1">
+                Send this design to HuzaEstate
+              </h2>
+              <p className="text-sm text-slate-500 mb-5">
+                {design.floors.length} {design.floors.length === 1 ? "floor" : "floors"} · {roomTotal} {roomTotal === 1 ? "room" : "rooms"}. Our team will review it so we can build it for you.
+              </p>
+              {sendError && <p className="mb-4 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-3 py-2">{sendError}</p>}
+              <div className="space-y-3">
+                <label className="block text-sm font-bold text-slate-700">
+                  Design name
+                  <input type="text" value={sendTitle} maxLength={160} onChange={(e) => setSendTitle(e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20" />
+                </label>
+                <label className="block text-sm font-bold text-slate-700">
+                  Phone number <span className="font-normal text-slate-400">(optional)</span>
+                  <input type="tel" value={sendPhone} maxLength={40} onChange={(e) => setSendPhone(e.target.value)} placeholder="+250 …" className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20" />
+                </label>
+                <label className="block text-sm font-bold text-slate-700">
+                  Anything we should know <span className="font-normal text-slate-400">(optional)</span>
+                  <textarea value={sendNotes} maxLength={4000} rows={3} onChange={(e) => setSendNotes(e.target.value)} className="mt-1 w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 resize-none" />
+                </label>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button type="button" onClick={handleSend} disabled={sending} className="px-5 py-3 rounded-xl text-sm font-bold bg-slate-900 hover:bg-[#2ec440] text-white disabled:opacity-60">
+                  {sending ? "Sending…" : "Send design"}
+                </button>
+                <button type="button" onClick={() => setSendOpen(false)} className="px-5 py-3 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
+                  Cancel
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </Dialog>
 
