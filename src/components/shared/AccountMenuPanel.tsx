@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth, type AccountRole } from "@/lib/auth-context";
 import { ROLE_LABELS, availableRoles, roleHome } from "@/lib/navigation";
 import { useLanguage } from "@/lib/i18n/language";
+import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
 
 const itemClass = "block w-full px-4 py-2 text-left text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900";
 const groupClass = "mt-1 border-t border-slate-50 pt-1";
@@ -41,6 +42,9 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
   // Furniture orders can be placed by anyone who is not running the platform or a supplier business.
   const canOrder = roles.some((role) => role === "customer" || role === "seller_manager" || role === "professional");
   const otherWorkspaces = roles.filter((role) => role !== activeRole);
+  const heldRoles: AccountRole[] = account?.roles ?? [];
+  const requestable = requestableRolesFor(heldRoles);
+  const canBecomeSeller = !!account && !heldRoles.includes("administrator") && !heldRoles.includes("organization_admin") && !heldRoles.includes("seller_manager");
 
   const switchTo = (role: (typeof roles)[number]) => {
     onNavigate();
@@ -135,13 +139,31 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
         </div>
       )}
 
-      {otherWorkspaces.length > 0 && (
+      {(otherWorkspaces.length > 0 || requestable.length > 0 || canBecomeSeller) && (
         <div className={groupClass}>
+          {otherWorkspaces.length > 0 && <div className="px-4 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t("Switch role")}</div>}
           {otherWorkspaces.map((role) => (
             <button key={role} type="button" onClick={() => switchTo(role)} className={itemClass}>
               {t(ROLE_LABELS[role])}
             </button>
           ))}
+          {canBecomeSeller && (
+            <Link href="/become-a-seller" onClick={onNavigate} className={itemClass}>
+              {t("Become a seller")}
+            </Link>
+          )}
+          {requestable.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate();
+                window.dispatchEvent(new Event(OPEN_ADD_ROLE_EVENT));
+              }}
+              className={itemClass}
+            >
+              {t("Add a role")}
+            </button>
+          )}
         </div>
       )}
 
