@@ -10,12 +10,14 @@ import { useCurrencyOptions } from "@/lib/currencies";
 import { CurrencySelect, SpaceSelect, spacesFor } from "@/components/designs/fields";
 import {
   DESIGN_CATEGORY_LABELS,
+  DESIGN_PART_KIND_LABELS,
   DESIGN_PRICE_TYPE_LABELS,
   DesignsApi,
   formatDesignPrice,
   type Design,
   type DesignCategory,
   type DesignInput,
+  type DesignPartKind,
   type DesignPriceType,
 } from "@/lib/designs/api";
 import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "./ui";
@@ -23,12 +25,13 @@ import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass
 const MAX_IMAGES = 10;
 
 const MAX_FURNITURE = 40;
+const MAX_PARTS = 20;
 const MAX_INCLUDED = 12;
 
-const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], included: [], priceType: "fixed", price: undefined, currency: "", status: "draft" };
+const EMPTY: DesignInput = { title: "", description: "", category: "interior", spaceType: "", images: [], furniture: [], parts: [], included: [], priceType: "fixed", price: undefined, currency: "", status: "draft" };
 
 function toInput(design: Design): DesignInput {
-  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], included: design.included ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
+  return { title: design.title, description: design.description, category: design.category, spaceType: design.spaceType ?? "", images: design.images, furniture: design.furniture ?? [], parts: design.parts ?? [], included: design.included ?? [], priceType: design.priceType, price: design.price, currency: design.currency, status: design.status };
 }
 
 /** The professional's own designs: publish interior and exterior designs, each with a quote. */
@@ -186,7 +189,8 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
     }
     setBusy(true);
     setError("");
-    const input: DesignInput = { ...form, included, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: form.currency || defaultCurrency };
+    const parts = form.parts.filter((p) => p.name.trim()).map((p) => ({ ...p, name: p.name.trim(), price: p.priceType === "on_request" ? undefined : p.price }));
+    const input: DesignInput = { ...form, included, parts, furniture: form.furniture.filter((f) => f.name.trim()).map((f) => ({ ...f, name: f.name.trim(), quantity: f.quantity || 1 })), status, price, currency: form.currency || defaultCurrency };
     const result = id ? await DesignsApi.update(token, id, input) : await DesignsApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -273,6 +277,56 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
               <button type="button" onClick={() => patch({ furniture: [...form.furniture, { name: "", quantity: 1, notes: "" }] })} className="mt-2 text-sm font-bold text-[#219b31] hover:underline">
                 + Add item
               </button>
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm font-bold text-slate-700">
+              Parts a client can buy separately <span className="font-normal text-slate-400">({form.parts.length}/{MAX_PARTS})</span>
+            </p>
+            <div className="mt-2 space-y-3">
+              {form.parts.map((part, index) => {
+                const setPart = (changes: Partial<(typeof form.parts)[number]>) => patch({ parts: form.parts.map((p, i) => (i === index ? { ...p, ...changes } : p)) });
+                return (
+                  <div key={part.id ?? index} className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 p-3 sm:grid-cols-[1fr_9rem_9rem_7rem_auto]">
+                    <input className={`${fieldClass} col-span-2 sm:col-span-1`} placeholder="Part, e.g. Engraved feature wall" aria-label={`Part ${index + 1} name`} maxLength={120} value={part.name} onChange={(e) => setPart({ name: e.target.value })} />
+                    <Select className={fieldClass} aria-label={`Part ${index + 1} kind`} value={part.kind} onChange={(e) => setPart({ kind: e.target.value as DesignPartKind })}>
+                      {(Object.keys(DESIGN_PART_KIND_LABELS) as DesignPartKind[]).map((k) => (
+                        <option key={k} value={k}>
+                          {DESIGN_PART_KIND_LABELS[k]}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select className={fieldClass} aria-label={`Part ${index + 1} price type`} value={part.priceType} onChange={(e) => setPart({ priceType: e.target.value as DesignPriceType })}>
+                      {(Object.keys(DESIGN_PRICE_TYPE_LABELS) as DesignPriceType[]).map((t) => (
+                        <option key={t} value={t}>
+                          {DESIGN_PRICE_TYPE_LABELS[t]}
+                        </option>
+                      ))}
+                    </Select>
+                    {part.priceType !== "on_request" ? (
+                      <input className={fieldClass} inputMode="decimal" placeholder={part.priceType === "per_sqm" ? "Per m²" : "Amount"} aria-label={`Part ${index + 1} amount`} value={part.price === undefined ? "" : String(part.price)} onChange={(e) => setPart({ price: Number(e.target.value.replace(/[^\d.]/g, "")) || undefined })} />
+                    ) : (
+                      <span className="flex items-center text-sm text-slate-400">On request</span>
+                    )}
+                    <button type="button" aria-label={`Remove part ${index + 1}`} onClick={() => patch({ parts: form.parts.filter((_, i) => i !== index) })} className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:border-red-300 hover:text-red-600">
+                      ×
+                    </button>
+                    <input className={`${fieldClass} col-span-2 sm:col-span-5`} placeholder="Short description (optional)" aria-label={`Part ${index + 1} description`} maxLength={300} value={part.description ?? ""} onChange={(e) => setPart({ description: e.target.value })} />
+                  </div>
+                );
+              })}
+            </div>
+            {form.parts.length < MAX_PARTS && (
+              <button type="button" onClick={() => patch({ parts: [...form.parts, { name: "", kind: "wall", description: "", priceType: "on_request" }] })} className="mt-2 text-sm font-bold text-[#219b31] hover:underline">
+                + Add part
+              </button>
+            )}
+            {form.parts.some((p) => p.priceType !== "on_request") && form.priceType === "on_request" && (
+              <label className="mt-3 block text-sm font-bold text-slate-700 sm:w-48">
+                Currency of the parts
+                <CurrencySelect className={`${fieldClass} mt-1`} value={form.currency || defaultCurrency} onChange={(currency) => patch({ currency })} />
+              </label>
             )}
           </div>
 

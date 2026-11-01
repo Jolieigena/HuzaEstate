@@ -279,6 +279,7 @@ export default function ProfessionalProfileForm() {
         spaceType: newProject.spaceType || undefined,
         images: newProject.images,
         furniture: [],
+        parts: [],
         included: fixed ? newProject.included.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 12) : [],
         priceType: newProject.priceType,
         price: fixed ? Number(newProject.price) : undefined,

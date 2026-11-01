@@ -6,7 +6,7 @@ import BackLink from "@/components/BackLink";
 import { FurnitureQuoteDialog, RequestDialog, SignInPrompt, type RequestTarget } from "@/components/designs/DesignRequestDialogs";
 import { useAuth } from "@/lib/auth-context";
 import { useDisplayCurrency } from "@/lib/currency/display";
-import { DESIGN_CATEGORY_LABELS, DesignsApi, formatDesignPrice, type Design } from "@/lib/designs/api";
+import { DESIGN_CATEGORY_LABELS, DESIGN_PART_KIND_LABELS, DesignsApi, formatDesignPrice, type Design, type DesignPart } from "@/lib/designs/api";
 
 const primary = "min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]";
 const secondary = "min-h-11 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31]";
@@ -21,6 +21,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
   const [target, setTarget] = useState<RequestTarget | null>(null);
   const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [signInOpen, setSignInOpen] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -43,13 +44,22 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
   const areaNumber = Number(area);
   const estimate = design.priceType === "per_sqm" && design.price && areaNumber > 0 ? design.price * areaNumber : undefined;
 
+  // The parts a client can take separately: what they picked adds up, and any part without a price goes into the quote request.
+  const parts = design.parts ?? [];
+  const chosen = parts.filter((p) => p.id && picked.includes(p.id));
+  const costOf = (part: DesignPart): number | undefined => (part.priceType === "fixed" ? part.price : part.priceType === "per_sqm" && part.price && areaNumber > 0 ? part.price * areaNumber : undefined);
+  const pricedTotal = chosen.reduce((sum, p) => sum + (costOf(p) ?? 0), 0);
+  const unpriced = chosen.filter((p) => costOf(p) === undefined);
+  const needsArea = parts.some((p) => p.priceType === "per_sqm");
+  const togglePart = (id: string) => setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+
   const ask = (kind: RequestTarget["kind"]) => {
     if (!designer) return;
     if (!isLoggedIn) {
       setSignInOpen(true);
       return;
     }
-    setTarget({ kind, designId: design.id, designTitle: design.title, professionalId: designer.accountId, professionalName: designer.displayName, priceType: design.priceType, areaSqm: areaNumber > 0 ? areaNumber : undefined, spaceType: design.spaceType });
+    setTarget({ kind, designId: design.id, designTitle: design.title, professionalId: designer.accountId, professionalName: designer.displayName, priceType: design.priceType, areaSqm: areaNumber > 0 ? areaNumber : undefined, spaceType: design.spaceType, ...(kind === "custom_price" && picked.length ? { partIds: picked } : {}) });
   };
 
   return (
@@ -119,6 +129,53 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
           )}
           {!published && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
 
+          {parts.length > 0 && (
+            <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-bold text-slate-800">Choose what you want</p>
+              <ul className="mt-3 space-y-2">
+                {parts.map((part) => {
+                  const on = !!part.id && picked.includes(part.id);
+                  const cost = costOf(part);
+                  return (
+                    <li key={part.id}>
+                      <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${on ? "border-[#2ec440] bg-[#2ec440]/5" : "border-slate-200 hover:border-slate-300"}`}>
+                        <input type="checkbox" checked={on} onChange={() => part.id && togglePart(part.id)} className="mt-1 h-4 w-4 accent-[#2ec440]" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold text-slate-900">{part.name}</span>
+                          <span className="block text-xs text-slate-500">{DESIGN_PART_KIND_LABELS[part.kind]}{part.description ? ` · ${part.description}` : ""}</span>
+                        </span>
+                        <span className="shrink-0 text-right text-sm font-bold text-slate-900">
+                          {part.priceType === "fixed" && part.price ? money.format(part.price, design.currency) : part.priceType === "per_sqm" && part.price ? `${money.format(part.price, design.currency)} / m²` : "On request"}
+                          {part.priceType === "per_sqm" && cost !== undefined && <span className="block text-xs font-semibold text-slate-500">{money.format(cost, design.currency)}</span>}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              {needsArea && design.priceType !== "per_sqm" && (
+                <label className="mt-3 block text-sm font-bold text-slate-700">
+                  Your area (m²)
+                  <input className="mt-1 w-full rounded-xl border border-slate-200 px-3.5 py-3 text-sm outline-none focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15" inputMode="decimal" value={area} onChange={(e) => setArea(e.target.value.replace(/[^\d.]/g, ""))} />
+                </label>
+              )}
+              {chosen.length > 0 && (
+                <div className="mt-3 border-t border-slate-100 pt-3 text-sm">
+                  <p className="text-slate-600">
+                    {chosen.length} {chosen.length === 1 ? "part" : "parts"} chosen
+                    {pricedTotal > 0 && (
+                      <>
+                        {": "}
+                        <span className="text-lg font-black text-slate-900">{money.format(pricedTotal, design.currency)}</span>
+                      </>
+                    )}
+                  </p>
+                  {unpriced.length > 0 && <p className="mt-1 text-xs text-slate-500">{unpriced.length === 1 ? "1 part has" : `${unpriced.length} parts have`} no price yet. Request a quote and the designer will price {unpriced.length === 1 ? "it" : "them"}.</p>}
+                </div>
+              )}
+            </section>
+          )}
+
           {design.priceType === "per_sqm" && (
             <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
               <label className="block text-sm font-bold text-slate-700">
@@ -138,7 +195,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
           {published && designer && !isOwner && (
             <div className="mt-6 flex flex-col gap-2">
               <button type="button" className={primary} onClick={() => ask("custom_price")}>
-                {design.priceType === "on_request" ? "Request a quote" : "Request a different quote"}
+                {picked.length > 0 ? "Request a quote for my choice" : design.priceType === "on_request" ? "Request a quote" : "Request a different quote"}
               </button>
               <button type="button" className={secondary} onClick={() => ask("custom_design")}>
                 Request a custom design

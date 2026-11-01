@@ -41,17 +41,20 @@ function cloneBrief(brief: DesignBrief): DesignBrief {
 }
 
 function initialStepIndex(brief: DesignBrief, keys: readonly BriefStepKey[]): number {
-  const firstIncomplete = keys.findIndex((k) => !brief.completedSteps.includes(k));
+  // On the short path a screen counts as done only when what it asks is really filled in: an older project may have the
+  // first step ticked without ever having been asked for bedrooms.
+  const quick = keys === QUICK_BRIEF_STEP_KEYS;
+  const firstIncomplete = keys.findIndex((k) => !brief.completedSteps.includes(k) || (quick && Object.keys(validateQuickStep(k, brief)).length > 0));
   return firstIncomplete === -1 ? keys.length - 1 : firstIncomplete;
 }
 
-// Projects designed with AI start on the short path; the full brief is one click away, and stays on for projects already into it.
-function startsDetailed(project: { creationMode: string; brief: DesignBrief }): boolean {
-  return project.creationMode === "ai" && !isQuickBrief(project.creationMode, project.brief);
+// Every brief starts on the short path; the full brief is one click away, and stays on for projects already deep into it.
+function startsDetailed(project: { brief: DesignBrief }): boolean {
+  return !isQuickBrief(project.brief);
 }
 
-function startKeys(project: { creationMode: string; brief: DesignBrief }): readonly BriefStepKey[] {
-  return project.creationMode === "ai" && !startsDetailed(project) ? QUICK_BRIEF_STEP_KEYS : BRIEF_STEP_KEYS;
+function startKeys(project: { brief: DesignBrief }): readonly BriefStepKey[] {
+  return startsDetailed(project) ? BRIEF_STEP_KEYS : QUICK_BRIEF_STEP_KEYS;
 }
 
 function initialView(project: { creationMode: string; brief: DesignBrief }): "wizard" | "agent" {
@@ -65,7 +68,7 @@ export default function BriefWizardPage() {
 
   const [draft, setDraft] = useState<DesignBrief>(() => cloneBrief(project.brief));
   const [detailed, setDetailed] = useState(() => startsDetailed(project));
-  const quick = project.creationMode === "ai" && !detailed;
+  const quick = !detailed;
   const stepKeys: readonly BriefStepKey[] = quick ? QUICK_BRIEF_STEP_KEYS : BRIEF_STEP_KEYS;
   const labelOf = (key: BriefStepKey) => (quick ? QUICK_STEP_LABELS[key] : undefined) ?? STEP_LABELS[key];
   const [stepIndex, setStepIndex] = useState(() => initialStepIndex(project.brief, startKeys(project)));
@@ -171,12 +174,6 @@ export default function BriefWizardPage() {
     router.push(`/studio/build/${project.id}/designer`);
   };
 
-  const handleSaveAsDraft = () => {
-    persist(draft, "Saved brief as draft.");
-    showToast("Draft saved.");
-    router.push(`/studio/build/${project.id}`);
-  };
-
   if (view === "agent") {
     return (
       <div className="space-y-4">
@@ -197,7 +194,7 @@ export default function BriefWizardPage() {
   return (
     <div className="space-y-6">
       {/* Desktop horizontal step indicator */}
-      <ol className="hidden lg:flex items-center bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
+      <ol className="hidden lg:flex items-center bg-white border border-slate-100 rounded-2xl shadow-sm p-4 overflow-x-auto">
         {stepKeys.map((key, index) => {
           const isCurrent = index === stepIndex;
           const isComplete = draft.completedSteps.includes(key);
@@ -221,7 +218,7 @@ export default function BriefWizardPage() {
                     index + 1
                   )}
                 </span>
-                <span className="text-xs font-bold whitespace-nowrap hidden xl:inline">{labelOf(key)}</span>
+                <span className={`text-xs font-bold whitespace-nowrap hidden ${isCurrent || stepKeys.length <= 3 ? "lg:inline" : "2xl:inline"}`}>{labelOf(key)}</span>
               </button>
               {index < stepKeys.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-3" aria-hidden="true" />}
             </li>
@@ -306,8 +303,8 @@ export default function BriefWizardPage() {
         )}
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex gap-3">
+      <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-between gap-3">
+        <div className="flex gap-3 [&>button]:whitespace-nowrap">
           <button
             type="button"
             onClick={handleBack}
@@ -323,9 +320,6 @@ export default function BriefWizardPage() {
 
         {stepKey === "review" ? (
           <div className="flex flex-col sm:flex-row gap-3">
-            <button type="button" onClick={handleSaveAsDraft} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors">
-              Save as Draft
-            </button>
             <button type="button" onClick={handleOpenDesigner} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap">
               Open Manual Designer
             </button>

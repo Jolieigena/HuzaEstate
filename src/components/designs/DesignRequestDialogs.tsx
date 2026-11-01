@@ -39,6 +39,8 @@ export interface RequestTarget {
   /** Pre-filled from the page, e.g. the area typed into the price estimate. */
   areaSqm?: number;
   spaceType?: string;
+  /** The parts of the design the client picked to be priced. */
+  partIds?: string[];
 }
 
 /** A client's request to a designer: a custom price for an existing design, or a new custom design. */
@@ -76,6 +78,7 @@ function RequestForm({ titleId, target, onClose }: { titleId: string; target: Re
       kind: target.kind,
       designId: target.designId,
       professionalId: target.professionalId,
+      ...(target.partIds?.length ? { partIds: target.partIds } : {}),
       message: message.trim(),
       ...(showSpace && spaceType ? { spaceType } : target.spaceType ? { spaceType: target.spaceType } : {}),
       ...(showArea && Number(area) > 0 ? { areaSqm: Number(area) } : {}),

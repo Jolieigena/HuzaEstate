@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BuildProject, ExtractedRequirement, RequirementFieldStatus } from "@/lib/build/types";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { BuildAgentService, AgentCancelledError } from "@/lib/build/agentService";
+import { BuildAgentService, AgentCancelledError, applyDirectAnswers } from "@/lib/build/agentService";
 import { formatDateTime, projectLocationLabel } from "@/lib/build/format";
 import { newId } from "@/lib/build/factory";
 import { useToast } from "@/lib/toast-context";
@@ -159,6 +159,7 @@ export default function AgentPanel({ project }: { project: BuildProject }) {
     try {
       const result = await BuildAgentService.sendMessage(prompt, project, controller.signal);
       BuildProjectService.appendAgentMessages(project.id, [result.message]);
+      if (result.answers.length) BuildProjectService.saveBrief(project.id, applyDirectAnswers(project.brief, result.answers), "Updated the brief from the Huza AI conversation.");
       if (result.extracted.length) {
         const existing = project.agentConversation.extractedRequirements;
         const merged = [...existing.filter((e) => !result.extracted.some((n) => n.field === e.field)), ...result.extracted];

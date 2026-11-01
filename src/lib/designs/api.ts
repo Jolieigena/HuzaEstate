@@ -3,11 +3,11 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
-export type DesignCategory = "interior" | "exterior";
+export type DesignCategory = "house" | "interior" | "exterior" | "furniture" | "accessories";
 export type DesignPriceType = "fixed" | "per_sqm" | "on_request";
 export type DesignStatus = "draft" | "published";
 
-export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { interior: "Interior", exterior: "Exterior" };
+export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { house: "Houses", interior: "Interior", exterior: "Exterior", furniture: "Furniture", accessories: "Accessories" };
 export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed quote", per_sqm: "Quote per square metre", on_request: "Quote on request" };
 
 export interface DesignDesigner {
@@ -18,6 +18,28 @@ export interface DesignDesigner {
   photoUrl?: string;
   city?: string;
   country?: string;
+}
+
+export type DesignPartKind = "wall" | "tv_unit" | "paint" | "ceiling" | "lighting" | "furniture" | "other";
+
+export const DESIGN_PART_KIND_LABELS: Record<DesignPartKind, string> = {
+  wall: "Feature wall",
+  tv_unit: "TV unit",
+  paint: "Wall paint",
+  ceiling: "Ceiling",
+  lighting: "Lighting",
+  furniture: "Furniture",
+  other: "Other",
+};
+
+/** One piece of a design a client can buy on its own, priced in the design's currency. */
+export interface DesignPart {
+  id?: string;
+  name: string;
+  kind: DesignPartKind;
+  description?: string;
+  priceType: DesignPriceType;
+  price?: number;
 }
 
 export interface FurnitureItem {
@@ -35,6 +57,8 @@ export interface Design {
   images: string[];
   /** What the design calls for. Clients can ask suppliers to price this list. */
   furniture: FurnitureItem[];
+  /** What the design is made of, each part with its own price. A client takes one or several. */
+  parts: DesignPart[];
   priceType: DesignPriceType;
   price?: number;
   currency: string;
@@ -53,6 +77,7 @@ export interface DesignInput {
   spaceType?: string;
   images: string[];
   furniture: FurnitureItem[];
+  parts: DesignPart[];
   priceType: DesignPriceType;
   price?: number;
   currency: string;
@@ -105,6 +130,8 @@ export interface DesignRequestInput {
   areaSqm?: number;
   budget?: number;
   currency?: string;
+  /** The parts of the design the client picked; they lead the message the designer reads. */
+  partIds?: string[];
 }
 
 // ---- furniture quotes (suppliers price a design's furniture list)

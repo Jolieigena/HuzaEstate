@@ -39,6 +39,8 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
   const fromPath = workspaceOfPath(pathname);
   const activeRole = fromPath && roles.includes(fromPath) ? fromPath : storedRole;
   const isCustomer = roles.includes("customer");
+  // Professionals design for clients in the studio as well, though the rest of the customer pages are not theirs.
+  const canUseStudio = isCustomer || roles.includes("professional");
   // Furniture orders can be placed by anyone who is not running the platform or a supplier business.
   const canOrder = roles.some((role) => role === "customer" || role === "seller_manager" || role === "professional");
   const otherWorkspaces = roles.filter((role) => role !== activeRole);
@@ -113,23 +115,27 @@ export default function AccountMenuPanel({ onNavigate }: { onNavigate: () => voi
         {t("Browse Properties")}
       </Link>
 
-      {(isCustomer || canOrder) && (
+      {(canUseStudio || canOrder) && (
         <div className={groupClass}>
           {isCustomer && (
+            <Link href="/dashboard?tab=saved" onClick={onNavigate} className={itemClass}>
+              {t("Saved Homes")}
+            </Link>
+          )}
+          {canUseStudio && (
             <>
-              <Link href="/dashboard?tab=saved" onClick={onNavigate} className={itemClass}>
-                {t("Saved Homes")}
-              </Link>
               <Link href="/studio/build" onClick={onNavigate} className={itemClass}>
                 {t("Build Projects")}
               </Link>
               <Link href="/studio/renovate" onClick={onNavigate} className={itemClass}>
                 {t("Renovation Projects")}
               </Link>
-              <Link href="/design-requests" onClick={onNavigate} className={itemClass}>
-                {t("My design requests")}
-              </Link>
             </>
+          )}
+          {isCustomer && (
+            <Link href="/design-requests" onClick={onNavigate} className={itemClass}>
+              {t("My design requests")}
+            </Link>
           )}
           {canOrder && (
             <Link href="/shop/orders" onClick={onNavigate} className={itemClass}>

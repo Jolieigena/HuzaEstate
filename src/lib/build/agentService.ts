@@ -1,5 +1,5 @@
 import { newId } from "./factory";
-import { AgentMessage, BuildProject, DesignBrief, ExtractedRequirement, HOME_STYLE_LABELS, HomeStyle } from "./types";
+import { AgentMessage, BuildProject, DesignBrief, ExtractedRequirement, HOME_STYLE_LABELS, HomeStyle, ROOM_LABELS } from "./types";
 
 export class AgentCancelledError extends Error {
   constructor() {
@@ -103,15 +103,68 @@ export function extractRequirementsFromPrompt(text: string): ExtractedRequiremen
   return results;
 }
 
+const QUESTIONS = {
+  bedrooms: "How many bedrooms do you need?",
+  style: "Do you have a preferred style — for example contemporary, minimalist or traditional?",
+  budget: "What's your approximate target budget in RWF?",
+  plot_area: "Roughly how large is your plot, in square metres?",
+  location: "Which city or province is the plot in?",
+} as const;
+
 function missingBriefFields(brief: DesignBrief): { field: string; question: string }[] {
   const missing: { field: string; question: string }[] = [];
   const bedroomsReq = brief.household.rooms.find((r) => r.key === "bedrooms");
-  if (!bedroomsReq || bedroomsReq.quantity < 1) missing.push({ field: "bedrooms", question: "How many bedrooms do you need?" });
-  if (!brief.style.primaryStyle) missing.push({ field: "style", question: "Do you have a preferred style — for example contemporary, minimalist or traditional?" });
-  if (!brief.budget.targetBudget) missing.push({ field: "budget", question: "What's your approximate target budget in RWF?" });
-  if (!brief.plot.areaSqm) missing.push({ field: "plot_area", question: "Roughly how large is your plot, in square metres?" });
-  if (!brief.basics.provinceOrCity) missing.push({ field: "location", question: "Which city or province is the plot in?" });
+  if (!bedroomsReq || bedroomsReq.quantity < 1) missing.push({ field: "bedrooms", question: QUESTIONS.bedrooms });
+  if (!brief.style.primaryStyle) missing.push({ field: "style", question: QUESTIONS.style });
+  if (!brief.budget.targetBudget) missing.push({ field: "budget", question: QUESTIONS.budget });
+  if (!brief.plot.areaSqm) missing.push({ field: "plot_area", question: QUESTIONS.plot_area });
+  if (!brief.basics.provinceOrCity) missing.push({ field: "location", question: QUESTIONS.location });
   return missing;
+}
+
+/** A value the person gave as the plain answer to the question just asked ("500" after "how large is your plot?"). */
+export interface DirectAnswer {
+  field: "plot_area" | "bedrooms" | "budget";
+  value: number;
+}
+
+// The question the assistant asked last, so a bare number can be read as its answer. When it asked two, the first is the one answered.
+function lastQuestionAsked(project: BuildProject): keyof typeof QUESTIONS | null {
+  const lastAgent = [...project.agentConversation.messages].reverse().find((m) => m.role === "agent");
+  if (!lastAgent) return null;
+  const asked = (Object.keys(QUESTIONS) as (keyof typeof QUESTIONS)[])
+    .map((field) => ({ field, at: lastAgent.content.indexOf(QUESTIONS[field]) }))
+    .filter((q) => q.at >= 0)
+    .sort((a, b) => a.at - b.at);
+  return asked[0]?.field ?? null;
+}
+
+function readDirectAnswer(prompt: string, asked: keyof typeof QUESTIONS | null): DirectAnswer | null {
+  if (!asked) return null;
+  const m = prompt.trim().match(/^(\d[\d,]*(?:\.\d+)?)\s*(?:sqm|sq\.?\s?m|m2|m²|square met\w*|met\w*|bed\w*|rwf|frw)?\.?$/i);
+  if (!m) return null;
+  const value = Number(m[1].replace(/,/g, ""));
+  if (!Number.isFinite(value) || value <= 0) return null;
+  if (asked === "plot_area") return { field: "plot_area", value };
+  if (asked === "bedrooms") return Number.isInteger(value) && value <= 30 ? { field: "bedrooms", value } : null;
+  // A bare amount is only taken as a budget when it is clearly in francs, not "6" for six million.
+  if (asked === "budget") return value >= 100_000 ? { field: "budget", value: Math.round(value) } : null;
+  return null;
+}
+
+/** Writes direct answers into the brief, so the summary beside the conversation shows them at once. */
+export function applyDirectAnswers(brief: DesignBrief, answers: DirectAnswer[]): DesignBrief {
+  const next: DesignBrief = JSON.parse(JSON.stringify(brief));
+  for (const answer of answers) {
+    if (answer.field === "plot_area") next.plot.areaSqm = answer.value;
+    if (answer.field === "budget") next.budget.targetBudget = answer.value;
+    if (answer.field === "bedrooms") {
+      const room = next.household.rooms.find((r) => r.key === "bedrooms");
+      if (room) room.quantity = answer.value;
+      else next.household.rooms.push({ key: "bedrooms", label: ROOM_LABELS.bedrooms, quantity: answer.value, privacy: "private", isCustom: false });
+    }
+  }
+  return next;
 }
 
 function summarizeExtracted(extracted: ExtractedRequirement[]): string {
@@ -124,6 +177,8 @@ function summarizeExtracted(extracted: ExtractedRequirement[]): string {
 export interface AgentReplyResult {
   message: AgentMessage;
   extracted: ExtractedRequirement[];
+  /** What the person answered directly; the caller writes it into the brief. */
+  answers: DirectAnswer[];
 }
 
 /**
@@ -139,7 +194,17 @@ export const BuildAgentService = {
     await delay(650 + Math.min(prompt.length * 8, 900), signal);
 
     const extracted = extractRequirementsFromPrompt(prompt);
-    const missing = missingBriefFields(project.brief).slice(0, 2);
+    const answers: DirectAnswer[] = [];
+    const direct = extracted.length === 0 ? readDirectAnswer(prompt, lastQuestionAsked(project)) : null;
+    let briefAfter = project.brief;
+    if (direct) {
+      answers.push(direct);
+      briefAfter = applyDirectAnswers(project.brief, answers);
+      const label = direct.field === "plot_area" ? "Plot area" : direct.field === "bedrooms" ? "Bedrooms" : "Target budget";
+      const value = direct.field === "plot_area" ? `${direct.value} sqm` : direct.field === "budget" ? `${direct.value.toLocaleString()} RWF` : String(direct.value);
+      extracted.push({ id: newId("req"), field: direct.field, label, value, status: "confirmed" });
+    }
+    const missing = missingBriefFields(briefAfter).slice(0, 2);
 
     const parts: string[] = [];
     const summary = summarizeExtracted(extracted);
@@ -165,7 +230,7 @@ export const BuildAgentService = {
       extracted,
     };
 
-    return { message, extracted };
+    return { message, extracted, answers };
   },
 
   welcomeMessage(): AgentMessage {

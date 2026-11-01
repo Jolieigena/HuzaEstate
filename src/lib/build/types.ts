@@ -289,14 +289,15 @@ export interface DesignBrief {
   disclaimerAccepted: boolean;
 }
 
-/** The short path for designing with AI: where and what, style and budget, then confirm. Everything else in the full brief
+/** The short path every brief starts on: where and what, style and budget, then confirm. Everything else in the full brief
  *  (plot, timeline, sustainability, accessibility) is optional and asked later, or in conversation with Huza AI. */
 export const QUICK_BRIEF_STEP_KEYS: readonly BriefStepKey[] = ["basics", "style", "review"];
-const DETAILED_STEP_KEYS: readonly BriefStepKey[] = ["plot", "household", "budget", "sustainability"];
+// Plot is not here: the old brief asked for it second, so a project that only got that far still belongs on the short path.
+const DETAILED_STEP_KEYS: readonly BriefStepKey[] = ["household", "budget", "sustainability"];
 
-/** Whether a project follows the short path: it is designed with AI and none of the detailed steps has been filled in. */
-export function isQuickBrief(creationMode: string, brief: Pick<DesignBrief, "completedSteps">): boolean {
-  return creationMode === "ai" && !brief.completedSteps.some((key) => DETAILED_STEP_KEYS.includes(key));
+/** Whether a brief follows the short path: none of the detailed steps has been filled in. */
+export function isQuickBrief(brief: Pick<DesignBrief, "completedSteps">): boolean {
+  return !brief.completedSteps.some((key) => DETAILED_STEP_KEYS.includes(key));
 }
 
 export type RequirementFieldStatus = "confirmed" | "suggested" | "missing" | "conflicting";
