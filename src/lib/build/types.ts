@@ -289,6 +289,16 @@ export interface DesignBrief {
   disclaimerAccepted: boolean;
 }
 
+/** The short path for designing with AI: where and what, style and budget, then confirm. Everything else in the full brief
+ *  (plot, timeline, sustainability, accessibility) is optional and asked later, or in conversation with Huza AI. */
+export const QUICK_BRIEF_STEP_KEYS: readonly BriefStepKey[] = ["basics", "style", "review"];
+const DETAILED_STEP_KEYS: readonly BriefStepKey[] = ["plot", "household", "budget", "sustainability"];
+
+/** Whether a project follows the short path: it is designed with AI and none of the detailed steps has been filled in. */
+export function isQuickBrief(creationMode: string, brief: Pick<DesignBrief, "completedSteps">): boolean {
+  return creationMode === "ai" && !brief.completedSteps.some((key) => DETAILED_STEP_KEYS.includes(key));
+}
+
 export type RequirementFieldStatus = "confirmed" | "suggested" | "missing" | "conflicting";
 
 export interface ExtractedRequirement {

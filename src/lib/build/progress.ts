@@ -1,11 +1,16 @@
-import { BRIEF_STEP_KEYS, BuildProject } from "./types";
+import { BRIEF_STEP_KEYS, BuildProject, QUICK_BRIEF_STEP_KEYS, isQuickBrief } from "./types";
+
+/** How many steps the project's brief has: three on the short path for AI projects, seven in the full brief. */
+export function briefStepCount(project: BuildProject): number {
+  return isQuickBrief(project.creationMode, project.brief) ? QUICK_BRIEF_STEP_KEYS.length : BRIEF_STEP_KEYS.length;
+}
 
 export function getProjectProgress(project: BuildProject): number {
   switch (project.status) {
     case "draft":
       return 5;
     case "brief_in_progress": {
-      const ratio = project.brief.completedSteps.length / BRIEF_STEP_KEYS.length;
+      const ratio = project.brief.completedSteps.length / briefStepCount(project);
       return Math.max(10, Math.round(10 + ratio * 35));
     }
     case "ready_to_generate":

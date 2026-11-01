@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
-import { getNextAction, getProjectProgress } from "@/lib/build/progress";
+import { briefStepCount, getNextAction, getProjectProgress } from "@/lib/build/progress";
 import { formatCompactRwf, formatDate, formatRelativeTime, projectLocationLabel } from "@/lib/build/format";
-import { BRIEF_STEP_KEYS, PROPERTY_USE_LABELS, ROOM_LABELS, RoomKey } from "@/lib/build/types";
+import { PROPERTY_USE_LABELS, ROOM_LABELS, RoomKey } from "@/lib/build/types";
 import { StatusBadge, ReviewStatusBadge } from "@/components/build/StatusBadge";
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -154,11 +154,11 @@ export default function ProjectOverviewPage() {
           <SectionCard title="Brief completion">
             <div className="mb-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1.5">
-                <span>{project.brief.completedSteps.length} of {BRIEF_STEP_KEYS.length} steps</span>
+                <span>{project.brief.completedSteps.length} of {briefStepCount(project)} steps</span>
                 <span>{progress}%</span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-[#2ec440] rounded-full" style={{ width: `${Math.round((project.brief.completedSteps.length / BRIEF_STEP_KEYS.length) * 100)}%` }} />
+                <div className="h-full bg-[#2ec440] rounded-full" style={{ width: `${Math.round((project.brief.completedSteps.length / briefStepCount(project)) * 100)}%` }} />
               </div>
             </div>
             <Link href={`${base}/brief`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">

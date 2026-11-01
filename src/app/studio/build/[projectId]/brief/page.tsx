@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { BRIEF_STEP_KEYS, BriefStepKey, DesignBrief } from "@/lib/build/types";
-import { collectBriefWarnings, validateStep, StepErrors } from "@/lib/build/briefValidation";
+import { BRIEF_STEP_KEYS, BriefStepKey, DesignBrief, QUICK_BRIEF_STEP_KEYS, isQuickBrief } from "@/lib/build/types";
+import { collectBriefWarnings, validateQuickStep, validateStep, StepErrors } from "@/lib/build/briefValidation";
 import { useToast } from "@/lib/toast-context";
 import AgentPanel from "@/components/build/AgentPanel";
 import BriefStepBasics from "@/components/build/brief/BriefStepBasics";
@@ -15,6 +15,9 @@ import BriefStepStyle from "@/components/build/brief/BriefStepStyle";
 import BriefStepBudget from "@/components/build/brief/BriefStepBudget";
 import BriefStepSustainability from "@/components/build/brief/BriefStepSustainability";
 import BriefStepReview from "@/components/build/brief/BriefStepReview";
+import BriefQuickHome from "@/components/build/brief/BriefQuickHome";
+import BriefQuickStyle from "@/components/build/brief/BriefQuickStyle";
+import BriefQuickReview from "@/components/build/brief/BriefQuickReview";
 
 const STEP_LABELS: Record<BriefStepKey, string> = {
   basics: "Project basics",
@@ -26,13 +29,29 @@ const STEP_LABELS: Record<BriefStepKey, string> = {
   review: "Review brief",
 };
 
+// On the short path the same step keys carry different screens, so they are named for what the person sees.
+const QUICK_STEP_LABELS: Partial<Record<BriefStepKey, string>> = {
+  basics: "Your home",
+  style: "Style & budget",
+  review: "Confirm",
+};
+
 function cloneBrief(brief: DesignBrief): DesignBrief {
   return JSON.parse(JSON.stringify(brief));
 }
 
-function initialStepIndex(brief: DesignBrief): number {
-  const firstIncomplete = BRIEF_STEP_KEYS.findIndex((k) => !brief.completedSteps.includes(k));
-  return firstIncomplete === -1 ? BRIEF_STEP_KEYS.length - 1 : firstIncomplete;
+function initialStepIndex(brief: DesignBrief, keys: readonly BriefStepKey[]): number {
+  const firstIncomplete = keys.findIndex((k) => !brief.completedSteps.includes(k));
+  return firstIncomplete === -1 ? keys.length - 1 : firstIncomplete;
+}
+
+// Projects designed with AI start on the short path; the full brief is one click away, and stays on for projects already into it.
+function startsDetailed(project: { creationMode: string; brief: DesignBrief }): boolean {
+  return project.creationMode === "ai" && !isQuickBrief(project.creationMode, project.brief);
+}
+
+function startKeys(project: { creationMode: string; brief: DesignBrief }): readonly BriefStepKey[] {
+  return project.creationMode === "ai" && !startsDetailed(project) ? QUICK_BRIEF_STEP_KEYS : BRIEF_STEP_KEYS;
 }
 
 function initialView(project: { creationMode: string; brief: DesignBrief }): "wizard" | "agent" {
@@ -45,7 +64,11 @@ export default function BriefWizardPage() {
   const { showToast } = useToast();
 
   const [draft, setDraft] = useState<DesignBrief>(() => cloneBrief(project.brief));
-  const [stepIndex, setStepIndex] = useState(() => initialStepIndex(project.brief));
+  const [detailed, setDetailed] = useState(() => startsDetailed(project));
+  const quick = project.creationMode === "ai" && !detailed;
+  const stepKeys: readonly BriefStepKey[] = quick ? QUICK_BRIEF_STEP_KEYS : BRIEF_STEP_KEYS;
+  const labelOf = (key: BriefStepKey) => (quick ? QUICK_STEP_LABELS[key] : undefined) ?? STEP_LABELS[key];
+  const [stepIndex, setStepIndex] = useState(() => initialStepIndex(project.brief, startKeys(project)));
   const [errors, setErrors] = useState<StepErrors>({});
   const [dirty, setDirty] = useState(false);
   const [view, setView] = useState<"wizard" | "agent">(() => initialView(project));
@@ -57,7 +80,8 @@ export default function BriefWizardPage() {
   if (project.id !== loadedProjectId) {
     setLoadedProjectId(project.id);
     setDraft(cloneBrief(project.brief));
-    setStepIndex(initialStepIndex(project.brief));
+    setDetailed(startsDetailed(project));
+    setStepIndex(initialStepIndex(project.brief, startKeys(project)));
     setErrors({});
     setDirty(false);
     setView(initialView(project));
@@ -73,7 +97,7 @@ export default function BriefWizardPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  const stepKey = BRIEF_STEP_KEYS[stepIndex];
+  const stepKey = stepKeys[stepIndex];
   const warnings = useMemo(() => collectBriefWarnings(draft), [draft]);
 
   const patchBrief = <K extends keyof DesignBrief>(key: K, patch: Partial<DesignBrief[K]>) => {
@@ -88,7 +112,7 @@ export default function BriefWizardPage() {
   };
 
   const goToStep = (index: number) => {
-    persist(draft, `Updated the "${STEP_LABELS[stepKey]}" step.`);
+    persist(draft, `Updated the "${labelOf(stepKey)}" step.`);
     setStepIndex(index);
     setErrors({});
   };
@@ -99,14 +123,22 @@ export default function BriefWizardPage() {
   };
 
   const handleContinue = () => {
-    const stepErrors = validateStep(stepKey, draft);
+    const stepErrors = quick ? validateQuickStep(stepKey, draft) : validateStep(stepKey, draft);
     setErrors(stepErrors);
     if (Object.keys(stepErrors).length > 0) return;
     const completedSteps = draft.completedSteps.includes(stepKey) ? draft.completedSteps : [...draft.completedSteps, stepKey];
     const next = { ...draft, completedSteps };
     setDraft(next);
-    persist(next, `Completed the "${STEP_LABELS[stepKey]}" step.`);
-    if (stepIndex < BRIEF_STEP_KEYS.length - 1) setStepIndex(stepIndex + 1);
+    persist(next, `Completed the "${labelOf(stepKey)}" step.`);
+    if (stepIndex < stepKeys.length - 1) setStepIndex(stepIndex + 1);
+  };
+
+  // Opens the full brief at the plot step, keeping what has been filled in.
+  const handleAddDetail = () => {
+    persist(draft, "Opened the full brief.");
+    setDetailed(true);
+    setStepIndex(BRIEF_STEP_KEYS.indexOf("plot"));
+    setErrors({});
   };
 
   const handleSaveAndExit = () => {
@@ -166,7 +198,7 @@ export default function BriefWizardPage() {
     <div className="space-y-6">
       {/* Desktop horizontal step indicator */}
       <ol className="hidden lg:flex items-center bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
-        {BRIEF_STEP_KEYS.map((key, index) => {
+        {stepKeys.map((key, index) => {
           const isCurrent = index === stepIndex;
           const isComplete = draft.completedSteps.includes(key);
           return (
@@ -189,9 +221,9 @@ export default function BriefWizardPage() {
                     index + 1
                   )}
                 </span>
-                <span className="text-xs font-bold whitespace-nowrap hidden xl:inline">{STEP_LABELS[key]}</span>
+                <span className="text-xs font-bold whitespace-nowrap hidden xl:inline">{labelOf(key)}</span>
               </button>
-              {index < BRIEF_STEP_KEYS.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-3" aria-hidden="true" />}
+              {index < stepKeys.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-3" aria-hidden="true" />}
             </li>
           );
         })}
@@ -201,25 +233,51 @@ export default function BriefWizardPage() {
       <div className="lg:hidden bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
         <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
           <span>
-            Step {stepIndex + 1} of {BRIEF_STEP_KEYS.length}
+            Step {stepIndex + 1} of {stepKeys.length}
           </span>
-          <span>{STEP_LABELS[stepKey]}</span>
+          <span>{labelOf(stepKey)}</span>
         </div>
         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full bg-[#2ec440] rounded-full transition-all" style={{ width: `${((stepIndex + 1) / BRIEF_STEP_KEYS.length) * 100}%` }} />
+          <div className="h-full bg-[#2ec440] rounded-full transition-all" style={{ width: `${((stepIndex + 1) / stepKeys.length) * 100}%` }} />
         </div>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sm:p-7">
-        <h1 className="text-xl font-black text-slate-900 mb-1">{STEP_LABELS[stepKey]}</h1>
-        <p className="text-slate-500 text-sm mb-6">Step {stepIndex + 1} of {BRIEF_STEP_KEYS.length}</p>
+        <h1 className="text-xl font-black text-slate-900 mb-1">{labelOf(stepKey)}</h1>
+        <p className="text-slate-500 text-sm mb-6">Step {stepIndex + 1} of {stepKeys.length}</p>
 
-        {stepKey === "basics" && <BriefStepBasics value={draft.basics} onChange={(p) => patchBrief("basics", p)} errors={errors} />}
-        {stepKey === "plot" && <BriefStepPlot value={draft.plot} onChange={(p) => patchBrief("plot", p)} errors={errors} />}
-        {stepKey === "household" && <BriefStepHousehold value={draft.household} onChange={(p) => patchBrief("household", p)} errors={errors} />}
-        {stepKey === "style" && <BriefStepStyle value={draft.style} onChange={(p) => patchBrief("style", p)} errors={errors} />}
-        {stepKey === "budget" && <BriefStepBudget value={draft.budget} onChange={(p) => patchBrief("budget", p)} errors={errors} />}
-        {stepKey === "sustainability" && (
+        {quick && stepKey === "basics" && (
+          <BriefQuickHome basics={draft.basics} household={draft.household} onChangeBasics={(p) => patchBrief("basics", p)} onChangeHousehold={(p) => patchBrief("household", p)} errors={errors} />
+        )}
+        {quick && stepKey === "style" && (
+          <BriefQuickStyle style={draft.style} budget={draft.budget} onChangeStyle={(p) => patchBrief("style", p)} onChangeBudget={(p) => patchBrief("budget", p)} errors={errors} />
+        )}
+        {quick && stepKey === "review" && (
+          <>
+            <BriefQuickReview
+              brief={draft}
+              onEdit={(key) => setStepIndex(stepKeys.indexOf(key))}
+              onAddDetail={handleAddDetail}
+              onToggleDisclaimer={(accepted) => {
+                setDraft((prev) => ({ ...prev, disclaimerAccepted: accepted }));
+                setDirty(true);
+                setErrors({});
+              }}
+            />
+            {errors.disclaimer && (
+              <p className="text-red-600 text-sm font-semibold mt-3" role="alert">
+                {errors.disclaimer}
+              </p>
+            )}
+          </>
+        )}
+
+        {!quick && stepKey === "basics" && <BriefStepBasics value={draft.basics} onChange={(p) => patchBrief("basics", p)} errors={errors} />}
+        {!quick && stepKey === "plot" && <BriefStepPlot value={draft.plot} onChange={(p) => patchBrief("plot", p)} errors={errors} />}
+        {!quick && stepKey === "household" && <BriefStepHousehold value={draft.household} onChange={(p) => patchBrief("household", p)} errors={errors} />}
+        {!quick && stepKey === "style" && <BriefStepStyle value={draft.style} onChange={(p) => patchBrief("style", p)} errors={errors} />}
+        {!quick && stepKey === "budget" && <BriefStepBudget value={draft.budget} onChange={(p) => patchBrief("budget", p)} errors={errors} />}
+        {!quick && stepKey === "sustainability" && (
           <BriefStepSustainability
             sustainability={draft.sustainability}
             accessibility={draft.accessibility}
@@ -227,7 +285,7 @@ export default function BriefWizardPage() {
             onChangeAccessibility={(p) => patchBrief("accessibility", p)}
           />
         )}
-        {stepKey === "review" && (
+        {!quick && stepKey === "review" && (
           <>
             <BriefStepReview
               brief={draft}
