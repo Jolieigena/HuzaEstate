@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Reveal from "@/components/Reveal";
 import Accordion from "@/components/Accordion";
 import AuthRequiredModal from "@/components/AuthRequiredModal";
 import { useAuth } from "@/lib/auth-context";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import { DESIGN_CATEGORY_LABELS, DesignsApi, formatDesignPrice, type Design } from "@/lib/designs/api";
 
 const STUDIO_PATH = "/studio/build/new";
 
@@ -37,6 +39,18 @@ export default function BuildPage() {
 
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const money = useDisplayCurrency();
+  // Real designs that professionals on HuzaEstate have published, newest first.
+  const [designs, setDesigns] = useState<Design[]>([]);
+  useEffect(() => {
+    let active = true;
+    DesignsApi.list({ sort: "newest", limit: 12 }).then((result) => {
+      if (active && result.ok) setDesigns(result.data.designs.filter((d) => d.images.length > 0).slice(0, 6));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const startBuild = () => {
     if (isNavigating) return;
@@ -104,6 +118,39 @@ export default function BuildPage() {
           </Reveal>
         </div>
       </section>
+
+      {/* Real designs published by professionals on HuzaEstate */}
+      {designs.length > 0 && (
+        <section className="w-full bg-white pb-14 sm:pb-20 px-6 sm:px-10 md:px-12">
+          <div className="max-w-[1400px] mx-auto">
+            <Reveal className="mb-8 flex items-end justify-between gap-4">
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Designs by our professionals</h2>
+              <Link href="/designs" className="text-sm font-bold text-[#219b31] hover:underline whitespace-nowrap">
+                See all designs
+              </Link>
+            </Reveal>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {designs.map((design) => (
+                <Link key={design.id} href={`/designs/${design.id}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={design.images[0]} alt={design.title} className="h-52 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+                  <div className="p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      {DESIGN_CATEGORY_LABELS[design.category]}
+                      {design.spaceType ? ` · ${design.spaceType}` : ""}
+                    </p>
+                    <h3 className="mt-1 font-black text-slate-900">{design.title}</h3>
+                    <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                      <span className="font-bold text-slate-900">{formatDesignPrice(design, money.format)}</span>
+                      {design.designer && <span className="min-w-0 truncate font-semibold text-slate-600">{design.designer.displayName}</span>}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Professional review: one slim band */}
       <section className="w-full bg-slate-900 py-10 sm:py-12 px-6 sm:px-10 md:px-12">
