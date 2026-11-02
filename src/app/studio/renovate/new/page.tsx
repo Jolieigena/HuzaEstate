@@ -8,7 +8,7 @@ import Dialog from "@/components/Dialog";
 import PropertySelector from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { assessmentFromPrompt } from "@/lib/renovate/assessmentFromPrompt";
-import { RenovationCreationMode, RenovationProject, RenovationPropertyInfo } from "@/lib/renovate/types";
+import { RenovationCreationMode, RenovationProject, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
 import type { MyProperty } from "@/lib/myProperties";
 import { useToast } from "@/lib/toast-context";
 
@@ -152,9 +152,10 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={(propertyInfo: RenovationPropertyInfo) => {
+            onRegister={(propertyInfo: RenovationPropertyInfo, photos: UploadedFile[]) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
-              showToast("Property registered.");
+              if (photos.length) RenovationProjectService.addUploads(project.id, "photos", photos);
+              showToast(photos.length ? "Property and photos saved." : "Property saved.");
               goToAssessment(project.id);
             }}
           />
