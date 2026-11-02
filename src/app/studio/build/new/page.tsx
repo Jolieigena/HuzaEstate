@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useId, useState, FormEvent } from "react";
+import { Suspense, useEffect, useId, useRef, useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
@@ -39,7 +39,8 @@ const EXAMPLE_PROMPTS = [
 function nameFromBrief(brief: string): string {
   const text = brief.trim().replace(/\s+/g, " ");
   if (!text) return "My home design";
-  const cut = text.length > 40 ? `${text.slice(0, 37).trim()}…` : text;
+  // Kept short, and cut between words, so the name still fits in the page header.
+  const cut = text.length > 32 ? `${text.slice(0, 32).replace(/\s+\S*$/, "").trim()}…` : text;
   return cut.charAt(0).toUpperCase() + cut.slice(1);
 }
 
@@ -49,6 +50,18 @@ function NewProjectContent() {
   const params = useSearchParams();
   const [prompt, setPrompt] = useState(() => (params.get("brief") ?? "").slice(0, 500));
   const [creating, setCreating] = useState(false);
+
+  // The brief is the first thing a new project shows: opening this page creates a Huza AI project and goes straight there. The
+  // choice of how to start (a prompt box, manual, template) is only shown when asked for with ?choose=1.
+  const choose = params.get("choose") === "1";
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (choose || autoStarted.current) return;
+    autoStarted.current = true;
+    const words = (params.get("brief") ?? "").slice(0, 500);
+    const project = BuildProjectService.create({ name: nameFromBrief(words), description: words.trim(), creationMode: "ai" });
+    router.replace(`/studio/build/${project.id}/brief`);
+  }, [choose, params, router]);
 
   // Manual and template projects still ask for a name first.
   const [picked, setPicked] = useState<(typeof OTHER_WAYS)[number] | null>(null);
@@ -75,6 +88,14 @@ function NewProjectContent() {
     const project = BuildProjectService.create({ name, description: "", creationMode: picked.mode });
     router.push(picked.mode === "manual" ? `/studio/build/${project.id}/designer` : `/studio/build/${project.id}/designer?pickTemplate=1`);
   };
+
+  if (!choose) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-500" role="status">
+        Setting up your project…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">

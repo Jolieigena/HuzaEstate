@@ -101,6 +101,9 @@ export default function BuildDashboardPage() {
               <p className="text-slate-500 font-medium">Design, compare and refine your home concepts with Huza AI.</p>
             </div>
             <div className="flex flex-wrap gap-3">
+            <Link href="/studio/build/new?choose=1" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
+              Other ways to start
+            </Link>
             <Link href="/studio/build/sent" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
               Designs I sent
             </Link>
