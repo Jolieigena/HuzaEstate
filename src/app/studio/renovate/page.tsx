@@ -114,6 +114,10 @@ export default function RenovateDashboardPage() {
               <h1 className="text-3xl font-black text-slate-900 mb-2">My Renovation Projects</h1>
               <p className="text-slate-500 font-medium">Plan, compare and refine renovations for the properties you own with Huza AI.</p>
             </div>
+            <div className="flex flex-wrap gap-3">
+            <Link href="/studio/renovate/new?choose=1" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
+              Other ways to start
+            </Link>
             <Link
               href="/studio/renovate/new"
               className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3.5 rounded-xl transition-colors shadow-lg whitespace-nowrap"
@@ -123,6 +127,7 @@ export default function RenovateDashboardPage() {
               </svg>
               New Renovation Project
             </Link>
+            </div>
           </div>
 
           {!ready ? (

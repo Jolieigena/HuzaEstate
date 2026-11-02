@@ -46,13 +46,11 @@ export function getNextAction(project: RenovationProject): NextAction | null {
   switch (project.status) {
     case "draft":
     case "property_setup":
-      return { label: "Complete property details", href: `${base}/assessment`, description: "Confirm the property being renovated before starting the assessment." };
+      return { label: "Choose the property", href: `${base}/assessment`, description: "Confirm the property being renovated before starting the assessment." };
     case "assessment_in_progress":
       return { label: "Continue the assessment", href: `${base}/assessment`, description: "Finish the remaining assessment steps and confirm your renovation brief." };
     case "ready_to_generate":
-      return project.creationMode === "ai"
-        ? { label: "Confirm your renovation brief", href: `${base}/assessment`, description: "Review the brief and continue to Huza AI to generate concepts." }
-        : { label: "Generate your first concepts", href: `${base}/concepts`, description: "Your brief is confirmed — generate three renovation directions to compare." };
+      return { label: project.creationMode === "ai" ? "Start designing" : "Generate your first concepts", href: `${base}/concepts`, description: "Your brief is confirmed — generate three renovation directions to compare." };
     case "generating":
       return { label: "View generation progress", href: `${base}/concepts`, description: "Huza AI is preparing your renovation concepts." };
     case "concepts_ready":

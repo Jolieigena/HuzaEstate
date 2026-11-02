@@ -132,6 +132,13 @@ export default function AssessmentWizardPage() {
     showToast("Brief confirmed. Continue the conversation with Huza AI.");
   };
 
+  // Confirming the brief starts the design: the three concepts are made right away, with the progress shown on the Concepts page.
+  const handleStartDesigning = () => {
+    if (!finalizeReview()) return;
+    RenovationProjectService.startGeneration(project.id);
+    router.push(`/studio/renovate/${project.id}/concepts`);
+  };
+
   const handleOpenDesigner = () => {
     if (!finalizeReview()) return;
     router.push(`/studio/renovate/${project.id}/designer`);
@@ -291,9 +298,14 @@ export default function AssessmentWizardPage() {
               Open Manual Planner
             </button>
             {project.creationMode === "ai" && (
-              <button type="button" onClick={handleContinueToAgent} className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg whitespace-nowrap">
-                Continue to Huza AI
-              </button>
+              <>
+                <button type="button" onClick={handleContinueToAgent} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap">
+                  Refine with Huza AI
+                </button>
+                <button type="button" onClick={handleStartDesigning} className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg whitespace-nowrap">
+                  Start designing
+                </button>
+              </>
             )}
           </div>
         ) : (

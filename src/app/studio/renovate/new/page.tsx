@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useId, useState, FormEvent } from "react";
+import { Suspense, useEffect, useId, useRef, useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
@@ -75,7 +75,8 @@ type FlowStep = "mode" | "property";
 function nameFromBrief(brief: string): string {
   const text = brief.trim().replace(/\s+/g, " ");
   if (!text) return "";
-  const cut = text.length > 40 ? `${text.slice(0, 37).trim()}…` : text;
+  // Kept short, and cut between words, so the name still fits in the page header.
+  const cut = text.length > 32 ? `${text.slice(0, 32).replace(/\s+\S*$/, "").trim()}…` : text;
   return cut.charAt(0).toUpperCase() + cut.slice(1);
 }
 
@@ -95,6 +96,20 @@ function NewProjectContent() {
   const [project, setProject] = useState<RenovationProject | null>(null);
 
   const titleId = useId();
+
+  // The property is the first thing a new project asks for: opening this page creates a Huza AI project and shows it straight away.
+  // The choice of how to start (Huza AI, manual, inspiration) is only shown when asked for with ?choose=1.
+  const choose = params.get("choose") === "1";
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (choose || autoStarted.current) return;
+    autoStarted.current = true;
+    const words = brief.slice(0, 500);
+    const created = RenovationProjectService.create({ name: nameFromBrief(words) || "My renovation", description: words.trim(), creationMode: "ai" });
+    RenovationProjectService.beginPropertySetup(created.id);
+    setProject(created);
+    setStep("property");
+  }, [choose, brief]);
 
   const handleCreate = (e: FormEvent) => {
     e.preventDefault();
