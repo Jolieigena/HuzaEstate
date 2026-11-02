@@ -10,7 +10,8 @@ import { useAuth } from "@/lib/auth-context";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { DESIGN_CATEGORY_LABELS, DesignsApi, formatDesignPrice, type Design } from "@/lib/designs/api";
 
-const STUDIO_PATH = "/studio/build/new";
+// Opens the new-project screen already on "Design with Huza AI".
+const STUDIO_PATH = "/studio/build/new?mode=ai";
 
 const SAMPLE_PROMPT =
   "Design a contemporary two-floor family home for a 600 sqm plot in Kigali. Include four bedrooms, a home office, natural ventilation, two parking spaces and a maximum budget of 180 million RWF.";
