@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -18,9 +18,7 @@ const STEPS = [
   {
     number: 1,
     title: "Tell us about your plot",
-    description:
-      "Share your location, plot dimensions and orientation, and upload an existing plot plan or sketch if you have one.",
-    video: buildVideos.overview,
+    description: "Location, size and orientation, plus a plan or sketch if you have one.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -30,8 +28,7 @@ const STEPS = [
   {
     number: 2,
     title: "Describe your home",
-    description: "Complete a guided form or send Huza AI a natural-language prompt describing what you want.",
-    video: buildVideos.describeYourHome,
+    description: "Fill in a short form or tell Huza AI what you want.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-6l-4 4v-4z" />
@@ -41,8 +38,7 @@ const STEPS = [
   {
     number: 3,
     title: "Generate design directions",
-    description: "Huza AI creates alternative layout and visual concepts based on your confirmed requirements.",
-    video: buildVideos.generateConcepts,
+    description: "Huza AI makes layouts and pictures to match.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -52,8 +48,7 @@ const STEPS = [
   {
     number: 4,
     title: "Compare and refine",
-    description: "Compare options side by side, request changes and save the versions you like best.",
-    video: buildVideos.refineDesign,
+    description: "Compare options, ask for changes, save the ones you like.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10m-10 6h16" />
@@ -63,25 +58,13 @@ const STEPS = [
   {
     number: 5,
     title: "Request professional review",
-    description: "Share your selected concept with an architect, engineer or quantity surveyor before construction.",
-    video: buildVideos.professionalReview,
+    description: "Send your pick to an architect or engineer.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
   },
-];
-
-const CREATIONS = [
-  { title: "Plot and site concept", description: "See how your home could sit on your plot given its shape, size and orientation." },
-  { title: "Conceptual floor plans", description: "Explore alternative room layouts based on the bedrooms and spaces you need." },
-  { title: "Exterior design options", description: "Compare exterior styles, rooflines and façade treatments for your home." },
-  { title: "Interior visualisations", description: "Preview how key interior spaces could look and feel." },
-  { title: "Material and colour directions", description: "Get suggested material palettes and colour directions to explore." },
-  { title: "Indicative budget ranges", description: "See an approximate budget range based on your requirements." },
-  { title: "Saved design versions", description: "Keep every version you generate so you can revisit or compare them later." },
-  { title: "Professional review package", description: "Package your selected concept to share with an architect or engineer." },
 ];
 
 const EXAMPLES = [
@@ -112,7 +95,7 @@ const EXAMPLES = [
   {
     id: "compact-urban-home",
     title: "Compact Urban Home",
-    image: "/hero-house-white.jpg",
+    image: "/seed/exterior-modern-white.jpg",
     size: "180 sqm",
     floors: "3 floors",
     bedrooms: "3 bedrooms",
@@ -124,7 +107,7 @@ const EXAMPLES = [
   {
     id: "luxury-villa",
     title: "Luxury Villa",
-    image: "/hero-house-ai.jpg",
+    image: "/hero-house-africa-test1.jpg",
     size: "800 sqm",
     floors: "2 floors",
     bedrooms: "6 bedrooms",
@@ -148,7 +131,7 @@ const EXAMPLES = [
   {
     id: "affordable-starter-home",
     title: "Affordable Starter Home",
-    image: "/hero-house.png",
+    image: "/seed/exterior-timber-house.jpg",
     size: "120 sqm",
     floors: "1 floor",
     bedrooms: "2 bedrooms",
@@ -159,34 +142,13 @@ const EXAMPLES = [
   },
 ];
 
-const VALIDATION_STAGES = [
-  "AI-generated concept",
-  "User refinement",
-  "Architect review",
-  "Engineering review",
-  "Cost validation",
-  "Permit preparation",
-];
-
 const FAQ_ITEMS = [
-  { question: "Do I need an account to use Build?", answer: "No. Anyone can explore this page, watch the demo videos and view examples without an account. You'll need a free account only when you're ready to create and save a design." },
-  { question: "Can I design from a written prompt?", answer: "Yes. You can describe your home in natural language, and Huza AI will confirm your requirements before generating concepts." },
-  { question: "Can I upload a plot plan or sketch?", answer: "Yes. You can upload an existing plot plan or a rough sketch alongside your plot's location, dimensions and orientation." },
-  { question: "Does HuzaEstate produce construction-ready drawings?", answer: "No. Huza AI produces conceptual layouts and visuals. Construction-ready architectural, structural and permit documents must be prepared or approved by qualified professionals." },
-  { question: "Can I change a generated design?", answer: "Yes. You can request changes to any generated concept and compare the results before saving a version." },
-  { question: "Will the system estimate construction costs?", answer: "Yes, Build shows an indicative budget range based on your requirements. This is an estimate, not a fixed quotation." },
-  { question: "Can I share my project with an architect?", answer: "Yes. Once you have a concept you like, you can package it to share with an architect, engineer or quantity surveyor for review." },
-  { question: "Are my designs saved?", answer: "Yes. Every version you generate is saved to your account so you can revisit or compare it later." },
-  { question: "Can I create more than one project?", answer: "Yes. You can start as many Build projects as you like from your dashboard." },
+  { question: "Do I need an account to use Build?", answer: "You can look around, watch the demo and view the examples without one. You need a free account to create and save a design." },
+  { question: "Does HuzaEstate produce construction-ready drawings?", answer: "No. Huza AI makes conceptual layouts and pictures. Construction-ready architectural, structural and permit documents must be prepared or approved by qualified professionals." },
+  { question: "Will the system estimate construction costs?", answer: "Build shows an indicative budget range based on your requirements. It is an estimate, not a quotation." },
+  { question: "Can I share my project with an architect?", answer: "Yes. Once you have a concept you like, you can send it to an architect, engineer or quantity surveyor for review." },
+  { question: "Are my designs saved?", answer: "Yes. Every version you make is saved to your account, and you can start as many projects as you like." },
 ];
-
-function CheckIcon() {
-  return (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
 
 export default function BuildPage() {
   const router = useRouter();
@@ -196,22 +158,6 @@ export default function BuildPage() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [activeExample, setActiveExample] = useState<(typeof EXAMPLES)[0] | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
-  const [demoStage, setDemoStage] = useState(0);
-  const demoTimer = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (demoTimer.current) window.clearTimeout(demoTimer.current);
-  }, []);
-  const startDemo = () => {
-    setDemoStage(1);
-    demoTimer.current = window.setTimeout(() => setDemoStage(2), 2500);
-  };
-  // Resetting removes the tall result, which leaves the page scrolled past the demo; bring the demo back into view.
-  const resetDemo = () => {
-    if (demoTimer.current) window.clearTimeout(demoTimer.current);
-    setDemoStage(0);
-    document.getElementById("huza-demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
-
   const exampleTitleId = useId();
   const exampleDescId = useId();
 
@@ -227,18 +173,15 @@ export default function BuildPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Section 1: Hero */}
-      <section className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-12 md:pt-20 pb-16 sm:pb-24">
+      {/* Hero */}
+      <section className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 pt-10 md:pt-16 pb-14 sm:pb-20">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
           <div className="lg:col-span-6 order-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-semibold text-xs uppercase tracking-wide mb-6">
-              HuzaEstate Build
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight leading-[1.1]">
               Describe your dream home. Watch it take shape.
             </h1>
-            <p className="text-slate-600 text-lg leading-relaxed mt-6 max-w-xl">
-              Turn your ideas, requirements and plot information into personalised home concepts with Huza AI. Explore layouts, exterior styles and estimated budgets before working with a professional.
+            <p className="text-slate-600 text-lg leading-relaxed mt-5 max-w-xl">
+              Layouts, exterior styles and a budget range for your plot, made by Huza AI before you talk to a professional.
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-8">
               <button
@@ -254,10 +197,9 @@ export default function BuildPage() {
                 onClick={() => setDemoOpen(true)}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-[15px] px-8 py-4 rounded-full transition-all"
               >
-                Watch Full Demo
+                Watch Demo
               </button>
             </div>
-            <p className="text-slate-400 text-sm mt-4">An account is required to create and save a design.</p>
           </div>
 
           <div className="lg:col-span-6 order-2">
@@ -266,154 +208,33 @@ export default function BuildPage() {
         </div>
       </section>
 
-      {/* Section 2: How Build works */}
-      <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
+      {/* How Build works */}
+      <section className="w-full bg-[#f8fafc] py-14 sm:py-20 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
         <div className="max-w-[1400px] mx-auto">
-          <Reveal className="max-w-2xl mb-16">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">How HuzaEstate Build works</h2>
-            <p className="text-slate-600 text-lg leading-relaxed mt-4">
-              You&apos;re guided from your initial idea to a saved concept that can be shared with a professional — one confirmed step at a time.
-            </p>
+          <Reveal className="mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">How it works</h2>
           </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
             {STEPS.map((step, index) => (
-              <Reveal key={step.number} delay={index * 80} className="bg-white border border-slate-200 rounded-[2rem] p-8 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
-                {/* Large Background Number */}
-                <div className="absolute -top-4 -right-4 text-[120px] font-bold text-slate-50 leading-none group-hover:scale-105 group-hover:text-slate-100 transition-all duration-500 select-none">
-                  {step.number}
+              <Reveal key={step.number} delay={index * 60} className="bg-white border border-slate-200 rounded-2xl p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center">{step.icon}</div>
+                  <span className="text-sm font-bold text-slate-300">{step.number}</span>
                 </div>
-                
-                <div className="relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center mb-6">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3 pr-8">{step.title}</h3>
-                  <p className="text-slate-600 text-[15px] leading-relaxed">{step.description}</p>
-                </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5">{step.title}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{step.description}</p>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
 
-
-
-      {/* Section 3: Prompt experience preview */}
-      <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
-        <div id="huza-demo" className="max-w-5xl mx-auto scroll-mt-24">
-          <Reveal className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See Huza AI in action</h2>
-            <p className="text-slate-600 text-lg leading-relaxed mt-4 max-w-2xl mx-auto">
-              This is a public demonstration of how a conversation with Huza AI works, not the working agent.
-            </p>
-          </Reveal>
-
-          <Reveal delay={100} className="bg-slate-50 border border-slate-200 rounded-3xl p-6 sm:p-10">
-            <div className="flex flex-col gap-5">
-              <div className="self-end max-w-lg bg-slate-900 text-white rounded-2xl rounded-tr-md px-5 py-4 text-[15px] leading-relaxed shadow-sm">
-                “Design a contemporary two-floor family home for a 600 sqm plot in Kigali. Include four bedrooms, a home office, natural ventilation, two parking spaces and a maximum budget of 180 million RWF.”
-              </div>
-
-              <div className="self-start max-w-xl bg-white border border-slate-200 rounded-2xl rounded-tl-md px-5 py-5 shadow-sm">
-                <p className="text-slate-900 font-bold text-sm mb-3">Huza AI understood:</p>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-slate-600 text-[15px]">
-                  {[
-                    "Two floors",
-                    "Four bedrooms",
-                    "Home office",
-                    "Two parking spaces",
-                    "Natural ventilation",
-                    "Approx. budget: 180M RWF",
-                    "Location: Kigali",
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-2">
-                      <span className="text-[#2ec440] flex-shrink-0"><CheckIcon /></span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <p className="text-slate-400 text-sm italic">Huza AI confirms your requirements before generating concepts.</p>
-            </div>
-
-            <div className="mt-8 flex flex-col items-center">
-              {demoStage === 0 && (
-                <button
-                  type="button"
-                  onClick={startDemo}
-                  className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
-                >
-                  Try This Prompt
-                </button>
-              )}
-              {demoStage === 1 && (
-                <div className="flex items-center gap-3 text-slate-700 font-bold text-[15px] bg-slate-50 border border-slate-200 px-6 py-3 rounded-full">
-                  <div className="flex items-center gap-1">
-                    {[0,1,2].map((i) => (
-                      <span key={i} className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />
-                    ))}
-                  </div>
-                  Huza AI is generating concepts...
-                </div>
-              )}
-            </div>
-
-            {demoStage === 2 && (
-              <Reveal className="mt-6 self-start max-w-4xl bg-white border border-slate-200 rounded-2xl rounded-tl-md p-6 shadow-sm">
-                <p className="text-slate-900 font-bold text-sm mb-4">Huza AI generated these concepts:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="rounded-xl overflow-hidden border border-slate-200">
-                    <div className="relative aspect-video">
-                      <Image src="/hero-house.png" alt="Option 1" fill className="object-cover" />
-                    </div>
-                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 1: Modern Two-Story</div>
-                  </div>
-                  <div className="rounded-xl overflow-hidden border border-slate-200">
-                    <div className="relative aspect-video">
-                      <Image src="/hero-house-final.jpg" alt="Option 2" fill className="object-cover" />
-                    </div>
-                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 2: Open Concept</div>
-                  </div>
-                </div>
-                <div className="mt-6 flex justify-end gap-3">
-                  <button onClick={resetDemo} className="px-5 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-100 transition-colors text-sm border border-slate-200">Reset Demo</button>
-                  <button onClick={startBuild} className="bg-[#2ec440] hover:bg-[#28b039] text-white px-5 py-2 rounded-full font-bold transition-colors text-sm shadow-sm">Start Designing →</button>
-                </div>
-              </Reveal>
-            )}
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Section 4: What users can create */}
-      <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
+      {/* Design examples */}
+      <section className="w-full bg-white py-14 sm:py-20 px-6 sm:px-10 md:px-12">
         <div className="max-w-[1400px] mx-auto">
-          <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">What you can create</h2>
-            <p className="text-slate-600 text-lg leading-relaxed mt-4">Floor plans and generated visuals shown here are conceptual, not construction-ready.</p>
-          </Reveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {CREATIONS.map((item, index) => (
-              <Reveal key={item.title} delay={index * 60} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 h-full flex flex-col">
-                <h3 className="text-base font-bold text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{item.description}</p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 5: Design examples */}
-      <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
-        <div className="max-w-[1400px] mx-auto">
-          <Reveal className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-12">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Design examples</h2>
-              <p className="text-slate-500 text-lg mt-2">A sample of the directions Huza AI can explore with you.</p>
-            </div>
+          <Reveal className="mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Design examples</h2>
           </Reveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
@@ -448,56 +269,28 @@ export default function BuildPage() {
         </div>
       </section>
 
-      {/* Section 6: Professional validation */}
-      <section className="w-full bg-slate-900 py-16 sm:py-24 px-6 sm:px-10 md:px-12">
-        <div className="max-w-[1400px] mx-auto">
-          <Reveal className="max-w-2xl mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">From an idea to a professionally reviewed project</h2>
-            <p className="text-slate-300 text-lg leading-relaxed mt-4">
-              Huza AI helps you explore and organise your requirements, but technical documents must be reviewed and prepared by qualified professionals.
-            </p>
-          </Reveal>
-
-          <Reveal delay={100} className="flex flex-wrap items-stretch gap-3 mb-10">
-            {VALIDATION_STAGES.map((stage, index) => (
-              <div key={stage} className="flex items-center gap-3">
-                <div className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 flex items-center gap-3">
-                  <span className="w-7 h-7 rounded-full bg-[#2ec440]/20 text-[#2ec440] font-bold text-xs flex items-center justify-center flex-shrink-0">{index + 1}</span>
-                  <span className="text-white font-semibold text-sm whitespace-nowrap">{stage}</span>
-                </div>
-                {index < VALIDATION_STAGES.length - 1 && (
-                  <svg className="w-5 h-5 text-slate-500 flex-shrink-0 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                )}
-              </div>
-            ))}
-          </Reveal>
-
-          <Reveal delay={150} className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5 mb-8">
-            <p className="text-slate-200 text-[15px] leading-relaxed">
-              <span className="font-bold text-white">Important: </span>
-              AI-generated designs are conceptual and must not be used directly for construction. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.
-            </p>
-          </Reveal>
-
-          <Reveal delay={200}>
-            <Link
-              href="/professionals"
-              className="inline-flex items-center gap-2 bg-[#2ec440] hover:bg-[#28b039] text-white font-bold px-6 py-3.5 rounded-full transition-colors"
-            >
-              Browse Engineers &amp; Professionals
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-            </Link>
-          </Reveal>
-        </div>
+      {/* Professional review: one slim band instead of a long process */}
+      <section className="w-full bg-slate-900 py-10 sm:py-12 px-6 sm:px-10 md:px-12">
+        <Reveal className="max-w-[1400px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Concepts are not construction-ready</h2>
+            <p className="text-slate-300 text-[15px] leading-relaxed mt-2 max-w-2xl">Final architectural, structural and permit documents must be prepared or approved by qualified professionals.</p>
+          </div>
+          <Link
+            href="/professionals"
+            className="inline-flex items-center justify-center gap-2 bg-[#2ec440] hover:bg-[#28b039] text-white font-bold px-6 py-3.5 rounded-full transition-colors whitespace-nowrap"
+          >
+            Browse Professionals
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+          </Link>
+        </Reveal>
       </section>
 
-      {/* Section 7: FAQ */}
-      <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
+      {/* FAQ */}
+      <section className="w-full bg-white py-14 sm:py-20 px-6 sm:px-10 md:px-12">
         <div className="max-w-3xl mx-auto">
-          <Reveal className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Build FAQ</h2>
+          <Reveal className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Questions</h2>
           </Reveal>
           <Reveal delay={100}>
             <Accordion items={FAQ_ITEMS} />
@@ -505,27 +298,18 @@ export default function BuildPage() {
         </div>
       </section>
 
-      {/* Section 8: Final CTA */}
-      <section className="w-full bg-[#f8fafc] py-16 sm:py-24 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
+      {/* Final call to action */}
+      <section className="w-full bg-[#f8fafc] py-14 sm:py-20 px-6 sm:px-10 md:px-12 border-t border-slate-200/60">
         <Reveal className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-4">Your future home can begin with one idea.</h2>
-          <p className="text-slate-600 text-lg leading-relaxed mb-10">Create an account, describe what you want and start exploring your first home concept.</p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={startBuild}
-              disabled={isNavigating}
-              className="w-full sm:w-auto bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 px-10 rounded-xl transition-colors shadow-lg"
-            >
-              Start Designing
-            </button>
-            <Link
-              href={isLoggedIn ? STUDIO_PATH : "/signup?redirect=" + encodeURIComponent(STUDIO_PATH)}
-              className="w-full sm:w-auto text-center bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 font-bold py-4 px-10 rounded-xl transition-colors"
-            >
-              Create an Account
-            </Link>
-          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight mb-8">Your future home can begin with one idea.</h2>
+          <button
+            type="button"
+            onClick={startBuild}
+            disabled={isNavigating}
+            className="bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-4 px-10 rounded-xl transition-colors shadow-lg"
+          >
+            Start Designing
+          </button>
         </Reveal>
       </section>
 
