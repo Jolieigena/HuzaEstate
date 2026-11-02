@@ -7,7 +7,9 @@ import ProjectCard from "@/components/build/ProjectCard";
 import { useBuildProjects } from "@/lib/build/hooks";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { BuildProjectStatus, CreationMode, CREATION_MODE_LABELS, PROJECT_STATUS_LABELS } from "@/lib/build/types";
-import { projectLocationLabel } from "@/lib/build/format";
+import { isBlankDraft, projectLocationLabel } from "@/lib/build/format";
+import ConfirmModal from "@/components/shared/ConfirmModal";
+import { useToast } from "@/lib/toast-context";
 import Select from "@/components/shared/Select";
 
 type SortKey = "recent" | "oldest" | "name";
@@ -54,6 +56,9 @@ export default function BuildDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<BuildProjectStatus | "all">("all");
   const [modeFilter, setModeFilter] = useState<CreationMode | "all">("all");
   const [sort, setSort] = useState<SortKey>("recent");
+  const { showToast } = useToast();
+  const [clearOpen, setClearOpen] = useState(false);
+  const blankDrafts = useMemo(() => projects.filter(isBlankDraft), [projects]);
 
   const visibleProjects = useMemo(() => projects.filter((p) => p.status !== "archived"), [projects]);
 
@@ -95,12 +100,14 @@ export default function BuildDashboardPage() {
             <span className="text-slate-900 font-semibold">Build Projects</span>
           </nav>
 
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 mb-2">My Build Projects</h1>
-              <p className="text-slate-500 font-medium">Design, compare and refine your home concepts with Huza AI.</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
+            <h1 className="text-3xl font-black text-slate-900">My Build Projects</h1>
+            <div className="flex flex-wrap items-center gap-3">
+            {blankDrafts.length > 1 && (
+              <button type="button" onClick={() => setClearOpen(true)} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 whitespace-nowrap">
+                Clear {blankDrafts.length} empty drafts
+              </button>
+            )}
             <Link href="/studio/build/new?choose=1" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
               Other ways to start
             </Link>
@@ -118,6 +125,20 @@ export default function BuildDashboardPage() {
             </Link>
             </div>
           </div>
+
+          <ConfirmModal
+            open={clearOpen}
+            onClose={() => setClearOpen(false)}
+            title="Clear empty drafts"
+            description={`This deletes ${blankDrafts.length} projects that were opened but never filled in. Projects with anything in them are not touched.`}
+            confirmLabel="Clear Empty Drafts"
+            destructive
+            onConfirm={() => {
+              blankDrafts.forEach((p) => BuildProjectService.delete(p.id));
+              setClearOpen(false);
+              showToast("Empty drafts cleared.");
+            }}
+          />
 
           {!ready ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-pulse">

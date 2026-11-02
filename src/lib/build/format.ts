@@ -53,6 +53,19 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+/** A project that was opened and never filled in: still a draft with the default name, no description, no brief step finished and no
+ *  concepts. Opening "New project" again reuses one of these instead of adding another, and the list can clear them. */
+export const DEFAULT_PROJECT_NAME = "My home design";
+export function isBlankDraft(project: BuildProject): boolean {
+  return (
+    project.status === "draft" &&
+    project.name === DEFAULT_PROJECT_NAME &&
+    !project.description?.trim() &&
+    project.concepts.length === 0 &&
+    project.brief.completedSteps.length === 0
+  );
+}
+
 export function projectLocationLabel(project: BuildProject): string {
   const { neighbourhood, district, provinceOrCity } = project.brief.basics;
   const parts = [neighbourhood, district, provinceOrCity].map((p) => p?.trim()).filter(Boolean);

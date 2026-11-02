@@ -40,7 +40,8 @@ export default function ProjectCard({ project }: { project: BuildProject }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId);
-  const image = selectedConcept?.previewImage ?? project.concepts[0]?.previewImage ?? "/hero-house.jpg";
+  // A project with no concept yet has no picture of its own: it gets a plain panel, not the same stock house on every card.
+  const image = selectedConcept?.previewImage ?? project.concepts[0]?.previewImage ?? null;
   const location = projectLocationLabel(project);
   const bedrooms = project.brief.household.rooms.find((r) => r.key === "bedrooms")?.quantity;
   const area = selectedConcept?.metrics.floorAreaSqm ?? project.brief.plot.areaSqm;
@@ -64,7 +65,15 @@ export default function ProjectCard({ project }: { project: BuildProject }) {
   return (
     <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
       <Link href={`/studio/build/${project.id}`} className="relative h-44 overflow-hidden block flex-shrink-0">
-        <Image src={image} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 400px" />
+        {image ? (
+          <Image src={image} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width: 768px) 100vw, 400px" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#2ec440]/10 via-slate-50 to-slate-100 text-[#2ec440]/50">
+            <svg className="h-14 w-14" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4" d="M3 9.5L12 3l9 6.5M4.5 10.5V20a1 1 0 001 1h4.75v-6.5h3.5V21H19.5a1 1 0 001-1v-9.5" />
+            </svg>
+          </div>
+        )}
         <div className="absolute top-3 left-3">
           <StatusBadge status={project.status} className="bg-white/95" />
         </div>
@@ -98,7 +107,9 @@ export default function ProjectCard({ project }: { project: BuildProject }) {
 
         {(budget.targetBudget || budget.minBudget) && (
           <p className="text-sm font-bold text-slate-900 mb-4">
-            {budget.minBudget ? formatCompactRwf(budget.minBudget) : "—"} – {budget.maxBudget ? formatCompactRwf(budget.maxBudget) : formatCompactRwf(budget.targetBudget ?? 0)}
+            {budget.minBudget && (budget.maxBudget || budget.targetBudget)
+              ? `${formatCompactRwf(budget.minBudget)} – ${formatCompactRwf((budget.maxBudget || budget.targetBudget) ?? 0)}`
+              : formatCompactRwf(budget.targetBudget || budget.maxBudget || budget.minBudget || 0)}
           </p>
         )}
 

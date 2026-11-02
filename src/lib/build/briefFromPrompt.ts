@@ -1,4 +1,5 @@
 import { extractRequirementsFromPrompt } from "./agentService";
+import { emptyBrief } from "./factory";
 import { DesignBrief, HOME_STYLE_LABELS, HomeStyle, PropertyUse, ROOM_LABELS, RoomKey } from "./types";
 
 // Reads a person's own words ("a three-bedroom family home on a 300 sqm plot in Kigali") into the brief's fields, so the brief
@@ -28,6 +29,21 @@ function propertyUseFrom(text: string): PropertyUse | null {
   if (/holiday|vacation|weekend home/i.test(text)) return "holiday_home";
   if (/family|my home|our home|residence|live in/i.test(text)) return "primary_residence";
   return null;
+}
+
+/** A short name for a project, made from what the words say ("2-floor 4-bedroom home in Kigali"). Empty when the words say none of it. */
+export function projectNameFromPrompt(words: string): string {
+  if (!words.trim()) return "";
+  const base = emptyBrief();
+  const brief = briefFromPrompt(base, words);
+  const bedrooms = brief.household.rooms.find((r) => r.key === "bedrooms")?.quantity ?? 0;
+  const parts: string[] = [];
+  if (brief.household.floors > base.household.floors) parts.push(`${brief.household.floors}-floor`);
+  if (bedrooms > 0) parts.push(`${bedrooms}-bedroom`);
+  if (parts.length === 0 && !brief.basics.provinceOrCity) return "";
+  parts.push("home");
+  const name = parts.join(" ");
+  return brief.basics.provinceOrCity ? `${name} in ${brief.basics.provinceOrCity}` : name;
 }
 
 /** The brief with whatever the words say filled in. Nothing the person has already entered is overwritten. */

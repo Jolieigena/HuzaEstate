@@ -6,7 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { briefFromPrompt } from "@/lib/build/briefFromPrompt";
+import { briefFromPrompt, projectNameFromPrompt } from "@/lib/build/briefFromPrompt";
+import { isBlankDraft } from "@/lib/build/format";
 import { CreationMode } from "@/lib/build/types";
 
 const SPARKLE_PATH =
@@ -60,7 +61,13 @@ function NewProjectContent() {
     if (choose || autoStarted.current) return;
     autoStarted.current = true;
     const words = (params.get("brief") ?? "").slice(0, 500);
-    const project = BuildProjectService.create({ name: nameFromBrief(words), description: words.trim(), creationMode: "ai" });
+    // With nothing typed, a project that was opened before and never filled in is opened again instead of adding another blank one.
+    const blank = words.trim() ? undefined : BuildProjectService.getAll().find((p) => isBlankDraft(p) && p.creationMode === "ai");
+    if (blank) {
+      router.replace(`/studio/build/${blank.id}/brief`);
+      return;
+    }
+    const project = BuildProjectService.create({ name: projectNameFromPrompt(words) || nameFromBrief(words), description: words.trim(), creationMode: "ai" });
     if (words.trim()) BuildProjectService.saveBrief(project.id, briefFromPrompt(project.brief, words), "Filled in from the description.");
     router.replace(`/studio/build/${project.id}/brief`);
   }, [choose, params, router]);
@@ -75,7 +82,7 @@ function NewProjectContent() {
     e.preventDefault();
     if (creating) return;
     setCreating(true);
-    const project = BuildProjectService.create({ name: nameFromBrief(prompt), description: prompt.trim(), creationMode: "ai" });
+    const project = BuildProjectService.create({ name: projectNameFromPrompt(prompt) || nameFromBrief(prompt), description: prompt.trim(), creationMode: "ai" });
     if (prompt.trim()) BuildProjectService.saveBrief(project.id, briefFromPrompt(project.brief, prompt), "Filled in from the description.");
     router.push(`/studio/build/${project.id}/brief`);
   };
