@@ -5,15 +5,20 @@ import Image from "@/components/PropertyImage";
 import Select from "@/components/shared/Select";
 import { getMyProperties, MyProperty } from "@/lib/myProperties";
 import { newId } from "@/lib/renovate/factory";
-import { PropertyType, PROPERTY_TYPE_LABELS, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
+import { PropertyType, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS, RenovationAreaKey, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
 
 const MAX_PHOTOS = 6;
 const MAX_SIDE_PX = 900;
 
+// What can be renovated, most common first. "Whole house" stands alone: it cannot be combined with a single room.
+const WHOLE_HOUSE: RenovationAreaKey = "full_property";
+const AREA_CHOICES: RenovationAreaKey[] = [WHOLE_HOUSE, "kitchen", "bathroom", "living_room", "bedroom", "dining_room", "ceiling", "walls_and_paint", "flooring", "exterior_facade", "roofing", "balcony", "terrace", "garden", "garage", "home_office", "hallway"];
+
 interface PropertySelectorProps {
   onSelectOwned: (property: MyProperty) => void;
-  /** Any property the person describes, with the photos they added. It does not have to be one of theirs on the site. */
-  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[]) => void | Promise<void>;
+  /** Any property the person describes: what is being renovated, the photos (each tagged with the area it shows, as `relatedAreaId`
+   *  holding the area's key), and where it is. It does not have to be one of theirs on the site. */
+  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: RenovationAreaKey[]) => void | Promise<void>;
 }
 
 /** A photo made small enough to keep with the project (a JPEG of at most 900 px on its longer side), as a data address, so it is
@@ -46,6 +51,8 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const properties = getMyProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const [areas, setAreas] = useState<RenovationAreaKey[]>([]);
+  const [areaError, setAreaError] = useState("");
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
   const [location, setLocation] = useState("");
   const [propertyType, setPropertyType] = useState<PropertyType>("detached_house");
@@ -54,18 +61,30 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const toggleArea = (key: RenovationAreaKey) => {
+    setAreaError("");
+    const next = areas.includes(key) ? areas.filter((k) => k !== key) : key === WHOLE_HOUSE ? [WHOLE_HOUSE] : [...areas.filter((k) => k !== WHOLE_HOUSE), key];
+    setAreas(next);
+    // A photo always belongs to one of the chosen areas: one that no longer is chosen moves to the first that is.
+    setPhotos((prev) => prev.map((p) => (next.includes(p.relatedAreaId as RenovationAreaKey) || next.length === 0 ? p : { ...p, relatedAreaId: next[0] })));
+  };
+
   const addPhotos = async (list: FileList | null) => {
     if (!list || list.length === 0) return;
     setPhotoError("");
     const room = MAX_PHOTOS - photos.length;
     const chosen = Array.from(list).filter((f) => f.type.startsWith("image/")).slice(0, Math.max(room, 0));
     if (chosen.length < list.length) setPhotoError(room <= 0 ? `You can add up to ${MAX_PHOTOS} photos.` : "Only pictures can be added here, up to six in all.");
-    const read = (await Promise.all(chosen.map(readPhoto))).filter((p): p is UploadedFile => p !== null);
+    const read = (await Promise.all(chosen.map(readPhoto))).filter((p): p is UploadedFile => p !== null).map((p) => ({ ...p, relatedAreaId: areas[0] }));
     if (read.length) setPhotos((prev) => [...prev, ...read].slice(0, MAX_PHOTOS));
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (areas.length === 0) {
+      setAreaError("Choose what you are renovating.");
+      return;
+    }
     if (!location.trim()) {
       setError("Tell us where the property is.");
       return;
@@ -90,6 +109,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
         willBeOccupiedDuringRenovation: null,
       },
       photos,
+      areas,
     );
   };
 
@@ -98,7 +118,30 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-8">What are you renovating?</h2>
 
       <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
-        <p className="text-sm font-bold text-slate-700 mb-3">Photos of the property</p>
+        <p className="text-sm font-bold text-slate-700 mb-3">What do you want to renovate?</p>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="What do you want to renovate?">
+          {AREA_CHOICES.map((key) => {
+            const on = areas.includes(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={on}
+                onClick={() => toggleArea(key)}
+                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                  on ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                }`}
+              >
+                {key === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[key]}
+              </button>
+            );
+          })}
+        </div>
+        {areaError && <p className="mt-2 text-sm font-semibold text-red-600">{areaError}</p>}
+
+        {areas.length > 0 && (
+        <>
+        <p className="mt-8 text-sm font-bold text-slate-700 mb-3">Photos of {areas.length === 1 ? (areas[0] === WHOLE_HOUSE ? "the house" : `the ${RENOVATION_AREA_LABELS[areas[0]].toLowerCase()}`) : "the property"}</p>
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -118,6 +161,20 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
                 <li key={photo.id} className="relative aspect-[4/3] overflow-hidden rounded-xl border border-slate-200 bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photo.previewUrl} alt={photo.name} className="h-full w-full object-cover" />
+                  {areas.length > 1 && (
+                    <select
+                      value={photo.relatedAreaId}
+                      onChange={(e) => setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, relatedAreaId: e.target.value } : p)))}
+                      aria-label={`What ${photo.name} shows`}
+                      className="absolute inset-x-1.5 bottom-1.5 rounded-lg border-0 bg-white/90 px-2 py-1 text-xs font-semibold text-slate-700"
+                    >
+                      {areas.map((key) => (
+                        <option key={key} value={key}>
+                          {key === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[key]}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <button
                     type="button"
                     onClick={() => setPhotos((prev) => prev.filter((p) => p.id !== photo.id))}
@@ -152,6 +209,8 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
           </div>
         </div>
         {photoError && <p className="mt-2 text-xs font-semibold text-amber-700">{photoError}</p>}
+        </>
+        )}
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">

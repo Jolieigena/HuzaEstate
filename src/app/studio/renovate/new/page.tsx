@@ -7,9 +7,9 @@ import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
 import PropertySelector from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { assessmentFromPrompt } from "@/lib/renovate/assessmentFromPrompt";
+import { assessmentFromPrompt, newArea } from "@/lib/renovate/assessmentFromPrompt";
 import { analysePhotos, applyPhotoAnalysis } from "@/lib/renovate/photoAnalysis";
-import { RenovationCreationMode, RenovationProject, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
+import { RENOVATION_AREA_LABELS, RenovationAreaKey, RenovationCreationMode, RenovationProject, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
 import type { MyProperty } from "@/lib/myProperties";
 import { useToast } from "@/lib/toast-context";
 
@@ -166,8 +166,18 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[]) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], areaKeys: RenovationAreaKey[]) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
+              // What the person said they are renovating becomes the brief's areas, so the first step is already answered.
+              const existing = RenovationProjectService.getById(project.id);
+              if (existing) {
+                const assessment = JSON.parse(JSON.stringify(existing.assessment)) as typeof existing.assessment;
+                for (const key of areaKeys) if (!assessment.areas.some((a) => a.areaKey === key)) assessment.areas.push(newArea(key));
+                if (!assessment.completedSteps.includes("areas")) assessment.completedSteps.push("areas");
+                // Each photo points at the area it shows.
+                photos = photos.map((p) => ({ ...p, relatedAreaId: assessment.areas.find((a) => a.areaKey === p.relatedAreaId)?.id }));
+                RenovationProjectService.saveAssessment(project.id, assessment, "Chose what to renovate.");
+              }
               if (photos.length === 0) {
                 showToast("Property saved.");
                 goToAssessment(project.id);
@@ -176,7 +186,11 @@ function NewProjectContent() {
               RenovationProjectService.addUploads(project.id, "photos", photos);
               // Huza AI looks at the photos and fills in what it sees; when it cannot (no model on the server), the brief just starts empty.
               setAnalysing(true);
-              const analysis = await analysePhotos(photos);
+              const labelOf = (photo: UploadedFile) => {
+                const area = RenovationProjectService.getById(project.id)?.assessment.areas.find((a) => a.id === photo.relatedAreaId);
+                return area ? (area.areaKey === "full_property" ? "Whole house" : RENOVATION_AREA_LABELS[area.areaKey]) : "";
+              };
+              const analysis = await analysePhotos(photos, photos.map(labelOf));
               const current = RenovationProjectService.getById(project.id);
               if (analysis && current) {
                 RenovationProjectService.saveAssessment(project.id, applyPhotoAnalysis(current.assessment, analysis), "Filled in from the photos.");

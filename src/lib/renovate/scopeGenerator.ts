@@ -40,6 +40,22 @@ interface TaskTemplate {
 }
 
 const AREA_TASK_TEMPLATES: Partial<Record<RenovationAreaKey, TaskTemplate[]>> = {
+  ceiling: [
+    { category: "demolition", task: "Remove damaged or old ceiling finish", description: "Strip loose or damaged ceiling boards, plaster or paint.", unit: "sqm" },
+    { category: "electrical", task: "Plan ceiling lighting", description: "Add or relocate lighting points before the new ceiling is closed.", unit: "room", professionalRequired: true },
+    { category: "ceiling", task: "Install the new ceiling", description: "Fit the selected ceiling design, such as gypsum boards with coves or a plain finish.", unit: "sqm", dependency: "Electrical work before closing the ceiling." },
+    { category: "painting", task: "Paint the ceiling", description: "Apply finish coats in the selected colours.", unit: "sqm" },
+  ],
+  flooring: [
+    { category: "demolition", task: "Lift the existing floor finish", description: "Remove old tiles, boards or screed where it is being replaced.", unit: "sqm" },
+    { category: "preparation", task: "Level and prepare the floor", description: "Repair and level the surface ready for the new finish.", unit: "sqm" },
+    { category: "flooring", task: "Lay the new flooring", description: "Install the selected tiles, boards or other flooring.", unit: "sqm" },
+  ],
+  walls_and_paint: [
+    { category: "preparation", task: "Repair and prepare the walls", description: "Patch cracks, skim and sand the walls, and deal with damp where found.", unit: "sqm" },
+    { category: "walls", task: "Apply the new wall finish", description: "Apply plaster, texture or cladding where the design calls for it.", unit: "sqm" },
+    { category: "painting", task: "Paint the walls", description: "Apply primer and finish coats in the selected colours.", unit: "sqm" },
+  ],
   kitchen: [
     { category: "demolition", task: "Remove existing cabinetry and worktop", description: "Strip out cabinetry, worktop and any fixtures marked for removal.", unit: "room" },
     { category: "plumbing", task: "Reposition or reconnect kitchen plumbing", description: "Adjust supply and drain lines for the new layout, keeping existing positions where marked to keep.", unit: "room", professionalRequired: true, dependency: "Demolition must be complete first." },

@@ -9,11 +9,13 @@ export interface PhotoAnalysis {
   areas: { area: RenovationAreaKey; problem: string; condition: "good" | "fair" | "poor" }[];
 }
 
-export async function analysePhotos(photos: UploadedFile[]): Promise<PhotoAnalysis | null> {
-  const images = photos.map((p) => p.previewUrl?.replace(/^data:image\/jpeg;base64,/, "")).filter((data): data is string => !!data && data.length > 100);
-  if (images.length === 0) return null;
+/** `labels` says what each photo shows, as the person told us (for example "Kitchen"), so the model does not have to guess. */
+export async function analysePhotos(photos: UploadedFile[], labels: string[] = []): Promise<PhotoAnalysis | null> {
+  const usable = photos.map((p, index) => ({ data: p.previewUrl?.replace(/^data:image\/jpeg;base64,/, ""), label: labels[index] ?? "" })).filter((item): item is { data: string; label: string } => !!item.data && item.data.length > 100);
+  if (usable.length === 0) return null;
+  const images = usable.map((item) => item.data);
   try {
-    const res = await fetch("/api/photo-analysis", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ images }), signal: AbortSignal.timeout(45000) });
+    const res = await fetch("/api/photo-analysis", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ images, labels: usable.map((item) => item.label) }), signal: AbortSignal.timeout(45000) });
     if (!res.ok) return null;
     const data = await res.json();
     return data?.available === true ? (data as PhotoAnalysis) : null;

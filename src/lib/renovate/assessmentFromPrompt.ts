@@ -5,7 +5,7 @@ import { RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS, RenovationAreaKey, Ren
 // opens already filled in with what they said. It reuses the keyword reader behind the Huza AI conversation: it fills in what it
 // recognises (the areas, the style and the budget) and leaves the rest for the person to answer.
 
-function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
+export function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
   return {
     id: `area_${Date.now()}_${Math.random().toString(16).slice(2)}`,
     areaKey,

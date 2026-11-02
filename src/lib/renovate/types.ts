@@ -139,6 +139,9 @@ export type RenovationAreaKey =
   | "extension"
   | "additional_floor"
   | "full_property"
+  | "ceiling"
+  | "flooring"
+  | "walls_and_paint"
   | "accessibility_improvement"
   | "energy_efficiency"
   | "custom";
@@ -161,6 +164,9 @@ export const RENOVATION_AREA_LABELS: Record<RenovationAreaKey, string> = {
   extension: "Extension",
   additional_floor: "Additional floor",
   full_property: "Full property",
+  ceiling: "Ceiling",
+  flooring: "Flooring",
+  walls_and_paint: "Walls and paint",
   accessibility_improvement: "Accessibility improvement",
   energy_efficiency: "Energy-efficiency upgrade",
   custom: "Custom area",

@@ -20,7 +20,7 @@ interface Analysis {
 
 const PROMPT = `You look at photos of a home in Rwanda or East Africa that its owner wants to renovate.
 Return only JSON: {"summary": string, "style": one of ${STYLES.join("|")} or null, "areas": [{"area": one of ${AREAS.join("|")}, "problem": string, "condition": "good"|"fair"|"poor"}]}.
-List each distinct room or outdoor area you can actually see, once, with the main visible problem or what looks dated, worn or damaged, in under 160 characters. If nothing looks wrong, say so.
+Where the owner says what a photo shows, trust that. List each distinct room or outdoor area you can actually see, once, with the main visible problem or what looks dated, worn or damaged, in under 160 characters. If nothing looks wrong, say so.
 "summary" is two short sentences describing what you see. "style" is the style the property is in now. Do not guess at anything you cannot see. Never mention prices.`;
 
 function clean(input: unknown, max: number): string {
@@ -42,8 +42,13 @@ function toAnalysis(parsed: Record<string, unknown> | null): Analysis | null {
   return { available: true, summary: clean(parsed.summary, 400), style, areas: areas.slice(0, 8) };
 }
 
-async function withGemini(images: string[], key: string): Promise<Analysis | null> {
-  const parts = [{ text: PROMPT }, ...images.map((data) => ({ inline_data: { mime_type: "image/jpeg", data } }))];
+// "Photo 1, which the owner says shows: Kitchen." in front of each picture, when the owner said what it is.
+function captionOf(labels: string[], index: number): string {
+  return labels[index] ? `Photo ${index + 1}, which the owner says shows: ${labels[index]}.` : `Photo ${index + 1}.`;
+}
+
+async function withGemini(images: string[], labels: string[], key: string): Promise<Analysis | null> {
+  const parts = [{ text: PROMPT }, ...images.flatMap((data, index) => [{ text: captionOf(labels, index) }, { inline_data: { mime_type: "image/jpeg", data } }])];
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -56,7 +61,7 @@ async function withGemini(images: string[], key: string): Promise<Analysis | nul
   return toAnalysis(typeof raw === "string" ? JSON.parse(raw) : null);
 }
 
-async function withOpenAI(images: string[], key: string): Promise<Analysis | null> {
+async function withOpenAI(images: string[], labels: string[], key: string): Promise<Analysis | null> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
@@ -64,7 +69,7 @@ async function withOpenAI(images: string[], key: string): Promise<Analysis | nul
       model: process.env.OPENAI_VISION_MODEL || "gpt-4o-mini",
       response_format: { type: "json_object" },
       temperature: 0.2,
-      messages: [{ role: "user", content: [{ type: "text", text: PROMPT }, ...images.map((data) => ({ type: "image_url", image_url: { url: `data:image/jpeg;base64,${data}` } }))] }],
+      messages: [{ role: "user", content: [{ type: "text", text: PROMPT }, ...images.flatMap((data, index) => [{ type: "text", text: captionOf(labels, index) }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${data}` } }])] }],
     }),
     signal: AbortSignal.timeout(40000),
   });
@@ -83,11 +88,12 @@ export async function POST(request: Request) {
     .filter((value: unknown): value is string => typeof value === "string" && value.length > 100 && value.length < 2_000_000)
     .slice(0, 6);
   if (images.length === 0) return NextResponse.json({ error: "Send at least one photo." }, { status: 400 });
+  const labels: string[] = (Array.isArray(body?.labels) ? body.labels : []).map((value: unknown) => clean(value, 60));
 
   const geminiKey = process.env.GEMINI_API_KEY;
   const openAiKey = process.env.OPENAI_API_KEY;
   try {
-    const analysis = geminiKey ? await withGemini(images, geminiKey) : openAiKey ? await withOpenAI(images, openAiKey) : null;
+    const analysis = geminiKey ? await withGemini(images, labels, geminiKey) : openAiKey ? await withOpenAI(images, labels, openAiKey) : null;
     return NextResponse.json(analysis ?? { available: false });
   } catch (error) {
     console.error("[photo-analysis]", (error as Error).message);
