@@ -265,7 +265,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading access codes…</p>
         ) : data && data.accessCodes.length ? (
           <>
-            <AdminTable headers={["Code", "Recipient", "Plan", "Days", "Status", "Created", "Redeemed", "Access expires", ...(scope === "platform" ? ["Issued by"] : []), "Actions"]}>
+            <AdminTable headers={["Code", "Recipient", "Plan", "Days", "Posts left", "Status", "Created", "Redeemed", "Access expires", ...(scope === "platform" ? ["Issued by"] : []), "Actions"]}>
               {data.accessCodes.map((item) => (
                 <tr key={item.id} className="align-top transition-colors hover:bg-slate-50/50">
                   <td className="px-6 py-4">
@@ -283,6 +283,20 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-slate-700">{item.tierLabel}</td>
                   <td className="px-6 py-4 text-sm text-slate-600">{item.days}</td>
+                  <td className="px-6 py-4 text-sm text-slate-600">
+                    {item.posts ? (
+                      item.posts.remaining === null ? (
+                        "Unlimited"
+                      ) : (
+                        <>
+                          <span className="font-bold text-slate-900">{item.posts.remaining}</span> of {item.posts.limit}
+                          <p className="mt-1 text-xs text-slate-500">{item.posts.used} used this month</p>
+                        </>
+                      )
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <CodeStatusPill status={item.status} />
                     {item.status === "redeemed" && item.daysLeft !== undefined && <p className="mt-1 text-xs text-slate-500">{item.daysLeft === 0 ? "Ends today" : `${item.daysLeft} day${item.daysLeft === 1 ? "" : "s"} left`}</p>}

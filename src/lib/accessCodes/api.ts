@@ -36,6 +36,8 @@ export interface AccessCode {
   accessEndsAt?: string;
   /** Only while the access is running. */
   daysLeft?: number;
+  /** This month's posts for the seller using it, only while the access is running. limit and remaining are null when unlimited. */
+  posts?: { used: number; limit: number | null; remaining: number | null };
   endedAt?: string;
   endReason?: string;
   issuedBy: { name?: string; email?: string; role?: "administrator" | "organization_admin" };
