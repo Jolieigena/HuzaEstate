@@ -93,6 +93,12 @@ function expandRoomSpecs(brief: DesignBrief): RoomSpec[] {
       });
     }
   }
+  // A home always has somewhere to sit and somewhere to wash, even when the brief only gave the bedrooms.
+  if (!specs.some((r) => r.type === "living_room")) specs.push({ type: "living_room", name: "Living room", areaSqm: 26, ground: true });
+  if (!specs.some((r) => r.type === "bathroom")) {
+    const bedrooms = specs.filter((r) => r.type === "bedroom").length;
+    for (let i = 0; i < Math.max(1, Math.ceil(bedrooms / 2)); i++) specs.push({ type: "bathroom", name: i === 0 ? "Bathroom" : `Bathroom ${i + 1}`, areaSqm: 5, ground: false });
+  }
   return specs;
 }
 
@@ -121,6 +127,14 @@ function buildFloorsForDirection(brief: DesignBrief, direction: ConceptDirection
   const floorCount = Math.max(1, brief.household.floors);
   const allSpecs = expandRoomSpecs(brief).map((s) => ({ ...s, areaSqm: Math.round(s.areaSqm * meta.areaFactor * 10) / 10 }));
 
+  // An open space (a yard or an open living-and-dining area) beside the rooms: about a twelfth of the plot, between 12 and 36 sqm. A plot
+  // smaller than 150 sqm has no room to give up, so it gets none. It is drawn with a dashed edge and has no doors or windows.
+  const plot = brief.plot.areaSqm;
+  if (!plot || plot >= 150) {
+    const openArea = plot ? Math.min(36, Math.max(12, Math.round(plot / 12))) : 16;
+    allSpecs.push({ type: "open_space", name: "Open space", areaSqm: Math.round(openArea * meta.areaFactor * 10) / 10, ground: true });
+  }
+
   const groundSpecs = allSpecs.filter((s) => s.ground || floorCount === 1);
   const upperSpecs = allSpecs.filter((s) => !s.ground && floorCount > 1);
 
@@ -145,13 +159,15 @@ function buildFloorsForDirection(brief: DesignBrief, direction: ConceptDirection
 }
 
 function totalFloorArea(floors: ManualFloor[]): number {
-  return Math.round(floors.reduce((sum, f) => sum + f.rooms.reduce((s, r) => s + r.w * r.h, 0), 0));
+  // Built area only: an open space is not built, so it is not counted in the floor area or the budget.
+  return Math.round(floors.reduce((sum, f) => sum + f.rooms.filter((r) => r.type !== "open_space").reduce((s, r) => s + r.w * r.h, 0), 0));
 }
 
 export function generateConcept(brief: DesignBrief, direction: ConceptDirection): Concept {
   const meta = DIRECTION_META[direction];
   const floors = addDefaultOpenings(buildFloorsForDirection(brief, direction));
   const singleStorey = floors.length === 1;
+  const hasOpenSpace = floors.some((f) => f.rooms.some((r) => r.type === "open_space"));
   const storeyWord = singleStorey ? "single-storey" : floors.length === 2 ? "two-storey" : `${floors.length}-storey`;
   const floorAreaSqm = Math.max(30, totalFloorArea(floors));
   const bedrooms = floors.reduce((sum, f) => sum + f.rooms.filter((r) => r.type === "bedroom").length, 0);
@@ -186,7 +202,7 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
       sustainabilityScore: meta.sustainability,
       efficiencyScore: meta.efficiency,
     },
-    advantages: singleStorey ? [...meta.advantages, "Everything is on one level, with no stairs to climb at any age"] : [...meta.advantages, `Living spaces below and bedrooms above, over ${floors.length} floors`],
+    advantages: (singleStorey ? [...meta.advantages, "Everything is on one level, with no stairs to climb at any age"] : [...meta.advantages, `Living spaces below and bedrooms above, over ${floors.length} floors`]).concat(hasOpenSpace ? ["An open space beside the rooms for a yard or shared living"] : []),
     compromises: singleStorey ? [...meta.compromises, "A single level needs a wider footprint and more of the plot"] : [...meta.compromises, "A staircase takes floor area on every level"],
     generatedAt,
     version: 1,
