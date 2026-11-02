@@ -1,4 +1,4 @@
-import { ASSESSMENT_STEP_KEYS, RenovationProject } from "./types";
+import { assessmentStepKeys, RenovationProject } from "./types";
 
 export function getProjectProgress(project: RenovationProject): number {
   switch (project.status) {
@@ -7,7 +7,8 @@ export function getProjectProgress(project: RenovationProject): number {
     case "property_setup":
       return 10;
     case "assessment_in_progress": {
-      const ratio = project.assessment.completedSteps.length / ASSESSMENT_STEP_KEYS.length;
+      const keys = assessmentStepKeys(project.assessment);
+      const ratio = keys.filter((key) => project.assessment.completedSteps.includes(key)).length / keys.length;
       return Math.max(15, Math.round(15 + ratio * 30));
     }
     case "ready_to_generate":

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { ASSESSMENT_STEP_KEYS, ASSESSMENT_STEP_LABELS, AssessmentStepKey, RenovationAssessment, RenovationPropertyInfo } from "@/lib/renovate/types";
+import { assessmentStepKeys, ASSESSMENT_STEP_LABELS, AssessmentStepKey, RenovationAssessment, RenovationPropertyInfo } from "@/lib/renovate/types";
 import { collectAssessmentWarnings, validateStep, StepErrors } from "@/lib/renovate/assessmentValidation";
 import { useToast } from "@/lib/toast-context";
 import AgentPanel from "@/components/renovate/AgentPanel";
@@ -25,8 +25,9 @@ function cloneProperty(p: RenovationPropertyInfo): RenovationPropertyInfo {
 }
 
 function initialStepIndex(assessment: RenovationAssessment): number {
-  const firstIncomplete = ASSESSMENT_STEP_KEYS.findIndex((k) => !assessment.completedSteps.includes(k));
-  return firstIncomplete === -1 ? ASSESSMENT_STEP_KEYS.length - 1 : firstIncomplete;
+  const keys = assessmentStepKeys(assessment);
+  const firstIncomplete = keys.findIndex((k) => !assessment.completedSteps.includes(k));
+  return firstIncomplete === -1 ? keys.length - 1 : firstIncomplete;
 }
 
 function initialView(project: { creationMode: string; assessment: RenovationAssessment }): "wizard" | "agent" {
@@ -66,7 +67,8 @@ export default function AssessmentWizardPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [dirty]);
 
-  const stepKey = ASSESSMENT_STEP_KEYS[stepIndex];
+  const stepKeys = assessmentStepKeys(draft);
+  const stepKey = stepKeys[stepIndex];
   const warnings = useMemo(() => collectAssessmentWarnings(draft), [draft]);
 
   const patch = <K extends keyof RenovationAssessment>(key: K, value: RenovationAssessment[K]) => {
@@ -100,7 +102,7 @@ export default function AssessmentWizardPage() {
     const next = { ...draft, completedSteps };
     setDraft(next);
     persist(next, propertyDraft, `Completed the "${ASSESSMENT_STEP_LABELS[stepKey]}" step.`);
-    if (stepIndex < ASSESSMENT_STEP_KEYS.length - 1) setStepIndex(stepIndex + 1);
+    if (stepIndex < stepKeys.length - 1) setStepIndex(stepIndex + 1);
   };
 
   const handleSaveAndExit = () => {
@@ -170,7 +172,7 @@ export default function AssessmentWizardPage() {
   return (
     <div className="space-y-6">
       <ol className="hidden lg:flex items-center bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
-        {ASSESSMENT_STEP_KEYS.map((key, index) => {
+        {stepKeys.map((key, index) => {
           const isCurrent = index === stepIndex;
           const isComplete = draft.completedSteps.includes(key);
           return (
@@ -191,7 +193,7 @@ export default function AssessmentWizardPage() {
                 </span>
                 <span className="text-xs font-bold whitespace-nowrap hidden xl:inline">{ASSESSMENT_STEP_LABELS[key]}</span>
               </button>
-              {index < ASSESSMENT_STEP_KEYS.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-3" aria-hidden="true" />}
+              {index < stepKeys.length - 1 && <div className="flex-1 h-px bg-slate-200 mx-3" aria-hidden="true" />}
             </li>
           );
         })}
@@ -200,19 +202,19 @@ export default function AssessmentWizardPage() {
       <div className="lg:hidden bg-white border border-slate-100 rounded-2xl shadow-sm p-4">
         <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-2">
           <span>
-            Step {stepIndex + 1} of {ASSESSMENT_STEP_KEYS.length}
+            Step {stepIndex + 1} of {stepKeys.length}
           </span>
           <span>{ASSESSMENT_STEP_LABELS[stepKey]}</span>
         </div>
         <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full bg-[#2ec440] rounded-full transition-all" style={{ width: `${((stepIndex + 1) / ASSESSMENT_STEP_KEYS.length) * 100}%` }} />
+          <div className="h-full bg-[#2ec440] rounded-full transition-all" style={{ width: `${((stepIndex + 1) / stepKeys.length) * 100}%` }} />
         </div>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sm:p-7">
         <h1 className="text-xl font-black text-slate-900 mb-1">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
         <p className="text-slate-500 text-sm mb-6">
-          Step {stepIndex + 1} of {ASSESSMENT_STEP_KEYS.length}
+          Step {stepIndex + 1} of {stepKeys.length}
         </p>
 
         {stepKey === "property" && <StepProperty value={propertyDraft} onChange={(p) => { setPropertyDraft((prev) => ({ ...prev, ...p })); setDirty(true); }} errors={errors} />}
@@ -258,7 +260,7 @@ export default function AssessmentWizardPage() {
               assessment={draft}
               uploads={project.uploads}
               warnings={warnings}
-              onEditStep={(key) => setStepIndex(ASSESSMENT_STEP_KEYS.indexOf(key))}
+              onEditStep={(key) => setStepIndex(Math.max(stepKeys.indexOf(key), 0))}
               onToggleDisclaimer={(accepted) => {
                 setDraft((prev) => ({ ...prev, disclaimerAccepted: accepted }));
                 setDirty(true);

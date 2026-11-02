@@ -7,6 +7,7 @@ import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
 import PropertySelector from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
+import { assessmentFromPrompt } from "@/lib/renovate/assessmentFromPrompt";
 import { RenovationCreationMode, RenovationProject, RenovationPropertyInfo } from "@/lib/renovate/types";
 import type { MyProperty } from "@/lib/myProperties";
 import { useToast } from "@/lib/toast-context";
@@ -106,6 +107,7 @@ function NewProjectContent() {
     autoStarted.current = true;
     const words = brief.slice(0, 500);
     const created = RenovationProjectService.create({ name: nameFromBrief(words) || "My renovation", description: words.trim(), creationMode: "ai" });
+    if (words.trim()) RenovationProjectService.saveAssessment(created.id, assessmentFromPrompt(created.assessment, words), "Filled in from the description.");
     RenovationProjectService.beginPropertySetup(created.id);
     setProject(created);
     setStep("property");
@@ -120,6 +122,7 @@ function NewProjectContent() {
     }
     setCreating(true);
     const created = RenovationProjectService.create({ name, description, creationMode: selected.mode });
+    if (selected.mode === "ai" && description.trim()) RenovationProjectService.saveAssessment(created.id, assessmentFromPrompt(created.assessment, description), "Filled in from the description.");
     RenovationProjectService.beginPropertySetup(created.id);
     setProject(created);
     setStep("property");

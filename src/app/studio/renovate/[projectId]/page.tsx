@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { getNextAction, getProjectProgress } from "@/lib/renovate/progress";
 import { formatCompactRwf, formatDate, formatRelativeTime, propertyLocationLabel } from "@/lib/renovate/format";
-import { ASSESSMENT_STEP_KEYS, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
+import { assessmentStepKeys, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
 import { StatusBadge, ReviewStatusBadge, QuotationStatusBadge } from "@/components/renovate/StatusBadge";
 
 function SectionCard({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
@@ -23,6 +23,8 @@ export default function RenovationProjectOverviewPage() {
   const project = useRenovationProjectContext();
   const base = `/studio/renovate/${project.id}`;
   const nextAction = getNextAction(project);
+  const stepKeys = assessmentStepKeys(project.assessment);
+  const doneSteps = stepKeys.filter((key) => project.assessment.completedSteps.includes(key)).length;
   const progress = getProjectProgress(project);
   const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId);
   const activeReview = project.reviewRequests.find((r) => r.status !== "cancelled" && r.status !== "completed");
@@ -164,11 +166,11 @@ export default function RenovationProjectOverviewPage() {
           <SectionCard title="Brief completion">
             <div className="mb-3">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500 mb-1.5">
-                <span>{project.assessment.completedSteps.length} of {ASSESSMENT_STEP_KEYS.length} steps</span>
+                <span>{doneSteps} of {stepKeys.length} steps</span>
                 <span>{progress}%</span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full bg-[#2ec440] rounded-full" style={{ width: `${Math.round((project.assessment.completedSteps.length / ASSESSMENT_STEP_KEYS.length) * 100)}%` }} />
+                <div className="h-full bg-[#2ec440] rounded-full" style={{ width: `${Math.round((doneSteps / stepKeys.length) * 100)}%` }} />
               </div>
             </div>
             <Link href={`${base}/assessment`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">
