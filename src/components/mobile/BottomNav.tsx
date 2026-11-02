@@ -66,8 +66,9 @@ function Tab({ item, onDone }: { item: BottomNavItem; onDone?: () => void }) {
   );
 }
 
-/** The bottom navigation bar of the mobile app: up to five places that are always one tap away, with an optional "More" tab that
- *  opens the rest in a sheet. It is fixed to the bottom of the screen; the page it sits on needs room for it (see BOTTOM_NAV_SPACE). */
+/** The bottom navigation bar for small screens (the mobile app and the website on a phone or tablet; hidden once the side menu
+ *  shows, from the lg breakpoint): up to five places that are always one tap away, with an optional "More" tab that opens the
+ *  rest in a sheet. It is fixed to the bottom of the screen; the page it sits on needs room for it (see BOTTOM_NAV_SPACE). */
 export default function BottomNav({ label, items, more = [] }: { label: string; items: BottomNavItem[]; more?: BottomNavItem[] }) {
   const { t } = useLanguage();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -76,7 +77,7 @@ export default function BottomNav({ label, items, more = [] }: { label: string; 
 
   return (
     <>
-      <nav aria-label={label} className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-sm">
+      <nav aria-label={label} className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur-sm lg:hidden">
         <ul className="grid h-16" style={{ gridTemplateColumns: `repeat(${slots}, minmax(0, 1fr))` }}>
           {items.map((item) => (
             <li key={item.key} className="h-full">
@@ -92,7 +93,7 @@ export default function BottomNav({ label, items, more = [] }: { label: string; 
       </nav>
 
       {moreOpen && (
-        <div className="fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50" aria-hidden="true" onClick={() => setMoreOpen(false)} />
           <div role="dialog" aria-modal="true" aria-label={t("More")} className="absolute inset-x-0 bottom-0 max-h-[80vh] overflow-y-auto rounded-t-3xl bg-white px-4 pb-6 pt-3 shadow-2xl">
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-slate-200" aria-hidden="true" />
@@ -136,4 +137,4 @@ export default function BottomNav({ label, items, more = [] }: { label: string; 
 }
 
 /** Bottom padding that keeps a page's last content clear of the bar (the bar is 4rem tall). */
-export const BOTTOM_NAV_SPACE = "pb-20";
+export const BOTTOM_NAV_SPACE = "pb-20 lg:pb-0";

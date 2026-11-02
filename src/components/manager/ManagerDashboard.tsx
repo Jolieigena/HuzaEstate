@@ -20,7 +20,6 @@ import ApplyGate from './ApplyGate';
 import ManagerHeader from './ManagerHeader';
 import ManagerSidebar, { NAV_ITEMS } from './ManagerSidebar';
 import BottomNav, { BOTTOM_NAV_SPACE, type BottomNavItem } from '@/components/mobile/BottomNav';
-import { useIsNativeApp } from '@/lib/nativeApp';
 import ManagerMobileDrawer from './ManagerMobileDrawer';
 import PlanTab from './PlanTab';
 import OverviewTab from './OverviewTab';
@@ -51,7 +50,6 @@ export default function ManagerDashboard() {
   const [inquiryVersion, setInquiryVersion] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isNativeApp = useIsNativeApp();
 
   useEffect(() => {
     if (!token || !isApprovedSeller) return;
@@ -141,7 +139,7 @@ export default function ManagerDashboard() {
 
   return (
     <div className="min-h-full bg-slate-50 flex flex-col">
-      <ManagerHeader onOpenMobileSidebar={() => setMobileOpen(true)} hideMenuButton={isNativeApp} />
+      <ManagerHeader onOpenMobileSidebar={() => setMobileOpen(true)} hideMenuButton />
       <div className="flex flex-grow min-w-0">
         <ManagerSidebar
           activeTab={activeTab}
@@ -159,7 +157,7 @@ export default function ManagerDashboard() {
         />
 
         {/* Main Content Area */}
-        <main className={`flex-grow min-w-0 ${isNativeApp ? BOTTOM_NAV_SPACE : ''}`}>
+        <main className={`flex-grow min-w-0 ${BOTTOM_NAV_SPACE}`}>
           <PageFrame
             title={t('Property Manager')}
           >
@@ -220,7 +218,7 @@ export default function ManagerDashboard() {
         </main>
       </div>
 
-      {isNativeApp && <BottomNav label={t('Owner navigation')} items={bottomItems} more={bottomMore} />}
+      <BottomNav label={t('Owner navigation')} items={bottomItems} more={bottomMore} />
 
       <EditPropertyModal property={editingProperty} onClose={() => setEditingProperty(null)} />
       <PromoteListingModal property={promotingProperty} onClose={() => setPromotingProperty(null)} />

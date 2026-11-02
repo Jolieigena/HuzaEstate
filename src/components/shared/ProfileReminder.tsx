@@ -52,7 +52,7 @@ export default function ProfileReminder() {
   };
 
   return (
-    <div role="status" className="fixed bottom-20 right-4 z-40 max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-lg sm:bottom-4">
+    <div role="status" className="fixed bottom-20 right-4 z-40 max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-lg lg:bottom-4">
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-amber-900">{t("Remember to finish setting up")}</p>

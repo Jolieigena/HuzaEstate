@@ -9,7 +9,6 @@ import MobileSidebarDrawer from "./MobileSidebarDrawer";
 import AccountBottomNav from "./mobile/AccountBottomNav";
 import { BOTTOM_NAV_SPACE } from "./mobile/BottomNav";
 import { useAuth } from "@/lib/auth-context";
-import { useIsNativeApp } from "@/lib/nativeApp";
 import { getRouteDisplay } from "@/lib/navigation/routeDisplay";
 
 const COLLAPSE_STORAGE_KEY = "huzaestate_sidebar_collapsed";
@@ -37,7 +36,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const { shell } = getRouteDisplay(pathname);
   const [collapsed, setCollapsed] = useState(readStoredCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isNativeApp = useIsNativeApp();
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -72,18 +70,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex-grow flex flex-col min-w-0">
-      <AppHeader onOpenMobileSidebar={() => setMobileOpen(true)} hideMenuButton={isNativeApp} />
+      <AppHeader onOpenMobileSidebar={() => setMobileOpen(true)} hideMenuButton />
       <div className="flex flex-grow min-w-0">
         <Sidebar collapsed={collapsed} onToggleCollapse={toggleCollapsed} />
         <MobileSidebarDrawer open={mobileOpen} onClose={() => setMobileOpen(false)} />
-        <main className={`flex-grow min-w-0 ${isNativeApp ? BOTTOM_NAV_SPACE : ""}`}>{children}</main>
+        <main className={`flex-grow min-w-0 ${BOTTOM_NAV_SPACE}`}>{children}</main>
       </div>
-      {/* In the mobile app the account sections are a bottom bar instead of the hidden side menu. */}
-      {isNativeApp && (
-        <Suspense fallback={null}>
-          <AccountBottomNav />
-        </Suspense>
-      )}
+      {/* On small screens (the app and the website on a phone) the account sections are a bottom bar instead of the hidden side menu. */}
+      <Suspense fallback={null}>
+        <AccountBottomNav />
+      </Suspense>
     </div>
   );
 }
