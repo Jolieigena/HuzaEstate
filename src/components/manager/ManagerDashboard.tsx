@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/i18n/language';
@@ -160,6 +161,12 @@ export default function ManagerDashboard() {
         <main className={`flex-grow min-w-0 ${BOTTOM_NAV_SPACE}`}>
           <PageFrame
             title={t('Property Manager')}
+            // On small screens the button sits here, in the page, instead of the top bar (which shows it from the large breakpoint).
+            action={
+              <Link href="/post-property" className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white transition-colors hover:bg-[#2ec440] lg:hidden">
+                {t('+ Add Property')}
+              </Link>
+            }
           >
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (

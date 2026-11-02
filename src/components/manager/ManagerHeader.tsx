@@ -49,9 +49,8 @@ export default function ManagerHeader({ onOpenMobileSidebar, hideMenuButton }: M
       </div>
 
       <div className="flex items-center gap-2">
-        <Link href="/post-property" className={`inline-flex items-center whitespace-nowrap bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-3 sm:px-4 py-2.5 rounded-xl transition-colors`}>
-          <span className="sm:hidden">{t("+ Post")}</span>
-          <span className="hidden sm:inline">{t("+ Add Property")}</span>
+        <Link href="/post-property" className={`hidden lg:inline-flex items-center whitespace-nowrap bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors`}>
+          {t("+ Add Property")}
         </Link>
         <LanguagePicker align="right" compact />
         <NotificationBell />
