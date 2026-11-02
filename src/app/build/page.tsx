@@ -53,13 +53,16 @@ export default function BuildPage() {
     };
   }, []);
 
-  const startBuild = () => {
+  // `path` is where the person lands once signed in; "Try this prompt" opens the studio with the sample prompt already filled in.
+  const [targetPath, setTargetPath] = useState(STUDIO_PATH);
+  const startBuild = (path: string = STUDIO_PATH) => {
     if (isNavigating) return;
     if (isLoggedIn) {
       setIsNavigating(true);
-      router.push(STUDIO_PATH);
+      router.push(path);
       return;
     }
+    setTargetPath(path);
     setAuthModalOpen(true);
   };
 
@@ -78,7 +81,7 @@ export default function BuildPage() {
             <div className="mt-8">
               <button
                 type="button"
-                onClick={startBuild}
+                onClick={() => startBuild()}
                 disabled={isNavigating}
                 className="bg-slate-900 hover:bg-[#2ec440] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-[15px] px-8 py-4 rounded-full transition-all shadow-sm hover:-translate-y-0.5"
               >
@@ -109,11 +112,11 @@ export default function BuildPage() {
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
-                onClick={startBuild}
+                onClick={() => startBuild(`${STUDIO_PATH}&brief=${encodeURIComponent(SAMPLE_PROMPT)}`)}
                 disabled={isNavigating}
                 className="bg-white hover:bg-slate-100 disabled:opacity-60 text-slate-900 border border-slate-200 font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
               >
-                Try a prompt of your own
+                Try This Prompt
               </button>
             </div>
           </Reveal>
@@ -189,8 +192,8 @@ export default function BuildPage() {
         onClose={() => setAuthModalOpen(false)}
         title="Sign in to start designing"
         description="Create and save home concepts, compare versions and continue your project from any device."
-        signInHref={`/login?redirect=${encodeURIComponent(STUDIO_PATH)}`}
-        signUpHref={`/signup?redirect=${encodeURIComponent(STUDIO_PATH)}`}
+        signInHref={`/login?redirect=${encodeURIComponent(targetPath)}`}
+        signUpHref={`/signup?redirect=${encodeURIComponent(targetPath)}`}
       />
     </div>
   );
