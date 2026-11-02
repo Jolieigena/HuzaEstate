@@ -23,6 +23,11 @@
   height: 0;
 }
 
+/* Inside the dashboards (set on <html> by AppShell) the small labels written with `uppercase` read in normal letters. The public pages keep them. */
+html[data-shell]:not([data-shell="public"]) .uppercase {
+  text-transform: none;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

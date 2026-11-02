@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, Suspense, useState } from "react";
+import { ReactNode, Suspense, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "./Navbar";
 import AppHeader from "./AppHeader";
@@ -34,6 +34,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const { isLoggedIn, isAuthReady } = useAuth();
   const pathname = usePathname();
   const { shell } = getRouteDisplay(pathname);
+
+  // globals.css reads this to show the small ALL-CAPS labels in sentence case inside the dashboards (everything but the public pages).
+  useEffect(() => {
+    document.documentElement.dataset.shell = shell;
+  }, [shell]);
   const [collapsed, setCollapsed] = useState(readStoredCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
 
