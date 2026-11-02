@@ -98,7 +98,8 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              {nextAction && (
+              {/* Not shown on the page it points to: pressing it there would do nothing. */}
+              {nextAction && !pathname.startsWith(nextAction.href) && (
                 <Link
                   href={nextAction.href}
                   className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-5 sm:px-6 py-3 rounded-xl transition-colors shadow-lg text-sm whitespace-nowrap"

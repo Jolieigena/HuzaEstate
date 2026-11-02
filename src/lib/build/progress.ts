@@ -50,13 +50,11 @@ export interface NextAction {
 export function getNextAction(project: BuildProject): NextAction | null {
   switch (project.status) {
     case "draft":
-      return { label: "Complete your plot information", href: `/studio/build/${project.id}/brief`, description: "Add a few more details so Huza AI and the manual designer have what they need." };
+      return { label: "Fill in your brief", href: `/studio/build/${project.id}/brief`, description: "Add a few details so Huza AI and the manual designer have what they need." };
     case "brief_in_progress":
       return { label: "Confirm your design brief", href: `/studio/build/${project.id}/brief`, description: "Finish the remaining brief steps and confirm your requirements." };
     case "ready_to_generate":
-      return project.creationMode === "ai"
-        ? { label: "Continue to Huza AI", href: `/studio/build/${project.id}/brief`, description: "Chat with Huza AI to refine your brief before generating concepts." }
-        : { label: "Generate your first concepts", href: `/studio/build/${project.id}/concepts`, description: "Your brief is confirmed — generate three design directions to compare." };
+      return { label: project.creationMode === "ai" ? "Start designing" : "Generate your first concepts", href: `/studio/build/${project.id}/concepts`, description: "Your brief is confirmed — generate three design directions to compare." };
     case "generating":
       return { label: "View generation progress", href: `/studio/build/${project.id}/concepts`, description: "Huza AI is preparing your concept directions." };
     case "concepts_ready":
