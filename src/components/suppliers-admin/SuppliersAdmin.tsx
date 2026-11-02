@@ -144,7 +144,7 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
                 <td className="px-6 py-4 text-sm text-slate-600">{user.country ?? "—"}</td>
                 <td className="px-6 py-4">
                   <StatusPill status={user.status} />
-                  {!user.profileCompleted && <p className="mt-1 text-xs text-slate-400">Profile not completed</p>}
+                  {!user.supplierProfileCompleted && <p className="mt-1 text-xs text-slate-400">Profile not completed</p>}
                   {flags[user.id]?.paused && <p className="mt-1 text-xs font-bold text-amber-700">Shop paused</p>}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-600">{flags[user.id]?.reviews ? `${flags[user.id].rating.toFixed(1)} (${flags[user.id].reviews})` : "—"}</td>
@@ -154,7 +154,7 @@ export function SuppliersListPage({ scope }: { scope: SuppliersScope }) {
                     <Link href={`${BASE[scope]}/orders?supplier=${encodeURIComponent(user.id)}`} className="inline-flex min-h-9 items-center rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-slate-300">
                       Orders
                     </Link>
-                    {user.profileCompleted && (
+                    {user.supplierProfileCompleted && (
                       <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === user.id} onClick={() => toggleVerified(user)}>
                         {flags[user.id]?.verified ? "Remove badge" : "Verify"}
                       </SecondaryButton>

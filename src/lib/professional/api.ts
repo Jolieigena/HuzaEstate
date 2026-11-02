@@ -58,6 +58,8 @@ export interface RealProfessionalProfile {
   yearsExperience?: number;
   city: string;
   country: string;
+  /** Other countries an administrator placed this professional in, besides `country`. */
+  countries?: string[];
   /** District within `country` (see src/lib/regions.ts) — admin-assigned, same treatment as
    *  `country`. Absent for countries with no district reference data (every country but Rwanda
    *  at launch) or accounts created before this field. */

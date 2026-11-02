@@ -100,6 +100,7 @@ export const AccessCodesApi = {
   create: (token: string, input: { email: string; tier: AccessCodeTier; days: number }) =>
     call<{ accessCode: AccessCode; emailDelivered: boolean }>("/access-codes", token, { method: "POST", body: input }),
   end: (token: string, id: string, reason?: string) => call<{ accessCode: AccessCode }>(`/access-codes/${encodeURIComponent(id)}/end`, token, { method: "POST", body: { reason } }),
+  upgrade: (token: string, id: string, tier: AccessCodeTier) => call<{ accessCode: AccessCode; emailDelivered?: boolean }>(`/access-codes/${encodeURIComponent(id)}/upgrade`, token, { method: "POST", body: { tier } }),
   extend: (token: string, id: string, days: number) => call<{ accessCode: AccessCode }>(`/access-codes/${encodeURIComponent(id)}/extend`, token, { method: "POST", body: { days } }),
   resend: (token: string, id: string) => call<{ accessCode: AccessCode; emailDelivered: boolean }>(`/access-codes/${encodeURIComponent(id)}/resend`, token, { method: "POST" }),
 };

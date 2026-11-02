@@ -15,7 +15,7 @@ import MultiSelectCombobox from "@/components/shared/MultiSelectCombobox";
 import { MAX_SPECIALISATIONS, SPECIALISATION_GROUPS } from "@/lib/professional/specialisations";
 import { PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "./ui";
 
-// Saving here calls PUT /professionals/me (access-service), which also clears account.profileCompleted and
+// Saving here calls PUT /professionals/me (access-service), which also sets account.professionalProfileCompleted and
 // makes the profile visible on the public /professionals directory. Portfolio management used to be its
 // own page (PortfolioPage.tsx, at /professional/portfolio) — merged in here since it's saved as part of
 // this same profile document anyway (PUT /professionals/me always saves a complete profile, no partial
@@ -159,7 +159,7 @@ export default function ProfessionalProfileForm() {
   }, [token]);
 
   // The Designs step shows how many designs exist. Designs need a saved profile, so ask only once it is.
-  const profileSaved = account?.profileCompleted !== false;
+  const profileSaved = account?.professionalProfileCompleted !== false;
   useEffect(() => {
     if (!token || !profileSaved) return;
     let cancelled = false;
@@ -373,7 +373,7 @@ export default function ProfessionalProfileForm() {
     { label: "At least one project", done: projectCount > 0, href: "#services" },
     { label: "At least one design", done: (designCount ?? 0) > 0, href: "#designs" },
   ];
-  const isPublic = account?.profileCompleted !== false;
+  const isPublic = account?.professionalProfileCompleted !== false;
 
   return (
     <PageFrame title="Professional profile">
@@ -635,7 +635,7 @@ export default function ProfessionalProfileForm() {
           </Section>
 
           <Section id="designs" step={4} title="Designs">
-            {account?.profileCompleted === false ? (
+            {account?.professionalProfileCompleted === false ? (
               <p className="text-sm font-semibold text-slate-500">Save your profile first. Then you can publish priced interior and exterior designs here.</p>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3">

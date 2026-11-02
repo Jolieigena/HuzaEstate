@@ -117,7 +117,7 @@ export default function SupplierProfileForm() {
     await refreshAccount();
   };
 
-  const incomplete = account?.profileCompleted === false;
+  const incomplete = account?.supplierProfileCompleted === false;
   const extra = categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c));
 
   return (

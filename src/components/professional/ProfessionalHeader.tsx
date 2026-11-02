@@ -20,7 +20,7 @@ export default function ProfessionalHeader({ onOpenMobileSidebar }: Professional
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const { account } = useAuth();
-  const incomplete = account?.profileCompleted === false;
+  const incomplete = account?.professionalProfileCompleted === false;
 
   return (
     <header className="w-full bg-white border-b border-slate-100 py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 z-40 bg-white/95 backdrop-blur-sm">

@@ -52,6 +52,11 @@ function RequestRow({ record, onDecided }: { record: RoleRequestRecord; onDecide
         </div>
         <StatusPill status={ROLE_REQUEST_STATUS_LABELS[record.status]} />
       </div>
+      {record.details && (
+        <p className="mt-3 text-sm text-slate-600">
+          {[record.details.companyName, record.details.specialisations?.join(", "), record.details.categories?.join(", "), record.details.city, record.details.phone, record.details.yearsExperience !== undefined ? `${record.details.yearsExperience} years` : ""].filter(Boolean).join(" · ")}
+        </p>
+      )}
       {record.note && <p className="mt-3 whitespace-pre-line rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">“{record.note}”</p>}
       {record.adminNote && record.status !== "pending" && <p className="mt-3 text-sm text-slate-500">Note: {record.adminNote}</p>}
 

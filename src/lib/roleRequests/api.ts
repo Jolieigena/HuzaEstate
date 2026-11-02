@@ -11,15 +11,13 @@ export const REQUESTABLE_ROLE_LABELS: Record<RequestableRole, string> = {
 
 export const OPEN_ADD_ROLE_EVENT = "huza:add-role";
 
-/** What an account can still ask for. Administrator and organisation admin accounts hold one role only, and an account cannot be both
- *  a professional and a supplier. A seller applies through Become a seller, which has its own approval. */
+/** What an account can still ask for. Administrator and organisation admin accounts hold one role only. A seller applies through
+ *  Become a seller, which has its own approval. */
 export function requestableRolesFor(held: readonly string[] | undefined): RequestableRole[] {
   const roles = held ?? [];
   if (roles.includes("administrator") || roles.includes("organization_admin")) return [];
   return (["customer", "professional", "supplier"] as const).filter((role) => {
     if (roles.includes(role)) return false;
-    if (role === "professional" && roles.includes("supplier")) return false;
-    if (role === "supplier" && roles.includes("professional")) return false;
     return true;
   });
 }
@@ -40,10 +38,23 @@ export interface RoleRequestRecord {
   note?: string;
   country?: string;
   professionalKind?: "individual" | "firm";
+  /** What the profile for this role needs first, asked with the request and saved onto the profile when approved. */
+  details?: RoleRequestDetails;
   status: RoleRequestStatus;
   adminNote?: string;
   reviewedAt?: string;
   createdAt: string;
+}
+
+export interface RoleRequestDetails {
+  city?: string;
+  phone?: string;
+  /** Professionals. */
+  specialisations?: string[];
+  yearsExperience?: number;
+  /** Suppliers. */
+  companyName?: string;
+  categories?: string[];
 }
 
 export interface SubmitRoleRequestInput {
@@ -51,6 +62,7 @@ export interface SubmitRoleRequestInput {
   note?: string;
   country?: string;
   professionalKind?: "individual" | "firm";
+  details?: RoleRequestDetails;
 }
 
 type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string };

@@ -202,7 +202,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
                 ))}
               </div>
             )}
-            <p className="text-slate-500 text-sm">{[profile.city, profile.country].filter(Boolean).join(", ")}{profile.yearsExperience ? ` · ${profile.yearsExperience} years experience` : ""}</p>
+            <p className="text-slate-500 text-sm">{[profile.city, profile.country].filter(Boolean).join(", ")}{profile.countries?.length ? ` · also works in ${profile.countries.join(", ")}` : ""}{profile.yearsExperience ? ` · ${profile.yearsExperience} years experience` : ""}</p>
             {!!profile.reviewCount && (
               <div className="mt-2 flex items-center gap-1.5">
                 <StarRating value={profile.averageRating ?? 0} />

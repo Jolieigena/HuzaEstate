@@ -47,6 +47,9 @@ export interface Account {
   /** Professional accounts only. False until the account has saved a complete public profile
    * (see PUT /professionals/me) — the app should force that step next, same as mustChangePassword. */
   profileCompleted?: boolean;
+  /** Each of these roles has its own profile, so an account can hold both. False until that profile is saved complete. */
+  professionalProfileCompleted?: boolean;
+  supplierProfileCompleted?: boolean;
   path: string;
   /** The workspace used last (or the highest role the first time), remembered by the server across devices. */
   activeRole?: AccountRole;

@@ -69,6 +69,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
   const [creating, setCreating] = useState(false);
   const [endTarget, setEndTarget] = useState<EndTarget | null>(null);
   const [extendTarget, setExtendTarget] = useState<AccessCode | null>(null);
+  const [upgradeTarget, setUpgradeTarget] = useState<AccessCode | null>(null);
 
   // Wait a beat after typing before searching.
   useEffect(() => {
@@ -299,6 +300,11 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => resend(item)}>
                             Resend
                           </SecondaryButton>
+                          {item.tier !== "diamond" && (
+                            <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setUpgradeTarget(item)}>
+                              Upgrade
+                            </SecondaryButton>
+                          )}
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs! text-red-600!" onClick={() => setEndTarget({ code: item, mode: "cancel" })}>
                             Cancel code
                           </SecondaryButton>
@@ -309,6 +315,11 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setExtendTarget(item)}>
                             Extend
                           </SecondaryButton>
+                          {item.tier !== "diamond" && (
+                            <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setUpgradeTarget(item)}>
+                              Upgrade
+                            </SecondaryButton>
+                          )}
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs! text-red-600!" onClick={() => setEndTarget({ code: item, mode: "end" })}>
                             End access
                           </SecondaryButton>
@@ -396,6 +407,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
       />
 
       <ExtendDialog code={extendTarget} onClose={() => setExtendTarget(null)} onExtended={refresh} token={token} />
+      <UpgradeDialog code={upgradeTarget} onClose={() => setUpgradeTarget(null)} onUpgraded={refresh} token={token} />
     </PageFrame>
   );
 }
@@ -580,6 +592,71 @@ function ExtendDialog({ code, onClose, onExtended, token }: { code: AccessCode |
             </SecondaryButton>
             <PrimaryButton type="submit" className={softButton} disabled={!valid || busy}>
               {busy ? "Saving…" : "Extend access"}
+            </PrimaryButton>
+          </div>
+        </form>
+      )}
+    </Dialog>
+  );
+}
+
+const TIER_ORDER = ["silver", "gold", "diamond"] as const;
+
+/** Moves a code to a higher plan: an unused code is sent to its recipient again, running access carries on to the same end date. */
+function UpgradeDialog({ code, onClose, onUpgraded, token }: { code: AccessCode | null; onClose: () => void; onUpgraded: () => void; token: string | null }) {
+  const titleId = useId();
+  const { showToast } = useToast();
+  const higher = code ? TIER_ORDER.filter((tier) => TIER_ORDER.indexOf(tier) > TIER_ORDER.indexOf(code.tier)) : [];
+  const [chosen, setChosen] = useState<(typeof TIER_ORDER)[number] | "">("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const tier = chosen && higher.includes(chosen) ? chosen : higher[0];
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!code || !token || !tier || busy) return;
+    setBusy(true);
+    setError("");
+    const result = await AccessCodesApi.upgrade(token, code.id, tier);
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    showToast(`Upgraded to ${PLAN_LABELS[tier]}.`);
+    onUpgraded();
+    onClose();
+  };
+
+  return (
+    <Dialog open={code !== null} onClose={onClose} labelledBy={titleId} panelClassName="max-w-sm">
+      {code && (
+        <form onSubmit={submit} className="p-6">
+          <h2 id={titleId} className="mb-1 pr-6 text-lg font-semibold text-slate-900">
+            Upgrade plan
+          </h2>
+          <p className="mb-5 text-sm text-slate-500">
+            {code.email} · {code.tierLabel}
+            {code.status === "redeemed" && code.accessEndsAt ? ` until ${formatDate(code.accessEndsAt)}` : ""}
+          </p>
+          <label className={softLabel}>
+            New plan
+            <Select className={`${softField} mt-1.5`} value={tier} onChange={(e) => setChosen(e.target.value as (typeof TIER_ORDER)[number])}>
+              {higher.map((value) => (
+                <option key={value} value={value}>
+                  {PLAN_LABELS[value]}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <p className="mt-2 text-xs text-slate-500">{code.status === "redeemed" ? "The access keeps its end date and the person is told." : "The person is sent the code again with the new plan."}</p>
+          {error && <p className="mt-3 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+          <div className="mt-6 flex justify-end gap-2">
+            <SecondaryButton type="button" className={softButton} onClick={onClose}>
+              Close
+            </SecondaryButton>
+            <PrimaryButton type="submit" className={softButton} disabled={!tier || busy}>
+              {busy ? "Saving…" : "Upgrade"}
             </PrimaryButton>
           </div>
         </form>

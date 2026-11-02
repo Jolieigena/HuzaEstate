@@ -22,6 +22,8 @@ export interface AdminUser {
   autoPublish?: boolean;
   mustChangePassword: boolean;
   profileCompleted: boolean;
+  professionalProfileCompleted?: boolean;
+  supplierProfileCompleted?: boolean;
   /** organization_admin accounts only. */
   organizationId?: string;
   organizationName?: string;
@@ -30,6 +32,8 @@ export interface AdminUser {
   /** professional accounts only — which country they operate in (scoping field, see
    *  access-service's createUserByAdmin). */
   country?: string;
+  /** Other countries the account works in, besides `country`. Set by platform administrators. */
+  countries?: string[];
   /** professional accounts only — admin-assigned, only meaningful for a country with real
    *  district data (lib/regions.ts, Rwanda only at launch). */
   district?: string;
@@ -201,7 +205,7 @@ export const AdminApi = {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token);
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },
-  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status" | "permissions" | "scopeDistricts">> & { autoPublish?: boolean | null }) => {
+  updateUser: async (token: string, id: string, changes: Partial<Pick<AdminUser, "firstName" | "lastName" | "email" | "status" | "permissions" | "scopeDistricts" | "countries">> & { autoPublish?: boolean | null }) => {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "PATCH", body: changes });
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },

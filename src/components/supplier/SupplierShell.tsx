@@ -36,7 +36,7 @@ export default function SupplierShell({ children }: { children: React.ReactNode 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useDismiss(menuOpen, () => setMenuOpen(false));
   const isSupplier = account?.roles.includes("supplier") ?? false;
-  const incomplete = account?.profileCompleted === false;
+  const incomplete = account?.supplierProfileCompleted === false;
 
   useEffect(() => {
     if (!isAuthReady || !account) return;

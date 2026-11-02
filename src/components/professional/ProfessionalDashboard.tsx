@@ -43,7 +43,7 @@ export default function ProfessionalDashboard() {
         <StatCard href="/professional/reviews" label="Average rating" value={rating === null ? "—" : rating.reviewCount === 0 ? "No reviews yet" : `${rating.averageRating.toFixed(1)} (${rating.reviewCount})`} />
       </div>
       <Card className="max-w-xl">
-        {account?.profileCompleted ? (
+        {account?.professionalProfileCompleted ? (
           <>
             <p className="font-bold text-slate-900">Your profile is live</p>
             <p className="mt-1 text-sm text-slate-500">Clients can find and contact you on the public professionals directory.</p>

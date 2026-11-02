@@ -13,6 +13,7 @@ import { regionsForCountry } from "@/lib/regions";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, DistrictChecklist, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, StatusPill, fieldClass, formatDate, formatDateTime } from "../ui";
 import Select from "@/components/shared/Select";
+import CountriesCard from "./CountriesCard";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 
 const ALL_PERMISSIONS = new Set(ORG_PERMISSIONS.map((p) => p.value));
@@ -228,7 +229,7 @@ export function UsersListPage() {
                           </p>
                         )}
                         {type === "professional" ? (
-                          <p className="text-xs font-semibold text-slate-500">{user.profileCompleted ? "Public profile live" : "Profile not completed"}</p>
+                          <p className="text-xs font-semibold text-slate-500">{user.professionalProfileCompleted ? "Public profile live" : "Profile not completed"}</p>
                         ) : (
                           <p className="text-xs text-slate-500">Joined {formatDate(user.createdAt)}</p>
                         )}
@@ -491,11 +492,13 @@ export function UserDetailPage({ userId }: { userId: string }) {
               <Field label="Roles" value={user.roles.map((r) => TYPE_LABELS[r]).join(", ")} />
               <Field label="Joined" value={formatDateTime(user.createdAt)} />
               <Field label="Last updated" value={formatDateTime(user.updatedAt)} />
-              {user.roles.includes("professional") && <Field label="Public profile" value={user.profileCompleted ? <Link className="text-[#219b31] underline" href={`/professionals/${user.id}`}>View profile</Link> : "Not completed yet"} />}
+              {user.roles.includes("professional") && <Field label="Public profile" value={user.professionalProfileCompleted ? <Link className="text-[#219b31] underline" href={`/professionals/${user.id}`}>View profile</Link> : "Not completed yet"} />}
               {user.organizationId && <Field label="Organisation" value={<Link className="text-[#219b31] underline" href={`/admin/organizations/${user.organizationId}`}>{user.organizationName ?? "View organisation"}</Link>} />}
               {user.mustChangePassword && <Field label="Password" value="Still on the emailed temporary password" />}
             </dl>
           </Card>
+
+          {canManage && <CountriesCard user={user} token={token} onSaved={applyUser} />}
 
           {rolesEditable && (
             <Card>
