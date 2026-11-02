@@ -15,10 +15,10 @@ export default function StatTile({
 }) {
   const deltaColor = deltaDirection === 'up' ? 'text-[#0ca30c]' : deltaDirection === 'down' ? 'text-[#d03b3b]' : 'text-slate-500';
   return (
-    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 flex flex-col gap-4">
-      <div className="text-sm font-semibold text-slate-500">{label}</div>
+    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
+      <div className="text-xs sm:text-sm font-semibold text-slate-500">{label}</div>
       <div className="flex items-end justify-between gap-4">
-        <div className="text-3xl font-black text-slate-900 tracking-tight">{value}</div>
+        <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{value}</div>
         {sparkline && <Sparkline data={sparkline} />}
       </div>
       {delta && (

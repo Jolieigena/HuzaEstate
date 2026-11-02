@@ -64,7 +64,7 @@ export default function OverviewTab({ LISTINGS, statusCounts, topListings, onOpe
     <div className="flex flex-col gap-6">
       <PostingPlanCard onOpenPlan={onOpenPlan} />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-5">
         <StatTile label={t('Live Listings')} value={String(statusCounts.Live)} />
         <StatTile label={t('Posts This Month')} value={limit === null ? `${subscription.postsUsed}` : `${subscription.postsUsed} / ${limit + subscription.extraCredits}`} />
         <StatTile label={t('Current Plan')} value={t(PLAN_LABELS[subscription.tier])} />
