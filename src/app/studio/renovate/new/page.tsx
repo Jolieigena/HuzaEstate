@@ -8,6 +8,7 @@ import Dialog from "@/components/Dialog";
 import PropertySelector from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { assessmentFromPrompt } from "@/lib/renovate/assessmentFromPrompt";
+import { analysePhotos, applyPhotoAnalysis } from "@/lib/renovate/photoAnalysis";
 import { RenovationCreationMode, RenovationProject, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
 import type { MyProperty } from "@/lib/myProperties";
 import { useToast } from "@/lib/toast-context";
@@ -95,6 +96,7 @@ function NewProjectContent() {
   const [creating, setCreating] = useState(false);
   const [step, setStep] = useState<FlowStep>("mode");
   const [project, setProject] = useState<RenovationProject | null>(null);
+  const [analysing, setAnalysing] = useState(false);
 
   const titleId = useId();
 
@@ -134,6 +136,18 @@ function NewProjectContent() {
     router.push(`/studio/renovate/${id}/assessment`);
   };
 
+  if (analysing) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-slate-600" role="status">
+        <svg className="h-8 w-8 animate-spin text-[#2ec440]" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
+        <p className="text-sm font-semibold">Huza AI is looking at your photos…</p>
+      </div>
+    );
+  }
+
   if (step === "property" && project) {
     return (
       <div className="min-h-screen bg-white">
@@ -152,10 +166,24 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={(propertyInfo: RenovationPropertyInfo, photos: UploadedFile[]) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[]) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
-              if (photos.length) RenovationProjectService.addUploads(project.id, "photos", photos);
-              showToast(photos.length ? "Property and photos saved." : "Property saved.");
+              if (photos.length === 0) {
+                showToast("Property saved.");
+                goToAssessment(project.id);
+                return;
+              }
+              RenovationProjectService.addUploads(project.id, "photos", photos);
+              // Huza AI looks at the photos and fills in what it sees; when it cannot (no model on the server), the brief just starts empty.
+              setAnalysing(true);
+              const analysis = await analysePhotos(photos);
+              const current = RenovationProjectService.getById(project.id);
+              if (analysis && current) {
+                RenovationProjectService.saveAssessment(project.id, applyPhotoAnalysis(current.assessment, analysis), "Filled in from the photos.");
+                showToast(analysis.areas.length ? "Huza AI looked at your photos and suggested what to renovate." : "Huza AI looked at your photos.");
+              } else {
+                showToast("Property and photos saved.");
+              }
               goToAssessment(project.id);
             }}
           />

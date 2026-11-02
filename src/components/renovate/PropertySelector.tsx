@@ -13,7 +13,7 @@ const MAX_SIDE_PX = 900;
 interface PropertySelectorProps {
   onSelectOwned: (property: MyProperty) => void;
   /** Any property the person describes, with the photos they added. It does not have to be one of theirs on the site. */
-  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[]) => void;
+  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[]) => void | Promise<void>;
 }
 
 /** A photo made small enough to keep with the project (a JPEG of at most 900 px on its longer side), as a data address, so it is
