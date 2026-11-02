@@ -14,11 +14,20 @@ const MAX_SIDE_PX = 900;
 const WHOLE_HOUSE: RenovationAreaKey = "full_property";
 const AREA_CHOICES: RenovationAreaKey[] = [WHOLE_HOUSE, "kitchen", "bathroom", "living_room", "bedroom", "dining_room", "ceiling", "walls_and_paint", "flooring", "exterior_facade", "roofing", "balcony", "terrace", "garden", "garage", "home_office", "hallway"];
 
+const CUSTOM_PREFIX = "custom:";
+
+/** What a choice is called: the area's name, or what the person typed for something that is not in the list. */
+export function areaChoiceLabel(choice: string): string {
+  if (choice.startsWith(CUSTOM_PREFIX)) return choice.slice(CUSTOM_PREFIX.length);
+  return choice === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[choice as RenovationAreaKey] ?? choice;
+}
+
 interface PropertySelectorProps {
   onSelectOwned: (property: MyProperty) => void;
   /** Any property the person describes: what is being renovated, the photos (each tagged with the area it shows, as `relatedAreaId`
-   *  holding the area's key), and where it is. It does not have to be one of theirs on the site. */
-  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: RenovationAreaKey[]) => void | Promise<void>;
+   *  holding the choice), and where it is. A choice is an area's key, or "custom:" and the words the person typed for something that
+   *  is not in the list. It does not have to be one of theirs on the site. */
+  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: string[]) => void | Promise<void>;
 }
 
 /** A photo made small enough to keep with the project (a JPEG of at most 900 px on its longer side), as a data address, so it is
@@ -51,7 +60,9 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const properties = getMyProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const [areas, setAreas] = useState<RenovationAreaKey[]>([]);
+  const [areas, setAreas] = useState<string[]>([]);
+  const [customText, setCustomText] = useState("");
+  const [customOpen, setCustomOpen] = useState(false);
   const [areaError, setAreaError] = useState("");
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
   const [location, setLocation] = useState("");
@@ -61,12 +72,20 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const toggleArea = (key: RenovationAreaKey) => {
+  const addCustom = () => {
+    const text = customText.trim().replace(/\s+/g, " ").slice(0, 40);
+    if (!text) return;
+    const choice = `${CUSTOM_PREFIX}${text}`;
+    if (!areas.some((a) => a.toLowerCase() === choice.toLowerCase())) toggleArea(choice);
+    setCustomText("");
+  };
+
+  const toggleArea = (key: string) => {
     setAreaError("");
     const next = areas.includes(key) ? areas.filter((k) => k !== key) : key === WHOLE_HOUSE ? [WHOLE_HOUSE] : [...areas.filter((k) => k !== WHOLE_HOUSE), key];
     setAreas(next);
     // A photo always belongs to one of the chosen areas: one that no longer is chosen moves to the first that is.
-    setPhotos((prev) => prev.map((p) => (next.includes(p.relatedAreaId as RenovationAreaKey) || next.length === 0 ? p : { ...p, relatedAreaId: next[0] })));
+    setPhotos((prev) => prev.map((p) => (next.includes(p.relatedAreaId ?? "") || next.length === 0 ? p : { ...p, relatedAreaId: next[0] })));
   };
 
   const addPhotos = async (list: FileList | null) => {
@@ -132,16 +151,56 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
                   on ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
                 }`}
               >
-                {key === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[key]}
+                {areaChoiceLabel(key)}
               </button>
             );
           })}
+          {areas.filter((a) => a.startsWith(CUSTOM_PREFIX)).map((choice) => (
+            <button
+              key={choice}
+              type="button"
+              aria-pressed
+              onClick={() => toggleArea(choice)}
+              aria-label={`Remove ${areaChoiceLabel(choice)}`}
+              className="rounded-full border border-[#2ec440] bg-[#2ec440]/10 py-2 pl-4 pr-3 text-sm font-semibold text-[#219b31]"
+            >
+              {areaChoiceLabel(choice)} <span aria-hidden="true" className="ml-1">×</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-expanded={customOpen}
+            onClick={() => setCustomOpen((open) => !open)}
+            className="rounded-full border border-dashed border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:border-slate-400"
+          >
+            + Something else
+          </button>
         </div>
+        {customOpen && (
+          <div className="mt-3 flex gap-2">
+            <input
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustom();
+                }
+              }}
+              placeholder="e.g. Staircase, Fence, Swimming pool"
+              aria-label="What else do you want to renovate?"
+              className="min-w-0 flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-[15px] focus:border-[#2ec440] focus:outline-none focus:ring-4 focus:ring-[#2ec440]/15"
+            />
+            <button type="button" onClick={addCustom} disabled={!customText.trim()} className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+              Add
+            </button>
+          </div>
+        )}
         {areaError && <p className="mt-2 text-sm font-semibold text-red-600">{areaError}</p>}
 
         {areas.length > 0 && (
         <>
-        <p className="mt-8 text-sm font-bold text-slate-700 mb-3">Photos of {areas.length === 1 ? (areas[0] === WHOLE_HOUSE ? "the house" : `the ${RENOVATION_AREA_LABELS[areas[0]].toLowerCase()}`) : "the property"}</p>
+        <p className="mt-8 text-sm font-bold text-slate-700 mb-3">Photos of {areas.length === 1 ? (areas[0] === WHOLE_HOUSE ? "the house" : `the ${areaChoiceLabel(areas[0]).toLowerCase()}`) : "the property"}</p>
         <div
           onDragOver={(e) => {
             e.preventDefault();
@@ -170,7 +229,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
                     >
                       {areas.map((key) => (
                         <option key={key} value={key}>
-                          {key === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[key]}
+                          {areaChoiceLabel(key)}
                         </option>
                       ))}
                     </select>

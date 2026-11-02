@@ -166,16 +166,23 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], areaKeys: RenovationAreaKey[]) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[]) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
               // What the person said they are renovating becomes the brief's areas, so the first step is already answered.
               const existing = RenovationProjectService.getById(project.id);
               if (existing) {
                 const assessment = JSON.parse(JSON.stringify(existing.assessment)) as typeof existing.assessment;
-                for (const key of areaKeys) if (!assessment.areas.some((a) => a.areaKey === key)) assessment.areas.push(newArea(key));
+                // A choice is an area's key, or "custom:" and what the person typed for something that is not in the list.
+                const areaFor = (choice: string) => assessment.areas.find((a) => (choice.startsWith("custom:") ? a.customLabel === choice.slice(7) : a.areaKey === choice));
+                for (const choice of choices) {
+                  if (areaFor(choice)) continue;
+                  const area = newArea(choice.startsWith("custom:") ? "custom" : (choice as RenovationAreaKey));
+                  if (choice.startsWith("custom:")) area.customLabel = choice.slice(7);
+                  assessment.areas.push(area);
+                }
                 if (!assessment.completedSteps.includes("areas")) assessment.completedSteps.push("areas");
                 // Each photo points at the area it shows.
-                photos = photos.map((p) => ({ ...p, relatedAreaId: assessment.areas.find((a) => a.areaKey === p.relatedAreaId)?.id }));
+                photos = photos.map((p) => ({ ...p, relatedAreaId: p.relatedAreaId ? areaFor(p.relatedAreaId)?.id : undefined }));
                 RenovationProjectService.saveAssessment(project.id, assessment, "Chose what to renovate.");
               }
               if (photos.length === 0) {
@@ -188,7 +195,7 @@ function NewProjectContent() {
               setAnalysing(true);
               const labelOf = (photo: UploadedFile) => {
                 const area = RenovationProjectService.getById(project.id)?.assessment.areas.find((a) => a.id === photo.relatedAreaId);
-                return area ? (area.areaKey === "full_property" ? "Whole house" : RENOVATION_AREA_LABELS[area.areaKey]) : "";
+                return area ? (area.customLabel || (area.areaKey === "full_property" ? "Whole house" : RENOVATION_AREA_LABELS[area.areaKey])) : "";
               };
               const analysis = await analysePhotos(photos, photos.map(labelOf));
               const current = RenovationProjectService.getById(project.id);
