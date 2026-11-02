@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import ConditionalFooter from "@/components/ConditionalFooter";
@@ -10,10 +10,13 @@ import VisitTracker from "@/components/analytics/VisitTracker";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
 
-const nunitoSans = Nunito_Sans({
+// Nunito Sans is kept in the project (the Latin letters, every weight from 200 to 900) rather than fetched from Google when the site
+// is built, so a build never fails because Google Fonts could not be reached.
+const nunitoSans = localFont({
+  src: "./fonts/NunitoSans-latin-variable.woff2",
   variable: "--font-nunito-sans",
-  subsets: ["latin"],
-  weight: ["200", "300", "400", "600", "700", "800", "900"],
+  weight: "200 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
