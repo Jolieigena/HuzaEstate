@@ -23,7 +23,7 @@ function placeFrom(text: string): string | null {
   return match ? match[1].trim() : null;
 }
 
-function useFrom(text: string): PropertyUse | null {
+function propertyUseFrom(text: string): PropertyUse | null {
   if (/\brental|to let|to rent|tenants?\b/i.test(text)) return "rental_property";
   if (/holiday|vacation|weekend home/i.test(text)) return "holiday_home";
   if (/family|my home|our home|residence|live in/i.test(text)) return "primary_residence";
@@ -81,7 +81,7 @@ export function briefFromPrompt(brief: DesignBrief, words: string): DesignBrief 
     if (country) next.basics.countryValue = country;
   }
 
-  const use = useFrom(words);
+  const use = propertyUseFrom(words);
   if (use && !next.basics.propertyUse) next.basics.propertyUse = use;
 
   return next;
