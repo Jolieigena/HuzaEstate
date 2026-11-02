@@ -14,59 +14,6 @@ import { buildVideos } from "@/lib/videos";
 
 const STUDIO_PATH = "/studio/build/new";
 
-const STEPS = [
-  {
-    number: 1,
-    title: "Tell us about your plot",
-    description: "Location, size and orientation, plus a plan or sketch if you have one.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-  {
-    number: 2,
-    title: "Describe your home",
-    description: "Fill in a short form or tell Huza AI what you want.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-6l-4 4v-4z" />
-      </svg>
-    ),
-  },
-  {
-    number: 3,
-    title: "Generate design directions",
-    description: "Huza AI makes layouts and pictures to match.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-  },
-  {
-    number: 4,
-    title: "Compare and refine",
-    description: "Compare options, ask for changes, save the ones you like.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h10m-10 6h16" />
-      </svg>
-    ),
-  },
-  {
-    number: 5,
-    title: "Request professional review",
-    description: "Send your pick to an architect or engineer.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-  },
-];
-
 const EXAMPLES = [
   {
     id: "modern-family-home",
@@ -204,28 +151,6 @@ export default function BuildPage() {
 
           <div className="lg:col-span-6 order-2">
             <ProcessVideoCard video={buildVideos.overview} autoplayPreview aspectClassName="aspect-[4/3] sm:aspect-video" className="shadow-xl" />
-          </div>
-        </div>
-      </section>
-
-      {/* How Build works */}
-      <section className="w-full bg-[#f8fafc] py-14 sm:py-20 px-6 sm:px-10 md:px-12 border-t border-b border-slate-200/60">
-        <div className="max-w-[1400px] mx-auto">
-          <Reveal className="mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight leading-[1.15]">How it works</h2>
-          </Reveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
-            {STEPS.map((step, index) => (
-              <Reveal key={step.number} delay={index * 60} className="bg-white border border-slate-200 rounded-2xl p-5">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 rounded-xl bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center">{step.icon}</div>
-                  <span className="text-sm font-bold text-slate-300">{step.number}</span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 mb-1.5">{step.title}</h3>
-                <p className="text-slate-500 text-sm leading-relaxed">{step.description}</p>
-              </Reveal>
-            ))}
           </div>
         </div>
       </section>
