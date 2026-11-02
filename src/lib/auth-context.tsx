@@ -1,18 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import {
-  ACCOUNTS_STORAGE_KEY,
-  lockSaved,
-  lockSavedByToken,
-  readSaved,
-  removeSaved,
-  upsertSaved,
-  viewOf,
-  writeSaved,
-  type SavedAccount,
-  type SavedAccountView,
-} from "./savedAccounts";
+// An earlier version kept every account signed in on a device. That is gone: one account per browser. The key is only here so what
+// that version saved (including other accounts' sign-in tokens) is wiped from browsers that still hold it.
+const LEGACY_ACCOUNTS_STORAGE_KEY = "huzaestate_accounts";
 
 // 'contractor' removed — nothing anywhere creates one (dead scaffolding in the original account
 // model, matching access-service's accountRoles). Revisit if/when contractor work is scoped.
@@ -143,14 +134,6 @@ interface AuthContextValue {
   account: Account | null;
   activeRole: AccountRole;
   switchRole: (role: AccountRole) => boolean;
-  /** Every account signed in on this device, the active one included. Never carries a token. */
-  savedAccounts: SavedAccountView[];
-  /** Makes another saved account the active one. A session that has expired is refused with needsPassword, and that account is locked. */
-  switchAccount: (id: string) => Promise<{ ok: true; account: Account } | { ok: false; error: string; needsPassword?: boolean }>;
-  /** Forgets a saved account that is not the active one. */
-  removeSavedAccount: (id: string) => void;
-  /** Ends every session on this device. */
-  logoutAll: () => void;
   /** The current JWT, for authenticated calls to OTHER backend services (property-service,
    * etc.) — those verify it locally against the same shared secret access-service signs
    * with, so no extra round-trip through access-service is needed. Null when logged out. */
@@ -198,15 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null);
   const [activeRole, setActiveRole] = useState<AccountRole>("customer");
   const [token, setToken] = useState<string | null>(null);
-  const [savedList, setSavedList] = useState<SavedAccount[]>([]);
-
-  const saveList = (list: SavedAccount[]) => {
-    writeSaved(list);
-    setSavedList(list);
-  };
 
   const applySession = (nextToken: string, nextAccount: Account) => {
-    saveList(upsertSaved(readSaved(), { id: nextAccount.id, name: nextAccount.name, email: nextAccount.email }, nextToken));
     let preferredRole: string | null = null;
     try { preferredRole = localStorage.getItem(ROLE_STORAGE_KEY); } catch { /* ignore */ }
     const role = deriveActiveRole(nextAccount, nextAccount.activeRole ?? preferredRole);
@@ -235,7 +211,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let storedToken: string | null = null;
-    try { storedToken = localStorage.getItem(TOKEN_STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+      localStorage.removeItem(LEGACY_ACCOUNTS_STORAGE_KEY);
+    } catch { /* ignore */ }
     if (!storedToken) {
       // No stored session to validate — reading that fact requires a one-time client sync.
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -255,8 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // A fresh token comes back when the account's roles changed since this one was issued.
         applySession((data.token as string | undefined) ?? (storedToken as string), data.account as Account);
       } catch {
-        // The stored session no longer works: its saved account asks for the password next time.
-        saveList(lockSavedByToken(readSaved(), storedToken as string));
+        // The stored session no longer works: the person signs in again.
         clearSession();
       } finally {
         setIsAuthReady(true);
@@ -268,16 +246,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
       if (event.key === TOKEN_STORAGE_KEY) window.location.reload();
-      else if (event.key === ACCOUNTS_STORAGE_KEY) setSavedList(readSaved());
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // The list on this device is read once the page is in the browser.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSavedList(readSaved());
   }, []);
 
   const signup = async (input: SignupInput): Promise<AuthResult> => {
@@ -345,64 +316,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }).catch(() => { /* ignore */ });
   };
 
-  // Signs out the active account only. If another account on this device still has a valid session the browser moves to it, as
-  // Google does; otherwise the visitor is signed out.
+  // Signs out. One account per browser, so there is nothing else to move to.
   const logout = () => {
-    const leaving = account?.id;
-    endOnServer(token);
-    const rest = leaving ? removeSaved(readSaved(), leaving) : readSaved();
-    clearSession();
-    saveList(rest);
-    const next = rest.find((a) => a.token);
-    if (!next?.token) return;
-    const nextToken = next.token;
-    (async () => {
-      try {
-        const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${nextToken}` } });
-        if (!res.ok) throw new Error("unauthenticated");
-        const data = await res.json();
-        const nextAccount = data.account as Account;
-        applySession(nextToken, nextAccount);
-        window.location.assign(nextAccount.path);
-      } catch {
-        saveList(lockSaved(readSaved(), next.id));
-      }
-    })();
-  };
-
-  const logoutAll = () => {
-    for (const saved of readSaved()) endOnServer(saved.token);
     endOnServer(token);
     clearSession();
-    saveList([]);
-  };
-
-  const switchAccount: AuthContextValue["switchAccount"] = async (id) => {
-    const target = readSaved().find((a) => a.id === id);
-    if (!target) return { ok: false, error: "That account is no longer saved on this device." };
-    if (!target.token) return { ok: false, error: "Sign in again to use this account.", needsPassword: true };
-    const targetToken = target.token;
-    let nextAccount: Account;
-    try {
-      // The saved session is checked with the server first: a suspended account or an expired session is not switched into.
-      const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${targetToken}` } });
-      if (res.status === 401 || res.status === 403) {
-        saveList(lockSaved(readSaved(), id));
-        return { ok: false, error: "Sign in again to use this account.", needsPassword: true };
-      }
-      if (!res.ok) return { ok: false, error: "Could not switch accounts. Please try again." };
-      nextAccount = (await res.json()).account as Account;
-    } catch {
-      return { ok: false, error: "Could not reach the server. Please try again." };
-    }
-    // applySession locks the account being left when it is privileged.
-    applySession(targetToken, nextAccount);
-    return { ok: true, account: nextAccount };
-  };
-
-  const removeSavedAccount = (id: string) => {
-    if (id === account?.id) return;
-    saveList(removeSaved(readSaved(), id));
   };
 
   const switchRole = (role: AccountRole) => {
@@ -430,7 +347,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // A new role (an access code, an administrator) needs a new token: the other services read the roles from it.
       if (data.token) {
         setToken(data.token as string);
-        saveList(upsertSaved(readSaved(), { id: nextAccount.id, name: nextAccount.name, email: nextAccount.email }, data.token as string));
         try { localStorage.setItem(TOKEN_STORAGE_KEY, data.token as string); } catch { /* ignore */ }
       }
       setAccount(nextAccount);
@@ -511,7 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, loginWithGoogle, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, savedAccounts: viewOf(savedList, account?.id), switchAccount, removeSavedAccount, logoutAll, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, loginWithGoogle, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
       {children}
     </AuthContext.Provider>
   );

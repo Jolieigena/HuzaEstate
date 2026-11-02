@@ -49,7 +49,7 @@ function LoginForm() {
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">{searchParams.get('add') ? t('Add an account') : t('Welcome back')}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('Welcome back')}</h1>
       <p className="text-slate-500 mb-8">{t('Please enter your details to sign in.')}</p>
 
       {error && (
