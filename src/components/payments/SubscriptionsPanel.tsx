@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { AdminSubscriptionList, AdminUser } from "@/lib/admin/api";
-import { AdminTable, EmptyState, StatusPill, formatDate, formatMoney } from "@/components/admin/ui";
+import { AdminTable, EmptyState, StatusPill, formatDate } from "@/components/admin/ui";
+import { useDisplayCurrency } from "@/lib/currency/display";
 import Select from "@/components/shared/Select";
 import type { PaymentsSource } from "./paymentsSource";
 import { LoadError, LoadingRow, Pager, SellerCell, Toolbar, useKeyedLoad } from "./shared";
@@ -47,6 +48,7 @@ export default function SubscriptionsPanel({
   sellers: Record<string, AdminUser>;
   onSummary: (summary: AdminSubscriptionList["summary"]) => void;
 }) {
+  const { format } = useDisplayCurrency();
   const [tier, setTier] = useState<TierFilter>("paid");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
@@ -117,7 +119,7 @@ export default function SubscriptionsPanel({
                   {sub.label}
                   {sub.source === "code" && <span className="block text-xs font-medium text-emerald-600">Access code{sub.accessUntil ? ` until ${formatDate(sub.accessUntil)}` : ""}</span>}
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-700">{sub.priceCents ? `${formatMoney(sub.priceCents / 100, "USD")}/mo` : sub.source === "code" ? "Via code" : "Free"}</td>
+                <td className="px-6 py-4 text-sm text-slate-700">{sub.priceCents ? `${format(sub.priceCents / 100, "USD")}/mo` : sub.source === "code" ? "Via code" : "Free"}</td>
                 <td className="px-6 py-4">
                   <StatusPill status={sub.status} />
                   {sub.renewsOn && <p className="mt-1 text-xs text-slate-500">Renews {formatDate(sub.renewsOn)}</p>}

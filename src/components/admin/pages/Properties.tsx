@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { PropertyApi } from "@/lib/properties/api";
+import { useDisplayCurrency } from "@/lib/currency/display";
+import CurrencyPicker from "@/components/CurrencyPicker";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
 import { usePropertyFilters } from "@/lib/admin/usePropertyFilters";
 import { useToast } from "@/lib/toast-context";
@@ -78,6 +80,8 @@ export function PropertiesListPage() {
     const matchesSearch = !q || `${p.title} ${p.location} ${p.city} ${p.ownerName ?? ""}`.toLowerCase().includes(q);
     return matchesSearch && (type === "all" || p.type === type) && (status === "all" || (p.status ?? "published") === status);
   });
+  // Each listing keeps the currency its seller typed; the page shows every price in the currency picked at the top.
+  const { format: formatMoney_ } = useDisplayCurrency();
   const count = (key: "all" | PropertyStatus) => (properties ?? []).filter((p) => key === "all" || (p.status ?? "published") === key).length;
 
   return (
@@ -85,9 +89,12 @@ export function PropertiesListPage() {
       title="Properties"
       action={
         canView && (
-          <Link href="/post-property" className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-            Add property
-          </Link>
+          <div className="flex items-center gap-3">
+            <CurrencyPicker />
+            <Link href="/post-property" className="inline-flex min-h-11 items-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+              Add property
+            </Link>
+          </div>
         )
       }
     >
@@ -177,7 +184,7 @@ export function PropertiesListPage() {
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-600">{property.type === "sale" ? "For sale" : "For rent"}</td>
                   <td className="px-6 py-4 text-sm font-bold text-slate-900">
-                    {formatMoney(property.price, "USD")}
+                    {formatMoney_(property.price, property.currency)}
                     {property.type === "rent" ? <span className="text-xs font-medium text-slate-400"> /mo</span> : null}
                   </td>
                   <td className="px-6 py-4">

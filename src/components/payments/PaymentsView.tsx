@@ -5,14 +5,15 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import type { AdminPaymentList, AdminSubscriptionList } from "@/lib/admin/api";
 import { hasOrgPermission } from "@/lib/orgPermissions";
-import { PageFrame, RequirePermission, formatMoney } from "@/components/admin/ui";
+import { PageFrame, RequirePermission } from "@/components/admin/ui";
+import CurrencyPicker from "@/components/CurrencyPicker";
+import { useDisplayCurrency } from "@/lib/currency/display";
 import OneTimePaymentsPanel from "./OneTimePaymentsPanel";
 import SubscriptionsPanel from "./SubscriptionsPanel";
 import type { PaymentsSource } from "./paymentsSource";
 import { usePaymentSellers } from "./shared";
 
 type Kind = "subscriptions" | "one-time";
-const dollars = (cents: number) => formatMoney(cents / 100, "USD");
 
 /** One of the two kinds of money, as a card you can select: what it earns, and a line of context. The two
  *  cards together are the page's overview; the one selected decides which list is shown below them. */
@@ -66,11 +67,14 @@ export default function PaymentsView({ source }: { source: PaymentsSource }) {
   const [subs, setSubs] = useState<AdminSubscriptionList["summary"] | null>(null);
   const [oneTime, setOneTime] = useState<AdminPaymentList["summary"] | null>(null);
 
+  // Payments are taken in US dollars; the amounts are shown in the currency picked at the top.
+  const { format } = useDisplayCurrency();
+  const dollars = (cents: number) => format(cents / 100, "USD");
   const promotions = oneTime?.byKind.promote ?? 0;
   const extraPosts = oneTime?.byKind.per_post ?? 0;
 
   return (
-    <PageFrame title={source.scope === "platform" ? "Seller Payments" : "Payments"}>
+    <PageFrame title={source.scope === "platform" ? "Seller Payments" : "Payments"} action={<CurrencyPicker />}>
       <RequirePermission granted={canView}>
         <div role="tablist" aria-label="Payment type" className="mb-8 grid gap-4 sm:grid-cols-2">
           <KindCard

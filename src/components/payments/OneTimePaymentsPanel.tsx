@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { AdminPayment, AdminPaymentList, AdminUser, PaymentKind } from "@/lib/admin/api";
-import { AdminTable, EmptyState, formatDateTime, formatMoney } from "@/components/admin/ui";
+import { AdminTable, EmptyState, formatDateTime } from "@/components/admin/ui";
+import { useDisplayCurrency } from "@/lib/currency/display";
 import Select from "@/components/shared/Select";
 import type { PaymentsSource } from "./paymentsSource";
 import { LoadError, LoadingRow, Pager, SellerCell, Toolbar, useKeyedLoad } from "./shared";
@@ -46,6 +47,7 @@ export default function OneTimePaymentsPanel({
   sellers: Record<string, AdminUser>;
   onSummary: (summary: AdminPaymentList["summary"]) => void;
 }) {
+  const { format } = useDisplayCurrency();
   const [kind, setKind] = useState<"all" | OneTimeKind>("all");
   const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
@@ -93,7 +95,7 @@ export default function OneTimePaymentsPanel({
                 <td className="px-6 py-4">
                   <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${KIND_STYLES[payment.kind as OneTimeKind] ?? "bg-slate-100 text-slate-600"}`}>{KIND_LABELS[payment.kind as OneTimeKind] ?? payment.kind}</span>
                 </td>
-                <td className="px-6 py-4 text-sm text-slate-700">{formatMoney(payment.amountCents / 100, payment.currency?.toUpperCase() || "USD")}</td>
+                <td className="px-6 py-4 text-sm text-slate-700">{format(payment.amountCents / 100, payment.currency || "USD")}</td>
                 <td className="px-6 py-4 text-sm text-slate-600">
                   <PaymentDetails payment={payment} />
                 </td>
