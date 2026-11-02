@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
 import { BuildProjectService } from "@/lib/build/projectService";
+import { briefFromPrompt } from "@/lib/build/briefFromPrompt";
 import { CreationMode } from "@/lib/build/types";
 
 const SPARKLE_PATH =
@@ -60,6 +61,7 @@ function NewProjectContent() {
     autoStarted.current = true;
     const words = (params.get("brief") ?? "").slice(0, 500);
     const project = BuildProjectService.create({ name: nameFromBrief(words), description: words.trim(), creationMode: "ai" });
+    if (words.trim()) BuildProjectService.saveBrief(project.id, briefFromPrompt(project.brief, words), "Filled in from the description.");
     router.replace(`/studio/build/${project.id}/brief`);
   }, [choose, params, router]);
 
@@ -74,6 +76,7 @@ function NewProjectContent() {
     if (creating) return;
     setCreating(true);
     const project = BuildProjectService.create({ name: nameFromBrief(prompt), description: prompt.trim(), creationMode: "ai" });
+    if (prompt.trim()) BuildProjectService.saveBrief(project.id, briefFromPrompt(project.brief, prompt), "Filled in from the description.");
     router.push(`/studio/build/${project.id}/brief`);
   };
 
