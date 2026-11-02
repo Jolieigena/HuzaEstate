@@ -12,7 +12,7 @@ interface Pending {
   href: string;
 }
 
-/** A small reminder, on every page, for each role the account holds whose profile is not finished yet. A role's own portal already
+/** A small reminder, beside the title of a portal page, for each role the account holds whose profile is not finished yet. A role's own portal already
  *  has a banner for it, so the reminder there is for the other roles. Closing it hides it until the next visit. */
 export default function ProfileReminder() {
   const { account, isLoggedIn } = useAuth();
@@ -52,24 +52,18 @@ export default function ProfileReminder() {
   };
 
   return (
-    <div role="status" className="fixed bottom-20 right-4 z-40 max-w-sm rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-lg lg:bottom-4">
-      <div className="flex items-start gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-amber-900">{t("Remember to finish setting up")}</p>
-          <ul className="mt-1.5 space-y-1">
-            {visible.map((item) => (
-              <li key={item.key}>
-                <Link href={item.href} className="text-sm font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-950">
-                  {t("Complete your {name}", { name: t(item.label) })}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <button type="button" onClick={close} aria-label={t("Close")} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-amber-700 hover:bg-amber-100">
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
+    <div role="status" className="inline-flex max-w-full items-center gap-2 rounded-full border border-amber-200 bg-amber-50 py-1.5 pl-3 pr-1.5 text-xs">
+      <span className="font-bold text-amber-900">{t("Remember to finish setting up")}:</span>
+      <span className="flex flex-wrap gap-x-3">
+        {visible.map((item) => (
+          <Link key={item.key} href={item.href} className="font-semibold text-amber-800 underline underline-offset-2 hover:text-amber-950">
+            {t("Complete your {name}", { name: t(item.label) })}
+          </Link>
+        ))}
+      </span>
+      <button type="button" onClick={close} aria-label={t("Close")} className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-amber-700 hover:bg-amber-100">
+        <span aria-hidden="true">×</span>
+      </button>
     </div>
   );
 }

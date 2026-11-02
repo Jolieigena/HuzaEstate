@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Tr from "@/components/Tr";
+import ProfileReminder from "@/components/shared/ProfileReminder";
 
 export function PageFrame({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
-  return <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8"><div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="text-2xl font-black text-slate-900 sm:text-3xl"><Tr text={title} /></h2>{description && <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500"><Tr text={description} /></p>}</div>{action}</div>{children}</div>;
+  return <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8"><div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><div className="flex flex-wrap items-center gap-x-4 gap-y-2"><h2 className="text-2xl font-black text-slate-900 sm:text-3xl"><Tr text={title} /></h2><ProfileReminder /></div>{description && <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500"><Tr text={description} /></p>}</div>{action}</div>{children}</div>;
 }
 
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) { return <section className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>{children}</section>; }

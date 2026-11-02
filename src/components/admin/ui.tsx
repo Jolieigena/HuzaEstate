@@ -3,13 +3,14 @@ import React, { useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { regionsForCountry } from "@/lib/regions";
 import Tr from "@/components/Tr";
+import ProfileReminder from "@/components/shared/ProfileReminder";
 
 export function PageFrame({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="mx-auto max-w-[1600px] px-6 py-10 sm:px-10 lg:px-12">
       <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between pb-6 border-b border-slate-200/70">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl"><Tr text={title} /></h2>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2"><h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl"><Tr text={title} /></h2><ProfileReminder /></div>
           {description && <p className="mt-3 max-w-3xl text-base leading-relaxed text-slate-500"><Tr text={description} /></p>}
         </div>
         {action && <div>{action}</div>}
