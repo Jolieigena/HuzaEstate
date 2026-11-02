@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -97,6 +97,14 @@ const FAQ_ITEMS = [
   { question: "Are my designs saved?", answer: "Yes. Every version you make is saved to your account, and you can start as many projects as you like." },
 ];
 
+function CheckIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
 export default function BuildPage() {
   const router = useRouter();
   const { isLoggedIn } = useAuth();
@@ -105,6 +113,22 @@ export default function BuildPage() {
   const [demoOpen, setDemoOpen] = useState(false);
   const [activeExample, setActiveExample] = useState<(typeof EXAMPLES)[0] | null>(null);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [demoStage, setDemoStage] = useState(0);
+  const demoTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (demoTimer.current) window.clearTimeout(demoTimer.current);
+  }, []);
+  const startDemo = () => {
+    setDemoStage(1);
+    demoTimer.current = window.setTimeout(() => setDemoStage(2), 2500);
+  };
+  // Resetting removes the tall result, which leaves the page scrolled past the demo; bring the demo back into view.
+  const resetDemo = () => {
+    if (demoTimer.current) window.clearTimeout(demoTimer.current);
+    setDemoStage(0);
+    document.getElementById("huza-demo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const exampleTitleId = useId();
   const exampleDescId = useId();
 
@@ -152,6 +176,94 @@ export default function BuildPage() {
           <div className="lg:col-span-6 order-2">
             <ProcessVideoCard video={buildVideos.overview} autoplayPreview aspectClassName="aspect-[4/3] sm:aspect-video" className="shadow-xl" />
           </div>
+        </div>
+      </section>
+
+      {/* Section 3: Prompt experience preview */}
+      <section className="w-full bg-white py-16 sm:py-24 px-6 sm:px-10 md:px-12">
+        <div id="huza-demo" className="max-w-5xl mx-auto scroll-mt-24">
+          <Reveal className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">See Huza AI in action</h2>
+            <p className="text-slate-600 text-lg leading-relaxed mt-4 max-w-2xl mx-auto">
+              This is a public demonstration of how a conversation with Huza AI works, not the working agent.
+            </p>
+          </Reveal>
+
+          <Reveal delay={100} className="bg-slate-50 border border-slate-200 rounded-3xl p-6 sm:p-10">
+            <div className="flex flex-col gap-5">
+              <div className="self-end max-w-lg bg-slate-900 text-white rounded-2xl rounded-tr-md px-5 py-4 text-[15px] leading-relaxed shadow-sm">
+                “Design a contemporary two-floor family home for a 600 sqm plot in Kigali. Include four bedrooms, a home office, natural ventilation, two parking spaces and a maximum budget of 180 million RWF.”
+              </div>
+
+              <div className="self-start max-w-xl bg-white border border-slate-200 rounded-2xl rounded-tl-md px-5 py-5 shadow-sm">
+                <p className="text-slate-900 font-bold text-sm mb-3">Huza AI understood:</p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-slate-600 text-[15px]">
+                  {[
+                    "Two floors",
+                    "Four bedrooms",
+                    "Home office",
+                    "Two parking spaces",
+                    "Natural ventilation",
+                    "Approx. budget: 180M RWF",
+                    "Location: Kigali",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-2">
+                      <span className="text-[#2ec440] flex-shrink-0"><CheckIcon /></span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <p className="text-slate-400 text-sm italic">Huza AI confirms your requirements before generating concepts.</p>
+            </div>
+
+            <div className="mt-8 flex flex-col items-center">
+              {demoStage === 0 && (
+                <button
+                  type="button"
+                  onClick={startDemo}
+                  className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-[15px] px-8 py-3.5 rounded-full transition-all"
+                >
+                  Try This Prompt
+                </button>
+              )}
+              {demoStage === 1 && (
+                <div className="flex items-center gap-3 text-slate-700 font-bold text-[15px] bg-slate-50 border border-slate-200 px-6 py-3 rounded-full">
+                  <div className="flex items-center gap-1">
+                    {[0,1,2].map((i) => (
+                      <span key={i} className="w-2 h-2 rounded-full bg-current animate-bounce" style={{ animationDelay: `${i*0.15}s` }} />
+                    ))}
+                  </div>
+                  Huza AI is generating concepts...
+                </div>
+              )}
+            </div>
+
+            {demoStage === 2 && (
+              <Reveal className="mt-6 self-start max-w-4xl bg-white border border-slate-200 rounded-2xl rounded-tl-md p-6 shadow-sm">
+                <p className="text-slate-900 font-bold text-sm mb-4">Huza AI generated these concepts:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="rounded-xl overflow-hidden border border-slate-200">
+                    <div className="relative aspect-video">
+                      <Image src="/hero-house.png" alt="Option 1" fill className="object-cover" />
+                    </div>
+                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 1: Modern Two-Story</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden border border-slate-200">
+                    <div className="relative aspect-video">
+                      <Image src="/hero-house-final.jpg" alt="Option 2" fill className="object-cover" />
+                    </div>
+                    <div className="p-3 bg-slate-50 text-sm font-semibold text-slate-700">Option 2: Open Concept</div>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-end gap-3">
+                  <button onClick={resetDemo} className="px-5 py-2 rounded-full font-bold text-slate-600 hover:bg-slate-100 transition-colors text-sm border border-slate-200">Reset Demo</button>
+                  <button onClick={startBuild} className="bg-[#2ec440] hover:bg-[#28b039] text-white px-5 py-2 rounded-full font-bold transition-colors text-sm shadow-sm">Start Designing →</button>
+                </div>
+              </Reveal>
+            )}
+          </Reveal>
         </div>
       </section>
 
