@@ -54,9 +54,8 @@ export default function SellPage() {
           <div className="relative grid gap-10 lg:grid-cols-[1.3fr_1fr] lg:items-center">
             <div>
               <h2 className="text-3xl font-black leading-[1.05] tracking-tight sm:text-5xl">
-                You make it.<br />
-                You supply it.<br />
-                <span className="text-[#2ec440]">Sell it here.</span>
+                Not selling a house?<br />
+                <span className="text-[#2ec440]">Sell what goes inside it.</span>
               </h2>
               <p className="mt-5 max-w-xl text-base text-slate-300 sm:text-lg">
                 Open your own shop on HuzaEstate and put your furniture and home products in front of people who are building, renovating and furnishing homes.
