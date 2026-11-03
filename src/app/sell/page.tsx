@@ -68,7 +68,7 @@ export default function SellPage() {
                   </svg>
                 </Link>
                 <Link href="/shop" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-7 font-bold text-white transition-colors hover:bg-white/10">
-                  See the shop
+                  Check the marketplace
                 </Link>
               </div>
             </div>
