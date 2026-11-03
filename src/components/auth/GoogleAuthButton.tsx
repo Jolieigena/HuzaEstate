@@ -54,6 +54,12 @@ function loadGisScript(): Promise<void> {
   return gisScriptPromise;
 }
 
+// Google keeps the callback it was first initialised with, and the page can change without a reload (Sign up, then Sign in). So Google
+// is initialised once, with a callback that hands the answer to whichever button is on the page now. Without this, the Sign in page
+// could answer with the Sign up page's handler, which is allowed to create an account.
+let initialised = false;
+let activeSubmit: ((idToken?: string) => void) | null = null;
+
 interface GoogleAuthButtonProps {
   /** "signup_with" on the sign-up page, "signin_with" on the sign-in page. */
   text?: "signin_with" | "signup_with" | "continue_with";
@@ -130,10 +136,16 @@ export default function GoogleAuthButton({ text = "signin_with", allowCreate = f
     if (isNativeApp || !GOOGLE_CLIENT_ID) return;
     let cancelled = false;
 
+    const mine = (idToken?: string) => void submitCredential.current(idToken);
+    activeSubmit = mine;
+
     loadGisScript()
       .then(() => {
         if (cancelled || !buttonRef.current || !window.google?.accounts?.id) return;
-        window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: (response) => void submitCredential.current(response?.credential), ux_mode: "popup" });
+        if (!initialised) {
+          initialised = true;
+          window.google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: (response) => activeSubmit?.(response?.credential), ux_mode: "popup" });
+        }
         // Google caps the rendered button width at 400px.
         const width = Math.min(wrapperRef.current?.offsetWidth || 320, 400);
         buttonRef.current.innerHTML = "";
@@ -145,6 +157,7 @@ export default function GoogleAuthButton({ text = "signin_with", allowCreate = f
 
     return () => {
       cancelled = true;
+      if (activeSubmit === mine) activeSubmit = null;
     };
   }, [text, isNativeApp]);
 
