@@ -12,7 +12,6 @@ import { COUNTRY_OPTIONS, findCountry } from "@/lib/countries";
 import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from "@/lib/passwordRules";
 import { RoleRequestsApi } from "@/lib/roleRequests/api";
-import { SUPPLIER_CATEGORIES } from "@/lib/suppliers/api";
 import { useToast } from "@/lib/toast-context";
 
 const PATH = "/open-a-shop";
@@ -36,8 +35,6 @@ export default function OpenAShopPage() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   // What the shop is
   const [shopName, setShopName] = useState("");
-  const [categories, setCategories] = useState<string[]>([]);
-  const [customCategory, setCustomCategory] = useState("");
   const [country, setCountry] = useState(() => findCountry(account?.country ?? "")?.name ?? "");
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
@@ -72,13 +69,6 @@ export default function OpenAShopPage() {
                 </li>
               ))}
             </ol>
-            <div className="mt-8 flex flex-wrap gap-2">
-              {SUPPLIER_CATEGORIES.slice(0, 7).map((name) => (
-                <span key={name} className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300">
-                  {name}
-                </span>
-              ))}
-            </div>
           </div>
         </aside>
 
@@ -106,14 +96,6 @@ export default function OpenAShopPage() {
     return panel("Use a different account", <p className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-600">Administrator and organisation accounts cannot open a shop. Use a different account.</p>);
   }
 
-  const toggleCategory = (name: string) => setCategories((list) => (list.includes(name) ? list.filter((c) => c !== name) : [...list, name]));
-  // Anything that is not in the suggestions: typed, added as one more choice.
-  const addCustomCategory = () => {
-    const text = customCategory.trim().replace(/\s+/g, " ").slice(0, 60);
-    if (text && !categories.some((c) => c.toLowerCase() === text.toLowerCase())) setCategories((list) => [...list, text]);
-    setCustomCategory("");
-  };
-  const customCategories = categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -157,7 +139,7 @@ export default function OpenAShopPage() {
     const result = await RoleRequestsApi.submit(sessionToken, {
       role: "supplier",
       country: shownCountry,
-      details: { city: city.trim(), phone: cleanPhone(phone), companyName: shopName.trim(), categories },
+      details: { city: city.trim(), phone: cleanPhone(phone), companyName: shopName.trim() },
     });
     if (!result.ok) {
       setSaving(false);
@@ -210,56 +192,6 @@ export default function OpenAShopPage() {
         Shop name
         <input className={`${fieldClass} mt-2`} value={shopName} maxLength={160} onChange={(e) => setShopName(e.target.value)} autoFocus={!needsAccount} />
       </label>
-
-      <div className="text-sm font-bold text-slate-700">
-        What do you sell?
-        <div className="mt-3 flex flex-wrap gap-2">
-          {SUPPLIER_CATEGORIES.map((name) => {
-            const on = categories.includes(name);
-            return (
-              <button
-                key={name}
-                type="button"
-                aria-pressed={on}
-                onClick={() => toggleCategory(name)}
-                className={`rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${on ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
-              >
-                {name}
-              </button>
-            );
-          })}
-          {customCategories.map((name) => (
-            <button
-              key={name}
-              type="button"
-              aria-pressed
-              aria-label={`Remove ${name}`}
-              onClick={() => toggleCategory(name)}
-              className="rounded-full border border-[#2ec440] bg-[#2ec440]/10 py-2 pl-4 pr-3 text-sm font-semibold text-[#219b31]"
-            >
-              {name} <span aria-hidden="true" className="ml-1">×</span>
-            </button>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            className={fieldClass}
-            placeholder="Something else you sell"
-            value={customCategory}
-            maxLength={60}
-            onChange={(e) => setCustomCategory(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addCustomCategory();
-              }
-            }}
-          />
-          <button type="button" onClick={addCustomCategory} disabled={!customCategory.trim()} className="rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
-            Add
-          </button>
-        </div>
-      </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="block text-sm font-bold text-slate-700">
