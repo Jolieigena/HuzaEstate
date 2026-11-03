@@ -10,8 +10,8 @@ const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
 // the two perks. Everything else is kept off the cards.
 const PRIORITY = "Priority placement: shown above standard listings";
 const FEATURES: Record<PlanTier, string[]> = {
-  free: ["2 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
-  silver: ["3 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
+  free: ["5 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
+  silver: ["20 listing posts / month", "Listings stay live {days} days", "Extra posts: {price} each"],
   gold: ["45 listing posts / month", "Listings stay live {days} days", PRIORITY, "Market Insights access", "Extra posts: {price} each"],
   diamond: ["Unlimited listing posts", "Listings stay live {days} days", PRIORITY, "Market Insights access"],
 };

@@ -11,11 +11,11 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
 };
 
 /** Total posts allowed per month for that tier — null means unlimited.
- *  A subscribed tier's limit REPLACES the free 2, it doesn't add to it
+ *  A subscribed tier's limit REPLACES the free 5, it doesn't add to it
  *  (Silver's own cap is 3 total, not 2+3). */
 export const PLAN_LIMITS: Record<PlanTier, number | null> = {
-  free: 2,
-  silver: 3,
+  free: 5,
+  silver: 20,
   gold: 45,
   diamond: null,
 };
@@ -36,10 +36,7 @@ export const PLAN_EXPIRY_DAYS: Record<PlanTier, number> = {
   diamond: 90,
 };
 
-/** One-time price to publish a single extra listing without subscribing —
- *  not specified by the source pricing, set to match Silver's own
- *  effective per-post rate ($15 / 3 posts = $5/post) so it's consistent
- *  with the numbers that were given rather than an arbitrary pick. */
+/** One-time price to publish a single extra listing without subscribing, as set by Huzalabs. */
 export const PER_POST_PRICE: Money = money(3, "USD");
 
 /** What a seller actually sees in Manager Portal differs by tier — this is
