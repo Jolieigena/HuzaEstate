@@ -16,7 +16,7 @@ export const PLAN_LABELS: Record<PlanTier, string> = {
 export const PLAN_LIMITS: Record<PlanTier, number | null> = {
   free: 2,
   silver: 3,
-  gold: 10,
+  gold: 45,
   diamond: null,
 };
 

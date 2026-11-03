@@ -517,7 +517,7 @@ export const RW: Record<string, string> = {
   "Diamond": "Diamond",
   "2 listing posts / month": "Amatangazo 2 ku kwezi",
   "3 listing posts / month": "Amatangazo 3 ku kwezi",
-  "10 listing posts / month": "Amatangazo 10 ku kwezi",
+  "45 listing posts / month": "Amatangazo 45 ku kwezi",
   "Unlimited listing posts": "Amatangazo adafite umubare",
   "Listings stay live {days} days": "Amatangazo amara iminsi {days} agaragara",
   "Extra posts: {price} each": "Amatangazo y'inyongera: {price} buri rimwe",
