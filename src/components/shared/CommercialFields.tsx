@@ -1,6 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/lib/i18n/language";
+import FormattedNumberInput from "@/components/shared/FormattedNumberInput";
 
 const inputClass = "w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors";
 
@@ -36,11 +37,11 @@ export function FloorsParkingFields({ floors, parking, onFloors, onParking }: { 
     <div className="grid grid-cols-2 gap-4">
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-2">{t("Floors")}</label>
-        <input type="number" min="0" value={floors} onChange={(e) => onFloors(e.target.value)} placeholder={t("e.g. 3")} className={inputClass} />
+        <FormattedNumberInput value={floors} onChange={onFloors} maxDecimals={0} placeholder={t("e.g. 3")} className={inputClass} />
       </div>
       <div>
         <label className="block text-sm font-bold text-slate-700 mb-2">{t("Parking spaces")}</label>
-        <input type="number" min="0" value={parking} onChange={(e) => onParking(e.target.value)} placeholder={t("e.g. 10")} className={inputClass} />
+        <FormattedNumberInput value={parking} onChange={onParking} maxDecimals={0} placeholder={t("e.g. 10")} className={inputClass} />
       </div>
     </div>
   );

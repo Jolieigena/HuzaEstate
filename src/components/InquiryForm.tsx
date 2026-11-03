@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { allowsFullPayment, describePlan, installmentsOf } from "@/lib/properties/paymentOptions";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
 import { PropertyApi } from "@/lib/properties/api";
 import type { Property } from "@/lib/properties/types";
 
@@ -16,6 +17,7 @@ const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3
  *  since most sellers here are private individuals listing their own place, not agents. */
 export default function InquiryForm({ property }: { property: Property }) {
   const { account, token } = useAuth();
+  const { showToast } = useToast();
   // The links in the emails about an inquiry open this form with the sender's details filled in (?name=&email=&phone=).
   const hint = useSearchParams();
   const [name, setName] = useState(() => (hint.get("name") ?? "").slice(0, 160));
@@ -46,6 +48,11 @@ export default function InquiryForm({ property }: { property: Property }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const emailToSend = (email || account?.email || "").trim();
+    if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)*\.[A-Za-z]{2,}$/.test(emailToSend)) {
+      setError("Enter a valid email address, like name@example.com.");
+      return;
+    }
     const phoneIssue = phoneProblem(phone);
     if (phoneIssue) {
       setError(`Phone: ${phoneIssue}`);
@@ -53,12 +60,14 @@ export default function InquiryForm({ property }: { property: Property }) {
     }
     setBusy(true);
     const result = await PropertyApi.sendInquiry(
-      { propertyId: property.id, name: (name || account?.name || "").trim(), email: (email || account?.email || "").trim(), phone: cleanPhone(phone) || undefined, message: plan && (bothWays || !allowsFullPayment(property)) ? `${message.trim()}\n\nPayment preference: ${bothWays && payWith === "full" ? "in full" : `in installments (${describePlan(plan)})`}` : message.trim() },
+      { propertyId: property.id, name: (name || account?.name || "").trim(), email: emailToSend, phone: cleanPhone(phone) || undefined, message: plan && (bothWays || !allowsFullPayment(property)) ? `${message.trim()}\n\nPayment preference: ${bothWays && payWith === "full" ? "in full" : `in installments (${describePlan(plan)})`}` : message.trim() },
       token
     );
     setBusy(false);
-    if (result.ok) setSent(true);
-    else setError(result.error);
+    if (result.ok) {
+      setSent(true);
+      showToast(`Your message about "${property.title}" was sent to the ${posterLabel}.`);
+    } else setError(result.error);
   }
 
   return (

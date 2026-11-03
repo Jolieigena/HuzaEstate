@@ -572,11 +572,10 @@ function PostPropertyForm() {
                 <>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bedrooms')}</label>
-                    <input
-                      type="number"
+                    <FormattedNumberInput
                       value={bedrooms}
-                      onChange={(e) => setBedrooms(e.target.value)}
-                      min={listingType === 'sale' ? 1 : 0}
+                      onChange={setBedrooms}
+                      maxDecimals={0}
                       placeholder={t('e.g. 4')}
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -585,11 +584,10 @@ function PostPropertyForm() {
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">{t('Bathrooms')}</label>
-                    <input
-                      type="number"
+                    <FormattedNumberInput
                       value={bathrooms}
-                      onChange={(e) => setBathrooms(e.target.value)}
-                      min={listingType === 'sale' ? 1 : 0}
+                      onChange={setBathrooms}
+                      maxDecimals={0}
                       placeholder={t('e.g. 3')}
                       required
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
@@ -601,12 +599,10 @@ function PostPropertyForm() {
               <div className="sm:col-span-2">
                 <label className="block text-sm font-bold text-slate-700 mb-2">{t('Size')}</label>
                 <div className="flex gap-2">
-                  <input
-                    type="number"
+                  <FormattedNumberInput
                     value={sqmDisplayValue}
-                    onChange={(e) => handleSqmChange(e.target.value)}
-                    min="0"
-                    step="any"
+                    onChange={handleSqmChange}
+                    maxDecimals={sqmUnit === 'sqkm' ? 6 : 2}
                     required
                     placeholder={sqmUnit === 'sqkm' ? t('e.g. 0.5') : t('e.g. 450')}
                     className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"

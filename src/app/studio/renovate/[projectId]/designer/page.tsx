@@ -44,6 +44,23 @@ function cloneDesign(d: ManualRenovationDesign): ManualRenovationDesign {
   return JSON.parse(JSON.stringify(d));
 }
 
+/** A box for a list typed with commas. It keeps what was typed (so a comma or a space can be typed) and hands back the list. */
+function CommaListInput({ id, items, onChange }: { id: string; items: string[]; onChange: (items: string[]) => void }) {
+  const [text, setText] = useState(() => items.join(", "));
+  return (
+    <input
+      id={id}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value);
+        onChange(e.target.value.split(",").map((part) => part.trim()).filter(Boolean));
+      }}
+      onBlur={() => setText(items.join(", "))}
+      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+    />
+  );
+}
+
 export default function DesignerPage() {
   const project = useRenovationProjectContext();
   const { showToast } = useToast();
@@ -288,11 +305,11 @@ export default function DesignerPage() {
                     <label htmlFor={`list-${listKey}`} className="block text-xs font-bold text-slate-500 mb-1 capitalize">
                       {listKey.replace("Items", "")} items (comma separated)
                     </label>
-                    <input
+                    <CommaListInput
+                      key={`${selectedArea.id}-${listKey}`}
                       id={`list-${listKey}`}
-                      value={selectedArea[listKey].join(", ")}
-                      onChange={(e) => updateArea(selectedArea.id, { [listKey]: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-                      className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
+                      items={selectedArea[listKey]}
+                      onChange={(items) => updateArea(selectedArea.id, { [listKey]: items })}
                     />
                   </div>
                 ))}
