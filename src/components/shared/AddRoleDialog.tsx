@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Dialog from "@/components/Dialog";
 import MultiSelectCombobox from "@/components/shared/MultiSelectCombobox";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
@@ -19,7 +20,8 @@ const fieldClass = "w-full rounded-xl border border-slate-200 px-4 py-3 focus:bo
  *  Switch role in the account menu. A professional or a supplier gives the basics of their profile here, so the profile
  *  form is already part filled when they open it. `roles` is what the account can still ask for. */
 export default function AddRoleDialog({ open, onClose, roles }: { open: boolean; onClose: () => void; roles: RequestableRole[] }) {
-  const { token, account } = useAuth();
+  const { token, account, refreshAccount } = useAuth();
+  const router = useRouter();
   const { showToast } = useToast();
   const { t } = useLanguage();
   const titleId = useId();
@@ -105,6 +107,14 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
     setSaving(false);
     if (!result.ok) {
       setError(result.error);
+      return;
+    }
+    if (result.data.status === "approved") {
+      // A shop opens at once: refresh the account so the supplier workspace is there, and go to it.
+      await refreshAccount();
+      showToast(t("Your shop is open. Finish your profile, then add your products."));
+      onClose();
+      router.push("/supplier");
       return;
     }
     showToast(t("Request sent. We will let you know when it is answered."));

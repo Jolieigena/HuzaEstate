@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Select from "@/components/shared/Select";
@@ -126,7 +127,12 @@ function Catalog() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
-      <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Shop</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Shop</h1>
+        <Link href="/open-a-shop" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
+          Open your shop
+        </Link>
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <input
