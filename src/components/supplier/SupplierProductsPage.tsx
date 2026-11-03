@@ -203,7 +203,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
     if (!token) return;
     setBusy(true);
     setError("");
-    const input: ProductInput = { name: name.trim(), description: description.trim(), category, images, price: Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), ...(stock === "in_stock" && quantityText.trim() !== "" ? { quantity: Number(quantityText), lowStockAt: Number(lowText || "3") } : {}), status };
+    const input: ProductInput = { name: name.trim(), description: description.trim(), category: category.trim(), images, price: Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), ...(stock === "in_stock" && quantityText.trim() !== "" ? { quantity: Number(quantityText), lowStockAt: Number(lowText || "3") } : {}), status };
     const result = product ? await FurnitureApi.update(token, product.id, input) : await FurnitureApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -214,7 +214,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
     onSaved();
   };
 
-  const complete = name.trim() !== "" && category !== "" && Number(priceText) > 0;
+  const complete = name.trim() !== "" && category.trim() !== "" && Number(priceText) > 0;
 
   return (
     <div className="flex max-h-[88vh] flex-col p-6">
@@ -255,16 +255,14 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
           <>
             <label className="block text-sm font-bold text-slate-700">
               {t("Category")}
-              <Select className={`${fieldClass} mt-1`} value={category} aria-label={t("Category")} onChange={(e) => setCategory(e.target.value)}>
-                <option value="">{t("Choose a category")}</option>
+              <input className={`${fieldClass} mt-1`} list="product-categories" value={category} maxLength={60} placeholder={t("Choose or type a category")} aria-label={t("Category")} onChange={(e) => setCategory(e.target.value)} />
+              <datalist id="product-categories">
                 {FURNITURE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+                  <option key={c} value={c} />
                 ))}
-              </Select>
+              </datalist>
             </label>
-            {category !== "" && (
+            {category.trim() !== "" && (
               <>
                 <div className="grid grid-cols-[1fr_7rem] gap-3">
                   <label className="block text-sm font-bold text-slate-700">

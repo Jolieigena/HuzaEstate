@@ -37,6 +37,7 @@ export default function OpenAShopPage() {
   // What the shop is
   const [shopName, setShopName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
+  const [customCategory, setCustomCategory] = useState("");
   const [country, setCountry] = useState(() => findCountry(account?.country ?? "")?.name ?? "");
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
@@ -106,6 +107,13 @@ export default function OpenAShopPage() {
   }
 
   const toggleCategory = (name: string) => setCategories((list) => (list.includes(name) ? list.filter((c) => c !== name) : [...list, name]));
+  // Anything that is not in the suggestions: typed, added as one more choice.
+  const addCustomCategory = () => {
+    const text = customCategory.trim().replace(/\s+/g, " ").slice(0, 60);
+    if (text && !categories.some((c) => c.toLowerCase() === text.toLowerCase())) setCategories((list) => [...list, text]);
+    setCustomCategory("");
+  };
+  const customCategories = categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c));
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -220,6 +228,36 @@ export default function OpenAShopPage() {
               </button>
             );
           })}
+          {customCategories.map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed
+              aria-label={`Remove ${name}`}
+              onClick={() => toggleCategory(name)}
+              className="rounded-full border border-[#2ec440] bg-[#2ec440]/10 py-2 pl-4 pr-3 text-sm font-semibold text-[#219b31]"
+            >
+              {name} <span aria-hidden="true" className="ml-1">×</span>
+            </button>
+          ))}
+        </div>
+        <div className="mt-3 flex gap-2">
+          <input
+            className={fieldClass}
+            placeholder="Something else you sell"
+            value={customCategory}
+            maxLength={60}
+            onChange={(e) => setCustomCategory(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addCustomCategory();
+              }
+            }}
+          />
+          <button type="button" onClick={addCustomCategory} disabled={!customCategory.trim()} className="rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+            Add
+          </button>
         </div>
       </div>
 

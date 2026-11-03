@@ -34,6 +34,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
   const [years, setYears] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
+  const [customCategory, setCustomCategory] = useState("");
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<RequestableRole[]>([]);
   const [error, setError] = useState("");
@@ -70,6 +71,12 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
 
   const needsProfile = role === "professional" || role === "supplier";
   const alreadyAsked = pending.includes(role);
+
+  const addCustomCategory = () => {
+    const text = customCategory.trim().replace(/\s+/g, " ").slice(0, 60);
+    if (text && !categories.some((c) => c.toLowerCase() === text.toLowerCase())) setCategories((list) => [...list, text]);
+    setCustomCategory("");
+  };
 
   const toggleCategory = (name: string) => setCategories((list) => (list.includes(name) ? list.filter((c) => c !== name) : [...list, name]));
 
@@ -171,11 +178,29 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
               <div className="text-sm font-bold text-slate-700">
                 {t("What you sell")} <span className="font-normal text-slate-400">({t("optional")})</span>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {SUPPLIER_CATEGORIES.map((name) => (
+                  {[...SUPPLIER_CATEGORIES, ...categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c))].map((name) => (
                     <button key={name} type="button" aria-pressed={categories.includes(name)} onClick={() => toggleCategory(name)} className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${categories.includes(name) ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}>
                       {t(name)}
                     </button>
                   ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    className={fieldClass}
+                    placeholder={t("Something else")}
+                    value={customCategory}
+                    maxLength={60}
+                    onChange={(e) => setCustomCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustomCategory();
+                      }
+                    }}
+                  />
+                  <button type="button" onClick={addCustomCategory} disabled={!customCategory.trim()} className="rounded-xl bg-slate-900 px-4 text-sm font-bold text-white disabled:opacity-50">
+                    {t("Add")}
+                  </button>
                 </div>
               </div>
             </>

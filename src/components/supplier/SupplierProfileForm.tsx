@@ -96,7 +96,7 @@ export default function SupplierProfileForm() {
       ? t("Enter your city.")
       : !cleanPhone(phone)
         ? t("Enter your phone number.")
-        : (phoneProblem(phone) ?? (categories.length === 0 ? t("Choose at least one thing you sell.") : ""));
+        : (phoneProblem(phone) ?? "");
 
   const save = async () => {
     if (!token) return;
