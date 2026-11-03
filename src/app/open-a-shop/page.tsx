@@ -33,20 +33,55 @@ export default function OpenAShopPage() {
   const roles = account?.roles ?? [];
   const isStaff = roles.includes("administrator") || roles.includes("organization_admin");
 
-  const panel = (children: React.ReactNode) => (
-    <main className="mx-auto max-w-xl px-6 py-14 sm:py-20">
-      <h1 className="mb-8 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">Open your shop</h1>
-      {children}
+  // The same two-part page for every state: what the shop is about on the left, what to do next on the right.
+  const panel = (title: string, children: React.ReactNode) => (
+    <main className="mx-auto max-w-6xl px-6 py-10 sm:py-16">
+      <div className="grid items-stretch gap-6 lg:grid-cols-[1fr_1.05fr] lg:gap-8">
+        <aside className="relative overflow-hidden rounded-[2rem] bg-slate-900 px-7 py-10 text-white sm:px-10 sm:py-12">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#2ec440]/25 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-10 h-56 w-56 rounded-full bg-[#2ec440]/10 blur-3xl" />
+          <div className="relative">
+            <h1 className="text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl">
+              Open your shop.
+              <br />
+              <span className="text-[#2ec440]">Start selling.</span>
+            </h1>
+            <ol className="mt-9 space-y-3">
+              {["Open your shop", "Add your products and prices", "Get orders and get paid"].map((step, index) => (
+                <li key={step} className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2ec440] text-sm font-black text-white">{index + 1}</span>
+                  <span className="font-bold">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <div className="mt-8 flex flex-wrap gap-2">
+              {SUPPLIER_CATEGORIES.slice(0, 7).map((name) => (
+                <span key={name} className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-300">
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        </aside>
+
+        <section className="flex items-center">
+          <div className="w-full rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+            <h2 className="mb-6 text-2xl font-extrabold tracking-tight text-slate-900">{title}</h2>
+            {children}
+          </div>
+        </section>
+      </div>
     </main>
   );
 
   if (!isLoggedIn || !account) {
     return panel(
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Link href={`/signup?redirect=${encodeURIComponent(PATH)}`} className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+      "Start with your account",
+      <div className="flex flex-col gap-3">
+        <Link href={`/signup?redirect=${encodeURIComponent(PATH)}`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
           Create an account
         </Link>
-        <Link href={`/login?redirect=${encodeURIComponent(PATH)}`} className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
+        <Link href={`/login?redirect=${encodeURIComponent(PATH)}`} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
           Sign in
         </Link>
       </div>,
@@ -55,6 +90,7 @@ export default function OpenAShopPage() {
 
   if (roles.includes("supplier")) {
     return panel(
+      "Your shop is open",
       <Link href="/supplier" className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
         Go to your shop
       </Link>,
@@ -62,7 +98,7 @@ export default function OpenAShopPage() {
   }
 
   if (isStaff) {
-    return panel(<p className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-600">Administrator and organisation accounts cannot open a shop. Use a different account.</p>);
+    return panel("Use a different account", <p className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-600">Administrator and organisation accounts cannot open a shop. Use a different account.</p>);
   }
 
   const toggleCategory = (name: string) => setCategories((list) => (list.includes(name) ? list.filter((c) => c !== name) : [...list, name]));
@@ -93,7 +129,8 @@ export default function OpenAShopPage() {
   };
 
   return panel(
-    <form onSubmit={submit} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+    "Tell us about your shop",
+    <form onSubmit={submit} className="space-y-6">
       <label className="block text-sm font-bold text-slate-700">
         Shop name
         <input className={`${fieldClass} mt-2`} value={shopName} maxLength={160} onChange={(e) => setShopName(e.target.value)} autoFocus />
