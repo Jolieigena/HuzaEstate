@@ -12,9 +12,6 @@ export default function SellPage() {
       {/* Kept compact so the plans below are visible without scrolling. */}
       <section className="pt-8 pb-10 md:pt-10 md:pb-12">
         <div className="max-w-3xl mx-auto px-6 sm:px-10 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs uppercase tracking-wide mb-5">
-            HuzaEstate Seller Network
-          </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-5 leading-[1.1]">
             Sell/Rent your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more</span>
           </h1>
