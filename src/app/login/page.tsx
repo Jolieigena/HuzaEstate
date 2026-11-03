@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { accountDestination } from '@/lib/navigation';
 import PasswordInput from '@/components/shared/PasswordInput';
-import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import GoogleAuthButton, { GOOGLE_NO_ACCOUNT_MESSAGE } from '@/components/auth/GoogleAuthButton';
 import { useLanguage } from '@/lib/i18n/language';
 import LanguagePicker from '@/components/LanguagePicker';
 
@@ -55,6 +55,14 @@ function LoginForm() {
       {error && (
         <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">
           {error}
+          {error === GOOGLE_NO_ACCOUNT_MESSAGE && (
+            <>
+              {' '}
+              <Link href={signupHref} className="underline underline-offset-2 hover:text-red-800">
+                {t('Sign up with Google')}
+              </Link>
+            </>
+          )}
         </p>
       )}
 

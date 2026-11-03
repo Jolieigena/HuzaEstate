@@ -30,6 +30,9 @@ declare global {
   }
 }
 
+/** What the Sign in page says when the Google account has no HuzaEstate account yet. The page recognises it to offer a link to sign up. */
+export const GOOGLE_NO_ACCOUNT_MESSAGE = "No account found for this Google account. Please sign up first.";
+
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
@@ -124,7 +127,7 @@ export default function GoogleAuthButton({ text = "signin_with", allowCreate = f
       const result = await current.loginWithGoogle(idToken, current.allowCreate ? { termsAccepted: true, country: current.country } : {});
       if (!result.ok) {
         setIsSubmitting(false);
-        current.onError("noAccount" in result ? "No account found for this Google account. Please sign up first." : result.error);
+        current.onError("noAccount" in result ? GOOGLE_NO_ACCOUNT_MESSAGE : result.error);
         return;
       }
       current.onSuccess(result.account);
