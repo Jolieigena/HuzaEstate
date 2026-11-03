@@ -19,7 +19,7 @@ export default function SellPage() {
             Sell/Rent your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more</span>
           </h1>
           <p className="text-slate-500 text-base sm:text-lg leading-relaxed">
-            Join thousands of owners who trust our elite network to seamlessly list, market, and sell their properties at peak market value.
+            List your property, reach buyers across Rwanda and choose the plan that fits.
           </p>
         </div>
       </section>
