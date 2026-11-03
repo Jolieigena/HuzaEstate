@@ -64,7 +64,7 @@ export default function SupplierProductsPage() {
     const result = await FurnitureApi.update(token, product.id, { ...toInput(product), status });
     if (!result.ok) showToast(result.error, "error");
     else {
-      showToast(status === "published" ? "Product published." : "Product hidden from the catalogue.");
+      showToast(status === "published" ? (result.data.product.review === "approved" ? "Product published." : "Sent for review. It goes live when it is approved.") : "Product hidden from the catalogue.");
       setReload((n) => n + 1);
     }
   };
@@ -102,6 +102,10 @@ export default function SupplierProductsPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</span>
                   {product.hidden ? (
                     <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">{t("Taken down")}</span>
+                  ) : product.status === "published" && product.review && product.review !== "approved" ? (
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.review === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+                      {product.review === "pending" ? t("Waiting for review") : product.review === "changes_requested" ? t("Changes needed") : t("Not approved")}
+                    </span>
                   ) : (
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? t("Published") : t("Draft")}</span>
                   )}
@@ -111,6 +115,9 @@ export default function SupplierProductsPage() {
                   {formatPrice(product.price, product.currency)} <span className="font-normal text-slate-400">· {STOCK_LABELS[product.stock]}</span>
                 </p>
                 {product.hidden && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{product.hiddenReason || "Taken down by the platform."}</p>}
+                {product.status === "published" && (product.review === "changes_requested" || product.review === "rejected") && product.reviewNote && (
+                  <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">{product.reviewNote}</p>
+                )}
                 {product.quantity !== undefined && (
                   <p className={`mt-1 text-xs font-bold ${product.quantity === 0 ? "text-red-600" : product.quantity <= (product.lowStockAt ?? 3) ? "text-amber-600" : "text-slate-500"}`}>
                     {product.quantity === 0 ? t("Sold out") : product.quantity <= (product.lowStockAt ?? 3) ? t("Running low: {count} left", { count: product.quantity }) : t("{count} in stock", { count: product.quantity })}
@@ -210,7 +217,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
       setError(result.error);
       return;
     }
-    showToast(status === "published" ? t("Product published.") : t("Product saved."));
+    showToast(status === "published" ? (result.data.product.review === "approved" ? t("Product published.") : t("Sent for review. It goes live when it is approved.")) : t("Product saved."));
     onSaved();
   };
 

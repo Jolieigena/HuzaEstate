@@ -57,6 +57,8 @@ export interface Storefront {
   memberSince?: string;
 }
 
+export type ProductReview = "pending" | "approved" | "changes_requested" | "rejected";
+
 export interface ModerationProduct {
   id: string;
   name: string;
@@ -69,6 +71,9 @@ export interface ModerationProduct {
   hidden: boolean;
   hiddenReason?: string;
   hiddenAt?: string;
+  /** Where it is in review before going live. */
+  review: ProductReview;
+  reviewNote?: string;
   updatedAt: string;
 }
 
@@ -105,6 +110,9 @@ export interface Product {
   /** Taken down by the platform, with the reason (only the supplier sees their own hidden products). */
   hidden?: boolean;
   hiddenReason?: string;
+  /** Review before buyers see it: a product is live only when this is "approved". The note says what was asked or why. */
+  review?: ProductReview;
+  reviewNote?: string;
   supplier?: ProductSupplier;
   createdAt: string;
 }
@@ -394,8 +402,11 @@ export const FurnitureApi = {
   moderationList: (token: string, query: { supplierId?: string; search?: string; state?: string; page?: number; limit?: number }) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
-    return call<{ products: ModerationProduct[]; total: number; hiddenCount: number; page: number; limit: number }>(`/furniture/moderation/products?${params.toString()}`, { token });
+    return call<{ products: ModerationProduct[]; total: number; hiddenCount: number; pendingCount: number; page: number; limit: number }>(`/furniture/moderation/products?${params.toString()}`, { token });
   },
   hideProduct: (token: string, id: string, reason: string) => call<{ hidden: boolean }>(`/furniture/moderation/products/${encodeURIComponent(id)}/hide`, { token, method: "POST", body: { reason } }),
+  /** Staff decide on a product that is waiting for review. Asking for changes or rejecting needs a reason. */
+  reviewProduct: (token: string, id: string, decision: "approve" | "request_changes" | "reject", reason?: string) =>
+    call<{ review: ProductReview }>(`/furniture/moderation/products/${encodeURIComponent(id)}/review`, { token, method: "POST", body: { decision, reason } }),
   restoreProduct: (token: string, id: string) => call<{ hidden: boolean }>(`/furniture/moderation/products/${encodeURIComponent(id)}/restore`, { token, method: "POST" }),
 };

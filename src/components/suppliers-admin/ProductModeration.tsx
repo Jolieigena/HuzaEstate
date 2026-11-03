@@ -14,8 +14,9 @@ import type { SuppliersScope } from "./SuppliersAdmin";
 
 const LIMIT = 25;
 
-/** Every published product from the suppliers a staff member looks after, with a way to take one down (with the reason the
- *  supplier is shown) and to put it back. Platform administrators see all suppliers, organisation admins those in their
+/** Every published product from the suppliers a staff member looks after. A product a supplier has just published waits here until
+ *  it is approved (or sent back with changes, or rejected, each with the reason the supplier is shown). A live one can be taken down
+ *  and put back. Platform administrators see all suppliers, organisation admins those in their
  *  organisation's countries. */
 export default function ProductModerationPage({ scope }: { scope: SuppliersScope }) {
   const { token, isAuthReady, account } = useAuth();
@@ -25,12 +26,13 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
 
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [state, setState] = useState("");
+  const [state, setState] = useState("pending");
   const [page, setPage] = useState(1);
-  const [data, setData] = useState<{ products: ModerationProduct[]; total: number; hiddenCount: number } | null>(null);
+  const [data, setData] = useState<{ products: ModerationProduct[]; total: number; hiddenCount: number; pendingCount: number } | null>(null);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [hiding, setHiding] = useState<ModerationProduct | null>(null);
+  const [deciding, setDeciding] = useState<{ product: ModerationProduct; decision: "request_changes" | "reject" } | null>(null);
   const [busyId, setBusyId] = useState("");
 
   // Typing waits a moment before searching so each keystroke is not a request.
@@ -66,6 +68,18 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
     setBusyId("");
     if (result.ok) {
       showToast("Product taken down. The supplier has been told.");
+      setReload((n) => n + 1);
+    } else showToast(result.error, "error");
+  }
+
+  async function decide(product: ModerationProduct, decision: "approve" | "request_changes" | "reject", reason?: string) {
+    if (!token) return;
+    setDeciding(null);
+    setBusyId(product.id);
+    const result = await FurnitureApi.reviewProduct(token, product.id, decision, reason);
+    setBusyId("");
+    if (result.ok) {
+      showToast(decision === "approve" ? "Approved. It is in the shop now." : "Done. The supplier has been told.");
       setReload((n) => n + 1);
     } else showToast(result.error, "error");
   }
@@ -108,8 +122,10 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
                 setPage(1);
               }}
             >
+              <option value="pending">Waiting for review{data ? ` (${data.pendingCount})` : ""}</option>
               <option value="">All products</option>
               <option value="live">Visible</option>
+              <option value="declined">Sent back or not approved</option>
               <option value="hidden">Taken down{data ? ` (${data.hiddenCount})` : ""}</option>
             </Select>
           </label>
@@ -145,7 +161,15 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold text-slate-700">{formatPrice(p.price, p.currency)}</td>
                   <td className="px-6 py-4">
-                    {p.hidden ? (
+                    {p.review !== "approved" ? (
+                      <>
+                        <StatusPill status={p.review === "pending" ? "Pending" : "Declined"} />
+                        <p className="mt-1 max-w-xs text-xs text-slate-500">
+                          {p.review === "pending" ? "Waiting for review" : p.review === "changes_requested" ? "Changes requested" : "Not approved"}
+                          {p.reviewNote ? `: ${p.reviewNote}` : ""}
+                        </p>
+                      </>
+                    ) : p.hidden ? (
                       <>
                         <StatusPill status="Declined" />
                         <p className="mt-1 max-w-xs text-xs text-slate-500">
@@ -158,7 +182,19 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    {p.hidden ? (
+                    {p.review === "pending" ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs hover:!border-[#2ec440] hover:!text-[#219b31]" disabled={busyId === p.id} onClick={() => decide(p, "approve")}>
+                          Approve
+                        </SecondaryButton>
+                        <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === p.id} onClick={() => setDeciding({ product: p, decision: "request_changes" })}>
+                          Ask for changes
+                        </SecondaryButton>
+                        <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs hover:!border-red-300 hover:!text-red-600" disabled={busyId === p.id} onClick={() => setDeciding({ product: p, decision: "reject" })}>
+                          Reject
+                        </SecondaryButton>
+                      </div>
+                    ) : p.review !== "approved" ? null : p.hidden ? (
                       <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === p.id} onClick={() => restore(p)}>
                         Restore
                       </SecondaryButton>
@@ -188,6 +224,15 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
         )}
       </RequirePermission>
 
+      <PromptModal
+        open={!!deciding}
+        onClose={() => setDeciding(null)}
+        onSubmit={(reason) => deciding && decide(deciding.product, deciding.decision, reason)}
+        title={deciding ? `${deciding.decision === "reject" ? "Reject" : "Ask for changes on"} "${deciding.product.name}"` : ""}
+        label="Reason for the supplier"
+        placeholder={deciding?.decision === "reject" ? "Why it cannot be sold here" : "What needs to change"}
+        submitLabel={deciding?.decision === "reject" ? "Reject" : "Send back"}
+      />
       <PromptModal open={!!hiding} onClose={() => setHiding(null)} onSubmit={hide} title={hiding ? `Take down "${hiding.name}"` : "Take down"} label="Reason for the supplier" placeholder="What needs to be fixed" submitLabel="Take down" />
     </PageFrame>
   );
