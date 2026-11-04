@@ -136,6 +136,8 @@ export type ProductSort = "newest" | "price_asc" | "price_desc" | "name";
 
 export interface ProductQuery {
   category?: string;
+  /** A shop tab: every category it lists. "other" is the categories no tab lists. */
+  group?: string;
   supplierId?: string;
   country?: string;
   availability?: "available" | "";
@@ -164,6 +166,26 @@ export interface ProductFacets {
   currencies: { code: string; count: number }[];
   available: number;
   total: number;
+}
+
+/** One tab of the shop and the categories in its dropdown, each with how many products are live in it. */
+export interface ShopGroup {
+  id: string;
+  name: string;
+  categories: { name: string; count: number }[];
+}
+
+export interface ShopTabs {
+  groups: ShopGroup[];
+  /** Categories that products use but no tab lists. */
+  other: { name: string; count: number }[];
+}
+
+/** What an administrator sends to change the tabs. A category with `was` set is a rename of that category. */
+export interface ShopGroupInput {
+  id?: string;
+  name: string;
+  categories: { name: string; was?: string }[];
 }
 
 export type OrderStatus = "requested" | "confirmed" | "shipped" | "declined" | "completed" | "cancelled";
@@ -359,6 +381,8 @@ export const FurnitureApi = {
     return call<ProductList>(`/furniture${text ? `?${text}` : ""}`);
   },
   filters: () => call<ProductFacets>("/furniture/filters"),
+  groups: () => call<ShopTabs>("/furniture/groups"),
+  saveGroups: (token: string, groups: ShopGroupInput[]) => call<{ groups: { id: string; name: string; categories: string[] }[] }>("/furniture/groups", { token, method: "PUT", body: { groups } }),
   mine: (token: string) => call<{ products: Product[] }>("/furniture/me", { token }),
   get: (id: string, token?: string | null) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token }),
   create: (token: string, input: ProductInput) => call<{ product: Product }>("/furniture", { token, method: "POST", body: input }),

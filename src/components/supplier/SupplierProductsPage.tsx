@@ -8,7 +8,8 @@ import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
-import { FURNITURE_CATEGORIES, FurnitureApi, STOCK_LABELS, formatPrice, type Product, type ProductInput, type StockStatus } from "@/lib/furniture/api";
+import { useSuggestedCategories } from "@/lib/furniture/groups";
+import { FurnitureApi, STOCK_LABELS, formatPrice, type Product, type ProductInput, type StockStatus } from "@/lib/furniture/api";
 import { useLanguage } from "@/lib/i18n/language";
 
 const MAX_IMAGES = 6;
@@ -176,6 +177,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   const fileInput = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
+  const suggestedCategories = useSuggestedCategories();
   const [description, setDescription] = useState(product?.description ?? "");
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [priceText, setPriceText] = useState(product ? String(product.price) : "");
@@ -264,7 +266,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
               {t("Category")}
               <input className={`${fieldClass} mt-1`} list="product-categories" value={category} maxLength={60} placeholder={t("Choose or type a category")} aria-label={t("Category")} onChange={(e) => setCategory(e.target.value)} />
               <datalist id="product-categories">
-                {FURNITURE_CATEGORIES.map((c) => (
+                {suggestedCategories.map((c) => (
                   <option key={c} value={c} />
                 ))}
               </datalist>
