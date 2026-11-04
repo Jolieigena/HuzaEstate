@@ -138,6 +138,8 @@ export type ProductSort = "newest" | "price_asc" | "price_desc" | "name";
 
 export interface ProductQuery {
   category?: string;
+  /** A shop tab: every category it lists. "other" is the categories no tab lists. */
+  group?: string;
   supplierId?: string;
   country?: string;
   availability?: "available" | "";
@@ -166,6 +168,26 @@ export interface ProductFacets {
   currencies: { code: string; count: number }[];
   available: number;
   total: number;
+}
+
+/** One tab of the shop and the categories in its dropdown, each with how many products are live in it. */
+export interface ShopGroup {
+  id: string;
+  name: string;
+  categories: { name: string; count: number }[];
+}
+
+export interface ShopTabs {
+  groups: ShopGroup[];
+  /** Categories that products use but no tab lists. */
+  other: { name: string; count: number }[];
+}
+
+/** What an administrator sends to change the tabs. A category with `was` set is a rename of that category. */
+export interface ShopGroupInput {
+  id?: string;
+  name: string;
+  categories: { name: string; was?: string }[];
 }
 
 export type OrderStatus = "requested" | "confirmed" | "shipped" | "declined" | "completed" | "cancelled";

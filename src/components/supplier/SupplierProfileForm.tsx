@@ -6,7 +6,8 @@ import { findCountry } from "@/lib/countries";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
-import { SUPPLIER_CATEGORIES, SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
+import { useSuggestedCategories } from "@/lib/furniture/groups";
+import { SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import DeliverySettings from "@/components/supplier/DeliverySettings";
 import { Card, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "@/components/professional/ui";
@@ -36,6 +37,7 @@ export default function SupplierProfileForm() {
   const [phone, setPhone] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
+  const suggested = useSuggestedCategories();
   const [custom, setCustom] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -118,7 +120,7 @@ export default function SupplierProfileForm() {
   };
 
   const incomplete = account?.supplierProfileCompleted === false;
-  const extra = categories.filter((c) => !SUPPLIER_CATEGORIES.includes(c));
+  const extra = categories.filter((c) => !suggested.includes(c));
 
   return (
     <PageFrame title={t("Company profile")}>
@@ -169,7 +171,7 @@ export default function SupplierProfileForm() {
           <div>
             <p className="text-sm font-bold text-slate-700">{t("What you sell")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {[...SUPPLIER_CATEGORIES, ...extra].map((name) => (
+              {[...suggested, ...extra].map((name) => (
                 <button key={name} type="button" onClick={() => toggle(name)} aria-pressed={categories.includes(name)} className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${categories.includes(name) ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}>
                   {name}
                 </button>

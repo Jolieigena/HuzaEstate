@@ -2,16 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Select from "@/components/shared/Select";
 import ProductCard from "@/components/shop/ProductCard";
 import { FurnitureApi, type ProductFacets, type ProductList, type ProductSort } from "@/lib/furniture/api";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { priceBracketsFor } from "@/lib/currency/brackets";
 import { useDisplayCurrency } from "@/lib/currency/display";
+import { useShopTabs } from "@/lib/furniture/groups";
 
 const PAGE_SIZE = 24;
 const SORT_LABELS: Record<ProductSort, string> = { newest: "Newest first", price_asc: "Price: low to high", price_desc: "Price: high to low", name: "Name A to Z" };
+const OTHER = "other";
 const USD_EDGES = [50, 150, 300, 600, 1200];
 
 export default function FurnitureCatalogPage() {
@@ -30,6 +32,7 @@ function Catalog() {
   // Every filter lives in the web address, so a filtered view can be shared and reached with Back.
   const get = (key: string) => params.get(key) ?? "";
   const category = get("category");
+  const group = get("group");
   const supplier = get("supplier");
   const country = get("country");
   const available = get("available") === "1";
@@ -83,6 +86,7 @@ function Catalog() {
     let cancelled = false;
     FurnitureApi.list({
       category,
+      group,
       supplierId: supplier,
       country,
       availability: available ? "available" : "",
@@ -105,10 +109,31 @@ function Catalog() {
   const list = data?.list;
   const loading = data?.key !== key;
   const lastPage = Math.max(Math.ceil((list?.total ?? 0) / PAGE_SIZE), 1);
+  const tabs = useShopTabs();
+  // The tab a view belongs to: the one chosen, or the one that lists the chosen category.
+  const activeTab = group || (category ? tabs?.groups.find((g) => g.categories.some((c) => c.name === category))?.name ?? (tabs?.other.some((c) => c.name === category) ? OTHER : "") : "");
+  const [openTab, setOpenTab] = useState("");
+  const tabsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!openTab) return;
+    const onDown = (e: MouseEvent) => {
+      if (tabsRef.current && !tabsRef.current.contains(e.target as Node)) setOpenTab("");
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenTab("");
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [openTab]);
   const supplierName = facets?.suppliers.find((s) => s.id === supplier)?.name;
 
   const chips: { label: string; clear: Record<string, string | undefined> }[] = [];
-  if (category) chips.push({ label: category, clear: { category: undefined } });
+  if (group && !category) chips.push({ label: group === OTHER ? "Other" : group, clear: { group: undefined } });
+  if (category) chips.push({ label: category, clear: { category: undefined, group: undefined } });
   if (supplier) chips.push({ label: supplierName ?? "Supplier", clear: { supplier: undefined } });
   if (country) chips.push({ label: country, clear: { country: undefined } });
   if (priced) chips.push({ label: activeBracket >= 0 ? brackets[activeBracket].label : `${minPrice || 0} to ${maxPrice || "any"}`, clear: { min: undefined, max: undefined, currency: undefined } });
@@ -142,16 +167,6 @@ function Catalog() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
         />
-        <div className="w-56">
-          <Select className={selectClass} value={category} aria-label="Category" onChange={(e) => update({ category: e.target.value || undefined })}>
-            <option value="">All categories</option>
-            {(facets?.categories ?? []).map((c) => (
-              <option key={c.name} value={c.name}>
-                {withCount(c.name, c.count)}
-              </option>
-            ))}
-          </Select>
-        </div>
         <button
           type="button"
           aria-expanded={panelOpen}
@@ -174,6 +189,59 @@ function Catalog() {
           </Select>
         </div>
       </div>
+
+      {tabs && (tabs.groups.length > 0 || tabs.other.length > 0) && (
+        <div ref={tabsRef} className="mt-5">
+          <div role="tablist" aria-label="Shop categories" className="flex gap-1 overflow-x-auto border-b border-slate-200">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!activeTab}
+              onClick={() => {
+                setOpenTab("");
+                update({ category: undefined, group: undefined });
+              }}
+              className={`relative shrink-0 px-4 py-3 text-sm font-bold transition-colors ${!activeTab ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
+            >
+              All
+            </button>
+            {[...tabs.groups.map((g) => ({ key: g.name, label: g.name, categories: g.categories })), ...(tabs.other.length > 0 ? [{ key: OTHER, label: "Other", categories: tabs.other }] : [])].map((tab) => {
+              const open = openTab === tab.key;
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-haspopup="true"
+                  aria-expanded={open}
+                  onClick={() => setOpenTab(open ? "" : tab.key)}
+                  className={`relative inline-flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-bold transition-colors ${active ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
+                >
+                  {tab.label}
+                  <svg className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              );
+            })}
+          </div>
+          {openTab && (
+            <TabMenu
+              label={openTab === OTHER ? "Other" : openTab}
+              categories={openTab === OTHER ? tabs.other : tabs.groups.find((g) => g.name === openTab)?.categories ?? []}
+              selectedCategory={category}
+              wholeTabSelected={group === openTab && !category}
+              onPick={(next) => {
+                setOpenTab("");
+                update(next);
+              }}
+              tab={openTab}
+            />
+          )}
+        </div>
+      )}
 
       {panelOpen && (
         <section aria-label="Filters" className="mt-5 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -285,5 +353,24 @@ function Catalog() {
         </div>
       )}
     </main>
+  );
+}
+
+/** The dropdown under a shop tab: the whole tab, then each of its categories with how many products it has. */
+function TabMenu({ label, tab, categories, selectedCategory, wholeTabSelected, onPick }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategory: string; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void }) {
+  const item = "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50";
+  return (
+    <div role="menu" aria-label={`${label} categories`} className="grid gap-1 rounded-b-2xl border border-t-0 border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <button type="button" role="menuitem" onClick={() => onPick({ group: tab, category: undefined })} className={`${item} font-bold ${wholeTabSelected ? "bg-slate-50 text-[#219b31]" : "text-slate-900"}`}>
+        All in {label}
+      </button>
+      {categories.map((c) => (
+        <button key={c.name} type="button" role="menuitem" onClick={() => onPick({ category: c.name, group: undefined })} className={`${item} font-semibold ${selectedCategory === c.name ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
+          <span>{c.name}</span>
+          <span className="text-xs font-bold text-slate-400">{c.count}</span>
+        </button>
+      ))}
+      {categories.length === 0 && <p className="px-3 py-2.5 text-sm font-semibold text-slate-400">No categories in this tab yet</p>}
+    </div>
   );
 }
