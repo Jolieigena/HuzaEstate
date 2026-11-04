@@ -56,7 +56,7 @@ export default function WhatsappSignIn({ onSuccess }: { onSuccess: (account: Acc
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:border-[#25D366] hover:text-slate-900"
+        className="mx-auto mt-3 flex h-10 w-full max-w-[400px] items-center justify-center gap-3 rounded border border-[#dadce0] bg-white text-sm font-semibold text-[#3c4043] transition-colors hover:border-[#25D366] hover:bg-[#f8faf9]"
       >
         <WhatsappIcon />
         {t("Sign in with WhatsApp")}
@@ -65,7 +65,7 @@ export default function WhatsappSignIn({ onSuccess }: { onSuccess: (account: Acc
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+    <div className="mx-auto mt-3 w-full max-w-[400px] rounded-2xl border border-slate-200 bg-slate-50 p-4">
       {!sentTo ? (
         <form onSubmit={send} className="space-y-3">
           <div className="text-sm font-bold text-slate-700">
