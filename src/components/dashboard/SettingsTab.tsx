@@ -7,6 +7,7 @@ import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { COUNTRY_OPTIONS } from "@/lib/countries";
 import { useToast } from "@/lib/toast-context";
 import Select from "@/components/shared/Select";
+import WhatsappNumberCard from "@/components/shared/WhatsappNumberCard";
 
 // Your country is only ever a best-effort, IP-detected guess made once at signup — this is
 // where you can correct it if it's wrong, or if you've since moved. See access-service's
@@ -65,6 +66,8 @@ export default function SettingsTab() {
           {saving ? t("Saving…") : t("Save")}
         </button>
       </div>
+
+      <WhatsappNumberCard className="mt-6 max-w-lg" />
     </div>
   );
 }

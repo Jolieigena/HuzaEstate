@@ -40,6 +40,8 @@ export interface Account {
   /** organization_admin accounts only — empty/absent means full access, see lib/orgPermissions.ts. */
   permissions?: string[];
   isApprovedSeller: boolean;
+  /** The WhatsApp number this account signs in with, once proven with a code. */
+  whatsappPhone?: string;
   /** True for accounts created by an administrator (or the bootstrap admin account) that are
    * still on their own emailed, randomly generated password. The app should force a
    * change-password step before letting the account use anything else. */
@@ -124,6 +126,8 @@ interface AuthContextValue {
   loginWithCredentials: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   /** Signs in with a Google ID token. A new Google identity gets a customer account only when termsAccepted is true (sign-up page). */
   loginWithGoogle: (idToken: string, options?: { termsAccepted?: boolean; country?: string }) => Promise<GoogleAuthResult>;
+  /** Signs in with the code WhatsApp sent to a verified number (see WhatsappApi.requestCode). */
+  loginWithWhatsapp: (phone: string, code: string) => Promise<AuthResult>;
   logout: () => void;
   isApprovedSeller: boolean;
   /** Re-fetches /auth/me and updates the local account — used after a backend-driven role/plan
@@ -288,6 +292,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithWhatsapp = async (phone: string, code: string): Promise<AuthResult> => {
+    try {
+      const res = await fetch(`${API_URL}/auth/whatsapp/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-huza-client": "web" },
+        body: JSON.stringify({ phone, code }),
+      });
+      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      const data = await res.json();
+      const nextAccount = data.account as Account;
+      applySession(data.token as string, nextAccount);
+      return { ok: true, account: nextAccount, token: data.token as string };
+    } catch {
+      return { ok: false, error: "Could not reach the server. Please try again." };
+    }
+  };
+
   const loginWithGoogle = async (idToken: string, options: { termsAccepted?: boolean; country?: string } = {}): Promise<GoogleAuthResult> => {
     try {
       const res = await fetch(`${API_URL}/auth/google`, {
@@ -430,7 +451,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, loginWithGoogle, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
+    <AuthContext.Provider value={{ isLoggedIn, signup, loginWithCredentials, loginWithGoogle, loginWithWhatsapp, logout, isApprovedSeller, refreshAccount, isAuthReady, account, activeRole, switchRole, token, changePassword, createUser, updateMyCountry, updateMyCompany }}>
       {children}
     </AuthContext.Provider>
   );

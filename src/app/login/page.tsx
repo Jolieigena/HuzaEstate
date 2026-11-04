@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { accountDestination } from '@/lib/navigation';
 import PasswordInput from '@/components/shared/PasswordInput';
 import GoogleAuthButton, { GOOGLE_NO_ACCOUNT_MESSAGE } from '@/components/auth/GoogleAuthButton';
+import WhatsappSignIn from '@/components/auth/WhatsappSignIn';
 import { useLanguage } from '@/lib/i18n/language';
 import LanguagePicker from '@/components/LanguagePicker';
 
@@ -118,6 +119,12 @@ function LoginForm() {
             router.push(`/change-password?redirect=${encodeURIComponent(accountDestination(account, redirectParam))}`);
             return;
           }
+          router.push(accountDestination(account, redirectParam));
+        }}
+      />
+
+      <WhatsappSignIn
+        onSuccess={(account) => {
           router.push(accountDestination(account, redirectParam));
         }}
       />
