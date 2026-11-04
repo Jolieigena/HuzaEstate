@@ -393,6 +393,8 @@ export const FurnitureApi = {
     }
     return result;
   },
+  groups: () => call<ShopTabs>("/furniture/groups"),
+  saveGroups: (token: string, groups: ShopGroupInput[]) => call<{ groups: { id: string; name: string; categories: string[] }[] }>("/furniture/groups", { token, method: "PUT", body: { groups } }),
   mine: (token: string) => call<{ products: Product[] }>("/furniture/me", { token }),
   get: async (id: string, token?: string | null): Promise<Result<{ product: Product }>> => {
     const result = await call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token });
