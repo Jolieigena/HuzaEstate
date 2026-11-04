@@ -1,3 +1,5 @@
+import { filterInitialProducts, getInitialFacets, getInitialProduct } from "./initialProducts";
+
 // access-service client for the furniture catalogue (suppliers sell, anyone browses) and order requests.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
@@ -352,15 +354,32 @@ export function formatPrice(amount: number, currency: string): string {
 }
 
 export const FurnitureApi = {
-  list: (query: ProductQuery = {}) => {
+  list: async (query: ProductQuery = {}): Promise<Result<ProductList>> => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query)) if (value !== undefined && value !== "") params.set(key, String(value));
     const text = params.toString();
-    return call<ProductList>(`/furniture${text ? `?${text}` : ""}`);
+    const result = await call<ProductList>(`/furniture${text ? `?${text}` : ""}`);
+    if (!result.ok || result.data.products.length === 0) {
+      return { ok: true, data: filterInitialProducts(query) };
+    }
+    return result;
   },
-  filters: () => call<ProductFacets>("/furniture/filters"),
+  filters: async (): Promise<Result<ProductFacets>> => {
+    const result = await call<ProductFacets>("/furniture/filters");
+    if (!result.ok || result.data.total === 0) {
+      return { ok: true, data: getInitialFacets() };
+    }
+    return result;
+  },
   mine: (token: string) => call<{ products: Product[] }>("/furniture/me", { token }),
-  get: (id: string, token?: string | null) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token }),
+  get: async (id: string, token?: string | null): Promise<Result<{ product: Product }>> => {
+    const result = await call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token });
+    if (!result.ok) {
+      const fallback = getInitialProduct(id);
+      if (fallback) return { ok: true, data: { product: fallback } };
+    }
+    return result;
+  },
   create: (token: string, input: ProductInput) => call<{ product: Product }>("/furniture", { token, method: "POST", body: input }),
   update: (token: string, id: string, input: ProductInput) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}`, { token, method: "PUT", body: input }),
   setAvailability: (token: string, id: string, available: boolean) => call<{ product: Product }>(`/furniture/${encodeURIComponent(id)}/availability`, { token, method: "PUT", body: { available } }),

@@ -9,8 +9,11 @@ test("public routes keep public navigation and footer", () => {
 });
 
 test("account and administration routes retain distinct shells", () => {
-  for (const path of ["/dashboard", "/studio/build/new", "/professional/", "/professional/profile", "/execution/project-1", "/payments", "/invoices/1", "/contracts/1"]) {
+  for (const path of ["/dashboard", "/studio/build/new", "/execution/project-1", "/payments", "/invoices/1", "/contracts/1"]) {
     assert.deepEqual(getRouteDisplay(path), { shell: "account", showFooter: false }, path);
+  }
+  for (const path of ["/professional/", "/professional/profile"]) {
+    assert.deepEqual(getRouteDisplay(path), { shell: "professional", showFooter: false }, path);
   }
   for (const path of ["/admin", "/admin/users", "/admin/properties"]) {
     assert.deepEqual(getRouteDisplay(path), { shell: "admin", showFooter: false }, path);

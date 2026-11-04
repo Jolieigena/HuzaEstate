@@ -37,7 +37,7 @@ test('presign rejection stops before uploading bytes', async (t) => {
 
 test('failed storage PUT never returns a URL to publish', async (t) => {
   let calls = 0;
-  t.mock.method(globalThis, 'fetch', async () => ++calls === 1
+  t.mock.method(globalThis, 'fetch', async () => ++calls % 2 === 1
     ? Response.json({ uploadUrl: 'http://localhost:9000/upload', publicUrl: 'http://localhost:9000/photo.jpg' })
     : new Response(null, { status: 500 }));
   await assert.rejects(uploadMedia(new Blob(), 'image/jpeg', 'token'), /Upload failed/);
