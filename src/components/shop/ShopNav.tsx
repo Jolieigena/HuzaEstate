@@ -24,13 +24,13 @@ export default function ShopNav() {
             key={item.href}
             href={item.href}
             aria-current={item.active ? "page" : undefined}
-            className={`relative inline-flex shrink-0 items-center gap-2 px-3 py-3 text-sm font-bold transition-colors sm:px-4 ${item.active ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
+            className={`relative inline-flex shrink-0 items-center gap-2 px-2.5 py-3 text-sm font-bold transition-colors sm:px-4 ${item.active ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
           >
             {item.label}
             {item.count > 0 && <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] text-white ${"red" in item ? "bg-red-600" : "bg-slate-900"}`}>{item.count}</span>}
           </Link>
         ))}
-        <Link href="/open-a-shop" className="my-1.5 ml-auto inline-flex shrink-0 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm sm:px-4 font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
+        <Link href="/open-a-shop" className="my-1.5 ml-auto inline-flex h-10 shrink-0 items-center rounded-xl bg-slate-900 px-3.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] sm:px-6">
           Open your shop
         </Link>
       </div>
