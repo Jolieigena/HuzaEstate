@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { FurnitureApi } from "@/lib/furniture/api";
 import { useToast } from "@/lib/toast-context";
-import { Card, DestructiveButton, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass } from "../ui";
+import { Card, DestructiveButton, PrimaryButton, SecondaryButton, fieldClass } from "../ui";
 
 interface Row {
   key: string;
@@ -24,10 +24,10 @@ function toRows(groups: { id: string; name: string; categories: { name: string; 
   return groups.map((g) => ({ key: nextKey(), id: g.id, name: g.name, categories: g.categories.map((c) => ({ key: nextKey(), name: c.name, saved: c.name, count: c.count })) }));
 }
 
-/** The tabs of the shop and the categories in each tab's dropdown. Administrators add, rename, reorder and remove both; the shop shows
+/** The tabs of the shop and the categories in each tab's dropdown, in Admin Settings. Administrators add, rename, reorder and remove both; the shop shows
  *  the change at once. A product keeps its own category text, so removing a category from a tab never deletes products: they move to
  *  the shop's "Other" tab until the category is listed again. Renaming a category renames it on its products too. */
-export function ShopCategoriesPage() {
+export function ShopCategoriesCard() {
   const { token } = useAuth();
   const { showToast } = useToast();
   const canManage = useIsAdministrator();
@@ -90,18 +90,21 @@ export function ShopCategoriesPage() {
     showToast("Shop categories saved.");
   }
 
+  if (!canManage) return null;
+
   return (
-    <PageFrame title="Shop categories" description="The tabs across the top of the shop, and the categories in each tab's dropdown. Changes show in the shop as soon as you save.">
-      <RequirePermission granted={canManage}>
+    <Card className="mt-6 max-w-2xl">
+      <h3 className="text-lg font-black text-slate-900">Shop categories</h3>
+      <div className="mt-4">
         {loadError ? (
           <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{loadError}</p>
         ) : rows === null ? (
           <p className="text-sm text-slate-400">Loading…</p>
         ) : (
-          <div className="max-w-3xl space-y-5">
-            {rows.length === 0 && <p className="text-sm font-semibold text-slate-500">No tabs yet. The shop shows only its “Other” tab, with every category products use.</p>}
+          <div className="space-y-5">
+            {rows.length === 0 && <p className="text-sm font-semibold text-slate-500">No tabs yet.</p>}
             {rows.map((row, index) => (
-              <Card key={row.key}>
+              <div key={row.key} className="rounded-xl border border-slate-200 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <input className={`${fieldClass} min-w-48 flex-1 !font-bold`} value={row.name} maxLength={40} placeholder="Tab name, e.g. Furniture" aria-label="Tab name" onChange={(e) => patch(row.key, (r) => ({ ...r, name: e.target.value }))} />
                   <SecondaryButton type="button" disabled={index === 0} aria-label={`Move ${row.name || "tab"} earlier`} onClick={() => move(index, -1)}>
@@ -152,7 +155,7 @@ export function ShopCategoriesPage() {
                     Add
                   </SecondaryButton>
                 </div>
-              </Card>
+              </div>
             ))}
 
             <div className="flex flex-wrap items-center gap-3">
@@ -166,7 +169,7 @@ export function ShopCategoriesPage() {
             </div>
           </div>
         )}
-      </RequirePermission>
-    </PageFrame>
+      </div>
+    </Card>
   );
 }
