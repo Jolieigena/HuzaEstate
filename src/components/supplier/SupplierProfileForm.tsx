@@ -10,6 +10,7 @@ import { useSuggestedCategories } from "@/lib/furniture/groups";
 import { SuppliersApi, type SupplierProfile } from "@/lib/suppliers/api";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import DeliverySettings from "@/components/supplier/DeliverySettings";
+import WhatsappNumberCard from "@/components/shared/WhatsappNumberCard";
 import { Card, PageFrame, PrimaryButton, SecondaryButton, fieldClass } from "@/components/professional/ui";
 import { useLanguage } from "@/lib/i18n/language";
 
@@ -191,6 +192,7 @@ export default function SupplierProfileForm() {
         </Card>
       )}
       {loaded && profile?.completedAt && <DeliverySettings />}
+      {loaded && <WhatsappNumberCard className="mt-6 max-w-2xl" />}
     </PageFrame>
   );
 }

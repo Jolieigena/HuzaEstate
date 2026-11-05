@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import WhatsappNumberCard from "@/components/shared/WhatsappNumberCard";
 import { useAuth } from "@/lib/auth-context";
 import { Card, PageFrame, PrimaryLink } from "./ui";
 
@@ -30,6 +31,8 @@ export default function SettingsPage() {
           <PrimaryLink href="/change-password">Change password</PrimaryLink>
         </div>
       </Card>
+
+      <WhatsappNumberCard className="mt-6 max-w-lg" />
     </PageFrame>
   );
 }

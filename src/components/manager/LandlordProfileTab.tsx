@@ -8,6 +8,7 @@ import { notifyProfilePhotoChanged } from "@/lib/profilePhoto";
 import { useToast } from "@/lib/toast-context";
 import { Card, fieldClass, PrimaryButton, SecondaryButton } from "@/components/admin/ui";
 import { useLanguage } from "@/lib/i18n/language";
+import WhatsappNumberCard from "@/components/shared/WhatsappNumberCard";
 
 const EMPTY: SaveLandlordInput = { displayName: "", photoUrl: "", bio: "", phone: "", responseTime: "", yearsHosting: undefined };
 
@@ -198,6 +199,8 @@ export default function LandlordProfileTab() {
           </div>
         </form>
       </Card>
+
+      <WhatsappNumberCard className="mt-6" />
     </div>
   );
 }
