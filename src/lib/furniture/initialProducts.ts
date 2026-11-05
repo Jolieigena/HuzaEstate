@@ -40,8 +40,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   // ── Co-Creation AI Designed Sets & Per m² Items ──────────────────────────
   {
     id: "huza-set-living-room",
-    name: "Kigali Modern Living Room Set (Round Oak Coffee Table & 2 Bouclé Armchairs)",
-    description: "Complete 3-piece living room conversation set designed for local artisan co-creation. Features a solid natural oak round coffee table (80cm diameter) with sculpted pedestal base and 2 matching ergonomic armchairs upholstered in high-durability cream textured bouclé fabric. Handcrafted in collaboration with Kigali woodworking and upholstery workshops.",
+    name: "Living Room Set",
+    description: "Round oak coffee table (80 cm) and two cream bouclé armchairs. Made in Kigali.",
     category: "Sofas & seating",
     images: ["/seed/products/living-room-set.jpg"],
     price: 480,
@@ -54,8 +54,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: "huza-set-dining-table",
-    name: "Solid Walnut 6-Seater Dining Room Set (Table & 6 Cushioned Chairs)",
-    description: "Contemporary 7-piece dining set engineered for Rwandan hardwood production. Includes one rectangular solid walnut dining table (180cm x 90cm) and six matching minimalist dining chairs with charcoal grey padded seats. Built using sustainably sourced timber and a non-toxic matte protective wax finish.",
+    name: "Walnut Dining Set",
+    description: "Solid walnut table (180 × 90 cm) with six padded chairs. Matte wax finish.",
     category: "Tables & desks",
     images: ["/seed/products/dining-table-set.jpg"],
     price: 680,
@@ -68,8 +68,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: "huza-set-tv-stand",
-    name: "Fluted Oak TV Stand & Media Console Unit Set",
-    description: "Modern low-profile entertainment console unit with fluted oak sliding tambour doors, open soundbar/media shelf, matte black powder-coated steel base, and hidden rear cable management. Designed for 55\" to 75\" TVs. Available ready-to-ship or custom-sized by local carpenters.",
+    name: "Fluted Oak TV Stand",
+    description: "Low oak console with sliding doors, a soundbar shelf and hidden cable space. Fits 55\" to 75\" TVs.",
     category: "Storage & wardrobes",
     images: ["/seed/products/tv-stand-console.jpg"],
     price: 320,
@@ -83,8 +83,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: "huza-set-kitchen-modular",
-    name: "Modular Contemporary Kitchen Cabinet & Island Counter Set",
-    description: "Full modular kitchen cabinetry set co-created with local joinery and stone fabrication suppliers. Includes floor and wall cabinetry in warm oak grain and matte charcoal with soft-close Blum hinges, quartz waterfall prep island, and integrated LED accent profile channels. Customized on-site to your exact kitchen dimensions.",
+    name: "Modular Kitchen Set",
+    description: "Oak and charcoal cabinets with soft-close hinges and a quartz island. Fitted to your kitchen.",
     category: "Kitchen furniture",
     images: ["/seed/products/modern-kitchen-design.jpg"],
     price: 1650,
@@ -97,8 +97,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: "huza-m2-gypsum-ceiling",
-    name: "Architectural Gypsum False Ceiling with LED Cove Lighting (Price per m²)",
-    description: "Priced per square meter (m²). Multi-tier suspended gypsum plasterboard ceiling system featuring hidden LED warm cove lighting troughs, acoustic dampening, and reinforced steel frame grid. Supplied and installed by certified local drywall craftsmen across Kigali. Enter your room area in m² as quantity.",
+    name: "Gypsum Ceiling (per m²)",
+    description: "Multi-tier gypsum ceiling with LED cove lighting, supplied and installed in Kigali. Enter your room area in m² as the quantity.",
     category: "Roofing & building materials",
     images: ["/seed/products/ceiling-design-gypsum.jpg"],
     price: 28,
@@ -111,8 +111,8 @@ export const INITIAL_PRODUCTS: Product[] = [
   },
   {
     id: "huza-m2-wall-paint",
-    name: "Velvet Matte Architectural Wall Paint & Limewash Finish (Price per m²)",
-    description: "Priced per square meter (m²) applied, or available in 20L drums. Premium eco-friendly, ultra-low VOC velvet matte architectural wall paint and microcement plaster finish. Formulated for high washability and humidity resistance in Rwandan climates. Includes custom color matching in earth tones: Warm Sand, Kigali Terracotta, Soft Sage, and Slate Grey.",
+    name: "Wall Paint & Limewash (per m²)",
+    description: "Low-VOC velvet matte finish in Warm Sand, Kigali Terracotta, Soft Sage or Slate Grey. Priced per m² applied, also sold in 20 L drums.",
     category: "Paint & finishes",
     images: ["/seed/products/wall-paints-finish.jpg"],
     price: 12,
