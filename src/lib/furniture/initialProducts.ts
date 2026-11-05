@@ -41,7 +41,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-set-living-room",
     name: "Living Room Set",
-    description: "Round oak coffee table (80 cm) and two cream bouclé armchairs. Made in Kigali.",
+    description: "Complete 3-piece set: a solid natural oak round coffee table (80 cm) with a sculpted pedestal base, and two matching ergonomic armchairs in cream textured bouclé. Handcrafted with Kigali woodworking and upholstery workshops.",
     category: "Sofas & seating",
     images: ["/seed/products/living-room-set.jpg"],
     price: 480,
@@ -55,7 +55,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-set-dining-table",
     name: "Walnut Dining Set",
-    description: "Solid walnut table (180 × 90 cm) with six padded chairs. Matte wax finish.",
+    description: "Solid walnut rectangular dining table (180 × 90 cm) with six matching minimalist chairs and charcoal grey padded seats. Made from sustainably sourced timber with a non-toxic matte wax finish.",
     category: "Tables & desks",
     images: ["/seed/products/dining-table-set.jpg"],
     price: 680,
@@ -69,7 +69,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-set-tv-stand",
     name: "Fluted Oak TV Stand",
-    description: "Low oak console with sliding doors, a soundbar shelf and hidden cable space. Fits 55\" to 75\" TVs.",
+    description: "Low-profile oak console with fluted sliding doors, an open soundbar shelf, a matte black steel base and hidden rear cable management. Designed for 55\" to 75\" TVs, ready to ship or custom-sized by local carpenters.",
     category: "Storage & wardrobes",
     images: ["/seed/products/tv-stand-console.jpg"],
     price: 320,
@@ -84,7 +84,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-set-kitchen-modular",
     name: "Modular Kitchen Set",
-    description: "Oak and charcoal cabinets with soft-close hinges and a quartz island. Fitted to your kitchen.",
+    description: "Full modular kitchen: floor and wall cabinets in warm oak grain and matte charcoal with soft-close hinges, a quartz waterfall island and integrated LED accent channels. Made with local joinery and stone suppliers and fitted to your exact kitchen dimensions.",
     category: "Kitchen furniture",
     images: ["/seed/products/modern-kitchen-design.jpg"],
     price: 1650,
@@ -98,7 +98,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-m2-gypsum-ceiling",
     name: "Gypsum Ceiling (per m²)",
-    description: "Multi-tier gypsum ceiling with LED cove lighting, supplied and installed in Kigali. Enter your room area in m² as the quantity.",
+    description: "Priced per square metre. Multi-tier suspended gypsum ceiling with hidden warm LED cove lighting, acoustic dampening and a reinforced steel frame, supplied and installed by certified drywall craftsmen across Kigali. Enter your room area in m² as the quantity.",
     category: "Roofing & building materials",
     images: ["/seed/products/ceiling-design-gypsum.jpg"],
     price: 28,
@@ -112,7 +112,7 @@ export const INITIAL_PRODUCTS: Product[] = [
   {
     id: "huza-m2-wall-paint",
     name: "Wall Paint & Limewash (per m²)",
-    description: "Low-VOC velvet matte finish in Warm Sand, Kigali Terracotta, Soft Sage or Slate Grey. Priced per m² applied, also sold in 20 L drums.",
+    description: "Priced per square metre applied, or in 20 L drums. Eco-friendly, ultra-low VOC velvet matte paint and microcement finish, washable and humidity-resistant. Custom colour matching in Warm Sand, Kigali Terracotta, Soft Sage and Slate Grey.",
     category: "Paint & finishes",
     images: ["/seed/products/wall-paints-finish.jpg"],
     price: 12,
