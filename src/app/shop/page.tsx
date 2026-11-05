@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Select from "@/components/shared/Select";
@@ -151,17 +150,12 @@ function Catalog() {
   const withCount = (name: string, count: number) => `${name} (${count})`;
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Shop</h1>
-        <Link href="/open-a-shop" className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]">
-          Open your shop
-        </Link>
-      </div>
+    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8">
+      <h1 className="sr-only">Shop</h1>
 
-      <div className="mt-6 flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
-          className="min-w-52 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15"
+          className="h-11 min-w-52 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15"
           placeholder="Search the shop"
           aria-label="Search the shop"
           value={searchInput}
@@ -171,7 +165,7 @@ function Catalog() {
           type="button"
           aria-expanded={panelOpen}
           onClick={() => setPanelOpen((open) => !open)}
-          className={`inline-flex min-h-11 items-center gap-2 rounded-xl border px-4 text-sm font-bold transition-colors ${panelOpen || filterCount > 0 ? "border-slate-900 text-slate-900" : "border-slate-200 text-slate-700 hover:border-slate-300"}`}
+          className={`inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-sm font-bold transition-colors ${panelOpen || filterCount > 0 ? "border-slate-900 text-slate-900" : "border-slate-200 text-slate-700 hover:border-slate-300"}`}
         >
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 6h18M6 12h12M10 18h4" />
@@ -180,7 +174,7 @@ function Catalog() {
           {filterCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-slate-900 px-1.5 text-[11px] text-white">{filterCount}</span>}
         </button>
         <div className="w-48">
-          <Select className={selectClass} value={sort} aria-label="Sort products" onChange={(e) => update({ sort: e.target.value === "newest" ? undefined : e.target.value })}>
+          <Select className={`${selectClass} !h-11 !py-0`} value={sort} aria-label="Sort products" onChange={(e) => update({ sort: e.target.value === "newest" ? undefined : e.target.value })}>
             {(Object.keys(SORT_LABELS) as ProductSort[]).map((s) => (
               <option key={s} value={s}>
                 {SORT_LABELS[s]}
