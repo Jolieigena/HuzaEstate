@@ -55,8 +55,8 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
         </div>
         <div className="px-4 pt-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
-          <h2 className="mt-1 font-black text-slate-900">{product.name}</h2>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
+          <h2 title={product.name} className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900">{product.name}</h2>
         </div>
       </Link>
       <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
