@@ -109,6 +109,8 @@ function Catalog() {
   const loading = data?.key !== key;
   const lastPage = Math.max(Math.ceil((list?.total ?? 0) / PAGE_SIZE), 1);
   const tabs = useShopTabs();
+  const hasTabs = !!tabs && (tabs.groups.length > 0 || tabs.other.length > 0);
+  const countLabel = loading && !list ? "Loading…" : `${list?.total ?? 0} ${list?.total === 1 ? "item" : "items"}`;
   // The tab a view belongs to: the one chosen, or the one that lists the chosen category.
   const activeTab = group || (category ? tabs?.groups.find((g) => g.categories.some((c) => c.name === category))?.name ?? (tabs?.other.some((c) => c.name === category) ? OTHER : "") : "");
   const [openTab, setOpenTab] = useState("");
@@ -184,9 +186,9 @@ function Catalog() {
         </div>
       </div>
 
-      {tabs && (tabs.groups.length > 0 || tabs.other.length > 0) && (
-        <div ref={tabsRef} className="mt-5">
-          <div role="tablist" aria-label="Shop categories" className="flex gap-1 overflow-x-auto border-b border-slate-200">
+      {tabs && hasTabs && (
+        <div ref={tabsRef} className="mt-4">
+          <div role="tablist" aria-label="Shop categories" className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               role="tab"
@@ -195,7 +197,7 @@ function Catalog() {
                 setOpenTab("");
                 update({ category: undefined, group: undefined });
               }}
-              className={`relative shrink-0 px-4 py-3 text-sm font-bold transition-colors ${!activeTab ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
+              className={`inline-flex h-10 shrink-0 items-center rounded-full border px-5 text-sm font-bold transition-colors ${!activeTab ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"}`}
             >
               All
             </button>
@@ -211,7 +213,7 @@ function Catalog() {
                   aria-haspopup="true"
                   aria-expanded={open}
                   onClick={() => setOpenTab(open ? "" : tab.key)}
-                  className={`relative inline-flex shrink-0 items-center gap-1.5 px-4 py-3 text-sm font-bold transition-colors ${active ? "text-slate-900 after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:bg-[#2ec440]" : "text-slate-500 hover:text-slate-900"}`}
+                  className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : open ? "border-slate-900 bg-white text-slate-900" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"}`}
                 >
                   {tab.label}
                   <svg className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -220,6 +222,7 @@ function Catalog() {
                 </button>
               );
             })}
+            <p className="ml-auto text-sm font-semibold text-slate-500" aria-live="polite">{countLabel}</p>
           </div>
           {openTab && (
             <TabMenu
@@ -294,8 +297,8 @@ function Catalog() {
         </section>
       )}
 
-      <div className="mt-5 flex flex-wrap items-center gap-2" aria-live="polite">
-        <p className="mr-2 text-sm font-semibold text-slate-500">{loading && !list ? "Loading…" : `${list?.total ?? 0} ${list?.total === 1 ? "item" : "items"}`}</p>
+      <div className={`mt-4 flex flex-wrap items-center gap-2 ${hasTabs && chips.length === 0 ? "hidden" : ""}`} aria-live="polite">
+        {!hasTabs && <p className="mr-2 text-sm font-semibold text-slate-500">{countLabel}</p>}
         {chips.map((chip) => (
           <button key={chip.label} type="button" onClick={() => { if ("q" in chip.clear) setSearchInput(""); update(chip.clear); }} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
             {chip.label}
@@ -354,7 +357,7 @@ function Catalog() {
 function TabMenu({ label, tab, categories, selectedCategory, wholeTabSelected, onPick }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategory: string; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void }) {
   const item = "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50";
   return (
-    <div role="menu" aria-label={`${label} categories`} className="grid gap-1 rounded-b-2xl border border-t-0 border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div role="menu" aria-label={`${label} categories`} className="mt-3 grid gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <button type="button" role="menuitem" onClick={() => onPick({ group: tab, category: undefined })} className={`${item} font-bold ${wholeTabSelected ? "bg-slate-50 text-[#219b31]" : "text-slate-900"}`}>
         All in {label}
       </button>
