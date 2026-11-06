@@ -234,6 +234,15 @@ export default function OpenAShopPage() {
       {error && (
         <p role="alert" className="text-sm font-semibold text-red-600">
           {error}
+          {/already exists/i.test(error) && (
+            <>
+              {" "}
+              <Link href={`/login?redirect=${encodeURIComponent(PATH)}`} className="font-bold text-[#219b31] underline">
+                Sign in to add a shop to that account
+              </Link>
+              .
+            </>
+          )}
         </p>
       )}
 
