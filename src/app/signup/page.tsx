@@ -11,6 +11,7 @@ import PasswordInput from '@/components/shared/PasswordInput';
 import PasswordChecklist from '@/components/shared/PasswordChecklist';
 import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import PhoneInput from '@/components/shared/PhoneInput';
 import { useLanguage } from '@/lib/i18n/language';
 
 function SignupForm() {
@@ -24,6 +25,7 @@ function SignupForm() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +43,7 @@ function SignupForm() {
       return;
     }
     setIsSubmitting(true);
-    const result = await signup({ firstName, lastName, email, password, termsAccepted, country: detectedCountry?.name });
+    const result = await signup({ firstName, lastName, email, phone, password, termsAccepted, country: detectedCountry?.name });
     if (!result.ok) {
       setError(result.error);
       setIsSubmitting(false);
@@ -97,6 +99,11 @@ function SignupForm() {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">{t('Phone Number')}</label>
+              <PhoneInput value={phone} onChange={setPhone} required />
             </div>
 
             <div>
