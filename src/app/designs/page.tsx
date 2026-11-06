@@ -157,7 +157,7 @@ function Catalog() {
     router.replace(category ? `${pathname}?category=${category}` : pathname, { scroll: false });
   };
 
-  const tabs: { value: DesignCategory | ""; label: string }[] = [{ value: "", label: "All" }, ...(Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).map((c) => ({ value: c, label: DESIGN_CATEGORY_LABELS[c] }))];
+  const tabs: { value: DesignCategory | ""; label: string }[] = [{ value: "", label: "All" }, ...(Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).filter((c) => c !== "furniture").map((c) => ({ value: c, label: DESIGN_CATEGORY_LABELS[c] }))];
   const selectClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
   const labelClass = "block text-xs font-bold uppercase tracking-wide text-slate-500";
   const withCount = (name: string, count: number) => `${name} (${count})`;
