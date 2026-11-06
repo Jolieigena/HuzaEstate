@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import BackLink from "@/components/BackLink";
+import DesignItems from "@/components/designs/DesignItems";
 import { FurnitureQuoteDialog, RequestDialog, SignInPrompt, type RequestTarget } from "@/components/designs/DesignRequestDialogs";
 import { useAuth } from "@/lib/auth-context";
 import { useDisplayCurrency } from "@/lib/currency/display";
@@ -78,27 +79,6 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
                 </button>
               ))}
             </div>
-          )}
-
-          {design.furniture.length > 0 && (
-            <section className="mt-8">
-              <h2 className="text-lg font-black text-slate-900">Furniture in this design</h2>
-              <ul className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
-                {design.furniture.map((item, index) => (
-                  <li key={index} className="flex items-baseline justify-between gap-4 px-5 py-3 text-sm">
-                    <span className="font-semibold text-slate-800">
-                      {item.name}{" "}
-                      <Link href={`/shop?q=${encodeURIComponent(item.name)}`} className="ml-1 text-xs font-bold text-[#219b31] hover:underline">
-                        Find in the shop
-                      </Link>
-                    </span>
-                    <span className="shrink-0 text-slate-500">
-                      {item.notes ? `${item.notes} · ` : ""}× {item.quantity}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
           )}
         </div>
 
@@ -189,6 +169,8 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               )}
             </div>
           )}
+
+          <DesignItems items={design.furniture} onQuote={() => (isLoggedIn ? setFurnitureOpen(true) : setSignInOpen(true))} />
 
           {design.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{design.description}</p>}
 

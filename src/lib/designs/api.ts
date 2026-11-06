@@ -46,6 +46,8 @@ export interface FurnitureItem {
   name: string;
   quantity: number;
   notes?: string;
+  /** The shop product this item is: the design page shows its price and an Add to cart button. */
+  productId?: string;
 }
 
 export interface Design {
