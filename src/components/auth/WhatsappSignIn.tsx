@@ -1,10 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth, type Account } from "@/lib/auth-context";
 import { useLanguage } from "@/lib/i18n/language";
 import { WhatsappApi } from "@/lib/whatsapp/api";
+
+const REMEMBER_KEY = "huza-whatsapp-number";
+
+/** The number this browser signed in with last time (per-browser convenience only; storage can be blocked). */
+function rememberedNumber(): string {
+  try {
+    return window.localStorage.getItem(REMEMBER_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function rememberNumber(number: string) {
+  try {
+    window.localStorage.setItem(REMEMBER_KEY, number);
+  } catch {
+    // Not remembered; the form still works.
+  }
+}
 
 function WhatsappIcon() {
   return (
@@ -25,6 +44,12 @@ export default function WhatsappSignIn({ onSuccess }: { onSuccess: (account: Acc
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
+  // Fill in the number used last time on this browser.
+  useEffect(() => {
+    const saved = rememberedNumber();
+    if (saved) setPhone((current) => (cleanPhone(current) ? current : saved));
+  }, []);
+
   const send = async (e?: FormEvent) => {
     e?.preventDefault();
     if (busy) return;
@@ -35,6 +60,7 @@ export default function WhatsappSignIn({ onSuccess }: { onSuccess: (account: Acc
     const result = await WhatsappApi.requestCode(cleanPhone(phone));
     setBusy(false);
     if (!result.ok) return setError(result.error);
+    rememberNumber(cleanPhone(phone));
     setSentTo(cleanPhone(phone));
     setCode("");
   };
