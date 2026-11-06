@@ -4,10 +4,16 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib/professional/api";
 import Select from "@/components/shared/Select";
+import { useAuth } from "@/lib/auth-context";
+import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
 
 export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
+  const { account } = useAuth();
+  const isProfessional = !!account?.roles.includes("professional");
+  const canApply = !!account && requestableRolesFor(account.roles).includes("professional");
+  const applyClass = "inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2ec440]";
 
   useEffect(() => {
     let cancelled = false;
@@ -61,7 +67,18 @@ export default function ProfessionalsDirectoryPage() {
         
         {/* Header & Filters (No background split or border) */}
         <div className="mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">Find Top Professionals</h1>
+          <div className="mb-2 flex flex-wrap items-start justify-between gap-4">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Find Top Professionals</h1>
+            {isProfessional ? (
+              <Link href="/professional" className={applyClass}>My professional page</Link>
+            ) : !account ? (
+              <Link href="/signup?redirect=/professionals" className={applyClass}>Apply to become a professional</Link>
+            ) : canApply ? (
+              <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_ADD_ROLE_EVENT, { detail: { role: "professional" } }))} className={applyClass}>
+                Apply to become a professional
+              </button>
+            ) : null}
+          </div>
           <p className="text-slate-500 max-w-2xl mb-6">
             Browse architects, engineers, designers, and contractors for your project. View their portfolios and reach out directly.
           </p>
