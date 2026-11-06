@@ -80,6 +80,8 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               ))}
             </div>
           )}
+
+          <DesignItems items={design.furniture} onQuote={() => (isLoggedIn ? setFurnitureOpen(true) : setSignInOpen(true))} />
         </div>
 
         <div>
@@ -169,8 +171,6 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
               )}
             </div>
           )}
-
-          <DesignItems items={design.furniture} onQuote={() => (isLoggedIn ? setFurnitureOpen(true) : setSignInOpen(true))} />
 
           {design.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{design.description}</p>}
 
