@@ -145,7 +145,7 @@ export default function OpenAShopPage() {
       setSaving(false);
       return setError(needsAccount ? `Your account is ready, but the shop could not be opened: ${result.error}` : result.error);
     }
-    await refreshAccount();
+    await refreshAccount(sessionToken, "supplier");
     showToast("Your shop is open. Finish your profile, then add your products.");
     router.push("/supplier");
   };

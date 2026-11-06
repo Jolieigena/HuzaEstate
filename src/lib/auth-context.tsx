@@ -133,7 +133,7 @@ interface AuthContextValue {
   /** Re-fetches /auth/me and updates the local account — used after a backend-driven role/plan
    * change the client didn't cause directly (payment-service granting seller_manager after a
    * free-tier pick or a Stripe webhook, a professional completing their profile, etc). */
-  refreshAccount: () => Promise<void>;
+  refreshAccount: (sessionToken?: string, makeActive?: AccountRole) => Promise<void>;
   /** True once the initial session check (validating any stored token against the
    * backend) has finished. Use this to avoid gating protected content on the
    * initial `false` value of `isLoggedIn`, which is only a default until then. */
@@ -361,10 +361,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  const refreshAccount = async (): Promise<void> => {
-    if (!token) return;
+  // `sessionToken` is for the moment right after sign-up, when this function was made before there was a session and `token` is still empty.
+  // `makeActive` opens that role's workspace when the account holds it now (a shop that has just been opened).
+  const refreshAccount = async (sessionToken?: string, makeActive?: AccountRole): Promise<void> => {
+    const current = sessionToken ?? token;
+    if (!current) return;
     try {
-      const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${current}` } });
       if (!res.ok) return;
       const data = await res.json();
       const nextAccount = data.account as Account;
@@ -375,6 +378,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setAccount(nextAccount);
       setIsApprovedSeller(nextAccount.isApprovedSeller);
+      if (makeActive && nextAccount.roles.includes(makeActive)) {
+        setActiveRole(makeActive);
+        try { localStorage.setItem(ROLE_STORAGE_KEY, makeActive); } catch { /* ignore */ }
+      }
     } catch {
       /* best-effort — caller's UI already has a fallback for a stale account view */
     }
