@@ -8,8 +8,6 @@ export const RENOVATE_ROOMS = [
   { id: "dining-room", label: "Dining room" },
   { id: "home-office", label: "Home office" },
   { id: "kids-room", label: "Kids room" },
-  { id: "exterior", label: "House outside" },
-  { id: "garden", label: "Garden" },
 ] as const;
 export type RenovateRoom = (typeof RENOVATE_ROOMS)[number]["id"];
 
@@ -30,8 +28,6 @@ export const ROOM_CATEGORIES: Record<RenovateRoom, string[]> = {
   "dining-room": ["Tables & desks", "Lighting", "Rugs & curtains", "Wall art & paintings", "Decor & accessories"],
   "home-office": ["Office furniture", "Tables & desks", "Storage & wardrobes", "Lighting", "Rugs & curtains"],
   "kids-room": ["Beds & mattresses", "Storage & wardrobes", "Rugs & curtains", "Lighting", "Decor & accessories"],
-  exterior: ["Paints", "Stones", "Guardrails", "Wood doors", "Frame doors", "Glass sheets", "Outdoor furniture", "Lighting"],
-  garden: ["Outdoor furniture", "Stones", "Lighting", "Decor & accessories"],
 };
 
 export interface RenovationResult {
@@ -61,8 +57,8 @@ export async function previewRenovation(
 }
 
 /** What each hiring tab looks for among the professionals' specialisations. */
-export const DESIGNER_SPECIALISATIONS = ["Architect", "Interior Designer", "Space Planner", "Lighting Designer", "3D Visualisation", "Furniture Designer", "Home Stager", "Landscape Architect"];
+export const DESIGNER_SPECIALISATIONS = ["Architect", "Interior Designer", "Space Planner", "Lighting Designer", "3D Visualisation", "Furniture Designer", "Home Stager"];
 export const BUILDER_SPECIALISATIONS = [
   "General Contractor", "Renovation Specialist", "Construction Manager", "Project Manager", "Site Supervisor", "Carpenter", "Painter", "Tiler",
-  "Plumber", "Electrician", "Plasterer", "Flooring Installer", "Roofer", "Glazier", "Welder", "Bricklayer / Mason", "Landscaper",
+  "Plumber", "Electrician", "Plasterer", "Flooring Installer", "Glazier", "Welder",
 ];
