@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { canAccessPath } from "@/lib/navigation";
 import { SIDEBAR_NAV_ITEMS } from "./SidebarNavItems";
+import { CUSTOM_LINK_ICON, useMenu } from "@/lib/menus/menus";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -20,7 +21,11 @@ function SidebarLinks({ collapsed }: { collapsed: boolean }) {
   // Only show links this account can actually open — e.g. a plain customer
   // shouldn't see "Professional Workspace" if they hold no professional/
   // contractor role (see src/lib/navigation.ts canAccessPath).
-  const items = SIDEBAR_NAV_ITEMS.filter((item) => canAccessPath(account, item.href));
+  const menu = useMenu("customer", SIDEBAR_NAV_ITEMS, {
+    custom: (e) => ({ key: e.key, label: e.label, href: e.href ?? "/", iconPath: CUSTOM_LINK_ICON, isActive: (path) => path === e.href }),
+  });
+  // A link the administrator added is shown to everyone signed in.
+  const items = menu.filter((item) => item.key.startsWith("custom-") || canAccessPath(account, item.href));
 
   return (
     <nav aria-label="Account navigation" className="flex flex-col gap-1 px-2">

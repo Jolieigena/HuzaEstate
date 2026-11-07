@@ -1,5 +1,6 @@
 import type { ManagerTab } from '@/lib/manager/types';
 import { useLanguage } from '@/lib/i18n/language';
+import { useMenu } from '@/lib/menus/menus';
 
 export const NAV_ITEMS: { id: ManagerTab; label: string; iconPath: string }[] = [
   {
@@ -45,13 +46,17 @@ interface ManagerNavLinksProps {
  *  internal tab (not routes, since Manager Portal doesn't have sub-pages), but they
  *  should look identical to every other dashboard-style nav in the app. Exported
  *  separately so the mobile drawer can reuse it, matching AdminSidebar's pattern. */
+/** The tabs with the key the menu settings use. */
+export const KEYED_NAV_ITEMS = NAV_ITEMS.map((item) => ({ ...item, key: item.id }));
+
 export function ManagerNavLinks({ activeTab, setActiveTab, listingCount, inquiryCount }: ManagerNavLinksProps) {
   const { t } = useLanguage();
+  const items = useMenu('owner', KEYED_NAV_ITEMS);
   const countFor = (id: ManagerTab) => (id === 'listings' ? listingCount : id === 'inquiries' ? inquiryCount : undefined);
 
   return (
     <nav aria-label={t('Manager navigation')} className="flex flex-col gap-1 px-2">
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = activeTab === item.id;
         const count = countFor(item.id);
         return (

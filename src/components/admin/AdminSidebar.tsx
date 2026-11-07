@@ -5,11 +5,12 @@ import { usePathname } from "next/navigation";
 import { useNavBadges } from "@/lib/admin/useNavBadges";
 import NavBadge from "@/components/admin/NavBadge";
 import { ADMIN_NAV_ITEMS } from "./adminNavItems";
+import { CUSTOM_LINK_ICON, useMenu } from "@/lib/menus/menus";
 
 export function AdminNavLinks() {
   const pathname = usePathname();
   const badges = useNavBadges("admin");
-  const items = ADMIN_NAV_ITEMS;
+  const items = useMenu("admin", ADMIN_NAV_ITEMS, { locked: ["settings"], custom: (e) => ({ key: e.key, label: e.label, href: e.href ?? "/", iconPath: CUSTOM_LINK_ICON }) });
 
   return (
     <nav aria-label="Administration navigation" className="flex flex-col gap-1 px-2">

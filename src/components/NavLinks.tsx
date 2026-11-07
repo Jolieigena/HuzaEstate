@@ -5,8 +5,9 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { activeNavKey, type NavKey } from "@/lib/navigation/activeNav";
 import { useLanguage } from "@/lib/i18n/language";
+import { useMenu } from "@/lib/menus/menus";
 
-const NAV_LINKS: { key: NavKey; href: string; label: string }[] = [
+export const NAV_LINKS: { key: string; href: string; label: string }[] = [
   { key: "home", href: "/home", label: "Home" },
   { key: "buy", href: "/properties?type=sale", label: "Buy" },
   { key: "rent", href: "/properties?type=rent", label: "Rent" },
@@ -21,9 +22,10 @@ const NAV_LINKS: { key: NavKey; href: string; label: string }[] = [
 
 function Links({ variant, active, onNavigate }: { variant: "desktop" | "mobile"; active: NavKey | null; onNavigate?: () => void }) {
   const { t } = useLanguage();
+  const links = useMenu("main", NAV_LINKS, { custom: (e) => ({ key: e.key, href: e.href ?? "/", label: e.label }) });
   return (
     <>
-      {NAV_LINKS.map((link) => {
+      {links.map((link) => {
         const isActive = link.key === active;
         return variant === "desktop" ? (
           <Link

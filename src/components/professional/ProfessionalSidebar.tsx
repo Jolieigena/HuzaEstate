@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PROFESSIONAL_NAV_ITEMS } from "./professionalNavItems";
+import { CUSTOM_LINK_ICON, useMenu } from "@/lib/menus/menus";
 
 export function ProfessionalNavLinks() {
   const pathname = usePathname();
+  const items = useMenu("professional", PROFESSIONAL_NAV_ITEMS, { custom: (e) => ({ key: e.key, label: e.label, href: e.href ?? "/", iconPath: CUSTOM_LINK_ICON }) });
 
   return (
     <nav aria-label="Professional navigation" className="flex flex-col gap-1 px-2">
-      {PROFESSIONAL_NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = item.href === "/professional" ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/");
         return (
           <Link

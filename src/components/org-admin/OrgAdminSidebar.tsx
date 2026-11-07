@@ -6,13 +6,15 @@ import { useNavBadges } from "@/lib/admin/useNavBadges";
 import NavBadge from "@/components/admin/NavBadge";
 import { useAuth } from "@/lib/auth-context";
 import { hasOrgPermission } from "@/lib/orgPermissions";
-import { ORG_ADMIN_NAV_ITEMS } from "./orgAdminNavItems";
+import { ORG_ADMIN_NAV_ITEMS, type OrgAdminNavItem } from "./orgAdminNavItems";
+import { CUSTOM_LINK_ICON, useMenu } from "@/lib/menus/menus";
 
 export function OrgAdminNavLinks() {
   const pathname = usePathname();
   const badges = useNavBadges("org-admin");
   const { account } = useAuth();
-  const items = ORG_ADMIN_NAV_ITEMS.filter((item) => !item.permission || hasOrgPermission(account?.permissions, item.permission));
+  const menu = useMenu<OrgAdminNavItem>("org-admin", ORG_ADMIN_NAV_ITEMS, { custom: (e) => ({ key: e.key, label: e.label, href: e.href ?? "/", iconPath: CUSTOM_LINK_ICON }) });
+  const items = menu.filter((item) => !item.permission || hasOrgPermission(account?.permissions, item.permission));
 
   return (
     <nav aria-label="Organisation navigation" className="flex flex-col gap-1 px-2">

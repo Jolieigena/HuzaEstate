@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Logo } from './Logo';
 import { useLanguage } from '@/lib/i18n/language';
 import LanguagePicker from './LanguagePicker';
+import { useMenu, type MenuId } from '@/lib/menus/menus';
 
 // Real handles/URLs pending — update these hrefs once each account exists.
 const SOCIAL_LINKS = [
@@ -47,8 +48,9 @@ const SOCIAL_LINKS = [
   },
 ];
 
-const FOOTER_LINKS = [
+export const FOOTER_LINKS: { id: MenuId; heading: string; links: { href: string; label: string }[] }[] = [
   {
+    id: 'footer-explore',
     heading: 'Explore',
     links: [
       { href: '/properties?type=sale', label: 'Buy' },
@@ -60,6 +62,7 @@ const FOOTER_LINKS = [
     ],
   },
   {
+    id: 'footer-company',
     heading: 'Company',
     links: [
       { href: '/professionals', label: 'Find a Professional' },
@@ -69,6 +72,7 @@ const FOOTER_LINKS = [
     ],
   },
   {
+    id: 'footer-account',
     heading: 'Account',
     links: [
       { href: '/login', label: 'Sign in' },
@@ -76,6 +80,31 @@ const FOOTER_LINKS = [
     ],
   },
 ];
+
+function FooterColumn({ group }: { group: (typeof FOOTER_LINKS)[number] }) {
+  const { t } = useLanguage();
+  const links = useMenu(
+    group.id,
+    group.links.map(link => ({ ...link, key: link.href })),
+    { custom: e => ({ key: e.key, href: e.href ?? '/', label: e.label }) },
+  );
+  return (
+    <div>
+      <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
+        {t(group.heading)}
+      </h3>
+      <ul className="flex flex-col gap-3">
+        {links.map(link => (
+          <li key={link.key}>
+            <Link href={link.href} className="text-slate-400 hover:text-[#2ec440] text-[15px] transition-colors">
+              {t(link.label)}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -109,20 +138,7 @@ export default function Footer() {
           {/* Link Columns */}
           <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-3 gap-8">
             {FOOTER_LINKS.map(group => (
-              <div key={group.heading}>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-                  {t(group.heading)}
-                </h3>
-                <ul className="flex flex-col gap-3">
-                  {group.links.map(link => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="text-slate-400 hover:text-[#2ec440] text-[15px] transition-colors">
-                        {t(link.label)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <FooterColumn key={group.id} group={group} />
             ))}
           </div>
         </div>

@@ -6,6 +6,7 @@ import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
 import { Card, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "../ui";
 import { ShopCategoriesCard } from "./ShopCategories";
+import { MenusCard } from "./Menus";
 
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
@@ -130,6 +131,8 @@ export function SettingsPage() {
             </div>
           )}
         </Card>
+
+        <MenusCard />
 
         <ShopCategoriesCard />
       </RequirePermission>
