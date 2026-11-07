@@ -85,7 +85,7 @@ export default function RenovatePage() {
             <p className="text-slate-600 text-lg leading-relaxed mt-5 max-w-xl">
               Tell Huza AI what you want to change in your home. It suggests the work, the materials and a budget range before you call a contractor.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => startRenovate()}
@@ -94,6 +94,12 @@ export default function RenovatePage() {
               >
                 Renovate My Space
               </button>
+              <Link
+                href="/shop"
+                className="inline-flex items-center justify-center bg-white hover:border-[#2ec440] text-slate-900 border border-slate-200 font-bold text-[15px] px-8 py-4 rounded-full transition-all"
+              >
+                Shop
+              </Link>
             </div>
           </div>
 
