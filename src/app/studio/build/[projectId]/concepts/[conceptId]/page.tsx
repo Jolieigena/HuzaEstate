@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
@@ -11,16 +10,6 @@ import { useToast } from "@/lib/toast-context";
 import FloorPlanSvg from "@/components/build/FloorPlanSvg";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import RefineDrawer from "@/components/build/RefineDrawer";
-import { ExteriorViews } from "@/lib/build/types";
-
-const EXTERIOR_LABELS: { key: keyof ExteriorViews; label: string }[] = [
-  { key: "front", label: "Front" },
-  { key: "rear", label: "Rear" },
-  { key: "left", label: "Left" },
-  { key: "right", label: "Right" },
-  { key: "day", label: "Day" },
-  { key: "evening", label: "Evening" },
-];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -38,7 +27,6 @@ export default function ConceptDetailPage() {
   const concept = project.concepts.find((c) => c.id === params?.conceptId);
 
   const [floorIndex, setFloorIndex] = useState(0);
-  const [exteriorView, setExteriorView] = useState<keyof ExteriorViews>("front");
   const [selectOpen, setSelectOpen] = useState(false);
   const [refineOpen, setRefineOpen] = useState(false);
 
@@ -60,11 +48,7 @@ export default function ConceptDetailPage() {
   return (
     <div className="space-y-6">
       <Section title="Overview">
-        <div className="grid lg:grid-cols-2 gap-6">
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-100">
-            <Image src={concept.previewImage} alt="" fill className="object-cover" sizes="(max-width: 1024px) 100vw, 600px" />
-            <div className="absolute top-3 left-3 bg-slate-900/70 text-white text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg">Conceptual</div>
-          </div>
+        <div>
           <div>
             <div className="flex items-center gap-2 mb-2">
               <h1 className="text-2xl font-black text-slate-900">{concept.name}</h1>
@@ -136,39 +120,6 @@ export default function ConceptDetailPage() {
             <p className="text-xl font-black text-slate-900">{floor.rooms.reduce((s, r) => s + r.w * r.h, 0).toFixed(0)} sqm</p>
             <p className="text-xs text-slate-400 mt-2">Circulation is approximated within room sizing, not shown separately.</p>
           </div>
-        </div>
-      </Section>
-
-      <Section title="Exterior views">
-        <div className="flex flex-wrap gap-2 mb-4">
-          {EXTERIOR_LABELS.map((v) => (
-            <button
-              key={v.key}
-              type="button"
-              onClick={() => setExteriorView(v.key)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${exteriorView === v.key ? "bg-[#2ec440]/10 text-[#2ec440]" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
-        <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-100">
-          <Image src={concept.exteriorViews[exteriorView]} alt={`${exteriorView} exterior view`} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 800px" />
-          <div className="absolute top-3 left-3 bg-slate-900/70 text-white text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg">Conceptual</div>
-        </div>
-      </Section>
-
-      <Section title="Interior directions">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {concept.interiorDirections.map((dir) => (
-            <div key={dir.room}>
-              <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 mb-2">
-                <Image src={dir.image} alt={dir.room} fill className="object-cover" sizes="240px" />
-              </div>
-              <p className="text-sm font-bold text-slate-900">{dir.room}</p>
-              <p className="text-xs text-slate-500 leading-relaxed">{dir.note}</p>
-            </div>
-          ))}
         </div>
       </Section>
 

@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ConceptPlan from "@/components/build/ConceptPlan";
 import { useSearchParams } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
@@ -111,9 +111,7 @@ function CompareContent() {
                 <th className="sticky left-0 bg-white text-left p-4 font-bold text-slate-400 w-40">Category</th>
                 {concepts.map((c) => (
                   <th key={c.id} className="p-4 text-left min-w-[220px]">
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-100 mb-2">
-                      <Image src={c.previewImage} alt="" fill className="object-cover" sizes="240px" />
-                    </div>
+                    <ConceptPlan concept={c} className="w-full aspect-video rounded-xl mb-2" />
                     <p className="font-bold text-slate-900">{c.name}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {c.id === lowestCostId && <span className="text-[10px] font-bold bg-[#2ec440]/10 text-[#2ec440] px-2 py-0.5 rounded-full">Lowest cost</span>}

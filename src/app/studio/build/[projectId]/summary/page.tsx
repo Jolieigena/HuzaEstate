@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import ConceptPlan from "@/components/build/ConceptPlan";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { formatCompactRwf, formatDate, projectLocationLabel, statusLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
@@ -60,9 +60,7 @@ export default function ProjectSummaryPage() {
         {selectedConcept && (
           <section>
             <h2 className="font-bold text-slate-900 mb-3">Selected concept — {selectedConcept.name}</h2>
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100 mb-3">
-              <Image src={selectedConcept.previewImage} alt="" fill className="object-cover" sizes="700px" />
-            </div>
+            <ConceptPlan concept={selectedConcept} className="aspect-video rounded-xl mb-3" />
             <p className="text-sm text-slate-600 mb-2">{selectedConcept.rationale}</p>
             <p className="text-sm font-semibold text-slate-900">
               {selectedConcept.metrics.floorAreaSqm} sqm · {selectedConcept.metrics.bedrooms} bed · {selectedConcept.metrics.bathrooms} bath ·{" "}

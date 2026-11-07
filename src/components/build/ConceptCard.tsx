@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import ConceptPlan from "./ConceptPlan";
 import { Concept } from "@/lib/build/types";
 import { formatCompactRwf, formatDate } from "@/lib/build/format";
 
@@ -20,7 +20,7 @@ export default function ConceptCard({ concept, projectId, isSelected, compareChe
   return (
     <div className={`bg-white rounded-3xl overflow-hidden border shadow-sm hover:shadow-xl transition-all flex flex-col ${isSelected ? "border-[#2ec440] ring-1 ring-[#2ec440]" : "border-slate-100"}`}>
       <div className="relative h-48 overflow-hidden">
-        <Image src={concept.previewImage} alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 400px" />
+        <ConceptPlan concept={concept} className="h-full w-full" />
         <div className="absolute top-3 left-3 bg-slate-900/70 text-white text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg">Conceptual</div>
         {isSelected && (
           <div className="absolute top-3 right-3 bg-[#2ec440] text-white text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg">Preferred</div>

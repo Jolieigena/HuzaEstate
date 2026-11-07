@@ -1,5 +1,6 @@
 "use client";
 
+import ConceptPlan from "@/components/build/ConceptPlan";
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { briefStepCount, briefStepsDone, getNextAction, getProjectProgress } from "@/lib/build/progress";
@@ -59,10 +60,7 @@ export default function ProjectOverviewPage() {
           <SectionCard title="Selected concept" action={<Link href={`${base}/concepts`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">View concepts</Link>}>
             {selectedConcept ? (
               <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative w-full sm:w-40 h-32 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={selectedConcept.previewImage} alt="" className="w-full h-full object-cover" />
-                </div>
+                <ConceptPlan concept={selectedConcept} className="w-full sm:w-48 h-36 rounded-xl flex-shrink-0" />
                 <div className="flex-grow">
                   <p className="font-bold text-slate-900 mb-1">{selectedConcept.name} concept</p>
                   <p className="text-sm text-slate-500 leading-relaxed mb-3">{selectedConcept.rationale}</p>
