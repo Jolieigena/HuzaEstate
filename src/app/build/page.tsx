@@ -78,7 +78,7 @@ export default function BuildPage() {
             <p className="text-slate-600 text-lg leading-relaxed mt-5 max-w-xl">
               Layouts, exterior styles and a budget range for your plot, made by Huza AI before you talk to a professional.
             </p>
-            <div className="mt-8">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => startBuild()}
@@ -87,6 +87,12 @@ export default function BuildPage() {
               >
                 Start Designing
               </button>
+              <Link
+                href="/shop"
+                className="inline-flex items-center justify-center bg-white hover:border-[#2ec440] text-slate-900 border border-slate-200 font-bold text-[15px] px-8 py-4 rounded-full transition-all"
+              >
+                Shop
+              </Link>
             </div>
           </div>
 

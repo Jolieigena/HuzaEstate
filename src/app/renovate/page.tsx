@@ -40,7 +40,12 @@ export default function RenovatePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
-      <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Renovate your space</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">Renovate your space</h1>
+        <Link href="/shop" className={secondary}>
+          Shop
+        </Link>
+      </div>
       <ol className="mt-6 flex gap-2" aria-label="Steps">
         {STEPS.map((label, index) => (
           <li key={label} className="flex-1">
