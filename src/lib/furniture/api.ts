@@ -5,7 +5,7 @@ import { filterInitialProducts, getInitialFacets, getInitialProduct } from "./in
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
 /** Suggested categories. A product's category can be anything a supplier types. */
-export const FURNITURE_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture", "Wall art & paintings", "Stones", "Cement", "Nails", "Imbahu", "Steel bars", "Bricks", "Sand", "Water", "Plumbing & sanitary", "Electrical fittings", "Paints", "Wood doors", "Frame doors", "Glass sheets", "Guardrails", "Tiles", "FPC", "Ceilings & wall panels"];
+export const FURNITURE_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture", "Wall art & paintings", "Stones", "Cement", "Nails", "Timber", "Steel bars", "Bricks", "Sand", "Water", "Plumbing & sanitary", "Electrical fittings", "Paints", "Wood doors", "Frame doors", "Glass sheets", "Guardrails", "Tiles", "FPC", "Ceilings & wall panels"];
 
 export type StockStatus = "in_stock" | "made_to_order" | "out_of_stock";
 export const STOCK_LABELS: Record<StockStatus, string> = { in_stock: "In stock", made_to_order: "Made to order", out_of_stock: "Out of stock" };
