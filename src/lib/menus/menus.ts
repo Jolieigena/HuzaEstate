@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/ac
 /** The icon on a link the administrator added. */
 export const CUSTOM_LINK_ICON = "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1";
 
-export const MENU_IDS = ["main", "footer-explore", "footer-company", "footer-account", "admin", "customer", "owner", "professional", "supplier", "org-admin"] as const;
+export const MENU_IDS = ["main", "footer-explore", "footer-company", "footer-account", "admin", "customer", "owner", "professional", "supplier", "org-admin", "designs-tabs", "professionals-filters", "property-types"] as const;
 export type MenuId = (typeof MENU_IDS)[number];
 
 /** One saved line of a menu: a link the site already has (matched by `key`) or a custom link the administrator added. */
@@ -20,7 +20,15 @@ export interface MenuEntry {
 }
 export type MenuOverrides = Partial<Record<MenuId, MenuEntry[]>>;
 
+/** The footer's own words and links the administrator set (each one optional: a missing one means the site's own is used). */
+export interface SiteSettings {
+  tagline?: string;
+  social?: { instagram?: string; facebook?: string; x?: string; linkedin?: string };
+  headings?: { explore?: string; company?: string; account?: string };
+}
+
 let cache: MenuOverrides | null = null;
+let siteCache: SiteSettings | null = null;
 let pending: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
@@ -34,6 +42,7 @@ async function load(): Promise<void> {
     const res = await fetch(`${API_URL}/menus`);
     if (!res.ok) return;
     const data = await res.json();
+    siteCache = (data.site ?? {}) as SiteSettings;
     publish((data.menus ?? {}) as MenuOverrides);
   } catch {
     // The built-in menus are used.
@@ -62,6 +71,12 @@ export function useMenuOverrides(): MenuOverrides | null {
     };
   }, []);
   return value;
+}
+
+/** The footer's words and links the administrator set (nothing until loaded, or if they could not be). */
+export function useSiteSettings(): SiteSettings | null {
+  useMenuOverrides();
+  return siteCache;
 }
 
 /** What a menu's code needs from each of its links. */
@@ -138,6 +153,26 @@ export async function saveMenus(token: string, menus: Partial<Record<MenuId, Men
     if (!res.ok) return { ok: false, error: data?.message || "Could not save the menu." };
     publish((data.menus ?? {}) as MenuOverrides);
     return { ok: true, menus: data.menus as MenuOverrides };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
+  }
+}
+
+export type SaveSiteResult = { ok: true; site: SiteSettings } | { ok: false; error: string };
+
+/** Administrators only. A field left empty goes back to the site's own. The footer redraws at once. */
+export async function saveSite(token: string, site: SiteSettings): Promise<SaveSiteResult> {
+  try {
+    const res = await fetch(`${API_URL}/auth/admin/settings/site`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(site),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: data?.message || "Could not save." };
+    siteCache = (data.site ?? {}) as SiteSettings;
+    publish(cache ?? {});
+    return { ok: true, site: siteCache };
   } catch {
     return { ok: false, error: "Could not reach the server. Please try again." };
   }

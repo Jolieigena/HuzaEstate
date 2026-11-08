@@ -6,6 +6,8 @@ import { ORG_ADMIN_NAV_ITEMS } from "@/components/org-admin/orgAdminNavItems";
 import { SIDEBAR_NAV_ITEMS } from "@/components/SidebarNavItems";
 import { SUPPLIER_NAV_ITEMS } from "@/components/supplier/SupplierShell";
 import { KEYED_NAV_ITEMS } from "@/components/manager/ManagerSidebar";
+import { DESIGN_TAB_ITEMS } from "@/lib/designs/api";
+import { PROPERTY_TYPE_OPTIONS } from "@/lib/properties/types";
 import type { MenuId } from "./menus";
 
 export interface MenuDefinition {
@@ -32,4 +34,18 @@ export const MENU_DEFINITIONS: MenuDefinition[] = [
   { id: "professional", title: "Professional sidebar", items: PROFESSIONAL_NAV_ITEMS, customLinks: true },
   { id: "supplier", title: "Supplier sidebar", items: SUPPLIER_NAV_ITEMS, customLinks: true },
   { id: "org-admin", title: "Organisation sidebar", items: ORG_ADMIN_NAV_ITEMS, customLinks: true },
+  { id: "designs-tabs", title: "Designs page tabs", items: DESIGN_TAB_ITEMS, customLinks: false },
+  {
+    id: "professionals-filters",
+    title: "Professionals page filters",
+    items: [
+      { key: "services", label: "All Services" },
+      { key: "locations", label: "All Locations" },
+      { key: "experienced", label: "5+ Years Exp." },
+      { key: "individuals", label: "Individuals" },
+      { key: "firms", label: "Firms" },
+    ],
+    customLinks: false,
+  },
+  { id: "property-types", title: "Property types filter", items: PROPERTY_TYPE_OPTIONS.map((o) => ({ key: o.label, label: o.label })), customLinks: false },
 ];

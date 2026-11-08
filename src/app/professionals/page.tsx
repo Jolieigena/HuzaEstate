@@ -6,10 +6,20 @@ import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib
 import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
+import { useMenu } from "@/lib/menus/menus";
+
+const FILTER_ITEMS = [
+  { key: "services", label: "All Services" },
+  { key: "locations", label: "All Locations" },
+  { key: "experienced", label: "5+ Years Exp." },
+  { key: "individuals", label: "Individuals" },
+  { key: "firms", label: "Firms" },
+];
 
 export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
+  const filterItems = useMenu("professionals-filters", FILTER_ITEMS);
   const { account } = useAuth();
   const isProfessional = !!account?.roles.includes("professional");
   const canApply = !!account && requestableRolesFor(account.roles).includes("professional");
@@ -98,53 +108,44 @@ export default function ProfessionalsDirectoryPage() {
               />
             </div>
 
-            {/* Specialization Select Pill */}
-            <div className="relative flex-shrink-0">
-              <Select 
-                value={specialization}
-                onChange={e => setSpecialization(e.target.value)}
-                className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${specialization ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
-              >
-                <option value="">All Services</option>
-                {specializations.map(s => <option key={s} value={s}>{s}</option>)}
-              </Select>
-            </div>
+            {/* The filters the administrator chose in Settings, in their order and with their names. */}
+            {filterItems.map((item, index) => {
+              const pill = (cls: boolean) => `px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${cls ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`;
+              const isSelect = item.key === 'services' || item.key === 'locations';
+              const wasSelect = index > 0 && (filterItems[index - 1].key === 'services' || filterItems[index - 1].key === 'locations');
+              const divider = !isSelect && wasSelect ? <div className="hidden sm:block w-px h-5 bg-slate-200 mx-0.5"></div> : null;
+              if (item.key === 'services' || item.key === 'locations') {
+                const isServices = item.key === 'services';
+                const value = isServices ? specialization : location;
+                return (
+                  <div key={item.key} className="relative flex-shrink-0">
+                    <Select
+                      value={value}
+                      onChange={e => (isServices ? setSpecialization(e.target.value) : setLocation(e.target.value))}
+                      className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${value ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
+                    >
+                      <option value="">{item.label}</option>
+                      {(isServices ? specializations : locations).map(o => <option key={o} value={o}>{o}</option>)}
+                    </Select>
+                  </div>
+                );
+              }
+              const toggle =
+                item.key === 'experienced'
+                  ? { on: experiencedOnly, click: () => setExperiencedOnly(!experiencedOnly) }
+                  : item.key === 'individuals'
+                  ? { on: kindFilter === 'individual', click: () => setKindFilter(kindFilter === 'individual' ? 'all' : 'individual') }
+                  : { on: kindFilter === 'firm', click: () => setKindFilter(kindFilter === 'firm' ? 'all' : 'firm') };
+              return (
+                <span key={item.key} className="contents">
+                  {divider}
+                  <button onClick={toggle.click} className={pill(toggle.on)}>
+                    {item.label}
+                  </button>
+                </span>
+              );
+            })}
 
-            {/* Location Select Pill */}
-            <div className="relative flex-shrink-0">
-              <Select 
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${location ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
-              >
-                <option value="">All Locations</option>
-                {locations.map(l => <option key={l} value={l}>{l}</option>)}
-              </Select>
-            </div>
-
-            <div className="hidden sm:block w-px h-5 bg-slate-200 mx-0.5"></div>
-
-            <button 
-              onClick={() => setExperiencedOnly(!experiencedOnly)}
-              className={`px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${experiencedOnly ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
-            >
-              5+ Years Exp.
-            </button>
-
-            <button 
-              onClick={() => setKindFilter(kindFilter === 'individual' ? 'all' : 'individual')}
-              className={`px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${kindFilter === 'individual' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
-            >
-              Individuals
-            </button>
-            
-            <button 
-              onClick={() => setKindFilter(kindFilter === 'firm' ? 'all' : 'firm')}
-              className={`px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${kindFilter === 'firm' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}
-            >
-              Firms
-            </button>
-            
             {/* Clear All Pill */}
             {hasActiveFilters && (
               <button 

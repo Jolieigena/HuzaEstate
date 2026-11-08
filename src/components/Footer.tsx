@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Logo } from './Logo';
 import { useLanguage } from '@/lib/i18n/language';
 import LanguagePicker from './LanguagePicker';
-import { useMenu, type MenuId } from '@/lib/menus/menus';
+import { useMenu, useSiteSettings, type MenuId } from '@/lib/menus/menus';
 
 // Real handles/URLs pending — update these hrefs once each account exists.
 const SOCIAL_LINKS = [
@@ -83,6 +83,8 @@ export const FOOTER_LINKS: { id: MenuId; heading: string; links: { href: string;
 
 function FooterColumn({ group }: { group: (typeof FOOTER_LINKS)[number] }) {
   const { t } = useLanguage();
+  const site = useSiteSettings();
+  const heading = site?.headings?.[group.id.replace('footer-', '') as 'explore' | 'company' | 'account'] || t(group.heading);
   const links = useMenu(
     group.id,
     group.links.map(link => ({ ...link, key: link.href })),
@@ -91,7 +93,7 @@ function FooterColumn({ group }: { group: (typeof FOOTER_LINKS)[number] }) {
   return (
     <div>
       <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-        {t(group.heading)}
+        {heading}
       </h3>
       <ul className="flex flex-col gap-3">
         {links.map(link => (
@@ -108,6 +110,7 @@ function FooterColumn({ group }: { group: (typeof FOOTER_LINKS)[number] }) {
 
 export default function Footer() {
   const { t } = useLanguage();
+  const site = useSiteSettings();
   return (
     <footer className="w-full bg-slate-900 text-white mt-12">
       <div className="max-w-[1400px] mx-auto px-6 sm:px-10 md:px-12 py-16">
@@ -116,13 +119,13 @@ export default function Footer() {
           <div className="md:col-span-4">
             <Logo className="h-8 w-auto" dark />
             <p className="text-slate-400 text-[15px] leading-relaxed mt-4 max-w-xs">
-              {t('Rwanda\'s home for premium, verified real estate — buy, rent, or sell with confidence.')}
+              {site?.tagline || t('Rwanda\'s home for premium, verified real estate — buy, rent, or sell with confidence.')}
             </p>
             <div className="flex items-center gap-3 mt-6">
               {SOCIAL_LINKS.map(social => (
                 <a
                   key={social.label}
-                  href={social.href}
+                  href={site?.social?.[social.label.toLowerCase() as 'instagram' | 'facebook' | 'x' | 'linkedin'] || social.href}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={social.label}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
-import { editableEntries, saveMenus, useMenuOverrides, type MenuEntry, type MenuId } from "@/lib/menus/menus";
+import { editableEntries, saveMenus, saveSite, useMenuOverrides, useSiteSettings, type MenuEntry, type MenuId, type SiteSettings } from "@/lib/menus/menus";
 import { MENU_DEFINITIONS } from "@/lib/menus/registry";
 import { useToast } from "@/lib/toast-context";
 import { Card, DestructiveButton, PrimaryButton, SecondaryButton, fieldClass } from "../ui";
@@ -184,6 +184,86 @@ export function MenusCard() {
             )}
           </div>
         </>
+      )}
+    </Card>
+  );
+}
+
+const SOCIAL_FIELDS = [
+  { key: "instagram", label: "Instagram" },
+  { key: "facebook", label: "Facebook" },
+  { key: "x", label: "X" },
+  { key: "linkedin", label: "LinkedIn" },
+] as const;
+const HEADING_FIELDS = [
+  { key: "explore", label: "First column" },
+  { key: "company", label: "Second column" },
+  { key: "account", label: "Third column" },
+] as const;
+
+/** The footer's own words: the line under the logo, the social media links and the three column headings. A field left empty uses the site's own. */
+export function FooterTextCard() {
+  const { token } = useAuth();
+  const { showToast } = useToast();
+  const canManage = useIsAdministrator();
+  const site = useSiteSettings();
+  const [form, setForm] = useState<SiteSettings | null>(null);
+  const [seen, setSeen] = useState<SiteSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  if (site !== seen) {
+    setSeen(site);
+    if (site) setForm(JSON.parse(JSON.stringify(site)));
+  }
+  if (!canManage) return null;
+
+  const dirty = form !== null && site !== null && JSON.stringify(form) !== JSON.stringify(site);
+  const save = async () => {
+    if (!token || !form || saving) return;
+    setSaving(true);
+    setError("");
+    const result = await saveSite(token, form);
+    setSaving(false);
+    if (!result.ok) return setError(result.error);
+    showToast("Footer saved.");
+  };
+
+  return (
+    <Card className="mt-6 max-w-2xl">
+      <h3 className="text-lg font-black text-slate-900">Footer</h3>
+      {!form ? (
+        <p className="mt-4 text-sm text-slate-400">Loading…</p>
+      ) : (
+        <div className="mt-4 space-y-4">
+          <label className="block text-sm font-bold text-slate-700">
+            Line under the logo
+            <textarea className={`${fieldClass} mt-1`} rows={2} maxLength={200} value={form.tagline ?? ""} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {HEADING_FIELDS.map((f) => (
+              <label key={f.key} className="block text-sm font-bold text-slate-700">
+                {f.label}
+                <input className={`${fieldClass} mt-1`} maxLength={30} value={form.headings?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, headings: { ...form.headings, [f.key]: e.target.value } })} />
+              </label>
+            ))}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {SOCIAL_FIELDS.map((f) => (
+              <label key={f.key} className="block text-sm font-bold text-slate-700">
+                {f.label} link
+                <input className={`${fieldClass} mt-1`} maxLength={300} placeholder="https://…" value={form.social?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, social: { ...form.social, [f.key]: e.target.value } })} />
+              </label>
+            ))}
+          </div>
+          {error && (
+            <p role="alert" className="text-sm font-semibold text-red-600">
+              {error}
+            </p>
+          )}
+          <PrimaryButton type="button" disabled={!dirty || saving} onClick={save}>
+            {saving ? "Saving…" : "Save changes"}
+          </PrimaryButton>
+        </div>
       )}
     </Card>
   );

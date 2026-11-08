@@ -8,6 +8,7 @@ export type DesignPriceType = "fixed" | "per_sqm" | "on_request";
 export type DesignStatus = "draft" | "published";
 
 export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { house: "Houses", interior: "Interior", exterior: "Exterior", furniture: "Furniture", accessories: "Accessories" };
+export const DESIGN_TAB_ITEMS = (Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).filter((c) => c !== "furniture").map((c) => ({ key: c, label: DESIGN_CATEGORY_LABELS[c] }));
 export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed quote", per_sqm: "Quote per square metre", on_request: "Quote on request" };
 
 export interface DesignDesigner {

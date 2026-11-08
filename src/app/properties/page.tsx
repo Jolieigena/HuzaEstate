@@ -18,6 +18,7 @@ import FormattedNumberInput, { withCommas } from '@/components/shared/FormattedN
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
+import { useMenu } from '@/lib/menus/menus';
 import { isPromotedNow } from '@/lib/promotion/types';
 import { useSavedSearches } from '@/lib/savedSearches/hooks';
 import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
@@ -136,6 +137,8 @@ function PropertiesContent() {
   // can match "Villa" and "Land" at once, and multiple synonyms of the same
   // underlying bucket (e.g. "House" and "Townhouse") stay separately tickable.
   const [selectedTypeLabels, setSelectedTypeLabels] = useState<string[]>([]);
+  // The types the administrator chose in Settings (shown, named and ordered). A selection is kept by the type's own name, whatever it is called here.
+  const typeChoices = useMenu('property-types', TYPE_OPTIONS.map((o) => ({ ...o, key: o.label })));
   const [isTypeOpen, setIsTypeOpen] = useState(false);
   const typeButtonRef = useRef<HTMLButtonElement>(null);
   const [typePanelPos, setTypePanelPos] = useState<{ top: number; left: number } | null>(null);
@@ -616,7 +619,7 @@ function PropertiesContent() {
                   {selectedTypeLabels.length === 0
                     ? 'Any Type'
                     : selectedTypeLabels.length === 1
-                    ? selectedTypeLabels[0]
+                    ? (typeChoices.find((t) => t.key === selectedTypeLabels[0])?.label ?? selectedTypeLabels[0])
                     : `Types (${selectedTypeLabels.length})`}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                 </button>
@@ -624,11 +627,11 @@ function PropertiesContent() {
                   <div data-filter-panel style={{ position: 'fixed', top: typePanelPos.top, left: typePanelPos.left }} className="bg-white border border-slate-200 rounded-2xl shadow-xl p-4 z-50 w-72">
                     <h3 className="font-bold text-slate-900 mb-2 text-[15px]">Property Type</h3>
                     <div className="grid grid-cols-2 gap-1.5 max-h-56 overflow-y-auto pr-1">
-                      {TYPE_OPTIONS.map(({ label }) => {
-                        const checked = selectedTypeLabels.includes(label);
+                      {typeChoices.map(({ key, label }) => {
+                        const checked = selectedTypeLabels.includes(key);
                         return (
-                          <label key={label} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
-                            <input type="checkbox" checked={checked} onChange={() => toggleTypeLabel(label)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
+                          <label key={key} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
+                            <input type="checkbox" checked={checked} onChange={() => toggleTypeLabel(key)} className="accent-[#2ec440] w-4 h-4 cursor-pointer" />
                             {label}
                           </label>
                         );

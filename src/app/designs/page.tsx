@@ -6,9 +6,11 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import Select from "@/components/shared/Select";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { priceBracketsFor } from "@/lib/currency/brackets";
+import { useMenu } from "@/lib/menus/menus";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import {
   DESIGN_CATEGORY_LABELS,
+  DESIGN_TAB_ITEMS,
   DESIGN_PRICE_TYPE_LABELS,
   DesignsApi,
   formatDesignPrice,
@@ -157,7 +159,9 @@ function Catalog() {
     router.replace(category ? `${pathname}?category=${category}` : pathname, { scroll: false });
   };
 
-  const tabs: { value: DesignCategory | ""; label: string }[] = [{ value: "", label: "All" }, ...(Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).filter((c) => c !== "furniture").map((c) => ({ value: c, label: DESIGN_CATEGORY_LABELS[c] }))];
+  // The tabs the administrator chose in Settings (shown, named and ordered); "All" is always first.
+  const tabItems = useMenu("designs-tabs", DESIGN_TAB_ITEMS);
+  const tabs: { value: DesignCategory | ""; label: string }[] = [{ value: "", label: "All" }, ...tabItems.map((t) => ({ value: t.key as DesignCategory, label: t.label }))];
   const selectClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
   const labelClass = "block text-xs font-bold uppercase tracking-wide text-slate-500";
   const withCount = (name: string, count: number) => `${name} (${count})`;
