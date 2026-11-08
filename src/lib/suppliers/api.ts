@@ -2,7 +2,7 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
-export const SUPPLIER_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture", "Wall art & paintings", "Stones", "Cement", "Nails", "Timber", "Steel bars", "Bricks", "Sand", "Water", "Plumbing & sanitary", "Electrical fittings", "Paints", "Wood doors", "Frame doors", "Glass sheets", "Guardrails", "Tiles", "FPC", "Ceilings & wall panels"];
+export const SUPPLIER_CATEGORIES = ["Sofas & seating", "Beds & mattresses", "Tables & desks", "Storage & wardrobes", "Kitchen furniture", "Lighting", "Rugs & curtains", "Decor & accessories", "Outdoor furniture", "Office furniture", "Wall art & paintings", "Stones", "Cement", "Nails", "Timber", "Steel bars", "Bricks", "Sand", "Water", "Roofing", "Plumbing & sanitary", "Electrical fittings", "Paints", "Wood doors", "Frame doors", "Glass sheets", "Guardrails", "Tiles", "FPC", "Ceilings & wall panels"];
 
 export interface SupplierProfile {
   accountId: string;
