@@ -7,6 +7,7 @@ import BackLink from "@/components/BackLink";
 import Select from "@/components/shared/Select";
 import ProductCard, { SaveButton } from "@/components/shop/ProductCard";
 import { RatingSummary, VerifiedBadge } from "@/components/shop/SupplierBadges";
+import WhatsappContactButton from "@/components/shared/WhatsappContactButton";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket } from "@/lib/furniture/basket";
@@ -156,6 +157,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </Link>
                 </p>
               )}
+            </div>
+          )}
+
+          {supplier && (
+            <div className="mt-4">
+              <WhatsappContactButton kind="supplier" id={supplier.accountId} message={`Hi, I am interested in "${product.name}" on HuzaEstate.`} />
             </div>
           )}
 

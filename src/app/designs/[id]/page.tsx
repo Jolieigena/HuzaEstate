@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import BackLink from "@/components/BackLink";
 import DesignItems from "@/components/designs/DesignItems";
 import { FurnitureQuoteDialog, RequestDialog, SignInPrompt, type RequestTarget } from "@/components/designs/DesignRequestDialogs";
+import WhatsappContactButton from "@/components/shared/WhatsappContactButton";
 import { useAuth } from "@/lib/auth-context";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { DESIGN_CATEGORY_LABELS, DESIGN_PART_KIND_LABELS, DesignsApi, formatDesignPrice, type Design, type DesignPart } from "@/lib/designs/api";
@@ -191,6 +192,7 @@ export default function DesignDetailPage({ params }: { params: Promise<{ id: str
                   Get furniture quotes
                 </button>
               )}
+              <WhatsappContactButton kind="designer" id={designer.accountId} message={`Hi ${designer.displayName}, I am interested in your design "${design.title}" on HuzaEstate.`} />
             </div>
           )}
 

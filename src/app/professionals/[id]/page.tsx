@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { StarRating } from "@/components/professional/ui";
 import ContactForm from "@/components/professional/ContactForm";
+import WhatsappContactButton from "@/components/shared/WhatsappContactButton";
 import { ProfessionalDesignsSection, RequestCustomDesignButton } from "@/components/designs/ProfessionalDesigns";
 
 function ProjectMedia({ item }: { item: RealProfessionalProfile["portfolio"][number] }) {
@@ -294,6 +295,9 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
                     <Link href={`/login?redirect=${encodeURIComponent(`/professionals/${profile.accountId}`)}`} className="font-bold text-[#219b31] hover:underline">Sign in</Link> to see their phone and email.
                   </p>
                 )}
+                <div className="mt-4">
+                  <WhatsappContactButton kind="professional" id={profile.accountId} message={`Hi ${profile.displayName}, I found you on HuzaEstate and would like to talk about a project.`} />
+                </div>
               </div>
               <ContactForm profileId={profile.accountId} profileName={profile.displayName} />
             </div>

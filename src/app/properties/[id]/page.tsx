@@ -7,6 +7,8 @@ import { getGalleryImages } from '@/lib/properties/gallery';
 import PropertyTourSection from '@/components/PropertyTourSection';
 import PropertyGallery from '@/components/PropertyGallery';
 import LandlordProfileCard from '@/components/LandlordProfileCard';
+import WhatsappChatButton from '@/components/shared/WhatsappChatButton';
+import { internationalPhone } from '@/lib/whatsapp/chat';
 import InquiryForm from '@/components/InquiryForm';
 import BackLink from '@/components/BackLink';
 import { useDisplayCurrency } from '@/lib/currency/display';
@@ -260,6 +262,9 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
                     <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                     {property.ownerPhone}
                   </a>
+                )}
+                {internationalPhone(property.ownerPhone) && (
+                  <WhatsappChatButton phone={internationalPhone(property.ownerPhone)} message={`Hi, I am interested in "${property.title}" on HuzaEstate.`} className="mt-1" />
                 )}
                 {property.ownerEmail && (
                   <a href={`mailto:${property.ownerEmail}`} className="flex items-center gap-2 text-slate-600 hover:text-[#2ec440] text-sm font-medium transition-colors">
