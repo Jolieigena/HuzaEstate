@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import type { AdminSubscriptionList, AdminUser } from "@/lib/admin/api";
 import { AdminTable, EmptyState, StatusPill, formatDate } from "@/components/admin/ui";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import Select from "@/components/shared/Select";
 import type { PaymentsSource } from "./paymentsSource";
-import { LoadError, LoadingRow, Pager, SellerCell, Toolbar, useKeyedLoad } from "./shared";
+import { LoadError, LoadingRow, SellerCell, Toolbar } from "./shared";
 
 const PAGE_SIZE = 25;
 type TierFilter = "paid" | "all" | "free" | "silver" | "gold" | "diamond" | "code";
@@ -51,21 +53,28 @@ export default function SubscriptionsPanel({
   const { format } = useDisplayCurrency();
   const [tier, setTier] = useState<TierFilter>("paid");
   const [status, setStatus] = useState("all");
-  const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
   const inScope = source.scope === "org";
 
-  const key = `${tier}|${status}|${page}|${reload}`;
-  const { data, error, loading } = useKeyedLoad(
-    enabled && !!token,
-    key,
-    () => source.subscriptions(token as string, { tier: tier === "all" ? undefined : tier, status: status === "all" ? undefined : status, page, limit: PAGE_SIZE }),
-    (list) => onSummary(list.summary),
+  // The sellers keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<AdminSubscriptionList["subscriptions"][number], { summary: AdminSubscriptionList["summary"] }>(
+    `${tier}|${status}|${reload}|${enabled && !!token}`,
+    (pageNumber) =>
+      !enabled || !token
+        ? new Promise(() => {})
+        : source.subscriptions(token, { tier: tier === "all" ? undefined : tier, status: status === "all" ? undefined : status, page: pageNumber, limit: PAGE_SIZE }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.subscriptions, total: result.data.total, meta: { summary: result.data.summary } } : { ok: false as const, error: result.error },
+          ),
+    (sub) => sub.accountId,
   );
+  const summary = feed.meta?.summary;
+  useEffect(() => {
+    if (summary) onSummary(summary);
+  }, [summary]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
-      <Toolbar count={data?.total} noun="seller">
+      <Toolbar count={feed.items.length > 0 || !feed.loading ? feed.total : undefined} noun="seller">
         <label className={filterLabel}>
           Plan
           <Select
@@ -73,7 +82,6 @@ export default function SubscriptionsPanel({
             value={tier}
             onChange={(e) => {
               setTier(e.target.value as TierFilter);
-              setPage(1);
             }}
           >
             <option value="paid">Subscribed (any paid plan)</option>
@@ -92,7 +100,6 @@ export default function SubscriptionsPanel({
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
-              setPage(1);
             }}
           >
             <option value="all">Any status</option>
@@ -103,14 +110,14 @@ export default function SubscriptionsPanel({
         </label>
       </Toolbar>
 
-      {error ? (
-        <LoadError message={error} onRetry={() => setReload((n) => n + 1)} />
-      ) : loading && !data ? (
+      {feed.error && feed.items.length === 0 ? (
+        <LoadError message={feed.error} onRetry={() => setReload((n) => n + 1)} />
+      ) : feed.loading && feed.items.length === 0 ? (
         <LoadingRow>Loading subscriptions…</LoadingRow>
-      ) : data && data.subscriptions.length ? (
+      ) : feed.items.length > 0 ? (
         <>
           <AdminTable headers={["Seller", "Plan", "Price", "Status", "Posts this month", "Stripe"]}>
-            {data.subscriptions.map((sub) => (
+            {feed.items.map((sub) => (
               <tr key={sub.accountId} className="transition-colors hover:bg-slate-50/50">
                 <td className="px-6 py-4">
                   <SellerCell accountId={sub.accountId} sellers={sellers} href={source.sellerHref} />
@@ -135,7 +142,7 @@ export default function SubscriptionsPanel({
               </tr>
             ))}
           </AdminTable>
-          <Pager page={page} total={data.total} limit={data.limit} onPage={setPage} />
+          <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
         </>
       ) : (
         <EmptyState

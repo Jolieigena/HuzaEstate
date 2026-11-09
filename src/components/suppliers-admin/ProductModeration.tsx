@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Link from "next/link";
 import PromptModal from "@/components/shared/PromptModal";
 import Select from "@/components/shared/Select";
@@ -27,9 +29,6 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [state, setState] = useState("pending");
-  const [page, setPage] = useState(1);
-  const [data, setData] = useState<{ products: ModerationProduct[]; total: number; hiddenCount: number; pendingCount: number } | null>(null);
-  const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
   const [hiding, setHiding] = useState<ModerationProduct | null>(null);
   const [deciding, setDeciding] = useState<{ product: ModerationProduct; decision: "request_changes" | "reject" } | null>(null);
@@ -39,25 +38,24 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQuery(search.trim());
-      setPage(1);
     }, 300);
     return () => window.clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    if (!isAuthReady || !token || !canManage) return;
-    let cancelled = false;
-    FurnitureApi.moderationList(token, { search: query, state, page, limit: LIMIT }).then((result) => {
-      if (cancelled) return;
-      if (result.ok) {
-        setData(result.data);
-        setError("");
-      } else setError(result.error);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, canManage, query, state, page, reload]);
+  // The products keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<ModerationProduct, { hiddenCount: number; pendingCount: number }>(
+    `${query}|${state}|${reload}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !canManage
+        ? new Promise(() => {})
+        : FurnitureApi.moderationList(token, { search: query, state, page: pageNumber, limit: LIMIT }).then((result) =>
+            result.ok
+              ? { ok: true as const, items: result.data.products, total: result.data.total, meta: { hiddenCount: result.data.hiddenCount, pendingCount: result.data.pendingCount } }
+              : { ok: false as const, error: result.error },
+          ),
+    (product) => product.id,
+  );
+  const counts = feed.meta;
 
   async function hide(reason: string) {
     if (!token || !hiding) return;
@@ -95,8 +93,6 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
     } else showToast(result.error, "error");
   }
 
-  const pages = data ? Math.max(1, Math.ceil(data.total / LIMIT)) : 1;
-
   return (
     <PageFrame
       title="Supplier products"
@@ -119,28 +115,27 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
               value={state}
               onChange={(e) => {
                 setState(e.target.value);
-                setPage(1);
               }}
             >
-              <option value="pending">Waiting for review{data ? ` (${data.pendingCount})` : ""}</option>
+              <option value="pending">Waiting for review{counts ? ` (${counts.pendingCount})` : ""}</option>
               <option value="">All products</option>
               <option value="live">Visible</option>
               <option value="declined">Sent back or not approved</option>
-              <option value="hidden">Taken down{data ? ` (${data.hiddenCount})` : ""}</option>
+              <option value="hidden">Taken down{counts ? ` (${counts.hiddenCount})` : ""}</option>
             </Select>
           </label>
         </Card>
 
-        {error ? (
-          <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">{error}</Card>
-        ) : !data ? (
+        {feed.error && feed.items.length === 0 ? (
+          <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">{feed.error}</Card>
+        ) : feed.loading && feed.items.length === 0 ? (
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading products…</p>
-        ) : data.products.length === 0 ? (
+        ) : feed.items.length === 0 ? (
           <EmptyState title="No products found" />
         ) : (
           <>
             <AdminTable headers={["Product", "Supplier", "Price", "Status", "Actions"]}>
-              {data.products.map((p) => (
+              {feed.items.map((p) => (
                 <tr key={p.id} className="transition-colors hover:bg-slate-50/50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -207,19 +202,7 @@ export default function ProductModerationPage({ scope }: { scope: SuppliersScope
                 </tr>
               ))}
             </AdminTable>
-            {pages > 1 && (
-              <div className="mt-5 flex items-center justify-between text-sm font-bold text-slate-600">
-                <SecondaryButton disabled={page <= 1} onClick={() => setPage((n) => n - 1)}>
-                  Previous
-                </SecondaryButton>
-                <span>
-                  Page {page} of {pages}
-                </span>
-                <SecondaryButton disabled={page >= pages} onClick={() => setPage((n) => n + 1)}>
-                  Next
-                </SecondaryButton>
-              </div>
-            )}
+            <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
           </>
         )}
       </RequirePermission>

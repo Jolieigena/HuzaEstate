@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
@@ -64,9 +66,7 @@ export function SocialPostsPage() {
   const [editing, setEditing] = useState<SocialPost | null>(null);
 
   const [status, setStatus] = useState<SocialPostStatus | "">("");
-  const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
-  const [list, setList] = useState<{ key: string; data?: SocialPostList; error?: string } | null>(null);
 
   const channel = channels.find((c) => c.id === selectedId) ?? channels[0];
 
@@ -97,23 +97,22 @@ export function SocialPostsPage() {
   }, [isAuthReady, token, isAdmin]);
 
   const channelId = channel?.id ?? "";
-  const key = `${channelId}|${status}|${page}|${reload}`;
-  useEffect(() => {
-    if (!isAuthReady || !token || !isAdmin || !channelId) return;
-    let cancelled = false;
-    SocialApi.listPosts(token, { channel: channelId, status, page, limit: PAGE_SIZE }).then((result) => {
-      if (!cancelled) setList(result.ok ? { key, data: result.data } : { key, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, isAdmin, channelId, status, page, key]);
+  // The posts keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<SocialPostList["posts"][number], { summary: SocialPostList["summary"] }>(
+    `${channelId}|${status}|${reload}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !isAdmin || !channelId
+        ? new Promise(() => {})
+        : SocialApi.listPosts(token, { channel: channelId, status, page: pageNumber, limit: PAGE_SIZE }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.posts, total: result.data.total, meta: { summary: result.data.summary } } : { ok: false as const, error: result.error },
+          ),
+    (post) => post.id,
+  );
 
   const selectChannel = (c: SocialChannel) => {
     setSelectedId(c.id);
     fillFields(c);
     setStatus("");
-    setPage(1);
   };
 
   const save = async (changes: Parameters<typeof SocialApi.updateChannel>[2], message = "Saved.") => {
@@ -168,10 +167,8 @@ export function SocialPostsPage() {
   };
 
   const settings = channel?.settings;
-  const data = list?.data;
-  const loading = list?.key !== key;
-  const total = data?.total ?? 0;
-  const lastPage = Math.max(Math.ceil(total / PAGE_SIZE), 1);
+  const summary = feed.meta?.summary;
+  const loading = feed.loading;
 
   return (
     <RequirePermission granted={isAdmin}>
@@ -246,15 +243,15 @@ export function SocialPostsPage() {
 
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div className="flex flex-wrap gap-2 text-sm font-semibold text-slate-600">
-            {data &&
+            {summary &&
               (Object.keys(SOCIAL_STATUS_LABELS) as SocialPostStatus[]).map((s) => (
                 <span key={s} className="rounded-full border border-slate-200 bg-white px-3 py-1">
-                  {SOCIAL_STATUS_LABELS[s]} {data.summary[s] ?? 0}
+                  {SOCIAL_STATUS_LABELS[s]} {summary[s] ?? 0}
                 </span>
               ))}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-          {data && (data.summary.dry_run + data.summary.skipped + data.summary.failed + data.summary.withdrawn > 0) && (
+          {summary && (summary.dry_run + summary.skipped + summary.failed + summary.withdrawn > 0) && (
             <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" onClick={clearList}>
               Clear rehearsals and old posts
             </SecondaryButton>
@@ -266,7 +263,6 @@ export function SocialPostsPage() {
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value as SocialPostStatus | "");
-                setPage(1);
               }}
             >
               <option value="">Any status</option>
@@ -280,13 +276,13 @@ export function SocialPostsPage() {
           </div>
         </div>
 
-        {list?.error ? (
-          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{list.error}</p>
-        ) : !loading && data && data.posts.length === 0 ? (
+        {feed.error && feed.items.length === 0 ? (
+          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{feed.error}</p>
+        ) : !loading && feed.items.length === 0 ? (
           <EmptyState title="No posts yet" />
         ) : (
           <AdminTable headers={["Listing", "Status", "When", "Post", ""]}>
-            {(data?.posts ?? []).map((post) => (
+            {feed.items.map((post) => (
               <tr key={post.id} className="align-top transition-colors hover:bg-slate-50/50">
                 <td className="px-6 py-4">
                   <Link href={`/properties/${post.propertyId}`} className="font-bold text-slate-900 hover:underline">
@@ -338,21 +334,7 @@ export function SocialPostsPage() {
           </AdminTable>
         )}
 
-        {total > PAGE_SIZE && (
-          <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-            <span>
-              Page {page} of {lastPage}
-            </span>
-            <div className="flex gap-2">
-              <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                Previous
-              </SecondaryButton>
-              <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" disabled={page >= lastPage} onClick={() => setPage(page + 1)}>
-                Next
-              </SecondaryButton>
-            </div>
-          </div>
-        )}
+        <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore || (loading && feed.items.length > 0)} />
         {channel && <SocialPostDialog channel={channel} open={picking} onClose={() => setPicking(false)} onQueued={() => setReload((n) => n + 1)} />}
         {channel && <SocialEditDialog post={editing} channel={channel} onClose={() => setEditing(null)} onSaved={() => setReload((n) => n + 1)} />}
       </PageFrame>

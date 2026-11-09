@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -308,8 +310,6 @@ export function SupplierOrdersTrackerPage({ scope }: { scope: SuppliersScope }) 
   const [supplierId, setSupplierId] = useState(initialSupplier);
   const [status, setStatus] = useState("");
   const [payment, setPayment] = useState("");
-  const [page, setPage] = useState(1);
-  const [result, setResult] = useState<{ key: string; data?: OrdersTrackResult; error?: string } | null>(null);
 
   useEffect(() => {
     if (!isAuthReady || !token || !canManage) return;
@@ -322,25 +322,20 @@ export function SupplierOrdersTrackerPage({ scope }: { scope: SuppliersScope }) 
     };
   }, [isAuthReady, token, canManage]);
 
-  const key = `${supplierId}|${status}|${payment}|${page}`;
-  useEffect(() => {
-    if (!isAuthReady || !token || !canManage) return;
-    let cancelled = false;
-    FurnitureApi.trackOrders(token, { supplierId, status, paymentStatus: payment, page, limit: PAGE_SIZE }).then((r) => {
-      if (!cancelled) setResult(r.ok ? { key, data: r.data } : { key, error: r.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, canManage, key, supplierId, status, payment, page]);
-
-  const loading = result?.key !== key;
-  const data = result?.data;
-  const lastPage = Math.max(Math.ceil((data?.total ?? 0) / PAGE_SIZE), 1);
-  const reset = (apply: () => void) => {
-    apply();
-    setPage(1);
-  };
+  // The orders keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<Order, { summary: OrdersTrackResult["summary"] }>(
+    `${supplierId}|${status}|${payment}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !canManage
+        ? new Promise(() => {})
+        : FurnitureApi.trackOrders(token, { supplierId, status, paymentStatus: payment, page: pageNumber, limit: PAGE_SIZE }).then((r) =>
+            r.ok ? { ok: true as const, items: r.data.orders, total: r.data.total, meta: { summary: r.data.summary } } : { ok: false as const, error: r.error },
+          ),
+    (order) => order.id,
+  );
+  const loading = feed.loading;
+  const summary = feed.meta?.summary;
+  const reset = (apply: () => void) => apply();
 
   return (
     <PageFrame
@@ -389,28 +384,28 @@ export function SupplierOrdersTrackerPage({ scope }: { scope: SuppliersScope }) 
           </div>
         </Card>
 
-        {data && data.summary.length > 0 && (
+        {summary && summary.length > 0 && (
           <div className="mb-5 grid gap-4 sm:grid-cols-2">
             <Card>
               <p className="text-sm font-bold text-slate-500">Paid by customers</p>
-              <p className="mt-2 text-xl font-black text-slate-900">{data.summary.filter((s) => s.paidOrders > 0).map((s) => formatPrice(s.paidTotal, s.currency)).join(" · ") || "—"}</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{summary.filter((s) => s.paidOrders > 0).map((s) => formatPrice(s.paidTotal, s.currency)).join(" · ") || "—"}</p>
             </Card>
             <Card>
               <p className="text-sm font-bold text-slate-500">Waiting for payment</p>
-              <p className="mt-2 text-xl font-black text-slate-900">{data.summary.filter((s) => s.waitingOrders > 0).map((s) => formatPrice(s.waitingTotal, s.currency)).join(" · ") || "—"}</p>
+              <p className="mt-2 text-xl font-black text-slate-900">{summary.filter((s) => s.waitingOrders > 0).map((s) => formatPrice(s.waitingTotal, s.currency)).join(" · ") || "—"}</p>
             </Card>
           </div>
         )}
 
-        {result?.error ? (
-          <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">{result.error}</Card>
-        ) : loading && !data ? (
+        {feed.error && feed.items.length === 0 ? (
+          <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">{feed.error}</Card>
+        ) : loading && feed.items.length === 0 ? (
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading orders…</p>
-        ) : data && data.orders.length === 0 ? (
+        ) : feed.items.length === 0 ? (
           <EmptyState title="No orders found" />
         ) : (
           <AdminTable headers={["Date", "Supplier", "Customer", "Items", "Amount", "Order", "Payment"]}>
-            {(data?.orders ?? []).map((order: Order) => (
+            {feed.items.map((order: Order) => (
               <tr key={order.id} className="align-top transition-colors hover:bg-slate-50/50">
                 <td className="px-6 py-4 text-xs text-slate-500">{formatDate(order.createdAt)}</td>
                 <td className="px-6 py-4 text-sm font-bold text-slate-900">{order.supplierName ?? "—"}</td>
@@ -432,21 +427,7 @@ export function SupplierOrdersTrackerPage({ scope }: { scope: SuppliersScope }) 
           </AdminTable>
         )}
 
-        {(data?.total ?? 0) > PAGE_SIZE && (
-          <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
-            <span>
-              Page {page} of {lastPage}
-            </span>
-            <div className="flex gap-2">
-              <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                Previous
-              </SecondaryButton>
-              <SecondaryButton type="button" className="min-h-10 px-4 py-2 text-sm" disabled={page >= lastPage} onClick={() => setPage(page + 1)}>
-                Next
-              </SecondaryButton>
-            </div>
-          </div>
-        )}
+        <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
       </RequirePermission>
     </PageFrame>
   );

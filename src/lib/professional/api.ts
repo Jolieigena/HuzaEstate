@@ -135,7 +135,7 @@ export async function saveMyProfessionalProfile(token: string, input: SaveProfil
 
 export async function fetchProfessionalsDirectory(): Promise<RealProfessionalProfile[]> {
   try {
-    const res = await fetch(`${API_URL}/professionals`);
+    const res = await fetch(`${API_URL}/professionals?limit=200`);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.professionals as RealProfessionalProfile[]) ?? [];

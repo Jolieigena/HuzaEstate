@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Link from "next/link";
 import type { AdminPayment, AdminPaymentList, AdminUser, PaymentKind } from "@/lib/admin/api";
 import { AdminTable, EmptyState, formatDateTime } from "@/components/admin/ui";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import Select from "@/components/shared/Select";
 import type { PaymentsSource } from "./paymentsSource";
-import { LoadError, LoadingRow, Pager, SellerCell, Toolbar, useKeyedLoad } from "./shared";
+import { LoadError, LoadingRow, SellerCell, Toolbar } from "./shared";
 
 const PAGE_SIZE = 25;
 type OneTimeKind = Exclude<PaymentKind, "subscribe">;
@@ -49,20 +51,27 @@ export default function OneTimePaymentsPanel({
 }) {
   const { format } = useDisplayCurrency();
   const [kind, setKind] = useState<"all" | OneTimeKind>("all");
-  const [page, setPage] = useState(1);
   const [reload, setReload] = useState(0);
 
-  const key = `${kind}|${page}|${reload}`;
-  const { data, error, loading } = useKeyedLoad(
-    enabled && !!token,
-    key,
-    () => source.payments(token as string, { kind: kind === "all" ? "one_time" : kind, page, limit: PAGE_SIZE }),
-    (list) => onSummary(list.summary),
+  // The payments keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<AdminPayment, { summary: AdminPaymentList["summary"] }>(
+    `${kind}|${reload}|${enabled && !!token}`,
+    (pageNumber) =>
+      !enabled || !token
+        ? new Promise(() => {})
+        : source.payments(token, { kind: kind === "all" ? "one_time" : kind, page: pageNumber, limit: PAGE_SIZE }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.payments, total: result.data.total, meta: { summary: result.data.summary } } : { ok: false as const, error: result.error },
+          ),
+    (payment) => payment.id,
   );
+  const summary = feed.meta?.summary;
+  useEffect(() => {
+    if (summary) onSummary(summary);
+  }, [summary]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div>
-      <Toolbar count={data?.total} noun="payment">
+      <Toolbar count={feed.items.length > 0 || !feed.loading ? feed.total : undefined} noun="payment">
         <label className={filterLabel}>
           Type
           <Select
@@ -70,7 +79,6 @@ export default function OneTimePaymentsPanel({
             value={kind}
             onChange={(e) => {
               setKind(e.target.value as "all" | OneTimeKind);
-              setPage(1);
             }}
           >
             <option value="all">All promotions & extra posts</option>
@@ -80,14 +88,14 @@ export default function OneTimePaymentsPanel({
         </label>
       </Toolbar>
 
-      {error ? (
-        <LoadError message={error} onRetry={() => setReload((n) => n + 1)} />
-      ) : loading && !data ? (
+      {feed.error && feed.items.length === 0 ? (
+        <LoadError message={feed.error} onRetry={() => setReload((n) => n + 1)} />
+      ) : feed.loading && feed.items.length === 0 ? (
         <LoadingRow>Loading payments…</LoadingRow>
-      ) : data && data.payments.length ? (
+      ) : feed.items.length > 0 ? (
         <>
           <AdminTable headers={["Seller", "Type", "Amount", "Details", "Date"]}>
-            {data.payments.map((payment) => (
+            {feed.items.map((payment) => (
               <tr key={payment.id} className="transition-colors hover:bg-slate-50/50">
                 <td className="px-6 py-4">
                   <SellerCell accountId={payment.accountId} sellers={sellers} href={source.sellerHref} />
@@ -103,7 +111,7 @@ export default function OneTimePaymentsPanel({
               </tr>
             ))}
           </AdminTable>
-          <Pager page={page} total={data.total} limit={data.limit} onPage={setPage} />
+          <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
         </>
       ) : (
         <EmptyState title="No promotions paid for yet" description="Paid promotions and extra posts appear here once a seller buys one." />

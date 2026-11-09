@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -60,7 +62,6 @@ const TYPE_TABS: { key: "all" | UserAccountType; label: string }[] = [
 const ROLE_KEYS = new Set(TYPE_TABS.map((t) => t.key));
 const PAGE_SIZE = 20;
 
-type ListState = { key: string; data?: AdminUserList; error?: string };
 
 // Used only on the Professionals tab, to show the same Type/Specialisation/Profile-status
 // columns the old standalone /admin/professionals page used to — folded in here instead of a
@@ -92,8 +93,6 @@ export function UsersListPage() {
   const [status, setStatus] = useState<"all" | UserStatus>("all");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [state, setState] = useState<ListState | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
   // Scopes the whole list to one organisation's staff — set only via a deep link from the
   // Organisations page ("View staff"); there's no UI to set this directly, so it never changes
@@ -104,28 +103,23 @@ export function UsersListPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const requestKey = `${type}|${status}|${search}|${page}|${organizationId}|${reloadCount}`;
-  useEffect(() => {
-    if (!isAuthReady || !token || !canView) return;
-    let cancelled = false;
-    AdminApi.listUsers(token, { role: type, status, search, page, limit: PAGE_SIZE, organizationId }).then((result) => {
-      if (cancelled) return;
-      setState(result.ok ? { key: requestKey, data: result.data } : { key: requestKey, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, canView, type, status, search, page, organizationId, requestKey]);
-
-  const loading = !state || state.key !== requestKey;
-  const data = state?.data;
-  const counts = data?.counts;
-  const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
+  // The accounts keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<AdminUser, { counts: AdminUserList["counts"] }>(
+    `${type}|${status}|${search}|${organizationId}|${reloadCount}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !canView
+        ? new Promise(() => {})
+        : AdminApi.listUsers(token, { role: type, status, search, page: pageNumber, limit: PAGE_SIZE, organizationId }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.users, total: result.data.total, meta: { counts: result.data.counts } } : { ok: false as const, error: result.error },
+          ),
+    (user) => user.id,
+  );
+  const loading = feed.loading;
+  const counts = feed.meta?.counts;
 
   return (
     <PageFrame
@@ -154,7 +148,6 @@ export function UsersListPage() {
                 aria-selected={active}
                 onClick={() => {
                   setType(tab.key);
-                  setPage(1);
                 }}
                 className={`rounded-full border px-4 py-2 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
               >
@@ -177,8 +170,7 @@ export function UsersListPage() {
                 className={`${fieldClass} mt-1`}
                 value={status}
                 onChange={(e) => {
-                  setStatus(e.target.value as typeof status);
-                  setPage(1);
+                  setStatus(e.target.value as typeof status);
                 }}
               >
                 <option value="all">All statuses</option>
@@ -189,23 +181,23 @@ export function UsersListPage() {
           </div>
         </Card>
 
-        {state?.error ? (
+        {feed.error ? (
           <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">
-            {state.error}{" "}
+            {feed.error}{" "}
             <button className="font-bold underline" onClick={() => setReloadCount((n) => n + 1)}>
               Retry
             </button>
           </Card>
-        ) : loading && !data ? (
+        ) : loading && feed.items.length === 0 ? (
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading accounts…</p>
-        ) : data && data.users.length ? (
+        ) : feed.items.length > 0 ? (
           <>
             <p className="mb-3 text-xs font-semibold text-slate-400">
-              {data.total} {data.total === 1 ? "account" : "accounts"}
+              {feed.total} {feed.total === 1 ? "account" : "accounts"}
               {loading ? " · updating…" : ""}
             </p>
             <div className="grid gap-3">
-              {data.users.map((user) => {
+              {feed.items.map((user) => {
                 const profile = type === "professional" ? professionalProfiles[user.id] : undefined;
                 return (
                   <Link key={user.id} href={`/admin/users/${user.id}`}>
@@ -240,19 +232,7 @@ export function UsersListPage() {
                 );
               })}
             </div>
-            {totalPages > 1 && (
-              <div className="mt-6 flex items-center justify-between">
-                <SecondaryButton disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  Previous
-                </SecondaryButton>
-                <span className="text-sm font-semibold text-slate-500">
-                  Page {page} of {totalPages}
-                </span>
-                <SecondaryButton disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                  Next
-                </SecondaryButton>
-              </div>
-            )}
+            <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
           </>
         ) : (
           <EmptyState title="No users found" description="Try a different search or filter." />

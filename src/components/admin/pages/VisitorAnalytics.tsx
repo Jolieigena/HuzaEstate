@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import dynamic from "next/dynamic";
 import Dialog from "@/components/Dialog";
 import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDateTime } from "@/components/admin/ui";
@@ -93,8 +95,6 @@ export function VisitorAnalyticsPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const [visitors, setVisitors] = useState<{ rows: VisitorRow[]; total: number } | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detail, setDetail] = useState<VisitorDetail | null>(null);
   const [detailError, setDetailError] = useState("");
@@ -112,7 +112,6 @@ export function VisitorAnalyticsPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setQuery(search.trim());
-      setPage(1);
     }, 300);
     return () => window.clearTimeout(timer);
   }, [search]);
@@ -135,16 +134,18 @@ export function VisitorAnalyticsPage() {
     };
   }, [isAuthReady, token, isAdministrator, range, filters]);
 
-  useEffect(() => {
-    if (!isAuthReady || !token || !isAdministrator) return;
-    let cancelled = false;
-    AnalyticsApi.visitors(token, { range, filters, search: query, page, limit: LIMIT }).then((result) => {
-      if (!cancelled && result.ok) setVisitors({ rows: result.data.visitors, total: result.data.total });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, isAdministrator, range, filters, query, page]);
+  // The visitors keep loading as you scroll, so there are no page buttons.
+  const visitorFeed = useInfinitePages<VisitorRow>(
+    `${JSON.stringify(range)}|${JSON.stringify(filters)}|${query}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !isAdministrator
+        ? new Promise(() => {})
+        : AnalyticsApi.visitors(token, { range, filters, search: query, page: pageNumber, limit: LIMIT }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.visitors, total: result.data.total } : { ok: false as const, error: result.error },
+          ),
+    (visitor) => String((visitor as { id?: string; ip?: string }).id ?? (visitor as { ip?: string }).ip),
+  );
+  const visitors = visitorFeed.loading && visitorFeed.items.length === 0 ? null : { rows: visitorFeed.items, total: visitorFeed.total };
 
   useEffect(() => {
     if (!detailId || !token) return;
@@ -164,7 +165,6 @@ export function VisitorAnalyticsPage() {
 
   const choose = (next: AnalyticsRange) => {
     setRange(next);
-    setPage(1);
     setCustomError("");
   };
 
@@ -178,7 +178,6 @@ export function VisitorAnalyticsPage() {
       }
       return next;
     });
-    setPage(1);
     if (toTab) setTab(toTab);
   };
   const drop = (key: keyof AnalyticsFilters) => {
@@ -188,11 +187,9 @@ export function VisitorAnalyticsPage() {
       if (key === "country") delete next.city;
       return next;
     });
-    setPage(1);
   };
   const pickPoint = (p: MapPoint) => {
     setFilters((current) => ({ ...current, country: p.code, ...(p.city ? { city: p.city } : {}) }));
-    setPage(1);
     setTab("visitors");
   };
 
@@ -217,7 +214,6 @@ export function VisitorAnalyticsPage() {
   const customActive = !PRESETS.some((p) => isPreset(range, p.days));
   const maxDay = Math.max(1, ...(summary?.daily ?? []).map((d) => d.visits));
   const maxCountry = Math.max(1, ...(summary?.countries ?? []).map((c) => c.visits));
-  const pages = visitors ? Math.max(1, Math.ceil(visitors.total / LIMIT)) : 1;
   const countryName = (code?: string) => summary?.countries.find((c) => c.code === code)?.country ?? code ?? "";
   const chips: { key: keyof AnalyticsFilters; label: string }[] = [];
   if (filters.country) chips.push({ key: "country", label: countryName(filters.country) });
@@ -346,7 +342,6 @@ export function VisitorAnalyticsPage() {
                           else delete next.audience;
                           return next;
                         });
-                        setPage(1);
                       }}
                       className={`min-h-9 rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${active ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900"}`}
                     >
@@ -638,19 +633,7 @@ export function VisitorAnalyticsPage() {
                         </tr>
                       ))}
                     </AdminTable>
-                    {pages > 1 && (
-                      <div className="mt-5 flex items-center justify-between text-sm font-bold text-slate-600">
-                        <SecondaryButton disabled={page <= 1} onClick={() => setPage((n) => n - 1)}>
-                          Previous
-                        </SecondaryButton>
-                        <span>
-                          Page {page} of {pages}
-                        </span>
-                        <SecondaryButton disabled={page >= pages} onClick={() => setPage((n) => n + 1)}>
-                          Next
-                        </SecondaryButton>
-                      </div>
-                    )}
+                    <InfiniteSentinel onVisible={visitorFeed.loadMore} hasMore={visitorFeed.hasMore} loading={visitorFeed.loadingMore} />
                   </>
                 )}
               </section>

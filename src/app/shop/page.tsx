@@ -2,9 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Select from "@/components/shared/Select";
 import ProductCard from "@/components/shop/ProductCard";
-import { FurnitureApi, type ProductFacets, type ProductList, type ProductSort } from "@/lib/furniture/api";
+import { FurnitureApi, type Product, type ProductFacets, type ProductSort } from "@/lib/furniture/api";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { priceBracketsFor } from "@/lib/currency/brackets";
 import { useDisplayCurrency } from "@/lib/currency/display";
@@ -39,7 +41,6 @@ function Catalog() {
   const maxPrice = get("max");
   const sort = (get("sort") as ProductSort) || "newest";
   const search = get("q");
-  const page = Math.max(parseInt(get("page") || "1", 10) || 1, 1);
 
   const update = useCallback(
     (changes: Record<string, string | undefined>, keepPage = false) => {
@@ -79,38 +80,31 @@ function Catalog() {
   const activeBracket = brackets.findIndex((b) => String(b.min ?? "") === minPrice && String(b.max ?? "") === maxPrice);
   const priced = minPrice !== "" || maxPrice !== "";
 
-  const [data, setData] = useState<{ key: string; list?: ProductList; error?: string } | null>(null);
-  const key = params.toString();
-  useEffect(() => {
-    let cancelled = false;
-    FurnitureApi.list({
-      category,
-      group,
-      supplierId: supplier,
-      country,
-      availability: available ? "available" : "",
-      inCurrency: money.currency ?? undefined,
-      minPrice: minPrice === "" ? "" : Number(minPrice),
-      maxPrice: maxPrice === "" ? "" : Number(maxPrice),
-      search,
-      sort,
-      page,
-      limit: PAGE_SIZE,
-    }).then((result) => {
-      if (!cancelled) setData(result.ok ? { key, list: result.data } : { key, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // `key` stands for every filter above: they all come from the address.
-  }, [key, money.currency]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const list = data?.list;
-  const loading = data?.key !== key;
-  const lastPage = Math.max(Math.ceil((list?.total ?? 0) / PAGE_SIZE), 1);
+  // The products keep loading as you scroll, so there are no page buttons. The key stands for every filter: they all come from the address.
+  const feedKey = `${params.toString()}|${money.currency ?? ""}`;
+  const feed = useInfinitePages<Product>(
+    feedKey,
+    (pageNumber) =>
+      FurnitureApi.list({
+        category,
+        group,
+        supplierId: supplier,
+        country,
+        availability: available ? "available" : "",
+        inCurrency: money.currency ?? undefined,
+        minPrice: minPrice === "" ? "" : Number(minPrice),
+        maxPrice: maxPrice === "" ? "" : Number(maxPrice),
+        search,
+        sort,
+        page: pageNumber,
+        limit: PAGE_SIZE,
+      }).then((result) => (result.ok ? { ok: true as const, items: result.data.products, total: result.data.total } : { ok: false as const, error: result.error })),
+    (product) => product.id,
+  );
+  const loading = feed.loading;
   const tabs = useShopTabs();
   const hasTabs = !!tabs && (tabs.groups.length > 0 || tabs.other.length > 0);
-  const countLabel = loading && !list ? "Loading…" : `${list?.total ?? 0} ${list?.total === 1 ? "item" : "items"}`;
+  const countLabel = loading && feed.items.length === 0 ? "Loading…" : `${feed.total} ${feed.total === 1 ? "item" : "items"}`;
   // The tab a view belongs to: the one chosen, or the one that lists the chosen category.
   const activeTab = group || (category ? tabs?.groups.find((g) => g.categories.some((c) => c.name === category))?.name ?? (tabs?.other.some((c) => c.name === category) ? OTHER : "") : "");
   const [openTab, setOpenTab] = useState("");
@@ -316,9 +310,9 @@ function Catalog() {
       </div>
 
       <div className="mt-6">
-        {data?.error ? (
-          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{data.error}</p>
-        ) : list && list.products.length === 0 ? (
+        {feed.error && feed.items.length === 0 ? (
+          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{feed.error}</p>
+        ) : !loading && feed.items.length === 0 ? (
           <div className="py-16 text-center">
             <p className="text-sm font-semibold text-slate-400">Nothing matches</p>
             {chips.length > 0 && (
@@ -329,26 +323,14 @@ function Catalog() {
           </div>
         ) : (
           <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-60" : ""}`}>
-            {(list?.products ?? []).map((product) => (
+            {feed.items.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
       </div>
 
-      {(list?.total ?? 0) > PAGE_SIZE && (
-        <div className="mt-8 flex items-center justify-center gap-3 text-sm font-semibold text-slate-600">
-          <button type="button" disabled={page <= 1} onClick={() => update({ page: String(page - 1) }, true)} className="rounded-xl border border-slate-200 px-4 py-2 disabled:opacity-40">
-            Previous
-          </button>
-          <span>
-            Page {page} of {lastPage}
-          </span>
-          <button type="button" disabled={page >= lastPage} onClick={() => update({ page: String(page + 1) }, true)} className="rounded-xl border border-slate-200 px-4 py-2 disabled:opacity-40">
-            Next
-          </button>
-        </div>
-      )}
+      <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore || (loading && feed.items.length > 0)} />
     </main>
   );
 }

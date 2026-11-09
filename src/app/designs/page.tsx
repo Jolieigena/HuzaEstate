@@ -7,6 +7,8 @@ import Select from "@/components/shared/Select";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { priceBracketsFor } from "@/lib/currency/brackets";
 import { useMenu } from "@/lib/menus/menus";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import {
   DESIGN_CATEGORY_LABELS,
@@ -16,7 +18,7 @@ import {
   formatDesignPrice,
   type DesignCategory,
   type DesignFacets,
-  type DesignList,
+  type Design,
   type DesignPriceType,
   type DesignSort,
 } from "@/lib/designs/api";
@@ -56,7 +58,6 @@ function Catalog() {
   const maxPrice = get("max");
   const sort = (get("sort") as DesignSort) || "newest";
   const search = get("q");
-  const page = Math.max(parseInt(get("page") || "1", 10) || 1, 1);
 
   const update = useCallback(
     (changes: Record<string, string | undefined>, keepPage = false) => {
@@ -97,38 +98,30 @@ function Catalog() {
   const activeBracket = brackets.findIndex((b) => String(b.min ?? "") === minPrice && String(b.max ?? "") === maxPrice);
   const priced = minPrice !== "" || maxPrice !== "";
 
-  const [data, setData] = useState<{ key: string; list?: DesignList; error?: string } | null>(null);
-  const key = params.toString();
-  useEffect(() => {
-    let cancelled = false;
-    DesignsApi.list({
-      category,
-      search,
-      space,
-      profession,
-      country,
-      city,
-      professionalId: designer,
-      priceType,
-      hasFurniture,
-      inCurrency: money.currency ?? undefined,
-      minPrice: minPrice === "" ? "" : Number(minPrice),
-      maxPrice: maxPrice === "" ? "" : Number(maxPrice),
-      sort,
-      page,
-      limit: PAGE_SIZE,
-    }).then((result) => {
-      if (!cancelled) setData(result.ok ? { key, list: result.data } : { key, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // `key` stands for every filter above: they all come from the address.
-  }, [key, money.currency]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const list = data?.list;
-  const loading = data?.key !== key;
-  const lastPage = Math.max(Math.ceil((list?.total ?? 0) / PAGE_SIZE), 1);
+  // The designs keep loading as you scroll, so there are no page buttons. The key stands for every filter: they all come from the address.
+  const feed = useInfinitePages<Design>(
+    `${params.toString()}|${money.currency ?? ""}`,
+    (pageNumber) =>
+      DesignsApi.list({
+        category,
+        search,
+        space,
+        profession,
+        country,
+        city,
+        professionalId: designer,
+        priceType,
+        hasFurniture,
+        inCurrency: money.currency ?? undefined,
+        minPrice: minPrice === "" ? "" : Number(minPrice),
+        maxPrice: maxPrice === "" ? "" : Number(maxPrice),
+        sort,
+        page: pageNumber,
+        limit: PAGE_SIZE,
+      }).then((result) => (result.ok ? { ok: true as const, items: result.data.designs, total: result.data.total } : { ok: false as const, error: result.error })),
+    (design) => design.id,
+  );
+  const loading = feed.loading;
 
   const spaces = (facets?.spaces ?? []).filter((s) => !category || s.category === category);
   const spaceOptions = Array.from(new Map(spaces.map((s) => [s.name.toLowerCase(), s])).values());
@@ -320,7 +313,7 @@ function Catalog() {
       )}
 
       <div className="mt-5 flex flex-wrap items-center gap-2" aria-live="polite">
-        <p className="mr-2 text-sm font-semibold text-slate-500">{loading && !list ? "Loading…" : `${list?.total ?? 0} ${list?.total === 1 ? "design" : "designs"}`}</p>
+        <p className="mr-2 text-sm font-semibold text-slate-500">{loading && feed.items.length === 0 ? "Loading…" : `${feed.total} ${feed.total === 1 ? "design" : "designs"}`}</p>
         {chips.map((chip) => (
           <button key={chip.label} type="button" onClick={() => { if ("q" in chip.clear) setSearchInput(""); update(chip.clear); }} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
             {chip.label}
@@ -338,9 +331,9 @@ function Catalog() {
       </div>
 
       <div className="mt-6">
-        {data?.error ? (
-          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{data.error}</p>
-        ) : list && list.designs.length === 0 ? (
+        {feed.error && feed.items.length === 0 ? (
+          <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{feed.error}</p>
+        ) : !loading && feed.items.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm font-semibold text-slate-400">No designs match</p>
             {chips.length > 0 && (
@@ -363,7 +356,7 @@ function Catalog() {
           </div>
         ) : (
           <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 ${loading ? "opacity-60" : ""}`}>
-            {(list?.designs ?? []).map((design) => (
+            {feed.items.map((design) => (
               <Link key={design.id} href={`/designs/${design.id}`} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
                 <div className="relative overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -405,19 +398,7 @@ function Catalog() {
         )}
       </div>
 
-      {(list?.total ?? 0) > PAGE_SIZE && (
-        <div className="mt-8 flex items-center justify-center gap-3 text-sm font-semibold text-slate-600">
-          <button type="button" disabled={page <= 1} onClick={() => update({ page: String(page - 1) }, true)} className="rounded-xl border border-slate-200 px-4 py-2 disabled:opacity-40">
-            Previous
-          </button>
-          <span>
-            Page {page} of {lastPage}
-          </span>
-          <button type="button" disabled={page >= lastPage} onClick={() => update({ page: String(page + 1) }, true)} className="rounded-xl border border-slate-200 px-4 py-2 disabled:opacity-40">
-            Next
-          </button>
-        </div>
-      )}
+      <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore || (loading && feed.items.length > 0)} />
     </main>
   );
 }

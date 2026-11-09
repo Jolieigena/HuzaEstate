@@ -21,9 +21,11 @@ import { PLAN_LABELS, PLAN_LIMITS } from "@/lib/postingPlans/types";
 import ReasonFormModal from "../ReasonFormModal";
 import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
 import Select from "@/components/shared/Select";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 
 const TIERS: AccessCodeTier[] = ["silver", "gold", "diamond"];
-const PAGE_SIZES = [10, 25, 50];
+const PAGE_SIZE = 25;
 const QUICK_DAYS = [7, 14, 30];
 
 const STATUS_STYLE: Record<AccessCodeStatus, string> = {
@@ -43,7 +45,6 @@ function tierHint(tier: AccessCodeTier): string {
   return limit === null ? "unlimited posts a month" : `up to ${limit} posts a month`;
 }
 
-type Loaded = { key: string; data?: AccessCodeList; error?: string };
 type EndTarget = { code: AccessCode; mode: "end" | "cancel" };
 
 /** Access codes: time-limited access to a paid plan, issued by email and redeemed by the seller. One
@@ -60,10 +61,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
   const [issuer, setIssuer] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [reload, setReload] = useState(0);
-  const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [organizations, setOrganizations] = useState<AdminOrganization[]>([]);
 
   const [creating, setCreating] = useState(false);
@@ -75,7 +73,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
@@ -91,26 +88,19 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
     };
   }, [scope, isAuthReady, token, isAdmin]);
 
-  const key = `${status}|${tier}|${issuer}|${search}|${page}|${limit}|${reload}`;
-  useEffect(() => {
-    if (!isAuthReady || !token || !canManage) return;
-    let cancelled = false;
-    AccessCodesApi.list(token, { status, tier, search, organizationId: scope === "platform" ? issuer : undefined, page, limit }).then((result) => {
-      if (cancelled) return;
-      setLoaded(result.ok ? { key, data: result.data } : { key, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [isAuthReady, token, canManage, scope, status, tier, issuer, search, page, limit, key]);
-
+  // The codes keep loading as you scroll, so there are no page buttons and no page size.
+  const feed = useInfinitePages<AccessCode, { summary: AccessCodeList["summary"] }>(
+    `${status}|${tier}|${issuer}|${search}|${scope}|${reload}`,
+    (pageNumber) =>
+      !isAuthReady || !token || !canManage
+        ? new Promise(() => {})
+        : AccessCodesApi.list(token, { status, tier, search, organizationId: scope === "platform" ? issuer : undefined, page: pageNumber, limit: PAGE_SIZE }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.accessCodes, total: result.data.total, meta: { summary: result.data.summary } } : { ok: false as const, error: result.error },
+          ),
+    (item) => item.id,
+  );
   const refresh = () => setReload((n) => n + 1);
-  const data = loaded?.data;
-  const loading = loaded?.key !== key;
-  const total = data?.total ?? 0;
-  const lastPage = Math.max(Math.ceil(total / limit), 1);
-  const from = total === 0 ? 0 : (page - 1) * limit + 1;
-  const to = Math.min(page * limit, total);
+  const loading = feed.loading;
   const filtered = status !== "" || tier !== "" || issuer !== "" || search !== "";
 
   const copy = async (code: string) => {
@@ -129,7 +119,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
     else showToast(result.data.emailDelivered ? `Code sent again to ${code.email}.` : "The email couldn't be delivered. Copy the code and send it yourself.", result.data.emailDelivered ? "success" : "error");
   };
 
-  const summary = data?.summary;
+  const summary = feed.meta?.summary;
   const tiles: { status: AccessCodeStatus; label: string; hint: string }[] = [
     { status: "redeemed", label: "Active now", hint: "Access running" },
     { status: "pending", label: "Not redeemed", hint: "Waiting for the seller" },
@@ -158,7 +148,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                 type="button"
                 onClick={() => {
                   setStatus(active ? "" : tile.status);
-                  setPage(1);
                 }}
                 aria-pressed={active}
                 className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition-colors ${active ? "border-slate-900" : "border-slate-200 hover:border-slate-300"}`}
@@ -185,7 +174,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value as AccessCodeStatus | "");
-                  setPage(1);
                 }}
               >
                 <option value="">Any status</option>
@@ -203,7 +191,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                 value={tier}
                 onChange={(e) => {
                   setTier(e.target.value as AccessCodeTier | "");
-                  setPage(1);
                 }}
               >
                 <option value="">Any plan</option>
@@ -222,7 +209,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                   value={issuer}
                   onChange={(e) => {
                     setIssuer(e.target.value);
-                    setPage(1);
                   }}
                 >
                   <option value="">Everyone</option>
@@ -246,7 +232,6 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
                 setIssuer("");
                 setSearchInput("");
                 setSearch("");
-                setPage(1);
               }}
             >
               Clear filters
@@ -254,19 +239,19 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
           )}
         </Card>
 
-        {loaded?.error ? (
+        {feed.error ? (
           <Card className="border-red-100 bg-red-50/60 text-sm text-red-700">
-            {loaded.error}{" "}
+            {feed.error}{" "}
             <button className="font-bold underline" onClick={refresh}>
               Retry
             </button>
           </Card>
-        ) : loading && !data ? (
+        ) : loading && feed.items.length === 0 ? (
           <p className="py-10 text-center text-sm font-semibold text-slate-400">Loading access codes…</p>
-        ) : data && data.accessCodes.length ? (
+        ) : feed.items.length > 0 ? (
           <>
             <AdminTable headers={["Code", "Recipient", "Plan", "Days", "Posts left", "Status", "Created", "Redeemed", "Access expires", ...(scope === "platform" ? ["Issued by"] : []), "Actions"]}>
-              {data.accessCodes.map((item) => (
+              {feed.items.map((item) => (
                 <tr key={item.id} className="align-top transition-colors hover:bg-slate-50/50">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -346,39 +331,10 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
               ))}
             </AdminTable>
 
-            <div className="mt-5 flex flex-col gap-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-              <label className="flex items-center gap-2 font-semibold">
-                Items per page
-                <Select
-                  className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm"
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                >
-                  {PAGE_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-              <div className="flex items-center gap-3">
-                <span>
-                  Showing {from} to {to} of {total} access {total === 1 ? "code" : "codes"}
-                </span>
-                <div className="flex items-center gap-1">
-                  <SecondaryButton aria-label="Previous page" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="min-h-9! px-3! py-1.5!">
-                    ‹
-                  </SecondaryButton>
-                  <span className="min-w-9 rounded-lg bg-[#2ec440] px-3 py-1.5 text-center text-sm font-bold text-white">{page}</span>
-                  <SecondaryButton aria-label="Next page" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)} className="min-h-9! px-3! py-1.5!">
-                    ›
-                  </SecondaryButton>
-                </div>
-              </div>
-            </div>
+            <p className="mt-5 text-sm text-slate-600">
+              {feed.total} access {feed.total === 1 ? "code" : "codes"}
+            </p>
+            <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
           </>
         ) : (
           <EmptyState
