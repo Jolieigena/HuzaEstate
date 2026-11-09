@@ -11,7 +11,7 @@ import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import PhoneInput from '@/components/shared/PhoneInput';
 import AddressInput from '@/components/shared/AddressInput';
 import Dialog from '@/components/Dialog';
-import { PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
+import { FREE_PLAN_PRICE, PLAN_LABELS, PLAN_PRICES, type PlanTier } from '@/lib/postingPlans/types';
 import { createSellerFreeCheckout, createSubscribeCheckout } from '@/lib/postingPlans/api';
 import { redeemAccessCode } from '@/lib/accessCodes/api';
 import { AccessCodeField } from '@/components/postingPlans/RedeemAccessCode';
@@ -188,7 +188,7 @@ function BecomeASellerForm() {
           <h1 className="text-2xl font-bold text-slate-900 leading-none">{t('Become a seller')}</h1>
           {selectedTier && (
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#2ec440]/10 text-[#2ec440] font-bold text-xs leading-none">
-              {usingCode ? t('Access code: no payment needed') : paidTier ? t('Selected plan: {plan} — {price}/month', { plan: t(PLAN_LABELS[selectedTier]), price: show(PLAN_PRICES[paidTier]) }) : t('Selected plan: {plan} — $0', { plan: t(PLAN_LABELS[selectedTier]) })}
+              {usingCode ? t('Access code: no payment needed') : paidTier ? t('Selected plan: {plan} — {price}/month', { plan: t(PLAN_LABELS[selectedTier]), price: show(PLAN_PRICES[paidTier]) }) : t('Selected plan: {plan} — {price}', { plan: t(PLAN_LABELS[selectedTier]), price: show(FREE_PLAN_PRICE) })}
             </div>
           )}
         </div>

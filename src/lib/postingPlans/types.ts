@@ -39,6 +39,9 @@ export const PLAN_EXPIRY_DAYS: Record<PlanTier, number> = {
 /** One-time price to publish a single extra listing without subscribing, as set by Huzalabs. */
 export const PER_POST_PRICE: Money = money(3, "USD");
 
+/** What the Free plan costs. It goes through the same currency conversion as the paid plans, so it shows as 0 in the visitor's own currency. */
+export const FREE_PLAN_PRICE: Money = money(0, "USD");
+
 /** What a seller actually sees in Manager Portal differs by tier — this is
  *  the single place that decides it, so PostingPlanCard's feature list
  *  (PricingCards.tsx) and the real gates (MarketInsightsTab.tsx,

@@ -1,5 +1,5 @@
 import type { PlanTier } from "@/lib/postingPlans/types";
-import { PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PER_POST_PRICE, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
+import { FREE_PLAN_PRICE, PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PER_POST_PRICE, PLAN_LIMITS, PLAN_PRICES } from "@/lib/postingPlans/types";
 import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { useLanguage } from "@/lib/i18n/language";
@@ -67,7 +67,7 @@ export default function PricingCards({
 
               <h3 className="font-bold text-slate-900 text-[15px]">{t(PLAN_LABELS[tier])}</h3>
               <div className="mt-2 mb-4">
-                <span className="text-2xl font-black text-slate-900">{price ? show(price) : "$0"}</span>
+                <span className="text-2xl font-black text-slate-900">{show(price ?? FREE_PLAN_PRICE)}</span>
                 <span className="text-slate-500 text-sm font-medium">{tier === "free" ? "" : t("/month")}</span>
               </div>
 
@@ -131,7 +131,7 @@ export default function PricingCards({
                 <th className="px-3 py-2.5 font-semibold text-slate-700">{t("Price")}</th>
                 {TIERS.map((tier) => (
                   <td key={tier} className="px-3 py-2.5">
-                    {tier === "free" ? "$0" : `${show(PLAN_PRICES[tier])}${t("/month")}`}
+                    {tier === "free" ? show(FREE_PLAN_PRICE) : `${show(PLAN_PRICES[tier])}${t("/month")}`}
                   </td>
                 ))}
               </tr>

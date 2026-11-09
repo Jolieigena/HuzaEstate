@@ -472,7 +472,7 @@ export const RW: Record<string, string> = {
   "Become a seller": "Ba ugurisha",
   "Access code: no payment needed": "Kode yo kwinjira: nta kwishyura bikenewe",
   "Selected plan: {plan} — {price}/month": "Gahunda wahisemo: {plan} — {price}/ukwezi",
-  "Selected plan: {plan} — $0": "Gahunda wahisemo: {plan} — $0",
+  "Selected plan: {plan} — {price}": "Gahunda wahisemo: {plan} — {price}",
   "You'll complete payment securely with Stripe next.": "Ubutaha uzarangiza kwishyura mu mutekano ukoresheje Stripe.",
   "Contact Information": "Amakuru yo kukugeraho",
   "Continuing as": "Urakomeza nka",
