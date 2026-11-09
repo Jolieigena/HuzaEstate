@@ -36,6 +36,26 @@ export const SPECIALISATION_GROUPS: SpecialisationGroup[] = [
     options: ["Painter", "Plasterer", "Tiler", "Flooring Installer", "Gypsum Ceiling Installer", "Wall Panel Installer", "Door & Window Fitter", "Glazier", "Balustrade & Guardrail Fitter", "Landscaper"],
   },
   {
+    label: "Cleaning, laundry & waste",
+    options: ["House Cleaner", "Carpet & Upholstery Cleaner", "Window Cleaner", "Laundry & Dry Cleaning", "Post-construction Cleaner", "Water Tank Cleaner", "Waste Collection", "Septic Tank Emptying", "Fumigation Specialist"],
+  },
+  {
+    label: "Garden & outdoor care",
+    options: ["Gardener", "Lawn & Hedge Care", "Tree Trimmer", "Swimming Pool Maintenance"],
+  },
+  {
+    label: "Home repairs & upkeep",
+    options: ["Handyman", "Appliance Repair", "Furniture Repair & Upholstery", "Curtain & Blinds Installer", "Interior Decorator", "Locksmith", "Moving & Storage"],
+  },
+  {
+    label: "Security, power & connectivity",
+    options: ["Security Guard Service", "CCTV & Alarm Installer", "Fire Extinguisher Servicing", "Generator & Inverter Technician", "Solar Panel Maintenance", "Refrigeration & AC Technician", "TV & Satellite Installer", "Internet & Wi-Fi Installer", "Gas Installer"],
+  },
+  {
+    label: "Home care & utilities",
+    options: ["House Manager / Caretaker", "Water Delivery"],
+  },
+  {
     label: "Renovation & maintenance",
     options: ["Renovation Specialist", "Home Inspector", "Waterproofing Specialist", "Facilities Manager", "Pest Control"],
   },
