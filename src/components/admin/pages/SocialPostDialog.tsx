@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 import Dialog from "@/components/Dialog";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
@@ -37,8 +39,6 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
 
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [loaded, setLoaded] = useState<{ key: string; data?: SocialListingList; error?: string } | null>(null);
   const [selected, setSelected] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState("");
   const [text, setText] = useState("");
@@ -50,22 +50,21 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const key = `${channel.id}|${search}|${page}`;
-  useEffect(() => {
-    if (!open || !token) return;
-    let cancelled = false;
-    SocialApi.listListings(token, { channel: channel.id, search, page, limit: PAGE_SIZE }).then((result) => {
-      if (!cancelled) setLoaded(result.ok ? { key, data: result.data } : { key, error: result.error });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, token, channel.id, search, page, key]);
+  // The listings keep loading as you scroll, so there are no page buttons.
+  const feed = useInfinitePages<SocialListingList["listings"][number]>(
+    `${channel.id}|${search}|${open}`,
+    (pageNumber) =>
+      !open || !token
+        ? new Promise(() => {})
+        : SocialApi.listListings(token, { channel: channel.id, search, page: pageNumber, limit: PAGE_SIZE }).then((result) =>
+            result.ok ? { ok: true as const, items: result.data.listings, total: result.data.total } : { ok: false as const, error: result.error },
+          ),
+    (listing) => listing.id,
+  );
 
   // With exactly one listing selected, show the text the system would write so it can be changed.
   useEffect(() => {
@@ -85,7 +84,6 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
     setSelected({});
     setSearchInput("");
     setSearch("");
-    setPage(1);
     setText("");
     setPreview("");
     onClose();
@@ -126,9 +124,7 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
     }
   };
 
-  const data = loaded?.data;
-  const loading = loaded?.key !== key;
-  const lastPage = Math.max(Math.ceil((data?.total ?? 0) / PAGE_SIZE), 1);
+  const loading = feed.loading;
 
   return (
     <Dialog open={open} onClose={close} labelledBy={titleId} panelClassName="max-w-3xl">
@@ -139,13 +135,13 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
         <input className={fieldClass} placeholder="Search by title or place" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} aria-label="Search listings" />
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          {loaded?.error ? (
-            <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{loaded.error}</p>
-          ) : !loading && data && data.listings.length === 0 ? (
+          {feed.error && feed.items.length === 0 ? (
+            <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{feed.error}</p>
+          ) : !loading && feed.items.length === 0 ? (
             <p className="py-10 text-center text-sm font-semibold text-slate-400">No published listings found</p>
           ) : (
             <ul className="space-y-2">
-              {(data?.listings ?? []).map((listing) => {
+              {feed.items.map((listing) => {
                 const taken = listing.postStatus === "posted" || listing.postStatus === "pending";
                 const checked = !!selected[listing.id];
                 return (
@@ -168,23 +164,8 @@ export default function SocialPostDialog({ channel, open, onClose, onQueued }: {
               })}
             </ul>
           )}
+          <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore || (loading && feed.items.length > 0)} />
         </div>
-
-        {(data?.total ?? 0) > PAGE_SIZE && (
-          <div className="mt-3 flex items-center justify-between text-sm text-slate-600">
-            <span>
-              Page {page} of {lastPage}
-            </span>
-            <div className="flex gap-2">
-              <SecondaryButton type="button" className="min-h-9 px-3 py-1.5 text-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                Previous
-              </SecondaryButton>
-              <SecondaryButton type="button" className="min-h-9 px-3 py-1.5 text-sm" disabled={page >= lastPage} onClick={() => setPage(page + 1)}>
-                Next
-              </SecondaryButton>
-            </div>
-          </div>
-        )}
 
         {single && (
           <label className="mt-4 block text-sm font-bold text-slate-700">

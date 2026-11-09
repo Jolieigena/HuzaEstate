@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AdminApi, type AdminUser, type ApiResult } from "@/lib/admin/api";
-import { Card, SecondaryButton } from "@/components/admin/ui";
+import { Card } from "@/components/admin/ui";
 
 /** Loads one page of a list and re-loads whenever `key` changes (filters, page, a retry counter).
  *  `loading` is true until the response for the *current* key has arrived, so a filter change shows
@@ -81,24 +81,6 @@ export function SellerCell({ accountId, sellers, href }: { accountId: string; se
       )}
       <p className="text-xs text-slate-500">{seller?.email ?? accountId}</p>
     </>
-  );
-}
-
-export function Pager({ page, total, limit, onPage }: { page: number; total: number; limit: number; onPage: (page: number) => void }) {
-  const pages = Math.max(1, Math.ceil(total / limit));
-  if (pages <= 1) return null;
-  return (
-    <div className="mt-6 flex items-center justify-between">
-      <SecondaryButton disabled={page <= 1} onClick={() => onPage(page - 1)}>
-        Previous
-      </SecondaryButton>
-      <span className="text-sm font-semibold text-slate-500">
-        Page {page} of {pages}
-      </span>
-      <SecondaryButton disabled={page >= pages} onClick={() => onPage(page + 1)}>
-        Next
-      </SecondaryButton>
-    </div>
   );
 }
 
