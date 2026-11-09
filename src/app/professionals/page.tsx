@@ -25,9 +25,18 @@ export default function ProfessionalsDirectoryPage() {
   // someone offers it, so a chip never leads to an empty list.
   const serviceItems = useMenu("professionals-categories", SERVICE_CATEGORIES);
   const [category, setCategory] = useState("");
-  const { account } = useAuth();
+  const { account, isAuthReady } = useAuth();
   const isProfessional = !!account?.roles.includes("professional");
   const canApply = !!account && requestableRolesFor(account.roles).includes("professional");
+
+  // Someone who came here to apply, created an account on the way and was sent back: the application opens by itself, once.
+  useEffect(() => {
+    if (!account || !canApply) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("apply") !== "professional") return;
+    window.history.replaceState(null, "", window.location.pathname);
+    window.dispatchEvent(new CustomEvent(OPEN_ADD_ROLE_EVENT, { detail: { role: "professional" } }));
+  }, [account, canApply]);
   const applyClass = "inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#2ec440]";
 
   useEffect(() => {
@@ -92,10 +101,10 @@ export default function ProfessionalsDirectoryPage() {
         <div className="mb-8">
           <div className="mb-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Find Top Professionals</h1>
-            {isProfessional ? (
+            {!isAuthReady ? null : isProfessional ? (
               <Link href="/professional" className={applyClass}>My professional page</Link>
             ) : !account ? (
-              <Link href="/signup?redirect=/professionals" className={applyClass}>Apply to become a professional</Link>
+              <Link href={`/signup?redirect=${encodeURIComponent("/professionals?apply=professional")}`} className={applyClass}>Apply to become a professional</Link>
             ) : canApply ? (
               <button type="button" onClick={() => window.dispatchEvent(new CustomEvent(OPEN_ADD_ROLE_EVENT, { detail: { role: "professional" } }))} className={applyClass}>
                 Apply to become a professional
