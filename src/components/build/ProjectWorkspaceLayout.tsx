@@ -1,11 +1,11 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BuildProject } from "@/lib/build/types";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { getProjectProgress, getNextAction } from "@/lib/build/progress";
+import { getProjectProgress } from "@/lib/build/progress";
 import { formatRelativeTime, projectLocationLabel } from "@/lib/build/format";
 import { useToast } from "@/lib/toast-context";
 import { StatusBadge } from "./StatusBadge";
@@ -13,16 +13,35 @@ import ActionMenu, { ActionMenuItem } from "@/components/shared/ActionMenu";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import PromptModal from "@/components/shared/PromptModal";
 
-const NAV_ITEMS: { key: string; label: string; segment: string }[] = [
-  { key: "overview", label: "Overview", segment: "" },
-  { key: "brief", label: "Brief", segment: "brief" },
-  { key: "designer", label: "Designer", segment: "designer" },
-  { key: "concepts", label: "Concepts", segment: "concepts" },
-  { key: "budget", label: "Budget", segment: "budget" },
-  { key: "professionals", label: "Professionals", segment: "professionals" },
-  { key: "documents", label: "Documents", segment: "documents" },
-  { key: "activity", label: "Activity", segment: "activity" },
+/** The path a person follows, one step after the other. Pages a step needs (comparing, the room editor, the budget) belong to it and are reached from it. */
+const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
+  { key: "home", label: "Your home", segment: "brief", segments: ["brief"] },
+  { key: "plans", label: "Floor plans", segment: "concepts", segments: ["concepts", "compare", "designer"] },
+  { key: "review", label: "Budget and download", segment: "summary", segments: ["summary", "budget"] },
+  { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals"] },
 ];
+
+/** Which steps are done, and which the person may open now: a step opens once the one before it is done. */
+function pathState(project: BuildProject) {
+  const briefConfirmed = !["draft", "brief_in_progress"].includes(project.status);
+  const planChosen = !!project.selectedConceptId;
+  const reviewRequested = ["awaiting_professional_review", "professionally_reviewed"].includes(project.status);
+  const done = [briefConfirmed, planChosen, reviewRequested, reviewRequested];
+  const open = [true, briefConfirmed, planChosen, planChosen];
+  // Where "continue where I left off" goes.
+  const resume = !briefConfirmed ? 0 : !planChosen ? 1 : !reviewRequested ? 2 : 3;
+  return { done, open, resume };
+}
+
+const CONTINUE_HINT = ["Confirm your brief to see floor plans.", "Choose one floor plan to continue.", "", ""];
+
+function CheckIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
 
 function LocationIcon() {
   return (
@@ -45,11 +64,20 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
 
   const base = `/studio/build/${project.id}`;
   const activeSegment = pathname === base ? "" : pathname.replace(`${base}/`, "").split("/")[0];
+  const { done, open, resume } = pathState(project);
+  const currentStep = STEPS.findIndex((step) => step.segments.includes(activeSegment));
+  const stepHref = (index: number) => `${base}/${STEPS[index].segment}`;
+
+  // The project's own front page is the path itself: it opens on the step the person is up to.
+  useEffect(() => {
+    if (activeSegment === "") router.replace(`${base}/${STEPS[resume].segment}`);
+  }, [activeSegment, base, resume, router]);
   const progress = getProjectProgress(project);
-  const nextAction = getNextAction(project);
   const location = projectLocationLabel(project);
 
   const menuItems: ActionMenuItem[] = [
+    { key: "documents", label: "Documents", onSelect: () => router.push(`${base}/documents`) },
+    { key: "activity", label: "Activity", onSelect: () => router.push(`${base}/activity`) },
     { key: "rename", label: "Rename", onSelect: () => setRenameOpen(true) },
     { key: "duplicate", label: "Duplicate", onSelect: () => setDuplicateOpen(true) },
     project.status === "archived"
@@ -98,42 +126,75 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Not shown on the page it points to: pressing it there would do nothing. */}
-              {nextAction && !pathname.startsWith(nextAction.href) && (
-                <Link
-                  href={nextAction.href}
-                  className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-5 sm:px-6 py-3 rounded-xl transition-colors shadow-lg text-sm whitespace-nowrap"
-                >
-                  {nextAction.label}
-                </Link>
-              )}
               <ActionMenu items={menuItems} />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="print:hidden lg:w-56 flex-shrink-0">
-            <nav aria-label="Project sections" className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 lg:sticky lg:top-24">
-              {NAV_ITEMS.map((item) => {
-                const isActive = activeSegment === item.segment;
-                return (
-                  <Link
-                    key={item.key}
-                    href={`${base}${item.segment ? `/${item.segment}` : ""}`}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
-                      isActive ? "bg-[#2ec440]/10 text-[#2ec440]" : "text-slate-600 hover:bg-white hover:text-slate-900"
-                    }`}
-                  >
-                    {item.label}
+        <ol aria-label="Your path" className="print:hidden mb-8 grid grid-cols-4 gap-2 sm:gap-4">
+          {STEPS.map((step, index) => {
+            const isCurrent = index === currentStep;
+            const isDone = done[index] && !isCurrent;
+            const reachable = open[index];
+            const circle = (
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
+                  isCurrent ? "bg-slate-900 text-white" : isDone ? "bg-[#2ec440] text-white" : reachable ? "bg-white text-slate-700 border border-slate-300" : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                {isDone ? <CheckIcon /> : index + 1}
+              </span>
+            );
+            const label = <span className={`text-xs font-bold leading-tight sm:text-sm ${isCurrent ? "text-slate-900" : reachable ? "text-slate-700" : "text-slate-400"}`}>{step.label}</span>;
+            const body = (
+              <>
+                <span className="flex items-center gap-3">
+                  {circle}
+                  <span className="hidden sm:block">{label}</span>
+                </span>
+                <span className="mt-2 block sm:hidden">{label}</span>
+              </>
+            );
+            return (
+              <li key={step.key} className={`border-t-4 pt-3 ${isCurrent ? "border-slate-900" : isDone ? "border-[#2ec440]" : "border-slate-200"}`}>
+                {reachable ? (
+                  <Link href={stepHref(index)} aria-current={isCurrent ? "step" : undefined} className="block">
+                    {body}
                   </Link>
-                );
-              })}
-            </nav>
-          </aside>
-          <main className="flex-grow min-w-0">{children}</main>
-        </div>
+                ) : (
+                  <span aria-disabled="true" className="block cursor-not-allowed">
+                    {body}
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+
+        <main className="min-w-0">{activeSegment === "" ? null : children}</main>
+
+        {/* Back and Continue, so the person is always told where to go next. The brief has its own steps and buttons inside it. */}
+        {currentStep >= 1 && (
+          <div className="print:hidden mt-10 flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <Link href={stepHref(currentStep - 1)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+              Back
+            </Link>
+            {currentStep < STEPS.length - 1 && (
+              <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                {!open[currentStep + 1] && CONTINUE_HINT[currentStep] && <p className="text-sm font-semibold text-slate-500 sm:text-right">{CONTINUE_HINT[currentStep]}</p>}
+                {open[currentStep + 1] ? (
+                  <Link href={stepHref(currentStep + 1)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+                    Continue: {STEPS[currentStep + 1].label}
+                  </Link>
+                ) : (
+                  <span aria-disabled="true" className="inline-flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl bg-slate-200 px-8 font-bold text-slate-400">
+                    Continue: {STEPS[currentStep + 1].label}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <PromptModal
