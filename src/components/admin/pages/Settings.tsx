@@ -5,15 +5,25 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { useToast } from "@/lib/toast-context";
 import { Card, PageFrame, PrimaryButton, RequirePermission, fieldClass } from "../ui";
+import Toggle from "../Toggle";
 import { ShopCategoriesCard } from "./ShopCategories";
 import { FooterTextCard, MenusCard } from "./Menus";
 
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
+const TABS = [
+  { id: "general", label: "General" },
+  { id: "menus", label: "Menus" },
+  { id: "footer", label: "Footer" },
+  { id: "shop", label: "Shop categories" },
+] as const;
+type TabId = (typeof TABS)[number]["id"];
+
 export function SettingsPage() {
   const { token } = useAuth();
   const { showToast } = useToast();
   const canView = useIsAdministrator();
+  const [tab, setTab] = useState<TabId>("general");
   const [requireListingReview, setRequireListingReview] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [feePercent, setFeePercent] = useState<number | null>(null);
@@ -86,57 +96,62 @@ export function SettingsPage() {
   return (
     <PageFrame title="Settings">
       <RequirePermission granted={canView}>
-        <Card className="max-w-2xl">
-          <h3 className="text-lg font-black text-slate-900">Listing review</h3>
-          <p className="mt-1 text-sm text-slate-500">
-            When on (the default), a newly submitted listing waits for an administrator or an in-scope organisation
-            admin to review and publish it. An organisation can still opt its own countries out of review from its
-            own settings page, overriding this default for just those countries.
-          </p>
-          {requireListingReview === null ? (
-            <p className="mt-4 text-sm text-slate-400">Loading…</p>
-          ) : (
-            <div className="mt-4 flex items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={requireListingReview}
-                onClick={() => save(!requireListingReview)}
-                disabled={saving}
-                className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${requireListingReview ? "bg-[#2ec440]" : "bg-slate-300"}`}
-              >
-                <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${requireListingReview ? "translate-x-6" : "translate-x-1"}`} />
-              </button>
-              <span className="text-sm font-bold text-slate-900">
-                {requireListingReview ? "Review required by default" : "Auto-publish by default"}
-              </span>
+        <div role="tablist" aria-label="Settings sections" className="mb-8 flex gap-1 overflow-x-auto border-b border-slate-200">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`settings-tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`settings-panel-${t.id}`}
+              onClick={() => setTab(t.id)}
+              className={`-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-bold transition-colors focus:outline-none focus-visible:ring-4 focus-visible:ring-[#2ec440]/20 ${tab === t.id ? "border-[#2ec440] text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <div role="tabpanel" id={`settings-panel-${tab}`} aria-labelledby={`settings-tab-${tab}`} className="max-w-5xl">
+          {tab === "general" && (
+            <div className="grid items-start gap-6 md:grid-cols-2">
+              <Card>
+                <h3 className="text-lg font-black text-slate-900">Listing review</h3>
+                {requireListingReview === null ? (
+                  <p className="mt-5 text-sm text-slate-400">Loading…</p>
+                ) : (
+                  <div className="mt-5">
+                    <Toggle checked={requireListingReview} onChange={save} disabled={saving} label="Review new listings before they go live">
+                      {requireListingReview ? "Review required by default" : "Auto-publish by default"}
+                    </Toggle>
+                  </div>
+                )}
+              </Card>
+
+              <Card>
+                <h3 className="text-lg font-black text-slate-900">Supplier fee</h3>
+                {feePercent === null ? (
+                  <p className="mt-5 text-sm text-slate-400">Loading…</p>
+                ) : (
+                  <div className="mt-5 flex items-end gap-3">
+                    <label className="block text-sm font-bold text-slate-700">
+                      Percent
+                      <input className={`${fieldClass} mt-1.5 block !w-28`} inputMode="decimal" value={feeText} onChange={(e) => setFeeText(e.target.value.replace(/[^0-9.]/g, ""))} />
+                    </label>
+                    <PrimaryButton type="button" disabled={savingFee || feeText === String(feePercent)} onClick={saveFee}>
+                      {savingFee ? "Saving…" : "Save"}
+                    </PrimaryButton>
+                  </div>
+                )}
+              </Card>
             </div>
           )}
-        </Card>
 
-        <Card className="mt-6 max-w-2xl">
-          <h3 className="text-lg font-black text-slate-900">Supplier fee</h3>
-          <p className="mt-1 text-sm text-slate-500">The share of each paid furniture order the platform keeps. It is fixed on an order when the order is paid, so a change only affects orders paid after it.</p>
-          {feePercent === null ? (
-            <p className="mt-4 text-sm text-slate-400">Loading…</p>
-          ) : (
-            <div className="mt-4 flex items-end gap-3">
-              <label className="block text-sm font-bold text-slate-700">
-                Percent
-                <input className={`${fieldClass} mt-1 !w-32`} inputMode="decimal" value={feeText} onChange={(e) => setFeeText(e.target.value.replace(/[^0-9.]/g, ""))} />
-              </label>
-              <PrimaryButton type="button" disabled={savingFee || feeText === String(feePercent)} onClick={saveFee}>
-                {savingFee ? "Saving…" : "Save"}
-              </PrimaryButton>
-            </div>
-          )}
-        </Card>
-
-        <MenusCard />
-
-        <FooterTextCard />
-
-        <ShopCategoriesCard />
+          {tab === "menus" && <MenusCard />}
+          {tab === "footer" && <FooterTextCard />}
+          {tab === "shop" && <ShopCategoriesCard />}
+        </div>
       </RequirePermission>
     </PageFrame>
   );

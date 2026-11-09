@@ -6,13 +6,37 @@ import { useIsAdministrator } from "@/lib/admin/hooks";
 import { editableEntries, saveMenus, saveSite, useMenuOverrides, useSiteSettings, type MenuEntry, type MenuId, type SiteSettings } from "@/lib/menus/menus";
 import { MENU_DEFINITIONS } from "@/lib/menus/registry";
 import { useToast } from "@/lib/toast-context";
-import { Card, DestructiveButton, PrimaryButton, SecondaryButton, fieldClass } from "../ui";
+import { Card, DestructiveButton, PrimaryButton, SecondaryButton } from "../ui";
+import Toggle from "../Toggle";
 
 const sameRows = (a: MenuEntry[], b: MenuEntry[]) => JSON.stringify(a) === JSON.stringify(b);
 
-/** The site's menus, in Admin Settings: the main menu, the footer columns and the sidebars. For each, the administrator shows or hides a
- *  link, renames it, moves it and adds their own; the site shows the change at once. A link the site gains later appears at the end of its
- *  menu by itself. Settings can never be hidden from the admin sidebar. */
+/** A compact input for rows and forms inside the editors. */
+const inputClass =
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2ec440] focus:ring-4 focus:ring-[#2ec440]/10";
+const iconButton =
+  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent";
+
+function Icon({ d }: { d: string }) {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+    </svg>
+  );
+}
+const UP = "M5 15l7-7 7 7";
+const DOWN = "M19 9l-7 7-7-7";
+const CROSS = "M6 6l12 12M18 6L6 18";
+
+const GROUPS: { title: string; ids: MenuId[] }[] = [
+  { title: "Site", ids: ["main", "footer-explore", "footer-company", "footer-account"] },
+  { title: "Sidebars", ids: ["admin", "customer", "owner", "professional", "supplier", "org-admin"] },
+  { title: "Page filters", ids: ["designs-tabs", "professionals-filters", "property-types"] },
+];
+
+/** The site's menus, in Admin Settings: the main menu, the footer columns, the sidebars and a few page filters. For each, the administrator
+ *  shows or hides a link, renames it, moves it and adds their own; the site shows the change at once. A link the site gains later appears at
+ *  the end of its menu by itself. Settings can never be hidden from the admin sidebar. */
 export function MenusCard() {
   const { token } = useAuth();
   const { showToast } = useToast();
@@ -88,104 +112,124 @@ export function MenusCard() {
     showToast("Menu put back to the site's own links.");
   };
 
+  const titleOf = (id: MenuId) => MENU_DEFINITIONS.find((d) => d.id === id)!.title;
+
   return (
-    <Card className="mt-6 max-w-2xl">
-      <h3 className="text-lg font-black text-slate-900">Menus</h3>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {MENU_DEFINITIONS.map((d) => (
-          <button
-            key={d.id}
-            type="button"
-            onClick={() => setMenuId(d.id)}
-            className={`min-h-9 rounded-full border px-3 text-xs font-bold transition-colors ${menuId === d.id ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-[#2ec440]"}`}
-          >
-            {d.title}
-          </button>
-        ))}
-      </div>
-
-      {!loaded ? (
-        <p className="mt-6 text-sm text-slate-400">Loading…</p>
-      ) : (
-        <>
-          <ul className="mt-5 divide-y divide-slate-100 rounded-2xl border border-slate-200">
-            {rows.map((row, index) => {
-              const locked = definition.locked?.includes(row.key);
-              return (
-                <li key={row.key} className="flex items-center gap-2 p-3">
+    <div className="grid items-start gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
+      {/* Which menu: a list on a wide screen, a dropdown on a phone. */}
+      <nav aria-label="Menus" className="hidden lg:block">
+        {GROUPS.map((group) => (
+          <div key={group.title} className="mb-5 last:mb-0">
+            <p className="mb-1.5 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">{group.title}</p>
+            <ul className="space-y-0.5">
+              {group.ids.map((id) => (
+                <li key={id}>
                   <button
                     type="button"
-                    role="switch"
-                    aria-checked={!row.hidden}
-                    aria-label={`Show ${row.label}`}
-                    disabled={locked}
-                    onClick={() => patch(row.key, { hidden: !row.hidden })}
-                    className={`relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:opacity-40 ${row.hidden ? "bg-slate-300" : "bg-[#2ec440]"}`}
+                    onClick={() => setMenuId(id)}
+                    aria-current={menuId === id ? "true" : undefined}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${menuId === id ? "bg-[#2ec440]/10 text-[#1f8a2e]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}
                   >
-                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${row.hidden ? "translate-x-1" : "translate-x-5"}`} />
+                    {titleOf(id)}
                   </button>
-                  <div className="min-w-0 flex-1">
-                    <input className={`${fieldClass} !py-2`} value={row.label} maxLength={40} aria-label="Name" onChange={(e) => patch(row.key, { label: e.target.value })} />
-                    {row.custom ? (
-                      <input className={`${fieldClass} mt-1 !py-2 !text-xs`} value={row.href ?? ""} maxLength={300} aria-label="Address" onChange={(e) => patch(row.key, { href: e.target.value })} />
-                    ) : (
-                      row.href && <p className="mt-1 truncate px-1 text-xs text-slate-400">{row.href}</p>
-                    )}
-                  </div>
-                  <button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up" className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30">
-                    ↑
-                  </button>
-                  <button type="button" onClick={() => move(index, 1)} disabled={index === rows.length - 1} aria-label="Move down" className="h-9 w-9 shrink-0 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30">
-                    ↓
-                  </button>
-                  {row.custom ? (
-                    <button type="button" onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))} aria-label="Remove link" className="h-9 w-9 shrink-0 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">
-                      ×
-                    </button>
-                  ) : (
-                    <span className="h-9 w-9 shrink-0" aria-hidden="true" />
-                  )}
                 </li>
-              );
-            })}
-          </ul>
-
-          {definition.customLinks && (
-            <div className="mt-4 flex flex-wrap items-end gap-2">
-              <label className="min-w-[8rem] flex-1 text-xs font-bold text-slate-600">
-                Name
-                <input className={`${fieldClass} mt-1 !py-2`} value={newLabel} maxLength={40} onChange={(e) => setNewLabel(e.target.value)} />
-              </label>
-              <label className="min-w-[10rem] flex-[2] text-xs font-bold text-slate-600">
-                Address
-                <input className={`${fieldClass} mt-1 !py-2`} value={newHref} maxLength={300} placeholder="/page or https://…" onChange={(e) => setNewHref(e.target.value)} />
-              </label>
-              <SecondaryButton type="button" onClick={addLink}>
-                Add link
-              </SecondaryButton>
-            </div>
-          )}
-
-          {error && (
-            <p role="alert" className="mt-3 text-sm font-semibold text-red-600">
-              {error}
-            </p>
-          )}
-
-          <div className="mt-5 flex flex-wrap gap-3">
-            <PrimaryButton type="button" disabled={!dirty || saving} onClick={save}>
-              {saving ? "Saving…" : "Save changes"}
-            </PrimaryButton>
-            {saved && saved.length > 0 && (
-              <DestructiveButton type="button" disabled={saving} onClick={reset}>
-                Reset to default
-              </DestructiveButton>
-            )}
+              ))}
+            </ul>
           </div>
-        </>
-      )}
-    </Card>
+        ))}
+      </nav>
+      <select aria-label="Menu" value={menuId} onChange={(e) => setMenuId(e.target.value as MenuId)} className={`${inputClass} lg:hidden`}>
+        {GROUPS.map((group) => (
+          <optgroup key={group.title} label={group.title}>
+            {group.ids.map((id) => (
+              <option key={id} value={id}>
+                {titleOf(id)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+
+      <Card className="!p-0">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <h3 className="text-lg font-black text-slate-900">{definition.title}</h3>
+          {dirty && <span className="text-sm font-semibold text-amber-600">Unsaved changes</span>}
+        </div>
+
+        {!loaded ? (
+          <p className="p-5 text-sm text-slate-400">Loading…</p>
+        ) : (
+          <>
+            <ul className="divide-y divide-slate-100">
+              {rows.map((row, index) => {
+                const locked = definition.locked?.includes(row.key);
+                return (
+                  <li key={row.key} className={`flex items-center gap-3 px-5 py-2.5 transition-opacity ${row.hidden ? "opacity-55" : ""}`}>
+                    <Toggle checked={!row.hidden} onChange={(on) => patch(row.key, { hidden: !on })} disabled={locked} label={`Show ${row.label}`} />
+                    <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
+                      <input className={inputClass} value={row.label} maxLength={40} aria-label="Name" onChange={(e) => patch(row.key, { label: e.target.value })} />
+                      {row.custom ? (
+                        <input className={inputClass} value={row.href ?? ""} maxLength={300} aria-label="Address" onChange={(e) => patch(row.key, { href: e.target.value })} />
+                      ) : (
+                        <span className="hidden min-w-0 items-center truncate px-1 text-xs text-slate-400 sm:flex">{row.href}</span>
+                      )}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button type="button" onClick={() => move(index, -1)} disabled={index === 0} aria-label="Move up" className={iconButton}>
+                        <Icon d={UP} />
+                      </button>
+                      <button type="button" onClick={() => move(index, 1)} disabled={index === rows.length - 1} aria-label="Move down" className={iconButton}>
+                        <Icon d={DOWN} />
+                      </button>
+                      {row.custom ? (
+                        <button type="button" onClick={() => setRows((current) => current.filter((r) => r.key !== row.key))} aria-label="Remove link" className={`${iconButton} !border-red-200 !text-red-600 hover:!bg-red-50`}>
+                          <Icon d={CROSS} />
+                        </button>
+                      ) : (
+                        <span className="h-9 w-9 shrink-0" aria-hidden="true" />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {definition.customLinks && (
+              <div className="flex flex-wrap items-end gap-2 border-t border-slate-100 bg-slate-50/70 px-5 py-4">
+                <label className="min-w-[8rem] flex-1 text-xs font-bold text-slate-600">
+                  Name
+                  <input className={`${inputClass} mt-1`} value={newLabel} maxLength={40} onChange={(e) => setNewLabel(e.target.value)} />
+                </label>
+                <label className="min-w-[10rem] flex-[2] text-xs font-bold text-slate-600">
+                  Address
+                  <input className={`${inputClass} mt-1`} value={newHref} maxLength={300} placeholder="/page or https://…" onChange={(e) => setNewHref(e.target.value)} />
+                </label>
+                <SecondaryButton type="button" onClick={addLink}>
+                  Add link
+                </SecondaryButton>
+              </div>
+            )}
+
+            {error && (
+              <p role="alert" className="border-t border-slate-100 px-5 py-3 text-sm font-semibold text-red-600">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center gap-3 border-t border-slate-100 px-5 py-4">
+              <PrimaryButton type="button" disabled={!dirty || saving} onClick={save}>
+                {saving ? "Saving…" : "Save changes"}
+              </PrimaryButton>
+              {saved && saved.length > 0 && (
+                <DestructiveButton type="button" disabled={saving} onClick={reset}>
+                  Reset to default
+                </DestructiveButton>
+              )}
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
   );
 }
 
@@ -201,7 +245,7 @@ const HEADING_FIELDS = [
   { key: "account", label: "Third column" },
 ] as const;
 
-/** The footer's own words: the line under the logo, the social media links and the three column headings. A field left empty uses the site's own. */
+/** The footer's own words: the line under the logo, the three column headings and the social media links. A field left empty uses the site's own. */
 export function FooterTextCard() {
   const { token } = useAuth();
   const { showToast } = useToast();
@@ -228,42 +272,53 @@ export function FooterTextCard() {
     showToast("Footer saved.");
   };
 
+  const label = "block text-xs font-bold text-slate-600";
+
   return (
-    <Card className="mt-6 max-w-2xl">
-      <h3 className="text-lg font-black text-slate-900">Footer</h3>
+    <Card className="!p-0">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+        <h3 className="text-lg font-black text-slate-900">Footer</h3>
+        {dirty && <span className="text-sm font-semibold text-amber-600">Unsaved changes</span>}
+      </div>
       {!form ? (
-        <p className="mt-4 text-sm text-slate-400">Loading…</p>
+        <p className="p-5 text-sm text-slate-400">Loading…</p>
       ) : (
-        <div className="mt-4 space-y-4">
-          <label className="block text-sm font-bold text-slate-700">
-            Line under the logo
-            <textarea className={`${fieldClass} mt-1`} rows={2} maxLength={200} value={form.tagline ?? ""} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-3">
-            {HEADING_FIELDS.map((f) => (
-              <label key={f.key} className="block text-sm font-bold text-slate-700">
-                {f.label}
-                <input className={`${fieldClass} mt-1`} maxLength={30} value={form.headings?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, headings: { ...form.headings, [f.key]: e.target.value } })} />
+        <>
+          <div className="grid gap-x-8 gap-y-6 p-5 md:grid-cols-2">
+            <div className="space-y-4">
+              <label className={label}>
+                Line under the logo
+                <textarea className={`${inputClass} mt-1`} rows={3} maxLength={200} value={form.tagline ?? ""} onChange={(e) => setForm({ ...form, tagline: e.target.value })} />
               </label>
-            ))}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {SOCIAL_FIELDS.map((f) => (
-              <label key={f.key} className="block text-sm font-bold text-slate-700">
-                {f.label} link
-                <input className={`${fieldClass} mt-1`} maxLength={300} placeholder="https://…" value={form.social?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, social: { ...form.social, [f.key]: e.target.value } })} />
-              </label>
-            ))}
+              <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-1 xl:grid-cols-3">
+                {HEADING_FIELDS.map((f) => (
+                  <label key={f.key} className={label}>
+                    {f.label}
+                    <input className={`${inputClass} mt-1`} maxLength={30} value={form.headings?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, headings: { ...form.headings, [f.key]: e.target.value } })} />
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              {SOCIAL_FIELDS.map((f) => (
+                <label key={f.key} className={label}>
+                  {f.label}
+                  <input className={`${inputClass} mt-1`} maxLength={300} placeholder="https://…" value={form.social?.[f.key] ?? ""} onChange={(e) => setForm({ ...form, social: { ...form.social, [f.key]: e.target.value } })} />
+                </label>
+              ))}
+            </div>
           </div>
           {error && (
-            <p role="alert" className="text-sm font-semibold text-red-600">
+            <p role="alert" className="border-t border-slate-100 px-5 py-3 text-sm font-semibold text-red-600">
               {error}
             </p>
           )}
-          <PrimaryButton type="button" disabled={!dirty || saving} onClick={save}>
-            {saving ? "Saving…" : "Save changes"}
-          </PrimaryButton>
-        </div>
+          <div className="flex items-center gap-3 border-t border-slate-100 px-5 py-4">
+            <PrimaryButton type="button" disabled={!dirty || saving} onClick={save}>
+              {saving ? "Saving…" : "Save changes"}
+            </PrimaryButton>
+          </div>
+        </>
       )}
     </Card>
   );

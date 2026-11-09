@@ -93,7 +93,7 @@ export function ShopCategoriesCard() {
   if (!canManage) return null;
 
   return (
-    <Card className="mt-6 max-w-2xl">
+    <Card>
       <h3 className="text-lg font-black text-slate-900">Shop categories</h3>
       <div className="mt-4">
         {loadError ? (
@@ -101,12 +101,13 @@ export function ShopCategoriesCard() {
         ) : rows === null ? (
           <p className="text-sm text-slate-400">Loading…</p>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {rows.length === 0 && <p className="text-sm font-semibold text-slate-500">No tabs yet.</p>}
+            <div className="grid items-start gap-4 lg:grid-cols-2">
             {rows.map((row, index) => (
               <div key={row.key} className="rounded-xl border border-slate-200 p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <input className={`${fieldClass} min-w-48 flex-1 !font-bold`} value={row.name} maxLength={40} placeholder="Tab name, e.g. Furniture" aria-label="Tab name" onChange={(e) => patch(row.key, (r) => ({ ...r, name: e.target.value }))} />
+                  <input className={`${fieldClass} min-w-40 flex-1 !py-2 !font-bold`} value={row.name} maxLength={40} placeholder="Tab name, e.g. Furniture" aria-label="Tab name" onChange={(e) => patch(row.key, (r) => ({ ...r, name: e.target.value }))} />
                   <SecondaryButton type="button" disabled={index === 0} aria-label={`Move ${row.name || "tab"} earlier`} onClick={() => move(index, -1)}>
                     ↑
                   </SecondaryButton>
@@ -138,7 +139,7 @@ export function ShopCategoriesCard() {
                 </ul>
                 <div className="mt-3 flex gap-2">
                   <input
-                    className={fieldClass}
+                    className={`${fieldClass} !py-2`}
                     value={drafts[row.key] ?? ""}
                     maxLength={60}
                     placeholder="Add a category"
@@ -157,6 +158,8 @@ export function ShopCategoriesCard() {
                 </div>
               </div>
             ))}
+
+            </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <SecondaryButton type="button" onClick={() => setRows((current) => [...(current ?? []), { key: nextKey(), name: "", categories: [] }])}>
