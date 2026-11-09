@@ -46,12 +46,18 @@ export interface RoleRequestRecord {
   createdAt: string;
 }
 
+import type { VerificationDocument } from "@/lib/verificationDocs";
+
 export interface RoleRequestDetails {
   city?: string;
   phone?: string;
   /** Professionals. */
   specialisations?: string[];
   yearsExperience?: number;
+  /** Professionals: what they sent to show who they are and what they have done (kept privately; an administrator opens them). */
+  documents?: VerificationDocument[];
+  /** Professionals: a link to their work, in place of (or with) uploaded proof of work. */
+  workLink?: string;
   /** Suppliers. */
   companyName?: string;
   categories?: string[];

@@ -10,6 +10,7 @@ import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { COUNTRY_OPTIONS, findCountry } from "@/lib/countries";
 import { useLanguage } from "@/lib/i18n/language";
+import { DOCUMENT_ACCEPT, MAX_DOCUMENTS_PER_KIND, documentProblem, uploadVerificationDocument, type DocumentKind, type VerificationDocument } from "@/lib/verificationDocs";
 import { MAX_SPECIALISATIONS, SPECIALISATION_GROUPS } from "@/lib/professional/specialisations";
 import { REQUESTABLE_ROLE_LABELS, RoleRequestsApi, type RequestableRole, type RoleRequestDetails } from "@/lib/roleRequests/api";
 import { useToast } from "@/lib/toast-context";
@@ -19,6 +20,65 @@ const fieldClass = "w-full rounded-xl border border-slate-200 px-4 py-3 focus:bo
 /** Asks for another role on the signed-in account. The request goes to an administrator; once approved the role shows up under
  *  Switch role in the account menu. A professional or a supplier gives the basics of their profile here, so the profile
  *  form is already part filled when they open it. `roles` is what the account can still ask for. */
+/** One kind of document an application asks for: what it is, the files sent so far, and a button to add more. */
+function DocumentField({
+  title,
+  required,
+  files,
+  busy,
+  error,
+  onAdd,
+  onRemove,
+}: {
+  title: string;
+  required?: boolean;
+  files: VerificationDocument[];
+  busy: boolean;
+  error?: string;
+  onAdd: (list: FileList | null) => void;
+  onRemove: (key: string) => void;
+}) {
+  const { t } = useLanguage();
+  const full = files.length >= MAX_DOCUMENTS_PER_KIND;
+  return (
+    <div className="text-sm font-bold text-slate-700">
+      {title}
+      {required ? <span className="text-red-500"> *</span> : <span className="font-normal text-slate-400"> ({t("optional")})</span>}
+      <ul className="mt-1 space-y-1">
+        {files.map((file) => (
+          <li key={file.key} className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
+            <span className="min-w-0 truncate">{file.name}</span>
+            <button type="button" onClick={() => onRemove(file.key)} aria-label={`${t("Remove")} ${file.name}`} className="shrink-0 font-bold text-red-600 hover:underline">
+              {t("Remove")}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {!full && (
+        <label className={`mt-1 flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-dashed border-slate-300 px-4 text-sm font-bold text-slate-600 transition-colors hover:border-[#2ec440] hover:text-[#219b31] ${busy ? "pointer-events-none opacity-60" : ""}`}>
+          {busy ? t("Uploading…") : files.length ? t("Add another file") : t("Add a PDF or photo")}
+          <input
+            type="file"
+            accept={DOCUMENT_ACCEPT}
+            multiple
+            hidden
+            disabled={busy}
+            onChange={(e) => {
+              onAdd(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </label>
+      )}
+      {error && (
+        <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function FieldError({ message }: { message?: string }) {
   return message ? (
     <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
@@ -45,6 +105,10 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
   const [pending, setPending] = useState<RequestableRole[]>([]);
   const [error, setError] = useState("");
   const [terms, setTerms] = useState(false);
+  const [documents, setDocuments] = useState<VerificationDocument[]>([]);
+  const [workLink, setWorkLink] = useState("");
+  const [uploading, setUploading] = useState<DocumentKind | null>(null);
+  const [documentErrors, setDocumentErrors] = useState<Record<string, string>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -74,6 +138,10 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
       setNote("");
       setError("");
       setTerms(false);
+      setDocuments([]);
+      setWorkLink("");
+      setUploading(null);
+      setDocumentErrors({});
       setFieldErrors({});
     }
   }
@@ -88,6 +156,13 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
     if (needsProfile) {
       if (!country) found.country = t("Please choose your country.");
       if (role === "professional" && specialisations.length === 0) found.specialisations = t("Choose at least one specialisation.");
+      if (role === "professional") {
+        const has = (docKind: DocumentKind) => documents.some((d) => d.kind === docKind);
+        if (kind === "firm" && !has("business")) found.business = t("Upload your business registration certificate.");
+        if (kind === "individual" && !has("qualification")) found.qualification = t("Upload your degree, licence or certificate.");
+        if (!has("work") && !workLink.trim()) found.work = t("Show some of your work: upload files, or add a link to it.");
+        if (workLink.trim() && !/^https:\/\/\S+$/.test(workLink.trim())) found.workLink = t("The link must start with https://");
+      }
       if (role === "supplier" && !companyName.trim()) found.companyName = t("Please enter your company name.");
       if (!city.trim()) found.city = t("Please enter your city.");
       const phoneIssue = phoneProblem(phone);
@@ -97,16 +172,49 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
     return found;
   };
 
+  const addFiles = async (docKind: DocumentKind, list: FileList | null) => {
+    if (!list || !token) return;
+    const room = MAX_DOCUMENTS_PER_KIND - documents.filter((d) => d.kind === docKind).length;
+    setDocumentErrors((current) => ({ ...current, [docKind]: "" }));
+    for (const file of Array.from(list).slice(0, Math.max(room, 0))) {
+      const problem = documentProblem(file);
+      if (problem) {
+        setDocumentErrors((current) => ({ ...current, [docKind]: t(problem) }));
+        continue;
+      }
+      setUploading(docKind);
+      try {
+        const sent = await uploadVerificationDocument(file, docKind, token);
+        setDocuments((current) => [...current, sent]);
+        setFieldErrors((current) => ({ ...current, [docKind]: "" }));
+      } catch (caught) {
+        setDocumentErrors((current) => ({ ...current, [docKind]: caught instanceof Error ? caught.message : t("Upload failed. Please try again.") }));
+      }
+    }
+    setUploading(null);
+  };
+  const removeFile = (key: string) => setDocuments((current) => current.filter((d) => d.key !== key));
+  const filesOf = (docKind: DocumentKind) => documents.filter((d) => d.kind === docKind);
+  const documentError = (docKind: string) => documentErrors[docKind] || fieldErrors[docKind];
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!token || saving || alreadyAsked) return;
+    if (!token || saving || alreadyAsked || uploading) return;
     const found = problems();
     setFieldErrors(found);
     if (Object.keys(found).length > 0) return;
     const details: RoleRequestDetails | undefined = !needsProfile
       ? undefined
       : role === "professional"
-        ? { city: city.trim(), phone: cleanPhone(phone), specialisations, ...(years !== "" ? { yearsExperience: Number(years) } : {}) }
+        ? {
+            city: city.trim(),
+            phone: cleanPhone(phone),
+            specialisations,
+            ...(years !== "" ? { yearsExperience: Number(years) } : {}),
+            // Only what applies to how they work: an individual's degree and ID, a firm's registration, and proof of work for both.
+            documents: documents.filter((d) => (kind === "firm" ? d.kind !== "id" : d.kind !== "business")),
+            ...(workLink.trim() ? { workLink: workLink.trim() } : {}),
+          }
         : { city: city.trim(), phone: cleanPhone(phone), companyName: companyName.trim() };
     setSaving(true);
     setError("");
@@ -172,6 +280,24 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
               <label className="block text-sm font-bold text-slate-700">
                 {t("Years of experience")} <span className="font-normal text-slate-400">({t("optional")})</span>
                 <input type="number" min={0} max={80} className={`${fieldClass} mt-1`} value={years} onChange={(e) => setYears(e.target.value)} />
+              </label>
+
+              {kind === "firm" ? (
+                <>
+                  <DocumentField title={t("Business registration certificate")} required files={filesOf("business")} busy={uploading === "business"} error={documentError("business")} onAdd={(list) => void addFiles("business", list)} onRemove={removeFile} />
+                  <DocumentField title={t("Licences or certificates")} files={filesOf("qualification")} busy={uploading === "qualification"} error={documentError("qualification")} onAdd={(list) => void addFiles("qualification", list)} onRemove={removeFile} />
+                </>
+              ) : (
+                <>
+                  <DocumentField title={t("Degree, licence or certificate")} required files={filesOf("qualification")} busy={uploading === "qualification"} error={documentError("qualification")} onAdd={(list) => void addFiles("qualification", list)} onRemove={removeFile} />
+                  <DocumentField title={t("National ID or passport")} files={filesOf("id")} busy={uploading === "id"} error={documentError("id")} onAdd={(list) => void addFiles("id", list)} onRemove={removeFile} />
+                </>
+              )}
+              <DocumentField title={t("Proof of your work")} required files={filesOf("work")} busy={uploading === "work"} error={documentError("work")} onAdd={(list) => void addFiles("work", list)} onRemove={removeFile} />
+              <label className="block text-sm font-bold text-slate-700">
+                {t("Link to your work")} <span className="font-normal text-slate-400">({t("optional")})</span>
+                <input className={`${fieldClass} mt-1`} value={workLink} maxLength={300} placeholder="https://…" inputMode="url" onChange={(e) => setWorkLink(e.target.value)} />
+                <FieldError message={fieldErrors.workLink} />
               </label>
             </>
           )}
@@ -251,7 +377,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
           <button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-5 py-3 font-semibold text-slate-700 transition-colors hover:bg-slate-50">
             {t("Cancel")}
           </button>
-          <button type="submit" disabled={saving || alreadyAsked} className="rounded-xl bg-slate-900 px-5 py-3 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+          <button type="submit" disabled={saving || alreadyAsked || !!uploading} className="rounded-xl bg-slate-900 px-5 py-3 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:opacity-50">
             {saving ? t("Sending…") : t("Send request")}
           </button>
         </div>

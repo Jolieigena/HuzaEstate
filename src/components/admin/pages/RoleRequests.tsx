@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { REQUESTABLE_ROLE_LABELS, ROLE_REQUEST_STATUS_LABELS, RoleRequestsApi, type RoleRequestRecord, type RoleRequestStatus } from "@/lib/roleRequests/api";
 import { useToast } from "@/lib/toast-context";
+import { openVerificationDocument } from "@/lib/verificationDocs";
 import { Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, StatusPill, fieldClass, formatDateTime } from "../ui";
 
 const STATUSES = Object.keys(ROLE_REQUEST_STATUS_LABELS) as RoleRequestStatus[];
@@ -57,6 +58,41 @@ function RequestRow({ record, onDecided }: { record: RoleRequestRecord; onDecide
           {[record.details.companyName, record.details.specialisations?.join(", "), record.details.categories?.join(", "), record.details.city, record.details.phone, record.details.yearsExperience !== undefined ? `${record.details.yearsExperience} years` : ""].filter(Boolean).join(" · ")}
         </p>
       )}
+      {(record.details?.documents?.length || record.details?.workLink) && (
+        <div className="mt-3 rounded-xl border border-slate-200 p-3">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Documents</p>
+          <ul className="space-y-1.5">
+            {record.details.documents?.map((doc) => (
+              <li key={doc.key} className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate text-slate-700">
+                  <span className="font-bold text-slate-900">{DOCUMENT_LABELS[doc.kind] ?? doc.kind}</span> · {doc.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!token) return;
+                    const problem = await openVerificationDocument(doc.key, token);
+                    if (problem) showToast(problem, "error");
+                  }}
+                  className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]"
+                >
+                  Open
+                </button>
+              </li>
+            ))}
+            {record.details.workLink && (
+              <li className="flex items-center justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate text-slate-700">
+                  <span className="font-bold text-slate-900">Link to their work</span> · {record.details.workLink}
+                </span>
+                <a href={record.details.workLink} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]">
+                  Open
+                </a>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
       {record.note && <p className="mt-3 whitespace-pre-line rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">“{record.note}”</p>}
       {record.adminNote && record.status !== "pending" && <p className="mt-3 text-sm text-slate-500">Note: {record.adminNote}</p>}
 
@@ -79,6 +115,13 @@ function RequestRow({ record, onDecided }: { record: RoleRequestRecord; onDecide
 }
 
 // Everyone asking for another role on their account. Approving adds the role and tells the person; declining tells them too.
+const DOCUMENT_LABELS: Record<string, string> = {
+  qualification: "Degree, licence or certificate",
+  work: "Proof of work",
+  business: "Business registration",
+  id: "ID",
+};
+
 export function RoleRequestsListPage() {
   const { token, isAuthReady } = useAuth();
   const canView = useIsAdministrator();
