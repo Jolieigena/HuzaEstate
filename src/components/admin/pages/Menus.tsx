@@ -31,7 +31,7 @@ const CROSS = "M6 6l12 12M18 6L6 18";
 const GROUPS: { title: string; ids: MenuId[] }[] = [
   { title: "Site", ids: ["main", "footer-explore", "footer-company", "footer-account"] },
   { title: "Sidebars", ids: ["admin", "customer", "owner", "professional", "supplier", "org-admin"] },
-  { title: "Page filters", ids: ["designs-tabs", "professionals-filters", "property-types"] },
+  { title: "Page filters", ids: ["designs-tabs", "professionals-filters", "professionals-categories", "property-types"] },
 ];
 
 /** The site's menus, in Admin Settings: the main menu, the footer columns, the sidebars and a few page filters. For each, the administrator

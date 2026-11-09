@@ -7,7 +7,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/ac
 /** The icon on a link the administrator added. */
 export const CUSTOM_LINK_ICON = "M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1";
 
-export const MENU_IDS = ["main", "footer-explore", "footer-company", "footer-account", "admin", "customer", "owner", "professional", "supplier", "org-admin", "designs-tabs", "professionals-filters", "property-types"] as const;
+export const MENU_IDS = ["main", "footer-explore", "footer-company", "footer-account", "admin", "customer", "owner", "professional", "supplier", "org-admin", "designs-tabs", "professionals-filters", "professionals-categories", "property-types"] as const;
 export type MenuId = (typeof MENU_IDS)[number];
 
 /** One saved line of a menu: a link the site already has (matched by `key`) or a custom link the administrator added. */

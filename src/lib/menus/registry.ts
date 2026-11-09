@@ -8,6 +8,7 @@ import { SUPPLIER_NAV_ITEMS } from "@/components/supplier/SupplierShell";
 import { KEYED_NAV_ITEMS } from "@/components/manager/ManagerSidebar";
 import { DESIGN_TAB_ITEMS } from "@/lib/designs/api";
 import { PROPERTY_TYPE_OPTIONS } from "@/lib/properties/types";
+import { SERVICE_CATEGORIES } from "@/lib/professional/serviceCategories";
 import type { MenuId } from "./menus";
 
 export interface MenuDefinition {
@@ -47,5 +48,6 @@ export const MENU_DEFINITIONS: MenuDefinition[] = [
     ],
     customLinks: false,
   },
+  { id: "professionals-categories", title: "Professionals page services", items: SERVICE_CATEGORIES.map((c) => ({ key: c.key, label: c.label })), customLinks: false },
   { id: "property-types", title: "Property types filter", items: PROPERTY_TYPE_OPTIONS.map((o) => ({ key: o.label, label: o.label })), customLinks: false },
 ];

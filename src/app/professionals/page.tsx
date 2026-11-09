@@ -7,6 +7,7 @@ import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
 import { useMenu } from "@/lib/menus/menus";
+import { SERVICE_CATEGORIES, inServiceCategory } from "@/lib/professional/serviceCategories";
 
 const FILTER_ITEMS = [
   { key: "services", label: "All Services" },
@@ -20,6 +21,10 @@ export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
   const filterItems = useMenu("professionals-filters", FILTER_ITEMS);
+  // The services (plumbing, tiling, glass...) the administrator shows, in their order and with their names. A service only appears once
+  // someone offers it, so a chip never leads to an empty list.
+  const serviceItems = useMenu("professionals-categories", SERVICE_CATEGORIES);
+  const [category, setCategory] = useState("");
   const { account } = useAuth();
   const isProfessional = !!account?.roles.includes("professional");
   const canApply = !!account && requestableRolesFor(account.roles).includes("professional");
@@ -56,12 +61,18 @@ export default function ProfessionalsDirectoryPage() {
       const matchesExp = experiencedOnly ? (profile.yearsExperience ?? 0) >= 5 : true;
       
       const matchesKind = kindFilter === "all" || profile.kind === kindFilter;
+      const chosen = serviceItems.find((c) => c.key === category);
+      const matchesCategory = !chosen || inServiceCategory(profile.specialisations, chosen);
 
-      return matchesSearch && matchesSpec && matchesLoc && matchesExp && matchesKind;
+      return matchesSearch && matchesSpec && matchesLoc && matchesExp && matchesKind && matchesCategory;
     });
-  }, [allProfiles, searchTerm, specialization, location, experiencedOnly, kindFilter]);
+  }, [allProfiles, searchTerm, specialization, location, experiencedOnly, kindFilter, category, serviceItems]);
 
-  const hasActiveFilters = searchTerm || specialization || location || experiencedOnly || kindFilter !== "all";
+  const serviceChips = serviceItems
+    .map(c => ({ key: c.key, label: c.label, count: allProfiles.filter(p => inServiceCategory(p.specialisations, c)).length }))
+    .filter(c => c.count > 0 || c.key === category);
+
+  const hasActiveFilters = searchTerm || specialization || location || experiencedOnly || kindFilter !== "all" || category;
 
   const clearAllFilters = () => {
     setSearchTerm("");
@@ -69,6 +80,7 @@ export default function ProfessionalsDirectoryPage() {
     setLocation("");
     setExperiencedOnly(false);
     setKindFilter("all");
+    setCategory("");
   };
 
   return (
@@ -156,6 +168,30 @@ export default function ProfessionalsDirectoryPage() {
               </button>
             )}
           </div>
+
+          {/* Services: one chip for each service someone offers, with how many do. */}
+          {serviceChips.length > 0 && (
+            <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Services">
+              <button
+                type="button"
+                onClick={() => setCategory('')}
+                className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === '' ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+              >
+                All services
+              </button>
+              {serviceChips.map(chip => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={() => setCategory(category === chip.key ? '' : chip.key)}
+                  aria-pressed={category === chip.key}
+                  className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === chip.key ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                >
+                  {chip.label} <span className={category === chip.key ? 'text-white/80' : 'text-slate-400'}>{chip.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Results Info */}

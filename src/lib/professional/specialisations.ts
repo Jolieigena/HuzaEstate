@@ -24,8 +24,16 @@ export const SPECIALISATION_GROUPS: SpecialisationGroup[] = [
     options: ["Project Manager", "Construction Manager", "General Contractor", "Site Supervisor", "Health & Safety Officer", "Building Inspector"],
   },
   {
-    label: "Trades & finishing",
-    options: ["Bricklayer / Mason", "Carpenter", "Electrician", "Plumber", "Painter", "Tiler", "Roofer", "Welder", "Plasterer", "Glazier", "HVAC Technician", "Landscaper", "Flooring Installer", "Steel Fixer"],
+    label: "Building trades",
+    options: ["Bricklayer / Mason", "Stone Mason", "Concrete Contractor", "Steel Fixer", "Carpenter", "Roofer", "Welder", "Scaffolder", "Excavation & Earthworks"],
+  },
+  {
+    label: "Plumbing, water & electrical",
+    options: ["Plumber", "Water Supply & Borehole", "Drainage & Sewer Specialist", "Water Tank Installer", "Electrician", "Solar Installer", "HVAC Technician"],
+  },
+  {
+    label: "Finishing trades",
+    options: ["Painter", "Plasterer", "Tiler", "Flooring Installer", "Gypsum Ceiling Installer", "Wall Panel Installer", "Door & Window Fitter", "Glazier", "Balustrade & Guardrail Fitter", "Landscaper"],
   },
   {
     label: "Renovation & maintenance",
