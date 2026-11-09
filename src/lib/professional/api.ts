@@ -193,6 +193,8 @@ export interface ProfessionalInquiry {
   createdAt: string;
   /** A platform/org admin's note about this inquiry — see nudgeProfessionalInquiry. */
   adminNudges: ProfessionalInquiryReply[];
+  /** What the professional has answered the sender. */
+  replies: ProfessionalInquiryReply[];
 }
 
 /** Platform-admin/org-admin listing only — adds who the inquiry was sent to. */
@@ -221,6 +223,24 @@ export async function markProfessionalInquiryRead(token: string, id: string): Pr
     return res.ok;
   } catch {
     return false;
+  }
+}
+
+export type ReplyResult = { ok: true; inquiry: ProfessionalInquiry } | { ok: false; error: string };
+
+/** The professional answers the person who wrote; it is emailed to them and kept on the inquiry. */
+export async function replyToProfessionalInquiry(token: string, id: string, message: string): Promise<ReplyResult> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/me/inquiries/${encodeURIComponent(id)}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) return { ok: false, error: data?.message || "Could not send the reply." };
+    return { ok: true, inquiry: data.inquiry as ProfessionalInquiry };
+  } catch {
+    return { ok: false, error: "Could not reach the server. Please try again." };
   }
 }
 

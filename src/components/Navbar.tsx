@@ -56,7 +56,7 @@ export default function Navbar() {
         <CartButton />
         <Link
           href="/post-property"
-          className="sm:hidden inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2 rounded-full whitespace-nowrap transition-colors"
+          className="hidden min-[420px]:max-sm:inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2 rounded-full whitespace-nowrap transition-colors"
         >
           {t('+ Post')}
         </Link>
@@ -100,6 +100,15 @@ export default function Navbar() {
               {t('Get Started')}
             </Link>
           </div>
+        )}
+
+        {/* On a phone the sign-in link is in the bar itself, not only inside the opened menu. */}
+        {!isLoggedIn && (
+          <Link href="/login" aria-label={t('Sign in')} title={t('Sign in')} className="md:hidden flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white transition-colors hover:bg-[#2ec440]">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </Link>
         )}
 
         {/* Mobile Menu Toggle */}
@@ -147,7 +156,7 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className="mt-2 text-center border border-slate-200 hover:border-slate-300 hover:bg-slate-50 active:bg-slate-100 text-slate-800 font-semibold text-sm px-5 py-3 rounded-full transition-colors duration-150"
             >
-              {t('Get Started')}
+              {t('Sign in or create an account')}
             </Link>
           )}
         </div>

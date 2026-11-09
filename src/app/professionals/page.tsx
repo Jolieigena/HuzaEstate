@@ -54,8 +54,9 @@ export default function ProfessionalsDirectoryPage() {
 
   const filteredProfiles = useMemo(() => {
     return allProfiles.filter(profile => {
-      const matchesSearch = profile.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            profile.bio.toLowerCase().includes(searchTerm.toLowerCase());
+      // Every part of a card can be searched: the name, what they do, where they are and their bio.
+      const needle = searchTerm.trim().toLowerCase();
+      const matchesSearch = !needle || [profile.displayName, profile.bio, profile.city, profile.country, ...profile.specialisations].some(part => (part ?? '').toLowerCase().includes(needle));
       const matchesSpec = specialization ? profile.specialisations.includes(specialization) : true;
       const matchesLoc = location ? profile.city === location : true;
       const matchesExp = experiencedOnly ? (profile.yearsExperience ?? 0) >= 5 : true;

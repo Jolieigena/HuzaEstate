@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Dialog from "@/components/Dialog";
 import MultiSelectCombobox from "@/components/shared/MultiSelectCombobox";
@@ -18,6 +19,14 @@ const fieldClass = "w-full rounded-xl border border-slate-200 px-4 py-3 focus:bo
 /** Asks for another role on the signed-in account. The request goes to an administrator; once approved the role shows up under
  *  Switch role in the account menu. A professional or a supplier gives the basics of their profile here, so the profile
  *  form is already part filled when they open it. `roles` is what the account can still ask for. */
+function FieldError({ message }: { message?: string }) {
+  return message ? (
+    <p role="alert" className="mt-1 text-xs font-semibold text-red-600">
+      {message}
+    </p>
+  ) : null;
+}
+
 export default function AddRoleDialog({ open, onClose, roles }: { open: boolean; onClose: () => void; roles: RequestableRole[] }) {
   const { token, account, refreshAccount } = useAuth();
   const router = useRouter();
@@ -35,6 +44,8 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<RequestableRole[]>([]);
   const [error, setError] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -62,6 +73,8 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
       setCompanyName("");
       setNote("");
       setError("");
+      setTerms(false);
+      setFieldErrors({});
     }
   }
 
@@ -69,23 +82,27 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
   const alreadyAsked = pending.includes(role);
 
 
-  const problem = (): string => {
-    if (!needsProfile) return "";
-    if (!country) return t("Please choose your country.");
-    if (role === "professional" && specialisations.length === 0) return t("Choose at least one specialisation.");
-    if (role === "supplier" && !companyName.trim()) return t("Please enter your company name.");
-    if (!city.trim()) return t("Please enter your city.");
-    return phoneProblem(phone) ?? "";
+  /** What is wrong, by field, so each message shows next to the field it is about. */
+  const problems = (): Record<string, string> => {
+    const found: Record<string, string> = {};
+    if (needsProfile) {
+      if (!country) found.country = t("Please choose your country.");
+      if (role === "professional" && specialisations.length === 0) found.specialisations = t("Choose at least one specialisation.");
+      if (role === "supplier" && !companyName.trim()) found.companyName = t("Please enter your company name.");
+      if (!city.trim()) found.city = t("Please enter your city.");
+      const phoneIssue = phoneProblem(phone);
+      if (phoneIssue) found.phone = phoneIssue;
+      if (!terms) found.terms = t("Please accept the Terms of Service and Privacy Policy to continue.");
+    }
+    return found;
   };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!token || saving || alreadyAsked) return;
-    const message = problem();
-    if (message) {
-      setError(message);
-      return;
-    }
+    const found = problems();
+    setFieldErrors(found);
+    if (Object.keys(found).length > 0) return;
     const details: RoleRequestDetails | undefined = !needsProfile
       ? undefined
       : role === "professional"
@@ -113,7 +130,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
       router.push("/supplier");
       return;
     }
-    showToast(t("Request sent. We will let you know when it is answered."));
+    showToast(role === "professional" ? t("Your request to become a professional has been sent. We will tell you here and by email when it is answered.") : t("Request sent. We will let you know when it is answered."));
     onClose();
   };
 
@@ -150,6 +167,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
                 <div className="mt-1">
                   <MultiSelectCombobox value={specialisations} onChange={setSpecialisations} groups={SPECIALISATION_GROUPS} max={MAX_SPECIALISATIONS} placeholder={t("Search and choose what you specialise in…")} ariaLabel={t("Specialisations")} />
                 </div>
+                <FieldError message={fieldErrors.specialisations} />
               </div>
               <label className="block text-sm font-bold text-slate-700">
                 {t("Years of experience")} <span className="font-normal text-slate-400">({t("optional")})</span>
@@ -163,6 +181,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
               <label className="block text-sm font-bold text-slate-700">
                 {t("Company name")}
                 <input className={`${fieldClass} mt-1`} value={companyName} maxLength={160} onChange={(e) => setCompanyName(e.target.value)} />
+                <FieldError message={fieldErrors.companyName} />
               </label>
             </>
           )}
@@ -180,10 +199,12 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
                       </option>
                     ))}
                   </Select>
+                  <FieldError message={fieldErrors.country} />
                 </label>
                 <label className="block text-sm font-bold text-slate-700">
                   {t("City")}
                   <input className={`${fieldClass} mt-1`} value={city} maxLength={120} onChange={(e) => setCity(e.target.value)} />
+                  <FieldError message={fieldErrors.city} />
                 </label>
               </div>
               <div className="text-sm font-bold text-slate-700">
@@ -191,6 +212,24 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
                 <div className="mt-1">
                   <PhoneInput value={phone} onChange={setPhone} required />
                 </div>
+                <FieldError message={fieldErrors.phone} />
+              </div>
+              <div>
+                <label className="flex items-start gap-3 text-sm font-normal leading-relaxed text-slate-600">
+                  <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1 h-4 w-4 shrink-0 cursor-pointer accent-[#2ec440]" />
+                  <span>
+                    {t("I agree to HuzaEstate's")}{" "}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">
+                      {t("Terms of Service")}
+                    </Link>{" "}
+                    {t("and")}{" "}
+                    <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold text-[#2ec440] hover:underline">
+                      {t("Privacy Policy")}
+                    </Link>
+                    .
+                  </span>
+                </label>
+                <FieldError message={fieldErrors.terms} />
               </div>
             </>
           )}
