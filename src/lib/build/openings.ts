@@ -127,15 +127,14 @@ export function addDefaultOpenings(floors: ManualFloor[]): ManualFloor[] {
       const neighbours = neighboursOf(room, rooms);
       const outside = exteriorWalls(room, neighbours);
 
-      // Windows
-      if (HABITABLE.has(room.type) || SMALL_WET.has(room.type)) {
-        const small = SMALL_WET.has(room.type);
-        const walls = outside.slice(0, small ? 1 : 2);
-        for (const wall of walls) {
-          const length = wallLength(room, wall);
-          const width = small ? 0.6 : length >= 5 && room.type === "living_room" ? 1.8 : Math.min(1.2, length - 0.6);
-          if (width >= 0.5) room.openings!.push(opening("window", wall, centred(room, wall, width), width));
-        }
+      // Windows: a window is about two fifths of its wall (at least 1.2 m, at most 2.4 m; living rooms may have 3 m), on every outside wall of a
+      // room people live in (up to three for a living or dining room, two for the others). A bathroom or laundry gets one small window, and
+      // a staircase or hallway one narrow one, because they have outside walls too.
+      const windowWidth = (wall: WallSide, max: number) => Math.min(Math.max(1.2, Math.round(wallLength(room, wall) * 0.4 * 10) / 10), max, wallLength(room, wall) - 0.6);
+      const windowWalls = HABITABLE.has(room.type) ? outside.slice(0, room.type === "living_room" || room.type === "dining_room" ? 3 : 2) : SMALL_WET.has(room.type) ? outside.slice(0, 1) : room.type === "staircase" || room.type === "hallway" ? outside.slice(0, 1) : [];
+      for (const wall of windowWalls) {
+        const width = SMALL_WET.has(room.type) ? Math.min(0.9, wallLength(room, wall) - 0.6) : room.type === "staircase" || room.type === "hallway" ? Math.min(0.9, wallLength(room, wall) - 0.6) : windowWidth(wall, room.type === "living_room" ? 3 : 2.4);
+        if (width >= 0.5) room.openings!.push(opening("window", wall, centred(room, wall, width), width));
       }
 
       // Door
