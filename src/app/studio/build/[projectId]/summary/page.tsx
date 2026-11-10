@@ -1,31 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import { FloorPlanGraphic } from "@/components/build/FloorPlanSvg";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { projectLocationLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
+import { downloadProjectPdf } from "@/lib/build/pdfReport";
+import { useToast } from "@/lib/toast-context";
 
 /** The download step: the whole design and the document to keep. */
 export default function ProjectSummaryPage() {
   const project = useBuildProjectContext();
+  const { showToast } = useToast();
+  const [making, setMaking] = useState(false);
   const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   const requiredSustainability = project.brief.sustainability.items.filter((i) => i.priority);
   const activeReview = project.reviewRequests.find((r) => r.status !== "cancelled");
 
+  const download = async () => {
+    setMaking(true);
+    try {
+      await downloadProjectPdf(project);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "The PDF could not be made. Please try again.", "error");
+    } finally {
+      setMaking(false);
+    }
+  };
+
   return (
-    <div className="space-y-8 print:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
-        <h1 className="text-xl font-black text-slate-900">Your design</h1>
-        <button type="button" onClick={() => window.print()} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-          Download PDF
+    <div className="space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-black text-slate-900">Download</h1>
+        <button type="button" onClick={download} disabled={making || !design} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">
+          {making ? "Making your PDF…" : "Download PDF"}
         </button>
       </div>
-
-      <header className="hidden print:block border-b border-slate-200 pb-4">
-        <p className="text-xs font-bold uppercase tracking-wide text-[#2ec440] mb-1">HuzaEstate Build</p>
-        <h1 className="text-3xl font-black text-slate-900">{project.name}</h1>
-        <p className="text-slate-500">{projectLocationLabel(project)}</p>
-      </header>
 
       {design && (
         <section>
