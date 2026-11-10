@@ -1,4 +1,5 @@
 import { newId } from "./factory";
+import { summariseBrief } from "./briefSummary";
 import { addDefaultOpenings } from "./openings";
 import { DesignBrief, ManualFloor, ManualRoomType } from "./types";
 
@@ -6,18 +7,6 @@ const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081
 
 type AiFloor = { name: string; rooms: { type: string; name: string; x: number; y: number; w: number; h: number }[] };
 export type AiDesignOutcome = { ok: true; floors: ManualFloor[] } | { ok: false; error: string; unavailable: boolean };
-
-/** The brief, said briefly: what the AI needs to draw a home. */
-function summariseBrief(brief: DesignBrief) {
-  return {
-    floors: brief.household.floors,
-    plotAreaSqm: brief.plot.areaSqm,
-    style: brief.style.primaryStyle,
-    parkingSpaces: brief.household.parkingSpaces,
-    priorities: [...brief.sustainability.items, ...brief.accessibility.items].filter((i) => i.priority).map((i) => i.label),
-    rooms: brief.household.rooms.map((r) => ({ label: r.label, quantity: r.quantity, preferredSizeSqm: r.preferredSizeSqm })),
-  };
-}
 
 /** The AI's rooms, given the ids and the doors and windows the rest of the page expects. */
 function toFloors(aiFloors: AiFloor[]): ManualFloor[] {

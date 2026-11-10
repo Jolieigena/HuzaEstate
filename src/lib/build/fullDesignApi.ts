@@ -1,4 +1,5 @@
 import { designToSvg } from "./exportPlan";
+import { summariseBrief } from "./briefSummary";
 import { DesignBrief, FullDesign, FullDesignPicture, ManualDesign, ManualFloor } from "./types";
 
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
@@ -27,17 +28,6 @@ async function post<T>(token: string, path: string, body: unknown): Promise<Outc
   } catch {
     return { ok: false, error: "Could not reach the server. Please try again.", unavailable: false };
   }
-}
-
-function summariseBrief(brief: DesignBrief) {
-  return {
-    floors: brief.household.floors,
-    plotAreaSqm: brief.plot.areaSqm,
-    style: brief.style.primaryStyle,
-    parkingSpaces: brief.household.parkingSpaces,
-    priorities: [...brief.sustainability.items, ...brief.accessibility.items].filter((i) => i.priority).map((i) => i.label),
-    rooms: brief.household.rooms.map((r) => ({ label: r.label, quantity: r.quantity, preferredSizeSqm: r.preferredSizeSqm })),
-  };
 }
 
 const roomsOf = (floors: ManualFloor[]) => floors.map((f) => ({ name: f.name, rooms: f.rooms.map(({ type, name, x, y, w, h }) => ({ type, name, x, y, w, h })) }));
