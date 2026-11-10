@@ -73,7 +73,7 @@ export default function RequestQuotationsModal({ project, open, onClose }: { pro
             <h2 id={titleId} className="text-xl font-black text-slate-900 mb-2">
               Quotations requested
             </h2>
-            <p className="text-slate-500 text-sm mb-6">Requested from {contractorIds.length} contractor{contractorIds.length === 1 ? "" : "s"}. Prototype quotations are ready to compare below.</p>
+            <p className="text-slate-500 text-sm mb-6">Requested from {contractorIds.length} contractor{contractorIds.length === 1 ? "" : "s"}. Quotations are ready to compare below.</p>
             <button type="button" onClick={handleClose} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg">
               Done
             </button>

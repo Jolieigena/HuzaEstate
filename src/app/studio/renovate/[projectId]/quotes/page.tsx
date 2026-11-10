@@ -108,7 +108,7 @@ export default function QuotesPage() {
       )}
 
       <p className="text-xs text-slate-400 italic">
-        This is a prototype. Accepting a quotation updates your project to &ldquo;Ready for execution&rdquo; but does not process payment or create a binding contract. See{" "}
+        Accepting a quotation moves your project to &ldquo;Ready for execution&rdquo;. It does not process payment or create a binding contract. See{" "}
         <Link href={`/studio/renovate/${project.id}/professionals`} className="underline">
           Professionals
         </Link>{" "}

@@ -53,7 +53,7 @@ export default function AcceptQuotationModal({ quotation, open, onClose, onConfi
         <label className="flex items-start gap-3 mb-6 cursor-pointer">
           <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} className="w-5 h-5 mt-0.5 rounded accent-[#2ec440] flex-shrink-0" />
           <span className="text-sm text-slate-700 leading-relaxed">
-            I understand this is a prototype acceptance. No payment is processed and no legally binding contract is created.
+            I understand that accepting this quotation does not process payment or create a legally binding contract.
           </span>
         </label>
 

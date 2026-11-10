@@ -165,8 +165,8 @@ export default function RenovationSummaryPage() {
         <section className="bg-slate-50 rounded-xl p-5 text-sm text-slate-600 leading-relaxed">
           <p className="font-bold text-slate-900 mb-1">Disclaimer</p>
           <p>
-            This summary reflects conceptual renovation directions produced by HuzaEstate Renovate and is not an approved technical design. Budget and timeline figures are indicative only.
-            Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals before execution. Accepting a contractor quotation in this prototype does
+            This summary reflects conceptual renovation directions produced by HuzaEstate Renovate and is not an approved technical design. Timeline figures are indicative only.
+            Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals before execution. Accepting a contractor quotation here does
             not process payment or create a binding contract.
           </p>
         </section>
