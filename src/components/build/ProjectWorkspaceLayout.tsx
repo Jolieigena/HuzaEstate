@@ -17,7 +17,7 @@ import PromptModal from "@/components/shared/PromptModal";
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
   { key: "home", label: "Your home", segment: "brief", segments: ["brief"] },
   { key: "plans", label: "Floor plans", segment: "concepts", segments: ["concepts", "compare", "designer"] },
-  { key: "review", label: "Budget and download", segment: "summary", segments: ["summary", "budget"] },
+  { key: "review", label: "Download", segment: "summary", segments: ["summary", "budget"] },
   { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals"] },
 ];
 

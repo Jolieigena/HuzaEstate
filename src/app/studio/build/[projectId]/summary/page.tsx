@@ -1,9 +1,8 @@
 "use client";
 
 import { FloorPlanGraphic } from "@/components/build/FloorPlanSvg";
-import BudgetPanel from "@/components/build/BudgetPanel";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
-import { formatCompactRwf, projectLocationLabel } from "@/lib/build/format";
+import { projectLocationLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
 
 /** The "Budget and download" step: the whole design, what it costs, and the document to keep. */
@@ -16,7 +15,7 @@ export default function ProjectSummaryPage() {
   return (
     <div className="space-y-8 print:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
-        <h1 className="text-xl font-black text-slate-900">Your design and budget</h1>
+        <h1 className="text-xl font-black text-slate-900">Your design</h1>
         <button type="button" onClick={() => window.print()} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
           Download PDF
         </button>
@@ -32,7 +31,7 @@ export default function ProjectSummaryPage() {
         <section>
           <h2 className="text-lg font-black text-slate-900">Your design</h2>
           <p className="mb-4 text-sm font-semibold text-slate-600">
-            {design.metrics.floorAreaSqm} sqm · {design.metrics.floors} floor{design.metrics.floors === 1 ? "" : "s"} · {design.metrics.bedrooms} bed / {design.metrics.bathrooms} bath · {formatCompactRwf(design.metrics.budgetLowRwf)} – {formatCompactRwf(design.metrics.budgetHighRwf)}
+            {design.metrics.floorAreaSqm} sqm · {design.metrics.floors} floor{design.metrics.floors === 1 ? "" : "s"} · {design.metrics.bedrooms} bed / {design.metrics.bathrooms} bath
           </p>
           <div className="space-y-8">
             {design.floors.map((floor) => (
@@ -46,11 +45,6 @@ export default function ProjectSummaryPage() {
           </div>
         </section>
       )}
-
-      <section className="break-inside-avoid">
-        <h2 className="mb-3 text-lg font-black text-slate-900">Budget</h2>
-        <BudgetPanel />
-      </section>
 
       <section className="grid gap-8 sm:grid-cols-2 break-inside-avoid">
         <div>
