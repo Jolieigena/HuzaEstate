@@ -1,0 +1,105 @@
+"use client";
+
+import { useRef, useState } from "react";
+/* eslint-disable @next/next/no-img-element */
+import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
+import { useAuth } from "@/lib/auth-context";
+import { useToast } from "@/lib/toast-context";
+import { BuildProjectService } from "@/lib/build/projectService";
+import { createFullDesign, FULL_DESIGN_VIEWS } from "@/lib/build/fullDesignApi";
+import { FullDesign } from "@/lib/build/types";
+
+/** The full design: the AI describes the whole house from the chosen plan and draws it, outside and in. */
+export default function FullDesignPage() {
+  const project = useBuildProjectContext();
+  const { token } = useAuth();
+  const { showToast } = useToast();
+  const [working, setWorking] = useState<FullDesign | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const runningRef = useRef(false);
+
+  const concept = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
+  const design = busy ? working : project.fullDesign ?? null;
+
+  const start = async () => {
+    if (!concept || !token || runningRef.current) return;
+    runningRef.current = true;
+    setBusy(true);
+    setError("");
+    setWorking(null);
+    const outcome = await createFullDesign(token, project.brief, concept.floors, concept.id, setWorking);
+    if (outcome.ok) {
+      BuildProjectService.saveFullDesign(project.id, outcome.design);
+      if (outcome.design.pictures.length < FULL_DESIGN_VIEWS.length) showToast("Some pictures could not be made. You can make the full design again.", "info");
+    } else {
+      setError(outcome.unavailable ? "AI is not switched on yet." : outcome.error);
+    }
+    setBusy(false);
+    runningRef.current = false;
+  };
+
+  if (!concept) {
+    return <p className="text-sm font-semibold text-slate-500">Choose a floor plan first.</p>;
+  }
+
+  const shown = design?.pictures ?? [];
+  const done = (key: string) => shown.find((p) => p.key === key);
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-black text-slate-900">Full design</h1>
+        <button
+          type="button"
+          onClick={start}
+          disabled={busy || !token}
+          className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+        >
+          {busy ? "Designing your house…" : project.fullDesign ? "Make a new full design" : "Create full design"}
+        </button>
+      </div>
+
+      {error && (
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {error}
+        </p>
+      )}
+
+      {design && <p className="text-base font-semibold text-slate-800">{design.summary}</p>}
+
+      {(design || busy) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {FULL_DESIGN_VIEWS.map((view, index) => {
+            const picture = done(view.key);
+            const wide = index === 0;
+            return (
+              <figure key={view.key} className={wide ? "sm:col-span-2" : ""}>
+                {picture ? (
+                  <img src={picture.url} alt={view.label} className="aspect-[16/10] w-full rounded-2xl bg-slate-100 object-cover" />
+                ) : (
+                  <div className={`aspect-[16/10] w-full rounded-2xl bg-slate-100 ${busy ? "animate-pulse" : ""}`} />
+                )}
+                <figcaption className="mt-2 text-sm font-bold text-slate-600">{view.label}</figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      )}
+
+      {design && design.items.length > 0 && (
+        <section className="break-inside-avoid">
+          <h2 className="mb-3 text-lg font-black text-slate-900">Specification</h2>
+          <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
+            {design.items.map((item) => (
+              <div key={item.label} className="grid gap-1 px-5 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4">
+                <dt className="text-sm font-bold text-slate-900">{item.label}</dt>
+                <dd className="text-sm text-slate-600">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+    </div>
+  );
+}

@@ -632,6 +632,7 @@ export type ActivityEventType =
   | "concept_generation_started"
   | "concepts_generated"
   | "concept_selected"
+  | "full_design_created"
   | "refinement_requested"
   | "version_created"
   | "budget_recalculated"
@@ -702,6 +703,9 @@ export interface BuildProject {
   concepts: Concept[];
   selectedConceptId: string | null;
 
+  /** The AI's full design of the chosen plan: the written design and the pictures. Missing until it is made. */
+  fullDesign?: FullDesign | null;
+
   versions: ProjectVersion[];
 
   budget: BudgetEstimate | null;
@@ -713,6 +717,25 @@ export interface BuildProject {
   activity: ActivityEvent[];
 
   generation: GenerationState;
+}
+
+export interface FullDesignPicture {
+  key: "front" | "rear" | "living" | "kitchen" | "bedroom";
+  label: string;
+  /** A JPEG as a data: address. */
+  url: string;
+}
+
+export interface FullDesign {
+  generatedAt: string;
+  /** The plan this design was made from. */
+  conceptId: string;
+  summary: string;
+  /** How the outside and inside look, kept so more pictures can follow the same house. */
+  exterior: string;
+  interior: string;
+  items: { label: string; value: string }[];
+  pictures: FullDesignPicture[];
 }
 
 export interface CreateProjectInput {

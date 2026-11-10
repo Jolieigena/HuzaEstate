@@ -17,6 +17,7 @@ import PromptModal from "@/components/shared/PromptModal";
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
   { key: "home", label: "Your home", segment: "brief", segments: ["brief"] },
   { key: "plans", label: "Floor plans", segment: "concepts", segments: ["concepts", "compare", "designer"] },
+  { key: "full", label: "Full design", segment: "full-design", segments: ["full-design"] },
   { key: "review", label: "Download", segment: "summary", segments: ["summary", "budget"] },
   { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals"] },
 ];
@@ -26,14 +27,15 @@ function pathState(project: BuildProject) {
   const briefConfirmed = !["draft", "brief_in_progress"].includes(project.status);
   const planChosen = !!project.selectedConceptId;
   const reviewRequested = ["awaiting_professional_review", "professionally_reviewed"].includes(project.status);
-  const done = [briefConfirmed, planChosen, reviewRequested, reviewRequested];
-  const open = [true, briefConfirmed, planChosen, planChosen];
+  const fullDesigned = !!project.fullDesign;
+  const done = [briefConfirmed, planChosen, fullDesigned, reviewRequested, reviewRequested];
+  const open = [true, briefConfirmed, planChosen, planChosen, planChosen];
   // Where "continue where I left off" goes.
-  const resume = !briefConfirmed ? 0 : !planChosen ? 1 : !reviewRequested ? 2 : 3;
+  const resume = !briefConfirmed ? 0 : !planChosen ? 1 : !fullDesigned ? 2 : !reviewRequested ? 3 : 4;
   return { done, open, resume };
 }
 
-const CONTINUE_HINT = ["Confirm your brief to see floor plans.", "Choose one floor plan to continue.", "", ""];
+const CONTINUE_HINT = ["Confirm your brief to see floor plans.", "Choose one floor plan to continue.", "", "", ""];
 
 function CheckIcon() {
   return (
@@ -131,7 +133,7 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
           </div>
         </div>
 
-        <ol aria-label="Your path" className="print:hidden mb-8 grid grid-cols-4 gap-2 sm:gap-4">
+        <ol aria-label="Your path" className="print:hidden mb-8 grid grid-cols-5 gap-2 sm:gap-4">
           {STEPS.map((step, index) => {
             const isCurrent = index === currentStep;
             const isDone = done[index] && !isCurrent;

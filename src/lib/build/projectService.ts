@@ -17,6 +17,7 @@ import {
   GENERATION_STAGES,
   ManualDesign,
   ProfessionalReviewRequest,
+  FullDesign,
   ProjectDocument,
   ProjectVersion,
   VersionSource,
@@ -306,6 +307,12 @@ export const BuildProjectService = {
       (p) => ({ ...p, selectedConceptId: conceptId }),
       { activity: activityEvent("concept_selected", "design", "You", `Selected "${concept?.name ?? "a concept"}" as the preferred concept.`) }
     );
+  },
+
+  saveFullDesign(id: string, fullDesign: FullDesign): BuildProject | undefined {
+    return mutate(id, (p) => ({ ...p, fullDesign }), {
+      activity: activityEvent("full_design_created", "design", "You", "The AI made the full design of your house."),
+    });
   },
 
   duplicateConceptAsVersion(id: string, conceptId: string): BuildProject | undefined {

@@ -46,6 +46,32 @@ export default function ProjectSummaryPage() {
         </section>
       )}
 
+      {project.fullDesign && project.fullDesign.pictures.length > 0 && (
+        <section>
+          <h2 className="mb-2 text-lg font-black text-slate-900">Full design</h2>
+          <p className="mb-4 text-sm font-semibold text-slate-600">{project.fullDesign.summary}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {project.fullDesign.pictures.map((picture) => (
+              <figure key={picture.key} className="break-inside-avoid">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={picture.url} alt={picture.label} className="aspect-[16/10] w-full rounded-xl object-cover" />
+                <figcaption className="mt-1 text-xs font-bold text-slate-500">{picture.label}</figcaption>
+              </figure>
+            ))}
+          </div>
+          {project.fullDesign.items.length > 0 && (
+            <dl className="mt-4 grid grid-cols-[10rem_1fr] gap-x-4 gap-y-2 text-sm break-inside-avoid">
+              {project.fullDesign.items.map((item) => (
+                <div key={item.label} className="contents">
+                  <dt className="font-bold text-slate-900">{item.label}</dt>
+                  <dd className="text-slate-600">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </section>
+      )}
+
       <section className="grid gap-8 sm:grid-cols-2 break-inside-avoid">
         <div>
           <h2 className="mb-3 font-bold text-slate-900">Plot</h2>
