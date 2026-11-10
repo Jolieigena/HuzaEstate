@@ -133,32 +133,25 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
           </div>
         </div>
 
-        <ol aria-label="Your path" className="print:hidden mb-8 grid grid-cols-5 gap-2 sm:gap-4">
+        <ol aria-label="Your path" className="print:hidden mb-8 flex items-center gap-x-3 overflow-x-auto whitespace-nowrap border-b border-slate-200 text-sm sm:gap-x-4 sm:text-base">
           {STEPS.map((step, index) => {
             const isCurrent = index === currentStep;
             const isDone = done[index] && !isCurrent;
             const reachable = open[index];
-            const circle = (
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-black ${
-                  isCurrent ? "bg-slate-900 text-white" : isDone ? "bg-[#2ec440] text-white" : reachable ? "bg-white text-slate-700 border border-slate-300" : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                {isDone ? <CheckIcon /> : index + 1}
+            const tone = isCurrent ? "font-black text-slate-900" : isDone ? "font-bold text-[#2ec440]" : reachable ? "font-bold text-slate-700" : "font-bold text-slate-300";
+            const body = (
+              <span className={`-mb-px inline-flex items-center gap-1.5 border-b-2 pb-3 ${isCurrent ? "border-slate-900" : "border-transparent"} ${tone}`}>
+                {isDone && <CheckIcon />}
+                {step.label}
               </span>
             );
-            const label = <span className={`text-xs font-bold leading-tight sm:text-sm ${isCurrent ? "text-slate-900" : reachable ? "text-slate-700" : "text-slate-400"}`}>{step.label}</span>;
-            const body = (
-              <>
-                <span className="flex items-center gap-3">
-                  {circle}
-                  <span className="hidden sm:block">{label}</span>
-                </span>
-                <span className="mt-2 block sm:hidden">{label}</span>
-              </>
-            );
             return (
-              <li key={step.key} className={`border-t-4 pt-3 ${isCurrent ? "border-slate-900" : isDone ? "border-[#2ec440]" : "border-slate-200"}`}>
+              <li key={step.key} ref={isCurrent ? (el) => { const bar = el?.parentElement; if (el && bar) bar.scrollLeft = el.offsetLeft - (bar.clientWidth - el.clientWidth) / 2; } : undefined} className="flex items-center gap-x-3 sm:gap-x-4">
+                {index > 0 && (
+                  <span aria-hidden="true" className="-mt-3 text-slate-300">
+                    ›
+                  </span>
+                )}
                 {reachable ? (
                   <Link href={stepHref(index)} aria-current={isCurrent ? "step" : undefined} className="block">
                     {body}
