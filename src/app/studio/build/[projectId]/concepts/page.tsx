@@ -26,7 +26,7 @@ function GenerateConceptsModal({ open, onClose, onConfirm }: { open: boolean; on
         <h2 id={titleId} className="text-xl font-black text-slate-900 mb-1">
           Generate your design
         </h2>
-        <p className="text-slate-500 text-sm mb-6">Huza AI will draw a design from your confirmed brief. You can change it afterwards with Edit with AI.</p>
+        <p className="text-slate-500 text-sm mb-6">Huza AI will draw a new design from your confirmed brief. Your current design is kept as a version.</p>
 
         <dl className="bg-slate-50 border border-slate-200 rounded-2xl p-5 grid grid-cols-2 gap-y-3 text-sm mb-4">
           <dt className="text-slate-500">Project</dt>
@@ -140,6 +140,9 @@ export default function ConceptsPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
+          <button type="button" onClick={() => setGenerateOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+            New design with AI
+          </button>
           <button type="button" onClick={() => setRefineOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             Edit with AI
           </button>

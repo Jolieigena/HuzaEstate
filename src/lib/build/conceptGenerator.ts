@@ -163,9 +163,9 @@ function totalFloorArea(floors: ManualFloor[]): number {
   return Math.round(floors.reduce((sum, f) => sum + f.rooms.filter((r) => r.type !== "open_space").reduce((s, r) => s + r.w * r.h, 0), 0));
 }
 
-export function generateConcept(brief: DesignBrief, direction: ConceptDirection): Concept {
+export function generateConcept(brief: DesignBrief, direction: ConceptDirection, givenFloors?: ManualFloor[]): Concept {
   const meta = DIRECTION_META[direction];
-  const floors = addDefaultOpenings(buildFloorsForDirection(brief, direction));
+  const floors = givenFloors ?? addDefaultOpenings(buildFloorsForDirection(brief, direction));
   const singleStorey = floors.length === 1;
   const hasOpenSpace = floors.some((f) => f.rooms.some((r) => r.type === "open_space"));
   const storeyWord = singleStorey ? "single-storey" : floors.length === 2 ? "two-storey" : `${floors.length}-storey`;
@@ -237,6 +237,11 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
       needsProfessionalValidation: ["Structural design", "Final electrical and plumbing layout", "Permit drawings"],
     },
   };
+}
+
+/** The design the AI drew from the brief: its floors, with the figures worked out from them. */
+export function conceptFromAiFloors(brief: DesignBrief, floors: ManualFloor[]): Concept {
+  return { ...generateConcept(brief, "balanced", floors), name: "Your design" };
 }
 
 /** One design, made from the brief. The person changes it afterwards with "Edit with AI", which makes a new version. */

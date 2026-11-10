@@ -273,7 +273,7 @@ export const BuildProjectService = {
           concepts: [...p.concepts, ...concepts],
           versions: [...p.versions, ...versions],
           // With one design there is nothing to choose between, so it is the chosen plan from the start.
-          selectedConceptId: p.selectedConceptId ?? concepts[0]?.id,
+          selectedConceptId: concepts[0]?.id ?? p.selectedConceptId,
           generation: { status: "completed", currentStageIndex: GENERATION_STAGES.length - 1, completedStageKeys: GENERATION_STAGES.map((s) => s.key) },
         };
       },
@@ -332,7 +332,7 @@ export const BuildProjectService = {
     );
   },
 
-  refineConcept(id: string, conceptId: string, request: string, changeSummary: string, patch: Partial<Concept["metrics"]>): BuildProject | undefined {
+  refineConcept(id: string, conceptId: string, request: string, changeSummary: string, patch: Partial<Concept["metrics"]>, floors?: Concept["floors"]): BuildProject | undefined {
     const project = this.getById(id);
     const source = project?.concepts.find((c) => c.id === conceptId);
     if (!source) return undefined;
@@ -342,6 +342,7 @@ export const BuildProjectService = {
       version: source.version + 1,
       generatedAt: new Date().toISOString(),
       metrics: { ...source.metrics, ...patch },
+      ...(floors ? { floors } : {}),
     };
     return mutate(
       id,

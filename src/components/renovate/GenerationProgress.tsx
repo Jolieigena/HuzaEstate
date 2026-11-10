@@ -5,6 +5,8 @@ import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { generateAllConcepts, ConceptGenerationInput } from "@/lib/renovate/conceptGenerator";
 import { GENERATION_STAGES, RenovationProject, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
 import { useToast } from "@/lib/toast-context";
+import { useAuth } from "@/lib/auth-context";
+import { previewRenovation, RenovateRoom } from "@/lib/renovate/aiPreview";
 
 const STAGE_DELAY_MS = 900;
 
@@ -25,8 +27,48 @@ export function buildGenerationInput(project: RenovationProject): ConceptGenerat
   };
 }
 
+const ROOM_FOR_AREA: Record<string, RenovateRoom> = {
+  kitchen: "kitchen",
+  bathroom: "bathroom",
+  living_room: "living-room",
+  dining_room: "dining-room",
+  bedroom: "bedroom",
+  home_office: "home-office",
+  exterior_facade: "exterior",
+  roofing: "exterior",
+  balcony: "exterior",
+  terrace: "exterior",
+  garage: "exterior",
+  garden: "garden",
+  landscaping: "garden",
+};
+
+const DIRECTION_WISH: Record<string, string> = {
+  essential_refresh: "A light refresh: keep the furniture and layout, change paint, finishes and small details so it feels new on a small budget.",
+  balanced_transformation: "A balanced renovation: new finishes, lighting and some new furniture, with the same layout.",
+  premium_reconfiguration: "A premium renovation: high-end materials, built-in storage, statement lighting and designer furniture.",
+};
+
+/** A small copy of the AI's picture (a JPEG of at most 1100 px), so three of them still fit with the project in the browser. */
+function shrinkPicture(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const scale = Math.min(1, 1100 / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 export default function GenerationProgress({ project }: { project: RenovationProject }) {
   const { showToast } = useToast();
+  const { token } = useAuth();
   const [elapsedSec, setElapsedSec] = useState(0);
   const cancelledRef = useRef(false);
   const runningRef = useRef(false);
@@ -37,6 +79,23 @@ export default function GenerationProgress({ project }: { project: RenovationPro
     cancelledRef.current = false;
 
     const run = async () => {
+      // With a photo of the room, the AI starts renovating it at once, one picture for each of the three directions, while the steps play.
+      const area = project.assessment.areas[0];
+      const photo = project.uploads.photos.find((p) => p.relatedAreaId === area?.id && p.previewUrl?.startsWith("data:image/")) ?? project.uploads.photos.find((p) => p.previewUrl?.startsWith("data:image/"));
+      const directions = ["essential_refresh", "balanced_transformation", "premium_reconfiguration"];
+      const drawing =
+        token && photo?.previewUrl
+          ? Promise.all(
+              directions.map((direction) =>
+                previewRenovation(token, {
+                  photos: [photo.previewUrl as string],
+                  room: ROOM_FOR_AREA[area?.areaKey ?? ""] ?? "living-room",
+                  style: project.assessment.style.primaryStyle ?? "modern",
+                  wish: [DIRECTION_WISH[direction], area?.desiredOutcome].filter(Boolean).join(" "),
+                }),
+              ),
+            )
+          : Promise.resolve(null);
       const startIndex = Math.max(0, project.generation.currentStageIndex);
       for (let i = startIndex; i < GENERATION_STAGES.length; i++) {
         if (cancelledRef.current) return;
@@ -46,6 +105,18 @@ export default function GenerationProgress({ project }: { project: RenovationPro
       }
       if (cancelledRef.current) return;
       const concepts = generateAllConcepts(buildGenerationInput(project));
+      const pictures = await drawing;
+      if (cancelledRef.current) return;
+      if (pictures && photo?.previewUrl) {
+        for (let i = 0; i < concepts.length; i++) {
+          const outcome = pictures[i];
+          if (!outcome?.ok) continue;
+          const after = await shrinkPicture(outcome.result.imageUrl);
+          concepts[i].beforeImage = photo.previewUrl;
+          concepts[i].afterImage = after;
+          concepts[i].areaViews = concepts[i].areaViews.map((view) => ({ ...view, beforeImage: photo.previewUrl as string, afterImage: after }));
+        }
+      }
       RenovationProjectService.completeGeneration(project.id, concepts);
       showToast("Your three renovation concepts are ready.");
     };
@@ -54,7 +125,7 @@ export default function GenerationProgress({ project }: { project: RenovationPro
       runningRef.current = false;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id, project.generation.status]);
+  }, [project.id, project.generation.status, token]);
 
   useEffect(() => {
     if (project.generation.status !== "in_progress") return;

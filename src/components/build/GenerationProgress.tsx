@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { generateAllConcepts } from "@/lib/build/conceptGenerator";
+import { conceptFromAiFloors, generateAllConcepts } from "@/lib/build/conceptGenerator";
+import { designWithAi } from "@/lib/build/aiApi";
+import { useAuth } from "@/lib/auth-context";
 import { BuildProject, GENERATION_STAGES } from "@/lib/build/types";
 import { useToast } from "@/lib/toast-context";
 
@@ -10,6 +12,7 @@ const STAGE_DELAY_MS = 900;
 
 export default function GenerationProgress({ project }: { project: BuildProject }) {
   const { showToast } = useToast();
+  const { token } = useAuth();
   const [elapsedSec, setElapsedSec] = useState(0);
   const cancelledRef = useRef(false);
   const runningRef = useRef(false);
@@ -20,6 +23,8 @@ export default function GenerationProgress({ project }: { project: BuildProject 
     cancelledRef.current = false;
 
     const run = async () => {
+      // The AI starts drawing at once, while the steps below play.
+      const drawing = token ? designWithAi(token, project.brief) : Promise.resolve(null);
       const startIndex = Math.max(0, project.generation.currentStageIndex);
       for (let i = startIndex; i < GENERATION_STAGES.length; i++) {
         if (cancelledRef.current) return;
@@ -28,7 +33,9 @@ export default function GenerationProgress({ project }: { project: BuildProject 
         BuildProjectService.advanceGenerationStage(project.id, GENERATION_STAGES[i].key, i);
       }
       if (cancelledRef.current) return;
-      const concepts = generateAllConcepts(project.brief);
+      const drawn = await drawing;
+      if (cancelledRef.current) return;
+      const concepts = drawn?.ok ? [conceptFromAiFloors(project.brief, drawn.floors)] : generateAllConcepts(project.brief);
       BuildProjectService.completeGeneration(project.id, concepts);
       showToast("Your design is ready.");
     };
@@ -37,7 +44,7 @@ export default function GenerationProgress({ project }: { project: BuildProject 
       runningRef.current = false;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id, project.generation.status]);
+  }, [project.id, project.generation.status, token]);
 
   useEffect(() => {
     if (project.generation.status !== "in_progress") return;
