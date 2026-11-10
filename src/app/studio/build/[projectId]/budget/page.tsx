@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 
-// The budget is part of the "Budget and download" step, on the same page as the design.
+// There is no budget page any more; old links land on the download step.
 export default function BudgetPage() {
   const project = useBuildProjectContext();
   const router = useRouter();

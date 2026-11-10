@@ -4,7 +4,7 @@ import ConceptPlan from "@/components/build/ConceptPlan";
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { briefStepCount, briefStepsDone, getNextAction, getProjectProgress } from "@/lib/build/progress";
-import { formatCompactRwf, formatDate, formatRelativeTime, projectLocationLabel } from "@/lib/build/format";
+import { formatDate, formatRelativeTime, projectLocationLabel } from "@/lib/build/format";
 import { PROPERTY_USE_LABELS, ROOM_LABELS, RoomKey } from "@/lib/build/types";
 import { StatusBadge, ReviewStatusBadge } from "@/components/build/StatusBadge";
 
@@ -68,9 +68,6 @@ export default function ProjectOverviewPage() {
                     <span>{selectedConcept.metrics.floorAreaSqm} sqm</span>
                     <span>{selectedConcept.metrics.bedrooms} bed</span>
                     <span>{selectedConcept.metrics.bathrooms} bath</span>
-                    <span>
-                      {formatCompactRwf(selectedConcept.metrics.budgetLowRwf)} – {formatCompactRwf(selectedConcept.metrics.budgetHighRwf)}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -162,19 +159,6 @@ export default function ProjectOverviewPage() {
             <Link href={`${base}/brief`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">
               {project.brief.completedSteps.length === 0 ? "Start the brief" : "Continue the brief"}
             </Link>
-          </SectionCard>
-
-          <SectionCard title="Budget range" action={<Link href={`${base}/budget`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">View budget</Link>}>
-            {project.budget ? (
-              <>
-                <p className="text-2xl font-black text-slate-900 mb-1">{formatCompactRwf(project.budget.target)}</p>
-                <p className="text-sm text-slate-500">
-                  {formatCompactRwf(project.budget.low)} – {formatCompactRwf(project.budget.high)}
-                </p>
-              </>
-            ) : (
-              <p className="text-slate-500 text-sm">No budget estimate calculated yet.</p>
-            )}
           </SectionCard>
 
           <SectionCard title="Professional review" action={<Link href={`${base}/professionals`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">View</Link>}>

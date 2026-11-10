@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { getNextAction, getProjectProgress } from "@/lib/renovate/progress";
-import { formatCompactRwf, formatDate, formatRelativeTime, propertyLocationLabel } from "@/lib/renovate/format";
+import { formatDate, formatRelativeTime, propertyLocationLabel } from "@/lib/renovate/format";
 import { assessmentStepKeys, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
 import { StatusBadge, ReviewStatusBadge, QuotationStatusBadge } from "@/components/renovate/StatusBadge";
 
@@ -85,9 +85,6 @@ export default function RenovationProjectOverviewPage() {
                   <p className="text-sm text-slate-500 leading-relaxed mb-3">{selectedConcept.rationale}</p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm font-semibold text-slate-600">
                     <span>{selectedConcept.estimatedDurationWeeks} weeks</span>
-                    <span>
-                      {formatCompactRwf(selectedConcept.estimatedCostLowRwf)} – {formatCompactRwf(selectedConcept.estimatedCostHighRwf)}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -176,19 +173,6 @@ export default function RenovationProjectOverviewPage() {
             <Link href={`${base}/assessment`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">
               {project.assessment.completedSteps.length === 0 ? "Start the assessment" : "Continue the assessment"}
             </Link>
-          </SectionCard>
-
-          <SectionCard title="Indicative budget" action={<Link href={`${base}/budget`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">View budget</Link>}>
-            {project.budget ? (
-              <>
-                <p className="text-2xl font-black text-slate-900 mb-1">{formatCompactRwf(project.budget.target)}</p>
-                <p className="text-sm text-slate-500">
-                  {formatCompactRwf(project.budget.low)} – {formatCompactRwf(project.budget.high)}
-                </p>
-              </>
-            ) : (
-              <p className="text-slate-500 text-sm">No budget estimate calculated yet.</p>
-            )}
           </SectionCard>
 
           {project.scope.length > 0 && (

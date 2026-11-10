@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { Concept } from "@/lib/build/types";
-import { formatCompactRwf } from "@/lib/build/format";
 import { useToast } from "@/lib/toast-context";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import RefineDrawer from "@/components/build/RefineDrawer";
@@ -55,7 +54,6 @@ function CompareContent() {
     );
   }
 
-  const lowestCostId = [...project.concepts].sort((a, b) => a.metrics.budgetLowRwf - b.metrics.budgetLowRwf)[0]?.id;
   const largestAreaId = [...project.concepts].sort((a, b) => b.metrics.floorAreaSqm - a.metrics.floorAreaSqm)[0]?.id;
   const bestSustainabilityId = [...project.concepts].sort((a, b) => b.metrics.sustainabilityScore - a.metrics.sustainabilityScore)[0]?.id;
   const balancedId = project.concepts.find((c) => c.direction === "balanced")?.id;
@@ -72,7 +70,6 @@ function CompareContent() {
     { label: "Privacy", render: () => "Bedrooms separated from shared living areas" },
     { label: "Expandability", render: (c) => (c.direction === "efficient" ? "Limited" : c.direction === "balanced" ? "Moderate" : "High") },
     { label: "Sustainability score", render: (c) => `${c.metrics.sustainabilityScore} / 100` },
-    { label: "Budget range", render: (c) => `${formatCompactRwf(c.metrics.budgetLowRwf)} – ${formatCompactRwf(c.metrics.budgetHighRwf)}` },
     { label: "Build complexity", render: (c) => (c.direction === "spacious" ? "Higher" : c.direction === "efficient" ? "Lower" : "Moderate") },
     { label: "Advantages", render: (c) => <ul className="list-disc list-inside text-left space-y-0.5">{c.advantages.map((a) => <li key={a}>{a}</li>)}</ul> },
     { label: "Compromises", render: (c) => <ul className="list-disc list-inside text-left space-y-0.5">{c.compromises.map((a) => <li key={a}>{a}</li>)}</ul> },
@@ -114,7 +111,6 @@ function CompareContent() {
                     <ConceptPlan concept={c} className="w-full aspect-video rounded-xl mb-2" />
                     <p className="font-bold text-slate-900">{c.name}</p>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {c.id === lowestCostId && <span className="text-[10px] font-bold bg-[#2ec440]/10 text-[#2ec440] px-2 py-0.5 rounded-full">Lowest cost</span>}
                       {c.id === largestAreaId && <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">Largest space</span>}
                       {c.id === bestSustainabilityId && <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">Most sustainable</span>}
                       {c.id === balancedId && <span className="text-[10px] font-bold bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full">Balanced option</span>}

@@ -19,7 +19,6 @@ const NAV_ITEMS: { key: string; label: string; segment: string }[] = [
   { key: "designer", label: "Designer", segment: "designer" },
   { key: "concepts", label: "Concepts", segment: "concepts" },
   { key: "scope", label: "Scope", segment: "scope" },
-  { key: "budget", label: "Budget", segment: "budget" },
   { key: "professionals", label: "Professionals", segment: "professionals" },
   { key: "quotes", label: "Quotations", segment: "quotes" },
   { key: "documents", label: "Documents", segment: "documents" },

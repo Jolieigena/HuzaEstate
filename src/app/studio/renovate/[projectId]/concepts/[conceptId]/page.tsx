@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { formatCompactRwf, formatDate } from "@/lib/renovate/format";
+import { formatDate } from "@/lib/renovate/format";
 import { useToast } from "@/lib/toast-context";
 import { DISRUPTION_LEVEL_LABELS } from "@/lib/renovate/types";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
@@ -58,12 +58,6 @@ export default function ConceptDetailPage() {
         </div>
         <p className="text-slate-600 leading-relaxed mb-4">{concept.rationale}</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-2">
-          <div className="bg-slate-50 rounded-xl p-3">
-            <p className="text-slate-400 text-xs font-bold">Estimated budget</p>
-            <p className="font-bold text-slate-900">
-              {formatCompactRwf(concept.estimatedCostLowRwf)} – {formatCompactRwf(concept.estimatedCostHighRwf)}
-            </p>
-          </div>
           <div className="bg-slate-50 rounded-xl p-3">
             <p className="text-slate-400 text-xs font-bold">Estimated duration</p>
             <p className="font-bold text-slate-900">{concept.estimatedDurationWeeks} weeks</p>
@@ -204,9 +198,6 @@ export default function ConceptDetailPage() {
           </Link>
           <Link href={`/studio/renovate/${project.id}/scope`} className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold px-5 py-3 rounded-xl transition-colors">
             View Scope
-          </Link>
-          <Link href={`/studio/renovate/${project.id}/budget`} className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold px-5 py-3 rounded-xl transition-colors">
-            View Budget
           </Link>
           <Link href={`/studio/renovate/${project.id}/professionals`} className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-bold px-5 py-3 rounded-xl transition-colors">
             Request Professional Review

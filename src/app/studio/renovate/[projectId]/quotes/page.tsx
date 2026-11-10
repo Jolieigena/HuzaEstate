@@ -21,10 +21,9 @@ export default function QuotesPage() {
   const [view, setView] = useState<"cards" | "compare">("cards");
 
   const scopeConfirmed = project.scope.length > 0;
-  const budgetConfirmed = project.budget !== null;
   const conceptSelected = project.selectedConceptId !== null;
   const safetyFlags = Object.values(project.assessment.safety.concerns).some((v) => v === "yes" || v === "unknown");
-  const readyToRequest = conceptSelected && scopeConfirmed && budgetConfirmed;
+  const readyToRequest = conceptSelected && scopeConfirmed;
 
   const activeQuotations = project.quotations.filter((q) => q.status !== "withdrawn");
 
@@ -33,7 +32,7 @@ export default function QuotesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-black text-slate-900 mb-1">Contractor quotations</h1>
-          <p className="text-slate-500 text-sm max-w-xl">Request and compare quotations from verified contractors. No payment is processed and no contract is created in this prototype.</p>
+          <p className="text-slate-500 text-sm max-w-xl">Request and compare quotations from verified contractors. No payment is processed and no contract is created here.</p>
         </div>
         {project.quotationRequest ? (
           <button type="button" onClick={() => setWithdrawOpen(true)} className="text-sm font-bold text-red-500 hover:text-red-700 whitespace-nowrap">
@@ -57,7 +56,6 @@ export default function QuotesPage() {
           <ul className="list-disc list-inside">
             {!conceptSelected && <li>Select a concept</li>}
             {!scopeConfirmed && <li>Generate the scope of work</li>}
-            {!budgetConfirmed && <li>Calculate the indicative budget</li>}
           </ul>
         </div>
       )}

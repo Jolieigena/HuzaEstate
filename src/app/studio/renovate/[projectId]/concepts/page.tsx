@@ -228,10 +228,6 @@ export default function ConceptsPage() {
                 <li key={a}>{a}</li>
               ))}
             </ul>
-            <p className="font-bold text-slate-900 mt-2">Cost range</p>
-            <p className="text-slate-600">
-              {formatCompactRwf(selectTarget.estimatedCostLowRwf)} – {formatCompactRwf(selectTarget.estimatedCostHighRwf)}
-            </p>
             <p className="font-bold text-slate-900 mt-2">Important compromises</p>
             <ul className="list-disc list-inside text-slate-600">
               {selectTarget.mainCompromises.map((c) => (

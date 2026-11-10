@@ -141,7 +141,7 @@ export default function ConceptsPage() {
         <div>
           <h1 className="text-xl font-black text-slate-900">Your design</h1>
           <p className="text-sm font-semibold text-slate-600">
-            {current.metrics.floorAreaSqm} sqm · {current.metrics.floors} floor{current.metrics.floors === 1 ? "" : "s"} · {current.metrics.bedrooms} bed / {current.metrics.bathrooms} bath · {formatCompactRwf(current.metrics.budgetLowRwf)} – {formatCompactRwf(current.metrics.budgetHighRwf)}
+            {current.metrics.floorAreaSqm} sqm · {current.metrics.floors} floor{current.metrics.floors === 1 ? "" : "s"} · {current.metrics.bedrooms} bed / {current.metrics.bathrooms} bath
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">

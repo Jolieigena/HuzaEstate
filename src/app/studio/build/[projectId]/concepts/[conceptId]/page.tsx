@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { formatCompactRwf, formatDate } from "@/lib/build/format";
+import { formatDate } from "@/lib/build/format";
 import { useToast } from "@/lib/toast-context";
 import FloorPlanSvg from "@/components/build/FloorPlanSvg";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -68,10 +68,6 @@ export default function ConceptDetailPage() {
               <div className="bg-slate-50 rounded-xl p-3">
                 <p className="text-slate-400 text-xs font-bold">Bedrooms / Bathrooms</p>
                 <p className="font-bold text-slate-900">{concept.metrics.bedrooms} / {concept.metrics.bathrooms}</p>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-3">
-                <p className="text-slate-400 text-xs font-bold">Budget range</p>
-                <p className="font-bold text-slate-900">{formatCompactRwf(concept.metrics.budgetLowRwf)} – {formatCompactRwf(concept.metrics.budgetHighRwf)}</p>
               </div>
             </div>
             <p className="text-xs text-slate-400 italic">Conceptual design direction — not an approved construction drawing. Generated {formatDate(concept.generatedAt)}.</p>
@@ -138,10 +134,6 @@ export default function ConceptDetailPage() {
             <dd className="text-slate-600">{concept.decisions.naturalLight}</dd>
           </div>
           <div>
-            <dt className="font-bold text-slate-700">Budget response</dt>
-            <dd className="text-slate-600">{concept.decisions.budgetResponse}</dd>
-          </div>
-          <div>
             <dt className="font-bold text-slate-700">Future expansion</dt>
             <dd className="text-slate-600">{concept.decisions.futureExpansion}</dd>
           </div>
@@ -154,7 +146,6 @@ export default function ConceptDetailPage() {
             ["Missing site information", concept.risks.missingSiteInfo],
             ["Planning assumptions", concept.risks.planningAssumptions],
             ["Structural assumptions", concept.risks.structuralAssumptions],
-            ["Budget assumptions", concept.risks.budgetAssumptions],
           ] as [string, string[]][]).map(([label, items]) =>
             items.length > 0 ? (
               <div key={label}>

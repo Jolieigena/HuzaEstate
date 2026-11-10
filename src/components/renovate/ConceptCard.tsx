@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { RenovationConcept, DISRUPTION_LEVEL_LABELS } from "@/lib/renovate/types";
-import { formatCompactRwf, formatDate } from "@/lib/renovate/format";
+import { formatDate } from "@/lib/renovate/format";
 
 interface ConceptCardProps {
   concept: RenovationConcept;
@@ -41,10 +41,6 @@ export default function ConceptCard({ concept, projectId, isSelected, compareChe
           <span>{DISRUPTION_LEVEL_LABELS[concept.disruptionLevel]}</span>
           <span>{concept.itemsPreserved.length} item{concept.itemsPreserved.length === 1 ? "" : "s"} retained</span>
         </div>
-
-        <p className="text-sm font-bold text-slate-900 mb-3">
-          {formatCompactRwf(concept.estimatedCostLowRwf)} – {formatCompactRwf(concept.estimatedCostHighRwf)}
-        </p>
 
         <div className="mb-4">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 mb-1">

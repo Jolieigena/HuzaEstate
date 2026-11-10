@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { RenovationConcept, DISRUPTION_LEVEL_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
-import { formatCompactRwf } from "@/lib/renovate/format";
 import { useToast } from "@/lib/toast-context";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import RefineDrawer from "@/components/renovate/RefineDrawer";
@@ -55,7 +54,6 @@ function CompareContent() {
   const balancedId = project.concepts.find((c) => c.direction === "balanced_transformation")?.id;
 
   const rows: { label: string; render: (c: RenovationConcept) => React.ReactNode }[] = [
-    { label: "Estimated cost", render: (c) => `${formatCompactRwf(c.estimatedCostLowRwf)} – ${formatCompactRwf(c.estimatedCostHighRwf)}` },
     { label: "Estimated duration", render: (c) => `${c.estimatedDurationWeeks} weeks` },
     { label: "Included areas", render: (c) => c.areasIncluded.map((a) => RENOVATION_AREA_LABELS[a]).join(", ") },
     { label: "Items retained", render: (c) => (c.itemsPreserved.length ? <ul className="list-disc list-inside text-left space-y-0.5">{c.itemsPreserved.map((i) => <li key={i}>{i}</li>)}</ul> : "None") },

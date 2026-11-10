@@ -112,7 +112,7 @@ export default function RenovationSummaryPage() {
             </div>
             <p className="text-sm text-slate-600 mb-2">{selectedConcept.rationale}</p>
             <p className="text-sm font-semibold text-slate-900">
-              {formatCompactRwf(selectedConcept.estimatedCostLowRwf)} – {formatCompactRwf(selectedConcept.estimatedCostHighRwf)} · {selectedConcept.estimatedDurationWeeks} weeks
+              {selectedConcept.estimatedDurationWeeks} weeks
             </p>
           </section>
         )}
@@ -122,16 +122,6 @@ export default function RenovationSummaryPage() {
             <h2 className="font-bold text-slate-900 mb-3">Scope summary</h2>
             <p className="text-sm text-slate-600">
               {project.scope.length} task{project.scope.length === 1 ? "" : "s"} across {new Set(project.scope.map((s) => s.areaKey)).size} area{new Set(project.scope.map((s) => s.areaKey)).size === 1 ? "" : "s"}. Quantities are indicative only.
-            </p>
-          </section>
-        )}
-
-        {project.budget && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Budget range</h2>
-            <p className="text-2xl font-black text-slate-900 mb-1">{formatCompactRwf(project.budget.target)}</p>
-            <p className="text-sm text-slate-500">
-              Range: {formatCompactRwf(project.budget.low)} – {formatCompactRwf(project.budget.high)} · {project.budget.finishLevel} finish
             </p>
           </section>
         )}

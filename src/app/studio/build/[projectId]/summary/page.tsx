@@ -5,7 +5,7 @@ import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { projectLocationLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
 
-/** The "Budget and download" step: the whole design, what it costs, and the document to keep. */
+/** The download step: the whole design and the document to keep. */
 export default function ProjectSummaryPage() {
   const project = useBuildProjectContext();
   const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
@@ -93,7 +93,7 @@ export default function ProjectSummaryPage() {
       <section className="break-inside-avoid rounded-xl bg-slate-50 p-5 text-sm leading-relaxed text-slate-600">
         <p className="mb-1 font-bold text-slate-900">Disclaimer</p>
         <p>
-          This is a conceptual design produced by HuzaEstate Build and is not an approved construction drawing. Budget figures are indicative only. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.
+          This is a conceptual design produced by HuzaEstate Build and is not an approved construction drawing. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.
         </p>
       </section>
     </div>

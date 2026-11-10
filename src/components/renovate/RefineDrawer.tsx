@@ -5,7 +5,6 @@ import Dialog from "@/components/Dialog";
 import { RenovationConcept } from "@/lib/renovate/types";
 import { analyzeRefinement, RefinementAnalysis } from "@/lib/renovate/refinement";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { formatCompactRwf } from "@/lib/renovate/format";
 import { useToast } from "@/lib/toast-context";
 
 const SUGGESTED_REQUESTS = [
@@ -111,15 +110,6 @@ export default function RefineDrawer({ projectId, concept, open, onClose }: { pr
                   </p>
                 </div>
               </div>
-              {(analysis.conceptPatch.estimatedCostLowRwf || analysis.conceptPatch.estimatedCostHighRwf) && (
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Estimated new cost range</p>
-                  <p className="text-sm text-slate-800 font-semibold">
-                    {formatCompactRwf(analysis.conceptPatch.estimatedCostLowRwf ?? concept.estimatedCostLowRwf)} –{" "}
-                    {formatCompactRwf(analysis.conceptPatch.estimatedCostHighRwf ?? concept.estimatedCostHighRwf)}
-                  </p>
-                </div>
-              )}
               <p className="text-xs text-slate-500">This creates a new version — your current version is never overwritten.</p>
             </div>
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">

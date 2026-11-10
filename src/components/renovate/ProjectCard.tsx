@@ -6,7 +6,7 @@ import Image from "@/components/PropertyImage";
 import { useRouter } from "next/navigation";
 import { RenovationProject, CREATION_MODE_LABELS, RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { formatRelativeTime, formatCompactRwf, propertyLocationLabel } from "@/lib/renovate/format";
+import { formatRelativeTime, propertyLocationLabel } from "@/lib/renovate/format";
 import { getProjectProgress } from "@/lib/renovate/progress";
 import { useToast } from "@/lib/toast-context";
 import { StatusBadge } from "./StatusBadge";
@@ -42,7 +42,6 @@ export default function ProjectCard({ project }: { project: RenovationProject })
   const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId);
   const image = selectedConcept?.afterImage ?? project.property.imageUrl ?? "/hero-house.jpg";
   const location = propertyLocationLabel(project);
-  const budget = project.budget;
   const progress = getProjectProgress(project);
   const action = primaryAction(project);
   const areaLabels = project.assessment.areas.slice(0, 3).map((a) => a.customLabel || RENOVATION_AREA_LABELS[a.areaKey]);
@@ -95,12 +94,6 @@ export default function ProjectCard({ project }: { project: RenovationProject })
             <HouseIcon />
             <span className="truncate">{areaLabels.join(", ")}{project.assessment.areas.length > 3 ? "…" : ""}</span>
           </div>
-        )}
-
-        {budget && (
-          <p className="text-sm font-bold text-slate-900 mb-4">
-            {formatCompactRwf(budget.low)} – {formatCompactRwf(budget.high)}
-          </p>
         )}
 
         <div className="mb-5">
