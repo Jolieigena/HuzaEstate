@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
@@ -87,6 +87,11 @@ export default function ConceptsPage() {
   const briefReady = project.status !== "draft" && project.status !== "brief_in_progress";
   // The design on show: the version picked, else the chosen one, else the newest.
   const current = project.concepts.find((c) => c.id === viewId) ?? project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
+
+  // The design on show is the chosen one: a project made before designs chose themselves has none chosen yet, and Continue waits for it.
+  useEffect(() => {
+    if (current && project.status !== "generating" && !project.selectedConceptId) BuildProjectService.selectConcept(project.id, current.id);
+  }, [current, project.id, project.status, project.selectedConceptId]);
 
   if (project.status === "generating") {
     return <GenerationProgress project={project} />;
