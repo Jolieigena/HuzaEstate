@@ -1,110 +1,107 @@
 "use client";
 
-import ConceptPlan from "@/components/build/ConceptPlan";
+import { FloorPlanGraphic } from "@/components/build/FloorPlanSvg";
+import BudgetPanel from "@/components/build/BudgetPanel";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
-import { formatCompactRwf, formatDate, projectLocationLabel, statusLabel } from "@/lib/build/format";
+import { formatCompactRwf, projectLocationLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
 
+/** The "Budget and download" step: the whole design, what it costs, and the document to keep. */
 export default function ProjectSummaryPage() {
   const project = useBuildProjectContext();
-  const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[0];
+  const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   const requiredSustainability = project.brief.sustainability.items.filter((i) => i.priority);
   const activeReview = project.reviewRequests.find((r) => r.status !== "cancelled");
 
   return (
-    <div className="max-w-3xl mx-auto bg-white print:max-w-none">
-      <div className="flex items-center justify-between mb-8 print:hidden">
-        <h1 className="text-xl font-black text-slate-900">Project summary</h1>
-        <button type="button" onClick={() => window.print()} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-5 py-2.5 rounded-xl transition-colors shadow-lg">
-          Print or Save as PDF
+    <div className="space-y-8 print:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
+        <h1 className="text-xl font-black text-slate-900">Your design and budget</h1>
+        <button type="button" onClick={() => window.print()} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+          Download PDF
         </button>
       </div>
 
-      <div className="border border-slate-200 rounded-2xl p-8 print:border-0 print:p-0 space-y-8">
-        <header className="border-b border-slate-200 pb-6">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#2ec440] mb-2">HuzaEstate Build — Project Summary</p>
-          <h1 className="text-3xl font-black text-slate-900 mb-1">{project.name}</h1>
-          <p className="text-slate-500">{project.description || "No description provided."}</p>
-          <p className="text-sm text-slate-400 mt-2">
-            Status: {statusLabel(project.status)} · Generated {formatDate(new Date().toISOString())}
-          </p>
-        </header>
+      <header className="hidden print:block border-b border-slate-200 pb-4">
+        <p className="text-xs font-bold uppercase tracking-wide text-[#2ec440] mb-1">HuzaEstate Build</p>
+        <h1 className="text-3xl font-black text-slate-900">{project.name}</h1>
+        <p className="text-slate-500">{projectLocationLabel(project)}</p>
+      </header>
 
+      {design && (
         <section>
-          <h2 className="font-bold text-slate-900 mb-3">Plot summary</h2>
+          <h2 className="text-lg font-black text-slate-900">Your design</h2>
+          <p className="mb-4 text-sm font-semibold text-slate-600">
+            {design.metrics.floorAreaSqm} sqm · {design.metrics.floors} floor{design.metrics.floors === 1 ? "" : "s"} · {design.metrics.bedrooms} bed / {design.metrics.bathrooms} bath · {formatCompactRwf(design.metrics.budgetLowRwf)} – {formatCompactRwf(design.metrics.budgetHighRwf)}
+          </p>
+          <div className="space-y-8">
+            {design.floors.map((floor) => (
+              <div key={floor.id} className="break-inside-avoid">
+                {design.floors.length > 1 && <h3 className="mb-2 text-sm font-black uppercase tracking-wide text-slate-500">{floor.name}</h3>}
+                <div className="w-full [&>svg]:h-auto [&>svg]:w-full">
+                  <FloorPlanGraphic floor={floor} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="break-inside-avoid">
+        <h2 className="mb-3 text-lg font-black text-slate-900">Budget</h2>
+        <BudgetPanel />
+      </section>
+
+      <section className="grid gap-8 sm:grid-cols-2 break-inside-avoid">
+        <div>
+          <h2 className="mb-3 font-bold text-slate-900">Plot</h2>
           <dl className="grid grid-cols-2 gap-y-2 text-sm">
             <dt className="text-slate-500">Location</dt>
             <dd className="text-right font-semibold text-slate-900">{projectLocationLabel(project)}</dd>
             <dt className="text-slate-500">Plot area</dt>
             <dd className="text-right font-semibold text-slate-900">{project.brief.plot.areaSqm ? `${project.brief.plot.areaSqm} sqm` : "Not provided"}</dd>
             <dt className="text-slate-500">Shape</dt>
-            <dd className="text-right font-semibold text-slate-900 capitalize">{project.brief.plot.shape}</dd>
+            <dd className="text-right font-semibold capitalize text-slate-900">{project.brief.plot.shape}</dd>
             <dt className="text-slate-500">Slope</dt>
-            <dd className="text-right font-semibold text-slate-900 capitalize">{project.brief.plot.slope}</dd>
+            <dd className="text-right font-semibold capitalize text-slate-900">{project.brief.plot.slope}</dd>
           </dl>
-        </section>
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Requirements</h2>
+        </div>
+        <div>
+          <h2 className="mb-3 font-bold text-slate-900">Requirements</h2>
           <div className="flex flex-wrap gap-2">
-            <span className="bg-slate-100 text-slate-700 text-sm font-semibold px-3 py-1.5 rounded-lg">{project.brief.household.floors} floors</span>
+            <span className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">{project.brief.household.floors} floors</span>
             {project.brief.household.rooms.map((r) => (
-              <span key={r.key} className="bg-slate-100 text-slate-700 text-sm font-semibold px-3 py-1.5 rounded-lg">
+              <span key={r.key} className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">
                 {ROOM_LABELS[r.key as RoomKey] ?? r.label}
                 {r.quantity > 1 ? ` × ${r.quantity}` : ""}
               </span>
             ))}
           </div>
-        </section>
-
-        {selectedConcept && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Selected concept — {selectedConcept.name}</h2>
-            <ConceptPlan concept={selectedConcept} className="aspect-video rounded-xl mb-3" />
-            <p className="text-sm text-slate-600 mb-2">{selectedConcept.rationale}</p>
-            <p className="text-sm font-semibold text-slate-900">
-              {selectedConcept.metrics.floorAreaSqm} sqm · {selectedConcept.metrics.bedrooms} bed · {selectedConcept.metrics.bathrooms} bath ·{" "}
-              {formatCompactRwf(selectedConcept.metrics.budgetLowRwf)} – {formatCompactRwf(selectedConcept.metrics.budgetHighRwf)}
-            </p>
-          </section>
-        )}
-
-        {project.budget && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Budget summary</h2>
-            <p className="text-2xl font-black text-slate-900 mb-1">{formatCompactRwf(project.budget.target)}</p>
-            <p className="text-sm text-slate-500">
-              Range: {formatCompactRwf(project.budget.low)} – {formatCompactRwf(project.budget.high)} · {project.budget.finishLevel} finish · {project.budget.totalAreaSqm} sqm
-            </p>
-          </section>
-        )}
-
-        {requiredSustainability.length > 0 && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Sustainability requirements</h2>
-            <ul className="text-sm text-slate-600 list-disc list-inside space-y-1">
+          {requiredSustainability.length > 0 && (
+            <ul className="mt-4 list-inside list-disc space-y-1 text-sm text-slate-600">
               {requiredSustainability.map((i) => (
-                <li key={i.key}>
-                  {i.label} — {i.priority}
-                </li>
+                <li key={i.key}>{i.label}</li>
               ))}
             </ul>
-          </section>
-        )}
+          )}
+        </div>
+      </section>
 
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Professional review status</h2>
-          <p className="text-sm text-slate-600">{activeReview ? `${activeReview.type.replace(/_/g, " ")} — ${activeReview.status.replace(/_/g, " ")}` : "No professional review requested yet."}</p>
-        </section>
-
-        <section className="bg-slate-50 rounded-xl p-5 text-sm text-slate-600 leading-relaxed">
-          <p className="font-bold text-slate-900 mb-1">Disclaimer</p>
-          <p>
-            This summary reflects conceptual design directions produced by HuzaEstate Build and is not an approved construction drawing. Budget figures are indicative only. Final architectural,
-            structural and permit documents must be prepared or approved by qualified professionals.
+      {activeReview && (
+        <section className="break-inside-avoid">
+          <h2 className="mb-2 font-bold text-slate-900">Professional review</h2>
+          <p className="text-sm text-slate-600">
+            {activeReview.type.replace(/_/g, " ")} — {activeReview.status.replace(/_/g, " ")}
           </p>
         </section>
-      </div>
+      )}
+
+      <section className="break-inside-avoid rounded-xl bg-slate-50 p-5 text-sm leading-relaxed text-slate-600">
+        <p className="mb-1 font-bold text-slate-900">Disclaimer</p>
+        <p>
+          This is a conceptual design produced by HuzaEstate Build and is not an approved construction drawing. Budget figures are indicative only. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.
+        </p>
+      </section>
     </div>
   );
 }
