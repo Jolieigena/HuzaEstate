@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 /* eslint-disable @next/next/no-img-element */
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
+import FullDesignEditDialog from "@/components/build/FullDesignEditDialog";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { createFullDesign, FULL_DESIGN_VIEWS } from "@/lib/build/fullDesignApi";
 import { FullDesign } from "@/lib/build/types";
@@ -17,18 +18,21 @@ export default function FullDesignPage() {
   const [working, setWorking] = useState<FullDesign | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
   const runningRef = useRef(false);
+  const autoRef = useRef(false);
 
   const concept = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   const design = busy ? working : project.fullDesign ?? null;
 
-  const start = async () => {
+  const start = async (request?: string) => {
     if (!concept || !token || runningRef.current) return;
     runningRef.current = true;
     setBusy(true);
     setError("");
     setWorking(null);
-    const outcome = await createFullDesign(token, project.brief, concept.floors, concept.id, setWorking);
+    const previous = request ? project.fullDesign ?? undefined : undefined;
+    const outcome = await createFullDesign(token, project.brief, concept.floors, concept.id, setWorking, request && previous ? { request, previous } : undefined);
     if (outcome.ok) {
       BuildProjectService.saveFullDesign(project.id, outcome.design);
       if (outcome.design.pictures.length < FULL_DESIGN_VIEWS.length) showToast("Some pictures could not be made. You can make the full design again.", "info");
@@ -38,6 +42,14 @@ export default function FullDesignPage() {
     setBusy(false);
     runningRef.current = false;
   };
+
+  // The first visit makes the design straight away, so there is nothing to press; after that, the person decides.
+  useEffect(() => {
+    if (autoRef.current || project.fullDesign || !concept || !token) return;
+    autoRef.current = true;
+    void start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concept?.id, token]);
 
   if (!concept) {
     return <p className="text-sm font-semibold text-slate-500">Choose a floor plan first.</p>;
@@ -50,14 +62,26 @@ export default function FullDesignPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-black text-slate-900">Full design</h1>
-        <button
-          type="button"
-          onClick={start}
-          disabled={busy || !token}
-          className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-        >
-          {busy ? "Designing your house…" : project.fullDesign ? "Make a new full design" : "Create full design"}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          {project.fullDesign && (
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              disabled={busy || !token}
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Edit with AI
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => void start()}
+            disabled={busy || !token}
+            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+          >
+            {busy ? "Designing your house…" : project.fullDesign ? "Make a new full design" : "Create full design"}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -100,6 +124,14 @@ export default function FullDesignPage() {
           </dl>
         </section>
       )}
+      <FullDesignEditDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSubmit={(request) => {
+          setEditOpen(false);
+          void start(request);
+        }}
+      />
     </div>
   );
 }
