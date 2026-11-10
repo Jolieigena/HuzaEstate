@@ -1,5 +1,6 @@
 "use client";
 
+import { useImagePaste } from "@/lib/useImageDrop";
 import { useRef, useState, FormEvent } from "react";
 import Image from "@/components/PropertyImage";
 import Select from "@/components/shared/Select";
@@ -88,7 +89,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
     setPhotos((prev) => prev.map((p) => (next.includes(p.relatedAreaId ?? "") || next.length === 0 ? p : { ...p, relatedAreaId: next[0] })));
   };
 
-  const addPhotos = async (list: FileList | null) => {
+  const addPhotos = async (list: FileList | File[] | null) => {
     if (!list || list.length === 0) return;
     setPhotoError("");
     const room = MAX_PHOTOS - photos.length;
@@ -97,6 +98,9 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
     const read = (await Promise.all(chosen.map(readPhoto))).filter((p): p is UploadedFile => p !== null).map((p) => ({ ...p, relatedAreaId: areas[0] }));
     if (read.length) setPhotos((prev) => [...prev, ...read].slice(0, MAX_PHOTOS));
   };
+
+  // A picture pasted from the clipboard is added like a dropped one.
+  const paste = useImagePaste((pictures) => void addPhotos(pictures));
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -202,6 +206,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
         <>
         <p className="mt-8 text-sm font-bold text-slate-700 mb-3">Photos of {areas.length === 1 ? (areas[0] === WHOLE_HOUSE ? "the house" : `the ${areaChoiceLabel(areas[0]).toLowerCase()}`) : "the property"}</p>
         <div
+          {...paste}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);

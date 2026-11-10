@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { fetchMyLandlordProfile, saveMyLandlordProfile, type SaveLandlordInput } from "@/lib/landlords/api";
@@ -112,7 +113,7 @@ export default function LandlordProfileTab() {
           </div>
           <Card>
             <form className="flex flex-col gap-5" onSubmit={handleCompanySave}>
-              <div className="flex items-center gap-4">
+              <ImageDropArea className="flex items-center gap-4" onFiles={(files) => void handleCompanyLogo(files[0])} disabled={companyLogoUploading}>
                 <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-white flex items-center justify-center">
                   {companyLogoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -127,7 +128,7 @@ export default function LandlordProfileTab() {
                     {companyLogoUploading ? t("Uploading…") : companyLogoUrl ? t("Change logo") : t("Upload logo")}
                   </SecondaryButton>
                 </div>
-              </div>
+              </ImageDropArea>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("Company / brokerage name")}</label>
                 <input className={fieldClass} value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder={t("e.g. Kigali Realty Group")} />
@@ -149,7 +150,7 @@ export default function LandlordProfileTab() {
 
       <Card>
         <form className="flex flex-col gap-5" onSubmit={handleSave}>
-          <div className="flex items-center gap-4">
+          <ImageDropArea className="flex items-center gap-4" onFiles={(files) => void handlePhoto(files[0])} disabled={uploading}>
             <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-slate-900 text-white flex items-center justify-center text-xl font-bold">
               {form.photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -164,7 +165,7 @@ export default function LandlordProfileTab() {
                 {uploading ? t("Uploading…") : form.photoUrl ? t("Change photo") : t("Upload photo")}
               </SecondaryButton>
             </div>
-          </div>
+          </ImageDropArea>
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">{t("Display name")}</label>

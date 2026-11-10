@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useId, useRef, useState } from "react";
 import Dialog from "@/components/Dialog";
 import Select from "@/components/shared/Select";
@@ -162,7 +163,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
 
   const patch = (changes: Partial<DesignInput>) => setForm((current) => ({ ...current, ...changes }));
 
-  const addImages = async (files: FileList | null) => {
+  const addImages = async (files: FileList | File[] | null) => {
     if (!files || !token) return;
     setUploading(true);
     setError("");
@@ -233,7 +234,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
             <textarea className={`${fieldClass} mt-1 min-h-28 resize-y font-normal`} value={form.description} maxLength={4000} onChange={(e) => patch({ description: e.target.value })} />
           </label>
 
-          <div>
+          <ImageDropArea onFiles={(files) => void addImages(files)} disabled={uploading}>
             <p className="text-sm font-bold text-slate-700">
               Images <span className="font-normal text-slate-400">({form.images.length}/{MAX_IMAGES})</span>
             </p>
@@ -255,7 +256,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
               )}
             </div>
             <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
-          </div>
+          </ImageDropArea>
 
           <div>
             <p className="text-sm font-bold text-slate-700">

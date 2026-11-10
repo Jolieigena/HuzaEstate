@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,13 +36,13 @@ function DocumentField({
   files: VerificationDocument[];
   busy: boolean;
   error?: string;
-  onAdd: (list: FileList | null) => void;
+  onAdd: (list: FileList | File[] | null) => void;
   onRemove: (key: string) => void;
 }) {
   const { t } = useLanguage();
   const full = files.length >= MAX_DOCUMENTS_PER_KIND;
   return (
-    <div className="text-sm font-bold text-slate-700">
+    <ImageDropArea className="text-sm font-bold text-slate-700" onFiles={(pictures) => onAdd(pictures)} disabled={busy || full}>
       {title}
       {required ? <span className="text-red-500"> *</span> : <span className="font-normal text-slate-400"> ({t("optional")})</span>}
       <ul className="mt-1 space-y-1">
@@ -75,7 +76,7 @@ function DocumentField({
           {error}
         </p>
       )}
-    </div>
+    </ImageDropArea>
   );
 }
 
@@ -172,7 +173,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
     return found;
   };
 
-  const addFiles = async (docKind: DocumentKind, list: FileList | null) => {
+  const addFiles = async (docKind: DocumentKind, list: FileList | File[] | null) => {
     if (!list || !token) return;
     const room = MAX_DOCUMENTS_PER_KIND - documents.filter((d) => d.kind === docKind).length;
     setDocumentErrors((current) => ({ ...current, [docKind]: "" }));

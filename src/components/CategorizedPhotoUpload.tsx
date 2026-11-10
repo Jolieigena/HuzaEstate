@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import ImageDropArea from '@/components/shared/ImageDropArea';
 import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/i18n/language';
 import { filesToUploadedUrls, MAX_IMAGES_PER_PROPERTY } from '@/lib/imageUpload';
@@ -76,7 +77,7 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
     const processing = processingCategory === category;
 
     return (
-      <div key={category}>
+      <ImageDropArea key={category} onFiles={(files) => void handleSelect(category, files)} disabled={disabled || processingCategory !== null}>
         <div className="text-xs font-semibold text-slate-600 mb-1.5">{t(label)}</div>
         <div className="flex flex-wrap gap-2">
           {categoryPhotos.map((photo) => (
@@ -113,7 +114,7 @@ export default function CategorizedPhotoUpload({ photos, onChange, onUploadingCh
             </label>
           )}
         </div>
-      </div>
+      </ImageDropArea>
     );
   };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -169,9 +170,13 @@ export default function ProfessionalProfileForm() {
     return () => { cancelled = true; };
   }, [token, profileSaved]);
 
-  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
+    void uploadPhotoFile(file);
+  };
+
+  const uploadPhotoFile = async (file?: File) => {
     if (!file || !token) return;
     setPhotoUploading(true);
     setError("");
@@ -215,9 +220,13 @@ export default function ProfessionalProfileForm() {
     if (profileSaved) void persist({ services: next }, "Service removed.");
   };
 
-  const handleProjectImagesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProjectImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    void addProjectImageFiles(files);
+  };
+
+  const addProjectImageFiles = async (files: File[]) => {
     if (!files.length || !token) return;
     const room = MAX_PROJECT_IMAGES - newProject.images.length;
     if (room <= 0) {
@@ -382,7 +391,7 @@ export default function ProfessionalProfileForm() {
           {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</p>}
 
           <Section id="photo">
-            <div className="flex flex-wrap items-center gap-5">
+            <ImageDropArea className="flex flex-wrap items-center gap-5" onFiles={(files) => void uploadPhotoFile(files[0])} disabled={photoUploading}>
               <div className="h-24 w-24 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-slate-50">
                 {photoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -407,7 +416,7 @@ export default function ProfessionalProfileForm() {
                   )}
                 </div>
               </div>
-            </div>
+            </ImageDropArea>
           </Section>
 
           <Section id="details" step={1} title="About you">
@@ -507,7 +516,7 @@ export default function ProfessionalProfileForm() {
                               ))}
                             </div>
                           )}
-                          <div className="mt-3 flex flex-wrap items-center gap-3">
+                          <ImageDropArea className="mt-3 flex flex-wrap items-center gap-3" onFiles={(files) => void addProjectImageFiles(files)} disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES}>
                             <label className={`${projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES ? "pointer-events-none opacity-50" : ""} cursor-pointer rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
                               {projectImagesUploading ? "Uploading…" : `Add photos (${newProject.images.length}/${MAX_PROJECT_IMAGES})`}
                               <input type="file" accept="image/*" multiple className="hidden" disabled={projectImagesUploading || newProject.images.length >= MAX_PROJECT_IMAGES} onChange={handleProjectImagesChange} />
@@ -519,7 +528,7 @@ export default function ProfessionalProfileForm() {
                             {newProject.videoUrl && (
                               <button type="button" onClick={() => setNewProject((v) => ({ ...v, videoUrl: "" }))} className="text-xs font-bold text-red-600 hover:text-red-800">Remove video</button>
                             )}
-                          </div>
+                          </ImageDropArea>
 
                           {profileSaved && (
                             <label className="mt-4 flex cursor-pointer items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-700">

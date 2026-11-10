@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { FileCategory, UploadedFile } from "@/lib/build/types";
 import { formatBytes } from "@/lib/build/format";
 import { newId } from "@/lib/build/factory";
+import { useImagePaste } from "@/lib/useImageDrop";
 
 const ALLOWED_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp"];
 const MAX_SIZE_BYTES = 15 * 1024 * 1024;
@@ -47,7 +48,7 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const addFiles = (fileList: FileList | null) => {
+  const addFiles = (fileList: FileList | File[] | null) => {
     if (!fileList || fileList.length === 0) return;
     setError("");
     const accepted: UploadedFile[] = [];
@@ -81,9 +82,13 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
     if (accepted.length) onChange([...files, ...accepted]);
   };
 
+  // A picture pasted from the clipboard (a screenshot, a copied image) is added like a dropped one.
+  const paste = useImagePaste((pictures) => addFiles(pictures));
+
   return (
     <div>
       <div
+        {...paste}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);

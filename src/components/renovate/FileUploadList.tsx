@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { UploadCategory, UploadedFile } from "@/lib/renovate/types";
 import { formatBytes } from "@/lib/renovate/format";
 import { newId } from "@/lib/renovate/factory";
+import { useImagePaste } from "@/lib/useImageDrop";
 import Select from "@/components/shared/Select";
 
 const ALLOWED_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "mp4", "mov"];
@@ -56,7 +57,7 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const addFiles = (fileList: FileList | null) => {
+  const addFiles = (fileList: FileList | File[] | null) => {
     if (!fileList || fileList.length === 0) return;
     setError("");
     const accepted: UploadedFile[] = [];
@@ -104,9 +105,13 @@ export default function FileUploadList({ files, onChange, category, uploadedBy =
     if (accepted.length) onChange([...files, ...accepted]);
   };
 
+  // A picture pasted from the clipboard (a screenshot, a copied image) is added like a dropped one.
+  const paste = useImagePaste((pictures) => addFiles(pictures));
+
   return (
     <div>
       <div
+        {...paste}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);

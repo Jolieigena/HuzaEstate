@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AgentAttachment, ExtractedRequirement, RenovationProject, RequirementFieldStatus } from "@/lib/renovate/types";
@@ -193,7 +194,7 @@ export default function AgentPanel({ project }: { project: RenovationProject }) 
     send(lastPrompt);
   };
 
-  const handleAttach = (fileList: FileList | null) => {
+  const handleAttach = (fileList: FileList | File[] | null) => {
     if (!fileList || fileList.length === 0) return;
     const attachments: AgentAttachment[] = Array.from(fileList)
       .slice(0, 4)
@@ -318,7 +319,7 @@ export default function AgentPanel({ project }: { project: RenovationProject }) 
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2">
+            <ImageDropArea className="flex items-end gap-2" onFiles={(files) => handleAttach(files)}>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -358,7 +359,7 @@ export default function AgentPanel({ project }: { project: RenovationProject }) 
                   Send
                 </button>
               )}
-            </div>
+            </ImageDropArea>
           </div>
         </div>
 

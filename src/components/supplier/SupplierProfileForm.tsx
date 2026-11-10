@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useRef, useState } from "react";
 import { parsePhoneNumberFromString, type CountryCode } from "libphonenumber-js";
 import { findCountry } from "@/lib/countries";
@@ -77,7 +78,7 @@ export default function SupplierProfileForm() {
     setCustom("");
   };
 
-  const upload = async (files: FileList | null) => {
+  const upload = async (files: FileList | File[] | null) => {
     const file = files?.[0];
     if (!file || !token) return;
     setUploading(true);
@@ -132,7 +133,7 @@ export default function SupplierProfileForm() {
           {incomplete && <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{t("Save your company profile to start answering quote requests.")}</p>}
           {error && <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
 
-          <div className="flex items-center gap-4">
+          <ImageDropArea className="flex items-center gap-4" onFiles={(files) => void upload(files)} disabled={uploading}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             {logoUrl ? <img src={logoUrl} alt="" className="h-16 w-16 rounded-xl object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100 text-xl font-black text-slate-400">{(companyName || "S").slice(0, 1)}</div>}
             <div className="flex gap-2">
@@ -146,7 +147,7 @@ export default function SupplierProfileForm() {
               )}
             </div>
             <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={(e) => upload(e.target.files)} />
-          </div>
+          </ImageDropArea>
 
           <label className="block text-sm font-bold text-slate-700">
             {t("Company name")}

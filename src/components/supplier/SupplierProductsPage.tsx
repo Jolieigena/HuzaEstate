@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import { useEffect, useId, useRef, useState } from "react";
 import Dialog from "@/components/Dialog";
 import Select from "@/components/shared/Select";
@@ -190,7 +191,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  const addImages = async (files: FileList | null) => {
+  const addImages = async (files: FileList | File[] | null) => {
     if (!files || !token) return;
     const room = MAX_IMAGES - images.length;
     if (files.length > room) showToast(t(room === 1 ? "Only {room} more photo fits ({max} per product). The rest were skipped." : "Only {room} more photos fit ({max} per product). The rest were skipped.", { room, max: MAX_IMAGES }), "error");
@@ -236,7 +237,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
           <input className={`${fieldClass} mt-1`} value={name} maxLength={120} autoFocus onChange={(e) => setName(e.target.value)} />
         </label>
 
-        <div>
+        <ImageDropArea onFiles={(files) => void addImages(files)} disabled={uploading}>
           <p className="text-sm font-bold text-slate-700">
             Photos <span className="font-normal text-slate-400">({images.length}/{MAX_IMAGES})</span>
           </p>
@@ -258,7 +259,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
             )}
           </div>
           <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
-        </div>
+        </ImageDropArea>
 
         {name.trim() !== "" && (
           <>

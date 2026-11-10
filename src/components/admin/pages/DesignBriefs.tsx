@@ -1,5 +1,6 @@
 "use client";
 
+import ImageDropArea from "@/components/shared/ImageDropArea";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -155,7 +156,7 @@ export function DesignBriefEditPage({ id }: { id: string }) {
     showToast(draft.source === "ai" ? "Drafted with AI. Check it, then save." : "Drafted from your words. Check it, then save.");
   };
 
-  const addImages = async (files: FileList | null) => {
+  const addImages = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0 || !token) return;
     setUploading(true);
     try {
@@ -260,7 +261,7 @@ export function DesignBriefEditPage({ id }: { id: string }) {
                   <textarea className={`${fieldClass} mt-1 min-h-20 resize-y font-normal`} value={form.instructions} maxLength={4000} disabled={!editable} onChange={(e) => patch({ instructions: e.target.value })} />
                 </label>
 
-                <div>
+                <ImageDropArea onFiles={(files) => void addImages(files)} disabled={!editable || uploading}>
                   <p className="text-sm font-bold text-slate-700">
                     Pictures <span className="font-normal text-slate-400">({form.images.length}/{MAX_IMAGES})</span>
                   </p>
@@ -283,7 +284,7 @@ export function DesignBriefEditPage({ id }: { id: string }) {
                     )}
                   </div>
                   <input ref={fileInput} type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
-                </div>
+                </ImageDropArea>
 
                 <PartsEditor parts={form.parts} editable={editable} onChange={(parts) => patch({ parts })} />
               </div>
