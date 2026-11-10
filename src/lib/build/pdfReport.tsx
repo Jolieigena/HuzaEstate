@@ -1,8 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import type { jsPDF } from "jspdf";
 import { FloorPlanGraphic, floorPlanSize } from "@/components/build/FloorPlanSvg";
-import { projectLocationLabel } from "./format";
-import { BuildProject, ManualFloor, ROOM_LABELS, RoomKey } from "./types";
+import { calculateBudget, COST_PER_SQM, PRICE_BASIS } from "./budget";
+import { formatCompactRwf, projectLocationLabel } from "./format";
+import { BuildProject, FINISH_LEVEL_LABELS, ManualFloor, ROOM_LABELS, RoomKey } from "./types";
 
 // A4 portrait, in millimetres.
 const PAGE_W = 210;
@@ -243,6 +244,99 @@ export async function downloadProjectPdf(project: BuildProject): Promise<void> {
     }
   }
 
+  // ---- Budget: what the design costs and where the money goes
+  const finish = project.brief.budget.finishLevel;
+  const estimate = calculateBudget({ totalAreaSqm: m.floorAreaSqm, finishLevel: finish, contingencyPct: 10, includeLandscaping: false, includeFurniture: false, includeProfessionalFees: false });
+  const money = (amount: number) => formatCompactRwf(amount).replace(" RWF", "");
+  const rowsTotal = estimate.categories.reduce((sum, c) => sum + c.amount, 0) || 1;
+
+  ensure(125);
+  heading("Budget estimate");
+  const costBoxW = (CONTENT_W - 6) / 3;
+  (
+    [
+      ["Low", estimate.low, false],
+      ["Target", estimate.target, true],
+      ["High", estimate.high, false],
+    ] as [string, number, boolean][]
+  ).forEach(([label, amount, strong], index) => {
+    const x = MARGIN + index * (costBoxW + 3);
+    doc.setFillColor(strong ? 240 : 248, strong ? 253 : 250, strong ? 244 : 252);
+    doc.roundedRect(x, y, costBoxW, 22, 2, 2, "F");
+    if (strong) {
+      doc.setDrawColor(GREEN[0], GREEN[1], GREEN[2]);
+      doc.roundedRect(x, y, costBoxW, 22, 2, 2, "S");
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    colour(GREY);
+    doc.text(`${label} estimate`, x + 4, y + 7);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    colour(INK);
+    doc.text(`${money(amount)} RWF`, x + 4, y + 16);
+  });
+  y += 28;
+  paragraph(
+    `${m.floorAreaSqm} sqm built at about RWF ${estimate.costPerSqm.toLocaleString("en-US")} per sqm (${FINISH_LEVEL_LABELS[finish]} finish), plus 10% contingency. The low and high figures follow the price range for that finish level: RWF ${COST_PER_SQM[finish].low.toLocaleString("en-US")} to ${COST_PER_SQM[finish].high.toLocaleString("en-US")} per sqm.`,
+    MARGIN,
+    CONTENT_W,
+    9.5,
+    INK,
+    "normal",
+    4,
+  );
+
+  const barRows = (title: string, rows: { label: string; amount: number; note?: string }[]) => {
+    ensure(14 + rows.length * 7);
+    paragraph(title.toUpperCase(), MARGIN, CONTENT_W, 8.5, GREY, "bold", 1.5);
+    for (const row of rows) {
+      ensure(7);
+      const share = row.amount / rowsTotal;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      colour(INK);
+      doc.text(plain(row.label), MARGIN, y + 4.6);
+      if (row.note) {
+        colour(GREY);
+        doc.setFontSize(8);
+        doc.text(plain(row.note), MARGIN + 62, y + 4.6, { align: "right" });
+        doc.setFontSize(9.5);
+      }
+      doc.setFillColor(238, 242, 247);
+      doc.rect(MARGIN + 66, y + 1.6, 52, 3.6, "F");
+      doc.setFillColor(GREEN[0], GREEN[1], GREEN[2]);
+      doc.rect(MARGIN + 66, y + 1.6, Math.max(0.6, 52 * share), 3.6, "F");
+      colour(GREY);
+      doc.text(`${(share * 100).toFixed(0)}%`, MARGIN + 126, y + 4.6, { align: "right" });
+      doc.setFont("helvetica", "bold");
+      colour(INK);
+      doc.text(`${money(row.amount)} RWF`, PAGE_W - MARGIN, y + 4.6, { align: "right" });
+      y += 7;
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    }
+    y += 5;
+  };
+
+  barRows(
+    "Where the money goes",
+    estimate.categories.map((c) => ({ label: c.key === "contingency" ? `Contingency (${estimate.contingencyPct}%)` : c.label, amount: c.amount })),
+  );
+
+  // Each floor's share follows its built area (open space is not built).
+  const floorAreas = design.floors.map((f) => ({ name: f.name, area: f.rooms.filter((r) => r.type !== "open_space").reduce((sum, r) => sum + r.w * r.h, 0) }));
+  const builtTotal = floorAreas.reduce((sum, f) => sum + f.area, 0);
+  if (floorAreas.length > 1 && builtTotal > 0) {
+    barRows(
+      "By floor",
+      floorAreas.map((f) => ({ label: f.name, amount: (f.area / builtTotal) * rowsTotal, note: `${Math.round((f.area / builtTotal) * m.floorAreaSqm)} sqm` })),
+    );
+  }
+
+  paragraph("Not included: land, design and engineering fees, the building permit, soil testing, water and electricity connections, landscaping, furniture and appliances.", MARGIN, CONTENT_W, 9, INK, "normal", 2.5);
+  paragraph(`Price basis: ${PRICE_BASIS} Get quotations from builders before you commit to a budget.`, MARGIN, CONTENT_W, 8.5, GREY, "normal", 2);
+
   // ---- Plot and requirements
   heading("Plot and requirements");
   const plot: [string, string][] = [
@@ -272,7 +366,7 @@ export async function downloadProjectPdf(project: BuildProject): Promise<void> {
   // ---- Disclaimer
   y += 4;
   const disclaimer =
-    "This is a conceptual design produced by HuzaEstate Build and is not an approved construction drawing. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.";
+    "This is a conceptual design produced by HuzaEstate Build and is not an approved construction drawing. Budget figures are indicative. Final architectural, structural and permit documents must be prepared or approved by qualified professionals.";
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   const disclaimerLines = doc.splitTextToSize(disclaimer, CONTENT_W - 10) as string[];

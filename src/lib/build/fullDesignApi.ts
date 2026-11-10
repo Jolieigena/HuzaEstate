@@ -111,25 +111,30 @@ export async function createFullDesign(
 
   const plan = await groundFloorPicture(floors);
   let firstError = "";
-  await Promise.all(
-    FULL_DESIGN_VIEWS.map(async (view) => {
-      const result = await post<{ image: string }>(token, "image", {
-        kind: view.key,
-        brief: summariseBrief(brief),
-        floors: roomsOf(floors),
-        exterior: design.exterior,
-        interior: design.interior,
-        ...(plan ? { plan } : {}),
-      });
-      if (!result.ok) {
-        firstError = firstError || result.error;
-        return;
-      }
-      const url = await shrinkPicture(result.value.image);
-      design = { ...design, pictures: [...design.pictures, { key: view.key, label: view.label, url }] };
-      onProgress(design);
-    }),
-  );
+  // One view: the picture comes back whole, and is added to the design as a smaller copy.
+  const makeView = async (view: (typeof FULL_DESIGN_VIEWS)[number], reference?: string): Promise<string | undefined> => {
+    const result = await post<{ image: string }>(token, "image", {
+      kind: view.key,
+      brief: summariseBrief(brief),
+      floors: roomsOf(floors),
+      exterior: design.exterior,
+      interior: design.interior,
+      ...(plan ? { plan } : {}),
+      ...(reference ? { reference } : {}),
+    });
+    if (!result.ok) {
+      firstError = firstError || result.error;
+      return undefined;
+    }
+    const url = await shrinkPicture(result.value.image);
+    design = { ...design, pictures: [...design.pictures, { key: view.key, label: view.label, url }] };
+    onProgress(design);
+    return result.value.image;
+  };
+  // The front goes first and is shown to all the others, so the pictures are one house in one light and one set of colours.
+  const [first, ...others] = FULL_DESIGN_VIEWS;
+  const front = await makeView(first);
+  await Promise.all(others.map((view) => makeView(view, front)));
   if (design.pictures.length === 0) return { ok: false, error: firstError || "The pictures could not be made. Please try again.", unavailable: false };
   // keep the pictures in the order of the views, whichever came first
   design = { ...design, pictures: FULL_DESIGN_VIEWS.flatMap((v) => design.pictures.filter((p) => p.key === v.key)) };
