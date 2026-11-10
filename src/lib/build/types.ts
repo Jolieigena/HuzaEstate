@@ -666,10 +666,10 @@ export type GenerationStageKey =
 export const GENERATION_STAGES: { key: GenerationStageKey; label: string; helper: string }[] = [
   { key: "reviewing_plot", label: "Reviewing plot information", helper: "Checking your plot size, shape and orientation." },
   { key: "organising_requirements", label: "Organising space requirements", helper: "Grouping the rooms and spaces you asked for." },
-  { key: "exploring_layouts", label: "Exploring layout directions", helper: "Trying efficient, balanced and spacious layouts." },
+  { key: "exploring_layouts", label: "Drawing the layout", helper: "Placing the rooms on your plot." },
   { key: "preparing_exteriors", label: "Preparing exterior concepts", helper: "Matching exterior directions to your preferred style." },
-  { key: "estimating_areas", label: "Estimating floor areas", helper: "Calculating approximate floor areas for each direction." },
-  { key: "preparing_results", label: "Preparing comparison results", helper: "Putting together your three concepts for review." },
+  { key: "estimating_areas", label: "Estimating floor areas", helper: "Calculating the approximate floor area." },
+  { key: "preparing_results", label: "Preparing your design", helper: "Putting your design together for review." },
 ];
 
 export type GenerationStatus = "idle" | "in_progress" | "completed" | "failed" | "cancelled";

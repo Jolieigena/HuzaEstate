@@ -41,9 +41,9 @@ export default function RefineDrawer({ projectId, concept, open, onClose }: { pr
     <Dialog open={open} onClose={handleClose} labelledBy={titleId} panelClassName="max-w-lg">
       <div className="p-6 sm:p-8">
         <h2 id={titleId} className="text-xl font-black text-slate-900 mb-1">
-          Refine with Huza AI
+          Edit with AI
         </h2>
-        <p className="text-slate-500 text-sm mb-6">Requesting a change to the {concept.name} concept, version {concept.version}.</p>
+        <p className="text-slate-500 text-sm mb-6">Describe the change to {concept.name}, version {concept.version}.</p>
 
         {!analysis ? (
           <>

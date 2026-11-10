@@ -54,7 +54,7 @@ export function getNextAction(project: BuildProject): NextAction | null {
     case "brief_in_progress":
       return { label: "Confirm your design brief", href: `/studio/build/${project.id}/brief`, description: "Finish the remaining brief steps and confirm your requirements." };
     case "ready_to_generate":
-      return { label: project.creationMode === "ai" ? "Start designing" : "Generate your first concepts", href: `/studio/build/${project.id}/concepts`, description: "Your brief is confirmed — generate three design directions to compare." };
+      return { label: project.creationMode === "ai" ? "Start designing" : "Generate your first concepts", href: `/studio/build/${project.id}/concepts`, description: "Your brief is confirmed — generate your design." };
     case "generating":
       return { label: "View generation progress", href: `/studio/build/${project.id}/concepts`, description: "Huza AI is preparing your concept directions." };
     case "concepts_ready":

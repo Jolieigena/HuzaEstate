@@ -238,7 +238,7 @@ export const BuildProjectService = {
     return mutate(
       id,
       (p) => ({ ...p, status: "generating", generation: { status: "in_progress", currentStageIndex: 0, startedAt: new Date().toISOString(), completedStageKeys: [] } }),
-      { activity: activityEvent("concept_generation_started", "design", "Huza AI", "Started generating three concept directions.") }
+      { activity: activityEvent("concept_generation_started", "design", "Huza AI", "Started generating the design.") }
     );
   },
 
@@ -263,7 +263,7 @@ export const BuildProjectService = {
           createdAt: c.generatedAt,
           createdBy: "Huza AI",
           source: "ai_generation" as VersionSource,
-          changeSummary: `${c.name} concept generated from the confirmed design brief.`,
+          changeSummary: `Design generated from the confirmed design brief.`,
           conceptId: c.id,
           selected: false,
         }));
@@ -272,10 +272,12 @@ export const BuildProjectService = {
           status: "concepts_ready",
           concepts: [...p.concepts, ...concepts],
           versions: [...p.versions, ...versions],
+          // With one design there is nothing to choose between, so it is the chosen plan from the start.
+          selectedConceptId: p.selectedConceptId ?? concepts[0]?.id,
           generation: { status: "completed", currentStageIndex: GENERATION_STAGES.length - 1, completedStageKeys: GENERATION_STAGES.map((s) => s.key) },
         };
       },
-      { activity: activityEvent("concepts_generated", "design", "Huza AI", "Generated Efficient, Balanced and Spacious concepts.") }
+      { activity: activityEvent("concepts_generated", "design", "Huza AI", "Generated the design.") }
     );
   },
 

@@ -239,6 +239,7 @@ export function generateConcept(brief: DesignBrief, direction: ConceptDirection)
   };
 }
 
+/** One design, made from the brief. The person changes it afterwards with "Edit with AI", which makes a new version. */
 export function generateAllConcepts(brief: DesignBrief): Concept[] {
-  return (["efficient", "balanced", "spacious"] as ConceptDirection[]).map((d) => generateConcept(brief, d));
+  return [{ ...generateConcept(brief, "balanced"), name: "Your design" }];
 }

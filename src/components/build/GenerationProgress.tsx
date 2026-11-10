@@ -30,7 +30,7 @@ export default function GenerationProgress({ project }: { project: BuildProject 
       if (cancelledRef.current) return;
       const concepts = generateAllConcepts(project.brief);
       BuildProjectService.completeGeneration(project.id, concepts);
-      showToast("Your three concepts are ready.");
+      showToast("Your design is ready.");
     };
 
     run().finally(() => {
@@ -60,8 +60,8 @@ export default function GenerationProgress({ project }: { project: BuildProject 
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
       </div>
-      <h2 className="text-xl font-black text-slate-900 mb-2">Generating your concepts</h2>
-      <p className="text-slate-500 text-sm mb-1">Huza AI is exploring three design directions based on your confirmed brief.</p>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Generating your design</h2>
+      <p className="text-slate-500 text-sm mb-1">Huza AI is drawing a design from your confirmed brief.</p>
       <p className="text-slate-400 text-xs mb-8">Elapsed time: {elapsedSec}s</p>
 
       <div className="max-w-md mx-auto space-y-3 text-left mb-8" aria-live="polite">
