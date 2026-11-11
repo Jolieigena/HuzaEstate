@@ -15,7 +15,7 @@ import PromptModal from "@/components/shared/PromptModal";
 
 /** The path a person follows, one step after the other. Pages a step needs (comparing, the room editor, the budget) belong to it and are reached from it. */
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
-  { key: "home", label: "Your home", segment: "brief", segments: ["brief"] },
+  { key: "home", label: "Describe your home", segment: "brief", segments: ["brief"] },
   { key: "plans", label: "Floor plans", segment: "concepts", segments: ["concepts", "compare", "designer"] },
   { key: "full", label: "Full design", segment: "full-design", segments: ["full-design"] },
   { key: "review", label: "Download", segment: "summary", segments: ["summary", "budget"] },
