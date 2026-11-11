@@ -131,7 +131,6 @@ function missingAssessmentFields(assessment: RenovationAssessment): { field: str
   const missing: { field: string; question: string }[] = [];
   if (assessment.areas.length === 0) missing.push({ field: "areas", question: "Which areas of the property would you like to renovate?" });
   if (!assessment.style.primaryStyle) missing.push({ field: "style", question: "Do you have a preferred style — for example warm contemporary, minimalist or traditional?" });
-  if (!assessment.budgetTimeline.targetBudget) missing.push({ field: "budget", question: "What's your approximate target budget in RWF?" });
   return missing;
 }
 

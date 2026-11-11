@@ -38,10 +38,6 @@ function BriefSummaryPanel({ project }: { project: RenovationProject }) {
           <dt className="text-slate-400">Style</dt>
           <dd className="text-slate-800 font-semibold">{project.assessment.style.primaryStyle ?? "Not set"}</dd>
         </div>
-        <div className="flex justify-between gap-3">
-          <dt className="text-slate-400">Target budget</dt>
-          <dd className="text-slate-800 font-semibold">{project.assessment.budgetTimeline.targetBudget ? project.assessment.budgetTimeline.targetBudget.toLocaleString() + " RWF" : "Not set"}</dd>
-        </div>
       </dl>
       <Link href={`/studio/renovate/${project.id}/assessment`} className="inline-block text-xs font-bold text-[#2ec440] hover:text-[#28b039]">
         Edit full assessment

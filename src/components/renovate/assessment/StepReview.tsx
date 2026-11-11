@@ -11,7 +11,6 @@ import {
   SafetyConcernKey,
 } from "@/lib/renovate/types";
 import { AssessmentWarning } from "@/lib/renovate/assessmentValidation";
-import { formatCurrency } from "@/lib/renovate/format";
 import { ProjectUploads } from "@/lib/renovate/types";
 
 interface Props {
@@ -41,7 +40,6 @@ export default function StepReview({ property, assessment, uploads, warnings, on
   const safetyFlags = (Object.entries(assessment.safety.concerns) as [SafetyConcernKey, string][]).filter(([, v]) => v === "yes" || v === "unknown");
   const missing: string[] = [];
   if (!assessment.style.primaryStyle) missing.push("Primary style");
-  if (!assessment.budgetTimeline.targetBudget) missing.push("Target budget");
   if (assessment.areas.length === 0) missing.push("Renovation areas");
   const totalUploads = uploads.photos.length + uploads.videos.length + uploads.floorPlans.length + uploads.inspiration.length;
 
@@ -82,13 +80,6 @@ export default function StepReview({ property, assessment, uploads, warnings, on
 
       <Section title="Style" onEdit={() => onEditStep("style")}>
         <p className="text-sm text-slate-600">{assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[assessment.style.primaryStyle] : "No style selected yet."}</p>
-      </Section>
-
-      <Section title="Budget and timeline" onEdit={() => onEditStep("budget_timeline")}>
-        <p className="text-sm text-slate-600">
-          {assessment.budgetTimeline.targetBudget ? formatCurrency(assessment.budgetTimeline.targetBudget) : "No target budget set"}
-          {assessment.budgetTimeline.requiredCompletionDate ? ` · Completion by ${assessment.budgetTimeline.requiredCompletionDate}` : ""}
-        </p>
       </Section>
 
       <Section title="Safety and constraints" onEdit={() => onEditStep("safety")}>

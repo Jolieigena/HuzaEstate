@@ -13,7 +13,6 @@ import StepAreas from "@/components/renovate/assessment/StepAreas";
 import StepCondition from "@/components/renovate/assessment/StepCondition";
 import StepKeepRemoveChange from "@/components/renovate/assessment/StepKeepRemoveChange";
 import StepStyle from "@/components/renovate/assessment/StepStyle";
-import StepBudgetTimeline from "@/components/renovate/assessment/StepBudgetTimeline";
 import StepSafety from "@/components/renovate/assessment/StepSafety";
 import StepReview from "@/components/renovate/assessment/StepReview";
 
@@ -121,9 +120,7 @@ export default function AssessmentWizardPage() {
     const next = { ...draft, completedSteps };
     setDraft(next);
     persist(next, propertyDraft, "Confirmed the renovation brief.");
-    const summary = `Renovate ${next.areas.map((a) => a.customLabel || a.areaKey).join(", ") || "the property"} in a ${next.style.primaryStyle ?? "TBD"} style${
-      next.budgetTimeline.targetBudget ? `, targeting ${next.budgetTimeline.targetBudget.toLocaleString()} RWF` : ""
-    }.`;
+    const summary = `Renovate ${next.areas.map((a) => a.customLabel || a.areaKey).join(", ") || "the property"} in a ${next.style.primaryStyle ?? "TBD"} style.`;
     RenovationProjectService.confirmBrief(project.id, summary, []);
     return next;
   };
@@ -236,14 +233,6 @@ export default function AssessmentWizardPage() {
               const added = files.filter((f) => !project.uploads.inspiration.some((e) => e.id === f.id));
               if (added.length) RenovationProjectService.addUploads(project.id, "inspiration", added);
             }}
-          />
-        )}
-        {stepKey === "budget_timeline" && (
-          <StepBudgetTimeline
-            value={draft.budgetTimeline}
-            onChange={(p) => patch("budgetTimeline", { ...draft.budgetTimeline, ...p })}
-            warnings={warnings}
-            errors={errors}
           />
         )}
         {stepKey === "safety" && <StepSafety value={draft.safety} onChange={(p) => patch("safety", { ...draft.safety, ...p })} />}

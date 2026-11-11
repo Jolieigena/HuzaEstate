@@ -24,6 +24,7 @@ const INSPIRATION_GALLERY = [
 
 export default function StepStyle({ value, onChange, inspirationFiles, onChangeInspirationFiles }: Props) {
   // Inspiration is never asked for: it stays folded away until the person opens it.
+  const [moreOpen, setMoreOpen] = useState(false);
   const [inspirationOpen, setInspirationOpen] = useState(value.inspirationFileIds.length > 0 || inspirationFiles.length > 0);
   const toggleSecondary = (style: RenovationStyle) => {
     const has = value.secondaryStyles.includes(style);
@@ -52,50 +53,70 @@ export default function StepStyle({ value, onChange, inspirationFiles, onChangeI
         )}
       </FormField>
 
-      <div>
-        <p className="text-sm font-bold text-slate-700 mb-2">Secondary influences</p>
-        <div className="flex flex-wrap gap-2">
-          {(Object.entries(RENOVATION_STYLE_LABELS) as [RenovationStyle, string][])
-            .filter(([k]) => k !== value.primaryStyle)
-            .map(([k, l]) => (
-              <Chip key={k} selected={value.secondaryStyles.includes(k)} onClick={() => toggleSecondary(k)}>
-                {l}
-              </Chip>
-            ))}
-        </div>
-      </div>
-
       <div className="grid sm:grid-cols-2 gap-5">
         <FormField label="Preferred colours" optional>
           {(id) => <input id={id} value={value.preferredColours} onChange={(e) => onChange({ preferredColours: e.target.value })} className={inputClass} />}
         </FormField>
-        <FormField label="Colours to avoid" optional>
-          {(id) => <input id={id} value={value.coloursToAvoid} onChange={(e) => onChange({ coloursToAvoid: e.target.value })} className={inputClass} />}
-        </FormField>
         <FormField label="Materials to use" optional>
           {(id) => <input id={id} value={value.materialsToUse} onChange={(e) => onChange({ materialsToUse: e.target.value })} className={inputClass} />}
         </FormField>
-        <FormField label="Materials to avoid" optional>
-          {(id) => <input id={id} value={value.materialsToAvoid} onChange={(e) => onChange({ materialsToAvoid: e.target.value })} className={inputClass} />}
-        </FormField>
-        <FormField label="Lighting preference" optional>
-          {(id) => <input id={id} value={value.lightingPreference} onChange={(e) => onChange({ lightingPreference: e.target.value })} className={inputClass} />}
-        </FormField>
-        <FormField label="Furniture preference" optional>
-          {(id) => <input id={id} value={value.furniturePreference} onChange={(e) => onChange({ furniturePreference: e.target.value })} className={inputClass} />}
-        </FormField>
-        <FormField label="Storage preference" optional>
-          {(id) => <input id={id} value={value.storagePreference} onChange={(e) => onChange({ storagePreference: e.target.value })} className={inputClass} />}
-        </FormField>
-        <FormField label="Maintenance preference" optional>
-          {(id) => <input id={id} value={value.maintenancePreference} onChange={(e) => onChange({ maintenancePreference: e.target.value })} className={inputClass} />}
-        </FormField>
       </div>
 
-      <label className="flex items-center gap-2.5 text-sm font-semibold text-slate-700">
-        <input type="checkbox" checked={value.localMaterialPreference} onChange={(e) => onChange({ localMaterialPreference: e.target.checked })} className="w-4 h-4 rounded accent-[#2ec440]" />
-        Prefer locally available materials
-      </label>
+      <div>
+        <button
+          type="button"
+          onClick={() => setMoreOpen((open) => !open)}
+          aria-expanded={moreOpen}
+          className="flex items-center gap-2 text-sm font-bold text-slate-700 transition-colors hover:text-slate-900"
+        >
+          More preferences <span className="font-medium text-slate-400">(optional)</span>
+          <svg className={`h-3.5 w-3.5 transition-transform ${moreOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+        {moreOpen && (
+          <div className="mt-4 space-y-6">
+          <div>
+            <p className="text-sm font-bold text-slate-700 mb-2">Secondary influences</p>
+            <div className="flex flex-wrap gap-2">
+              {(Object.entries(RENOVATION_STYLE_LABELS) as [RenovationStyle, string][])
+                .filter(([k]) => k !== value.primaryStyle)
+                .map(([k, l]) => (
+                  <Chip key={k} selected={value.secondaryStyles.includes(k)} onClick={() => toggleSecondary(k)}>
+                    {l}
+                  </Chip>
+                ))}
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-5">
+            <FormField label="Colours to avoid" optional>
+              {(id) => <input id={id} value={value.coloursToAvoid} onChange={(e) => onChange({ coloursToAvoid: e.target.value })} className={inputClass} />}
+            </FormField>
+            <FormField label="Materials to avoid" optional>
+              {(id) => <input id={id} value={value.materialsToAvoid} onChange={(e) => onChange({ materialsToAvoid: e.target.value })} className={inputClass} />}
+            </FormField>
+            <FormField label="Lighting preference" optional>
+              {(id) => <input id={id} value={value.lightingPreference} onChange={(e) => onChange({ lightingPreference: e.target.value })} className={inputClass} />}
+            </FormField>
+            <FormField label="Furniture preference" optional>
+              {(id) => <input id={id} value={value.furniturePreference} onChange={(e) => onChange({ furniturePreference: e.target.value })} className={inputClass} />}
+            </FormField>
+            <FormField label="Storage preference" optional>
+              {(id) => <input id={id} value={value.storagePreference} onChange={(e) => onChange({ storagePreference: e.target.value })} className={inputClass} />}
+            </FormField>
+            <FormField label="Maintenance preference" optional>
+              {(id) => <input id={id} value={value.maintenancePreference} onChange={(e) => onChange({ maintenancePreference: e.target.value })} className={inputClass} />}
+            </FormField>
+          </div>
+
+          <label className="flex items-center gap-2.5 text-sm font-semibold text-slate-700">
+            <input type="checkbox" checked={value.localMaterialPreference} onChange={(e) => onChange({ localMaterialPreference: e.target.checked })} className="w-4 h-4 rounded accent-[#2ec440]" />
+            Prefer locally available materials
+          </label>
+          </div>
+        )}
+      </div>
 
       <div>
         <button
