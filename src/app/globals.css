@@ -53,12 +53,16 @@ html[data-shell]:not([data-shell="public"]) .uppercase {
   --text-8xl: 3.75rem;
   --text-9xl: 5rem;
 
+  /* Nunito Sans draws the eye at heavy weights, so the weights step down: labels, buttons and names read as 500 and 600, and only
+   * the headings that ask for extrabold or black (700) stand out. */
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
   --font-weight-extrabold: 700;
   --font-weight-black: 700;
 }
 
 /* Inside the dashboards and studios (the signed-in shell) text is one step lighter and smaller again: headings and big numbers come
- * down, and the heavy weights ease to 500 and 600. The utilities read these variables, so every page in the shell follows without a
+ * down, and the heavy weights ease further: labels, buttons and names to 500, headings to 600. The utilities read these variables, so every page in the shell follows without a
  * className changing; the public pages keep the scale above. */
 html[data-shell]:not([data-shell="public"]) {
   --text-base: 0.8125rem;
@@ -69,9 +73,9 @@ html[data-shell]:not([data-shell="public"]) {
   --text-4xl: 1.5rem;
   --text-5xl: 1.875rem;
 
-  --font-weight-medium: 500;
+  --font-weight-medium: 400;
   --font-weight-semibold: 500;
-  --font-weight-bold: 600;
+  --font-weight-bold: 500;
   --font-weight-extrabold: 600;
   --font-weight-black: 600;
 }
