@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import Dialog from "@/components/Dialog";
 import GenerationProgress from "@/components/renovate/GenerationProgress";
-import EditDesignDialog from "@/components/renovate/EditDesignDialog";
+import EditPanel from "@/components/shared/EditPanel";
 
 function GenerateDesignModal({ open, onClose, onConfirm, replacing }: { open: boolean; onClose: () => void; onConfirm: () => void; replacing: boolean }) {
   const project = useRenovationProjectContext();
@@ -146,7 +146,13 @@ export default function ConceptsPage() {
         </p>
       )}
 
-      <EditDesignDialog open={editOpen} onClose={() => setEditOpen(false)} onSubmit={edit} />
+      <EditPanel
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        suggestions={["Make the room brighter", "Use lighter colours on the walls", "Change the floor to timber", "Add more plants", "Add built-in storage", "Make it feel warmer"]}
+        placeholder="e.g. Paint the walls light grey and add a green sofa"
+        onSubmit={edit}
+      />
       <GenerateDesignModal
         open={generateOpen}
         replacing

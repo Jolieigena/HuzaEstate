@@ -85,7 +85,7 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 sm:py-10 print:bg-white print:py-0">
+    <div data-studio-main className="min-h-screen bg-slate-50 py-8 sm:py-10 print:bg-white print:py-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 print:px-0 print:max-w-none">
         <nav aria-label="Breadcrumb" className="print:hidden flex items-center gap-2 text-sm text-slate-500 mb-4">
           <Link href="/studio/build" className="hover:text-slate-900 font-semibold transition-colors">

@@ -89,6 +89,13 @@ html[data-shell]:not([data-shell="public"]) {
  * inherited color, so it alone did not fix it. Since the site has no real dark theme
  * to switch to, --foreground/--background just stay fixed at their light values now. */
 
+/* The "Edit with AI" pane is docked on the right on a wide screen: the page leaves room for it, so the design stays in view. */
+@media (min-width: 1024px) {
+  html[data-side-panel="open"] [data-studio-main] {
+    padding-right: 400px;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
