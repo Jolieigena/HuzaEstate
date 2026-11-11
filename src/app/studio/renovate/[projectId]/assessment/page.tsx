@@ -156,10 +156,7 @@ export default function AssessmentWizardPage() {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-black text-slate-900">Huza AI renovation conversation</h1>
-            <p className="text-slate-500 text-sm">Refine your brief in conversation, then generate concepts when you&apos;re ready.</p>
-          </div>
+          <h1 className="text-xl font-black text-slate-900">Huza AI renovation conversation</h1>
           <button type="button" onClick={() => setView("wizard")} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] whitespace-nowrap">
             Edit structured brief
           </button>
@@ -212,10 +209,7 @@ export default function AssessmentWizardPage() {
       </div>
 
       <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-5 sm:p-7">
-        <h1 className="text-xl font-black text-slate-900 mb-1">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
-        <p className="text-slate-500 text-sm mb-6">
-          Step {stepIndex + 1} of {stepKeys.length}
-        </p>
+        <h1 className="text-xl font-black text-slate-900 mb-6">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
 
         {stepKey === "property" && <StepProperty value={propertyDraft} onChange={(p) => { setPropertyDraft((prev) => ({ ...prev, ...p })); setDirty(true); }} errors={errors} />}
         {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} />}

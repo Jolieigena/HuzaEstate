@@ -10,6 +10,7 @@ import { useToast } from "@/lib/toast-context";
 import { ReviewStatusBadge } from "@/components/renovate/StatusBadge";
 import RequestReviewModal from "@/components/renovate/RequestReviewModal";
 import ConfirmModal from "@/components/shared/ConfirmModal";
+import HireTabs from "@/components/renovate/HireTabs";
 
 const SEVERITY_STYLES: Record<FeedbackSeverity, string> = {
   info: "bg-slate-100 text-slate-600",
@@ -97,13 +98,9 @@ export default function ProfessionalsPage() {
 
   return (
     <div className="space-y-6">
+      <HireTabs projectId={project.id} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-black text-slate-900 mb-1">Professional review</h1>
-          <p className="text-slate-500 text-sm max-w-xl">
-            Huza AI produces conceptual renovation directions, not approved technical designs. A qualified professional should review structural, electrical, plumbing, safety and permit-related work before execution.
-          </p>
-        </div>
+        <h1 className="text-xl font-black text-slate-900">Professional review</h1>
         <button type="button" onClick={() => setRequestOpen(true)} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg whitespace-nowrap">
           Request Professional Review
         </button>

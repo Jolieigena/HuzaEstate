@@ -11,6 +11,7 @@ import CompareQuotationsTable from "@/components/renovate/CompareQuotationsTable
 import RequestQuotationsModal from "@/components/renovate/RequestQuotationsModal";
 import AcceptQuotationModal from "@/components/renovate/AcceptQuotationModal";
 import ConfirmModal from "@/components/shared/ConfirmModal";
+import HireTabs from "@/components/renovate/HireTabs";
 
 export default function QuotesPage() {
   const project = useRenovationProjectContext();
@@ -29,11 +30,9 @@ export default function QuotesPage() {
 
   return (
     <div className="space-y-6">
+      <HireTabs projectId={project.id} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-black text-slate-900 mb-1">Contractor quotations</h1>
-          <p className="text-slate-500 text-sm max-w-xl">Request and compare quotations from verified contractors. No payment is processed and no contract is created here.</p>
-        </div>
+        <h1 className="text-xl font-black text-slate-900">Contractor quotations</h1>
         {project.quotationRequest ? (
           <button type="button" onClick={() => setWithdrawOpen(true)} className="text-sm font-bold text-red-500 hover:text-red-700 whitespace-nowrap">
             Withdraw Request

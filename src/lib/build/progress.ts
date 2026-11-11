@@ -60,7 +60,7 @@ export function getNextAction(project: BuildProject): NextAction | null {
     case "concepts_ready":
       return project.selectedConceptId
         ? { label: "Request professional review", href: `/studio/build/${project.id}/professionals`, description: "Share your selected concept with a professional before construction." }
-        : { label: "Compare your concepts", href: `/studio/build/${project.id}/compare`, description: "Compare the three generated directions and select your favourite." };
+        : { label: "See your design", href: `/studio/build/${project.id}/concepts`, description: "Look at your design and carry on." };
     case "refinement_in_progress":
       return { label: "Review your latest version", href: `/studio/build/${project.id}/concepts`, description: "Check the refinement Huza AI just applied as a new version." };
     case "awaiting_professional_review":
