@@ -37,7 +37,7 @@ function SidebarLinks({ collapsed }: { collapsed: boolean }) {
             href={item.href}
             title={collapsed ? item.label : undefined}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold transition-all ${collapsed ? "justify-center" : ""} ${
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${collapsed ? "justify-center" : ""} ${
               active ? "bg-[#2ec440]/10 text-[#2ec440]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >

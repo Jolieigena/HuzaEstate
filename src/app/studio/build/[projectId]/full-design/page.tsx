@@ -71,7 +71,7 @@ export default function FullDesignPage() {
               type="button"
               onClick={() => setEditOpen(true)}
               disabled={busy || !token}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Edit with AI
             </button>
@@ -80,7 +80,7 @@ export default function FullDesignPage() {
             type="button"
             onClick={() => void start()}
             disabled={busy || !token}
-            className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             {busy ? "Designing your house…" : project.fullDesign ? "Make a new full design" : "Create full design"}
           </button>

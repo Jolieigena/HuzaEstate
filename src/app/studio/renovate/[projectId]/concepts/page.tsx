@@ -105,11 +105,11 @@ export default function ConceptsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-black text-slate-900">Your redesign</h1>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button type="button" onClick={() => setGenerateOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+          <button type="button" onClick={() => setGenerateOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
             New design with AI
           </button>
           {views.length > 0 && (
-            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
               Edit with AI
             </button>
           )}
