@@ -143,12 +143,6 @@ export default function AssessmentWizardPage() {
     router.push(`/studio/renovate/${project.id}/designer`);
   };
 
-  const handleSaveAsDraft = () => {
-    persist(draft, propertyDraft, "Saved assessment as draft.");
-    showToast("Draft saved.");
-    router.push(`/studio/renovate/${project.id}`);
-  };
-
   if (view === "agent") {
     return (
       <div className="space-y-4">
@@ -259,42 +253,34 @@ export default function AssessmentWizardPage() {
         )}
       </div>
 
-      <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={handleBack}
-            disabled={stepIndex === 0}
-            className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
+      <div className="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={handleBack} disabled={stepIndex === 0} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40">
             Back
           </button>
-          <button type="button" onClick={handleSaveAndExit} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors">
-            Save and Exit
+          <button type="button" onClick={handleSaveAndExit} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl px-4 font-bold text-slate-500 transition-colors hover:text-slate-900">
+            Save and exit
           </button>
         </div>
 
         {stepKey === "review" ? (
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button type="button" onClick={handleSaveAsDraft} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors">
-              Save as Draft
-            </button>
-            <button type="button" onClick={handleOpenDesigner} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap">
-              Open Manual Planner
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            {project.creationMode === "ai" && (
+              <button type="button" onClick={handleContinueToAgent} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl px-4 font-bold text-slate-500 transition-colors hover:text-slate-900">
+                Refine with Huza AI
+              </button>
+            )}
+            <button type="button" onClick={handleOpenDesigner} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+              Continue manually
             </button>
             {project.creationMode === "ai" && (
-              <>
-                <button type="button" onClick={handleContinueToAgent} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors whitespace-nowrap">
-                  Refine with Huza AI
-                </button>
-                <button type="button" onClick={handleStartDesigning} className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg whitespace-nowrap">
-                  Start designing
-                </button>
-              </>
+              <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+                Start designing
+              </button>
             )}
           </div>
         ) : (
-          <button type="button" onClick={handleContinue} className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg">
+          <button type="button" onClick={handleContinue} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             Continue
           </button>
         )}
