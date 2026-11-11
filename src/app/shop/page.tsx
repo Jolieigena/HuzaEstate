@@ -33,6 +33,8 @@ function Catalog() {
   // Every filter lives in the web address, so a filtered view can be shared and reached with Back.
   const get = (key: string) => params.get(key) ?? "";
   const category = get("category");
+  // Several categories can be picked at once; they sit in one address value, split with |.
+  const pickedCategories = category ? category.split("|").filter(Boolean) : [];
   const group = get("group");
   const supplier = get("supplier");
   const country = get("country");
@@ -106,7 +108,12 @@ function Catalog() {
   const hasTabs = !!tabs && (tabs.groups.length > 0 || tabs.other.length > 0);
   const countLabel = loading && feed.items.length === 0 ? "Loading…" : `${feed.total} ${feed.total === 1 ? "item" : "items"}`;
   // The tab a view belongs to: the one chosen, or the one that lists the chosen category.
-  const activeTab = group || (category ? tabs?.groups.find((g) => g.categories.some((c) => c.name === category))?.name ?? (tabs?.other.some((c) => c.name === category) ? OTHER : "") : "");
+  const firstPicked = pickedCategories[0] ?? "";
+  const activeTab = group || (firstPicked ? tabs?.groups.find((g) => g.categories.some((c) => c.name === firstPicked))?.name ?? (tabs?.other.some((c) => c.name === firstPicked) ? OTHER : "") : "");
+  const toggleCategory = (name: string) => {
+    const next = pickedCategories.includes(name) ? pickedCategories.filter((c) => c !== name) : [...pickedCategories, name];
+    update({ category: next.join("|") || undefined, group: undefined });
+  };
   const [openTab, setOpenTab] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -128,7 +135,7 @@ function Catalog() {
 
   const chips: { label: string; clear: Record<string, string | undefined> }[] = [];
   if (group && !category) chips.push({ label: group === OTHER ? "Other" : group, clear: { group: undefined } });
-  if (category) chips.push({ label: category, clear: { category: undefined, group: undefined } });
+  for (const name of pickedCategories) chips.push({ label: name, clear: { category: pickedCategories.filter((c) => c !== name).join("|") || undefined, group: undefined } });
   if (supplier) chips.push({ label: supplierName ?? "Supplier", clear: { supplier: undefined } });
   if (country) chips.push({ label: country, clear: { country: undefined } });
   if (priced) chips.push({ label: activeBracket >= 0 ? brackets[activeBracket].label : `${minPrice || 0} to ${maxPrice || "any"}`, clear: { min: undefined, max: undefined, currency: undefined } });
@@ -222,12 +229,13 @@ function Catalog() {
             <TabMenu
               label={openTab === OTHER ? "Other" : openTab}
               categories={openTab === OTHER ? tabs.other : tabs.groups.find((g) => g.name === openTab)?.categories ?? []}
-              selectedCategory={category}
-              wholeTabSelected={group === openTab && !category}
+              selectedCategories={pickedCategories}
+              wholeTabSelected={group === openTab && pickedCategories.length === 0}
               onPick={(next) => {
                 setOpenTab("");
                 update(next);
               }}
+              onToggle={toggleCategory}
               tab={openTab}
             />
           )}
@@ -335,20 +343,32 @@ function Catalog() {
   );
 }
 
-/** The dropdown under a shop tab: the whole tab, then each of its categories with how many products it has. */
-function TabMenu({ label, tab, categories, selectedCategory, wholeTabSelected, onPick }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategory: string; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void }) {
+/** The dropdown under a shop tab: the whole tab, then each of its categories with how many products it has. Categories can be ticked several at a time. */
+function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected, onPick, onToggle }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategories: string[]; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void; onToggle: (name: string) => void }) {
   const item = "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50";
   return (
     <div role="menu" aria-label={`${label} categories`} className="mt-3 grid gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <button type="button" role="menuitem" onClick={() => onPick({ group: tab, category: undefined })} className={`${item} font-bold ${wholeTabSelected ? "bg-slate-50 text-[#219b31]" : "text-slate-900"}`}>
         All in {label}
       </button>
-      {categories.map((c) => (
-        <button key={c.name} type="button" role="menuitem" onClick={() => onPick({ category: c.name, group: undefined })} className={`${item} font-semibold ${selectedCategory === c.name ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
-          <span>{c.name}</span>
-          <span className="text-xs font-bold text-slate-400">{c.count}</span>
-        </button>
-      ))}
+      {categories.map((c) => {
+        const picked = selectedCategories.includes(c.name);
+        return (
+          <button key={c.name} type="button" role="menuitemcheckbox" aria-checked={picked} onClick={() => onToggle(c.name)} className={`${item} font-semibold ${picked ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
+            <span className="flex items-center gap-2.5">
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${picked ? "border-[#2ec440] bg-[#2ec440] text-white" : "border-slate-300 bg-white"}`}>
+                {picked && (
+                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </span>
+              {c.name}
+            </span>
+            <span className="text-xs font-bold text-slate-400">{c.count}</span>
+          </button>
+        );
+      })}
       {categories.length === 0 && <p className="px-3 py-2.5 text-sm font-semibold text-slate-400">No categories in this tab yet</p>}
     </div>
   );
