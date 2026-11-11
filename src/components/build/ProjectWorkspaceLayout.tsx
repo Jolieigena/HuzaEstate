@@ -37,6 +37,14 @@ function pathState(project: BuildProject) {
 
 const CONTINUE_HINT = ["Confirm your brief to see floor plans.", "Choose one floor plan to continue.", "", "", ""];
 
+function CheckIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
 function LocationIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -58,7 +66,7 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
 
   const base = `/studio/build/${project.id}`;
   const activeSegment = pathname === base ? "" : pathname.replace(`${base}/`, "").split("/")[0];
-  const { open, resume } = pathState(project);
+  const { done, open, resume } = pathState(project);
   const currentStep = STEPS.findIndex((step) => step.segments.includes(activeSegment));
   const stepHref = (index: number) => `${base}/${STEPS[index].segment}`;
 
@@ -128,11 +136,12 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
         <ol aria-label="Your path" className="print:hidden mb-8 flex items-center gap-x-3 overflow-x-auto whitespace-nowrap border-b border-slate-200 text-sm sm:gap-x-4 sm:text-base">
           {STEPS.map((step, index) => {
             const isCurrent = index === currentStep;
+            const isDone = done[index] && !isCurrent;
             const reachable = open[index];
-            // Only where the person is stands out: nothing is ticked or turned green, so the first step never looks finished or special.
-            const tone = isCurrent ? "font-black text-slate-900" : reachable ? "font-bold text-slate-600" : "font-bold text-slate-300";
+            const tone = isCurrent ? "font-black text-slate-900" : isDone ? "font-bold text-[#2ec440]" : reachable ? "font-bold text-slate-700" : "font-bold text-slate-300";
             const body = (
-              <span className={`-mb-px inline-flex items-center border-b-2 pb-3 ${isCurrent ? "border-slate-900" : "border-transparent"} ${tone}`}>
+              <span className={`-mb-px inline-flex items-center gap-1.5 border-b-2 pb-3 ${isCurrent ? "border-slate-900" : "border-transparent"} ${tone}`}>
+                {isDone && <CheckIcon />}
                 {step.label}
               </span>
             );
