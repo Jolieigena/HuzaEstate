@@ -107,10 +107,12 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
                 <StatusBadge status={project.status} />
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 font-medium mb-4">
-                <span className="flex items-center gap-1.5">
-                  <LocationIcon />
-                  {location}
-                </span>
+                {project.property.location?.trim() && (
+                  <span className="flex items-center gap-1.5">
+                    <LocationIcon />
+                    {location}
+                  </span>
+                )}
                 <span>Updated {formatRelativeTime(project.updatedAt)}</span>
               </div>
               <div className="max-w-sm">

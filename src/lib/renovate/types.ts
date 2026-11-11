@@ -456,7 +456,7 @@ export const ASSESSMENT_STEP_LABELS: Record<AssessmentStepKey, string> = {
   areas: "Renovation areas",
   condition: "Existing condition",
   keep_remove_change: "Keep, remove and change",
-  style: "Style and inspiration",
+  style: "Style",
   budget_timeline: "Budget and timeline",
   safety: "Safety and constraints",
   review: "Review brief",

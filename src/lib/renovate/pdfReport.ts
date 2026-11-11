@@ -105,8 +105,9 @@ export async function downloadRenovationPdf(project: RenovationProject): Promise
   doc.text("HUZAESTATE RENOVATE", MARGIN, y + 3);
   y += 9;
   paragraph(project.name, MARGIN, CONTENT_W, 24, INK, "bold", 1);
-  const location = propertyLocationLabel(project);
-  paragraph(`${location}  |  ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`, MARGIN, CONTENT_W, 10, GREY, "normal", 2);
+  const location = project.property.location?.trim() ? propertyLocationLabel(project) : "";
+  const today = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  paragraph(location ? `${location}  |  ${today}` : today, MARGIN, CONTENT_W, 10, GREY, "normal", 2);
   doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
   doc.line(MARGIN, y, PAGE_W - MARGIN, y);
   y += 7;
@@ -202,7 +203,7 @@ export async function downloadRenovationPdf(project: RenovationProject): Promise
   // ---- Property
   heading("Property");
   const details: [string, string][] = [
-    ["Location", location],
+    ...(location ? ([["Location", location]] as [string, string][]) : []),
     ["Property type", project.property.propertyType ? PROPERTY_TYPE_LABELS[project.property.propertyType] : "Not provided"],
     ["Approximate area", project.property.approxAreaSqm ? `${project.property.approxAreaSqm} sqm` : "Not provided"],
   ];

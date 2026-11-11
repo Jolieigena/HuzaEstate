@@ -66,9 +66,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const [customOpen, setCustomOpen] = useState(false);
   const [areaError, setAreaError] = useState("");
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
-  const [location, setLocation] = useState("");
-  const [propertyType, setPropertyType] = useState<PropertyType>("detached_house");
-  const [error, setError] = useState("");
+  const [propertyType, setPropertyType] = useState<PropertyType | "">("");
   const [photoError, setPhotoError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,19 +106,15 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       setAreaError("Choose what you are renovating.");
       return;
     }
-    if (!location.trim()) {
-      setError("Tell us where the property is.");
-      return;
-    }
     onRegister(
       {
         source: "registered",
-        name: location.trim(),
+        name: "My property",
         imageUrl: photos[0]?.previewUrl ?? "/hero-house.jpg",
-        propertyType,
+        propertyType: propertyType || null,
         ownershipStatus: null,
-        address: location.trim(),
-        location: location.trim(),
+        address: "",
+        location: "",
         coordinates: null,
         approxAreaSqm: null,
         floors: null,
@@ -277,28 +271,12 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
         )}
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <label htmlFor="property-location" className="block text-sm font-bold text-slate-700 mb-2">
-              Where is it?
-            </label>
-            <input
-              id="property-location"
-              value={location}
-              onChange={(e) => {
-                setLocation(e.target.value);
-                if (error) setError("");
-              }}
-              placeholder="e.g. Remera, Gasabo, Kigali"
-              aria-invalid={Boolean(error)}
-              className={`${inputClass} ${error ? "border-red-300" : ""}`}
-            />
-            {error && <p className="mt-1.5 text-sm font-semibold text-red-600">{error}</p>}
-          </div>
           <div className="sm:col-span-2 sm:max-w-xs">
             <label htmlFor="property-type" className="block text-sm font-bold text-slate-700 mb-2">
               What kind of property?
             </label>
-            <Select id="property-type" value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType)} className={inputClass}>
+            <Select id="property-type" value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType | "")} className={inputClass}>
+              <option value="">Select</option>
               {Object.entries(PROPERTY_TYPE_LABELS).map(([key, label]) => (
                 <option key={key} value={key}>
                   {label}

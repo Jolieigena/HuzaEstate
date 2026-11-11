@@ -93,7 +93,7 @@ export default function ProjectCard({ project, selecting = false, selected = fal
           </Link>
           <ActionMenu items={menuItems} label={`Actions for ${project.name}`} />
         </div>
-        <p className="text-sm text-slate-500 truncate mb-3">{location}</p>
+        {project.property.location?.trim() && <p className="text-sm text-slate-500 truncate mb-3">{location}</p>}
 
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500 mb-4">
           <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md">{CREATION_MODE_LABELS[project.creationMode]}</span>

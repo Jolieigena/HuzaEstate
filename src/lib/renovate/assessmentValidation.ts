@@ -5,11 +5,6 @@ export type StepErrors = Record<string, string>;
 export function validateStep(step: AssessmentStepKey, assessment: RenovationAssessment, property: RenovationPropertyInfo): StepErrors {
   const errors: StepErrors = {};
 
-  if (step === "property") {
-    if (!property.propertyType) errors.propertyType = "Select a property type.";
-    if (!property.location.trim()) errors.location = "Location is required.";
-  }
-
   if (step === "areas") {
     if (assessment.areas.length === 0) errors.areas = "Select at least one renovation area.";
   }

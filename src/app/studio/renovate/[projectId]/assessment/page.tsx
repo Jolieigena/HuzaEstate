@@ -231,11 +231,6 @@ export default function AssessmentWizardPage() {
           <StepStyle
             value={draft.style}
             onChange={(p) => patch("style", { ...draft.style, ...p })}
-            inspirationFiles={project.uploads.inspiration}
-            onChangeInspirationFiles={(files) => {
-              const added = files.filter((f) => !project.uploads.inspiration.some((e) => e.id === f.id));
-              if (added.length) RenovationProjectService.addUploads(project.id, "inspiration", added);
-            }}
           />
         )}
         {stepKey === "budget_timeline" && (
