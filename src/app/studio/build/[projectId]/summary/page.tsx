@@ -7,11 +7,13 @@ import { projectLocationLabel } from "@/lib/build/format";
 import { ROOM_LABELS, RoomKey } from "@/lib/build/types";
 import { downloadProjectPdf } from "@/lib/build/pdfReport";
 import { useToast } from "@/lib/toast-context";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 
 /** The download step: the whole design and the document to keep. */
 export default function ProjectSummaryPage() {
   const project = useBuildProjectContext();
   const { showToast } = useToast();
+  const money = useStudioMoney();
   const [making, setMaking] = useState(false);
   const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   const requiredSustainability = project.brief.sustainability.items.filter((i) => i.priority);
@@ -20,7 +22,7 @@ export default function ProjectSummaryPage() {
   const download = async () => {
     setMaking(true);
     try {
-      await downloadProjectPdf(project);
+      await downloadProjectPdf(project, { code: money.code, fromRwf: money.fromRwf });
     } catch (error) {
       showToast(error instanceof Error ? error.message : "The PDF could not be made. Please try again.", "error");
     } finally {

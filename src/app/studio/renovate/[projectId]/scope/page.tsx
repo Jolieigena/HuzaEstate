@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { generateScope } from "@/lib/renovate/scopeGenerator";
+import { makeScope } from "@/lib/renovate/makeScope";
 import { newId } from "@/lib/renovate/factory";
-import { PriorityLevel, ScopeItem, HIGH_RISK_AREA_KEYS } from "@/lib/renovate/types";
+import { PriorityLevel, ScopeItem } from "@/lib/renovate/types";
 import { useToast } from "@/lib/toast-context";
 import ScopeTable from "@/components/renovate/ScopeTable";
 import ScopeItemModal from "@/components/renovate/ScopeItemModal";
@@ -19,15 +20,7 @@ export default function ScopePage() {
   const [deleteTarget, setDeleteTarget] = useState<ScopeItem | null>(null);
 
   const handleGenerate = () => {
-    const items = generateScope(project.assessment.areas, project.assessment.keepRemoveChange, project.assessment.safety);
-    RenovationProjectService.generateScope(project.id, items);
-    const highRiskCount = project.assessment.areas.filter((a) => HIGH_RISK_AREA_KEYS.includes(a.areaKey)).length;
-    RenovationProjectService.recalculateTimeline(project.id, {
-      desiredStartDate: project.assessment.budgetTimeline.desiredStartDate,
-      scopeItemCount: items.length,
-      highRiskAreaCount: highRiskCount,
-      propertyRemainsOccupied: project.assessment.budgetTimeline.propertyRemainsOccupied,
-    });
+    makeScope(project);
     showToast("Scope of work generated.");
   };
 
@@ -47,7 +40,12 @@ export default function ScopePage() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-xl font-black text-slate-900">Scope of work</h1>
+        <div className="flex items-center gap-4">
+          <Link href={`/studio/renovate/${project.id}/concepts`} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039]">
+            Back to redesign
+          </Link>
+          <h1 className="text-xl font-black text-slate-900">Scope of work</h1>
+        </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => { setEditing(null); setModalOpen(true); }} className="bg-white border border-slate-200 hover:border-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
             Add Task

@@ -3,7 +3,8 @@
 import { useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { ContractorQuotation } from "@/lib/renovate/types";
-import { formatCompactRwf, formatDate } from "@/lib/renovate/format";
+import { formatDate } from "@/lib/renovate/format";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 
 interface Props {
   quotation: ContractorQuotation | null;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function AcceptQuotationModal({ quotation, open, onClose, onConfirm }: Props) {
+  const money = useStudioMoney();
   const titleId = useId();
   const [confirmed, setConfirmed] = useState(false);
 
@@ -35,7 +37,7 @@ export default function AcceptQuotationModal({ quotation, open, onClose, onConfi
           <dt className="text-slate-500">Contractor</dt>
           <dd className="text-right font-semibold text-slate-900">{quotation.contractor.companyName}</dd>
           <dt className="text-slate-500">Total</dt>
-          <dd className="text-right font-semibold text-slate-900">{formatCompactRwf(quotation.total)}</dd>
+          <dd className="text-right font-semibold text-slate-900">{money.compact(quotation.total)}</dd>
           <dt className="text-slate-500">Included scope</dt>
           <dd className="text-right font-semibold text-slate-900">{quotation.includedScope.length} items</dd>
           <dt className="text-slate-500">Exclusions</dt>

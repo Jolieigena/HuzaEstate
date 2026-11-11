@@ -17,12 +17,10 @@ export default function BriefQuickReview({
   brief,
   onEdit,
   onAddDetail,
-  onToggleDisclaimer,
 }: {
   brief: DesignBrief;
   onEdit: (step: "basics" | "style") => void;
   onAddDetail: () => void;
-  onToggleDisclaimer: (accepted: boolean) => void;
 }) {
   const quantityOf = (key: string) => brief.household.rooms.find((r) => r.key === key)?.quantity;
 
@@ -52,11 +50,6 @@ export default function BriefQuickReview({
         <Row label="Style" value={brief.style.primaryStyle ? HOME_STYLE_LABELS[brief.style.primaryStyle] : ""} />
         <Row label="Target budget" value={brief.budget.targetBudget ? formatCurrency(brief.budget.targetBudget, brief.budget.currency) : ""} />
       </div>
-
-      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-5">
-        <input type="checkbox" checked={brief.disclaimerAccepted} onChange={(e) => onToggleDisclaimer(e.target.checked)} className="mt-0.5 h-5 w-5 flex-shrink-0 accent-[#2ec440]" />
-        <span className="text-sm leading-relaxed text-slate-700">I understand that HuzaEstate Build produces conceptual design directions and not approved construction drawings.</span>
-      </label>
 
       <button type="button" onClick={onAddDetail} className="text-sm font-bold text-slate-500 transition-colors hover:text-slate-900">
         Add more detail (plot, timeline, sustainability)

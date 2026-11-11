@@ -1,8 +1,9 @@
 "use client";
 
-import { PRIORITY_LABELS, PriorityLevel, RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS, RenovationAreaKey, RenovationStyle, SelectedRenovationArea } from "@/lib/renovate/types";
+import { RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS, RenovationAreaKey, RenovationStyle, SelectedRenovationArea } from "@/lib/renovate/types";
 import { FormField, inputClass, Chip } from "./FormField";
 import Select from "@/components/shared/Select";
+import BudgetInput from "@/components/shared/BudgetInput";
 
 interface Props {
   value: SelectedRenovationArea[];
@@ -11,9 +12,10 @@ interface Props {
   /** The one style for the whole renovation, chosen here. */
   style: RenovationStyle | null;
   onStyleChange: (style: RenovationStyle | null) => void;
-  /** What the person can spend on the renovation, in RWF. */
+  /** What the person can spend on the renovation, in the currency they typed it in. */
   budget: number | null;
-  onBudgetChange: (budget: number | null) => void;
+  budgetCurrency: string;
+  onBudgetChange: (budget: number | null, currency: string) => void;
 }
 
 function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
@@ -30,7 +32,7 @@ function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
   };
 }
 
-export default function StepAreas({ value, onChange, errors, style, onStyleChange, budget, onBudgetChange }: Props) {
+export default function StepAreas({ value, onChange, errors, style, onStyleChange, budget, budgetCurrency, onBudgetChange }: Props) {
   const selectedKeys = new Set(value.map((a) => a.areaKey));
 
   const toggleArea = (key: RenovationAreaKey) => {
@@ -80,97 +82,24 @@ export default function StepAreas({ value, onChange, errors, style, onStyleChang
         )}
       </FormField>
 
-      <FormField label="Budget (RWF)" optional>
-        {(id) => (
-          <input
-            id={id}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={budget ?? ""}
-            onChange={(e) => onBudgetChange(e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
-            placeholder="e.g. 8000000"
-            className={`${inputClass} max-w-sm`}
-          />
-        )}
+      <FormField label="Budget" optional>
+        {(id) => <BudgetInput id={id} amount={budget} currency={budgetCurrency} onChange={onBudgetChange} placeholder="e.g. 8000000" inputClassName={`${inputClass} max-w-xs`} />}
       </FormField>
 
-      <div className="space-y-4">
-        {value.map((area) => (
-          <div key={area.id} className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              {area.areaKey === "custom" ? (
-                <input
-                  value={area.customLabel ?? ""}
-                  onChange={(e) => updateArea(area.id, { customLabel: e.target.value })}
-                  placeholder="Name this area"
-                  className="font-bold text-slate-900 bg-transparent border-b border-dashed border-slate-300 focus:outline-none focus:border-[#2ec440] px-1"
-                />
-              ) : (
-                <h3 className="font-bold text-slate-900">{RENOVATION_AREA_LABELS[area.areaKey]}</h3>
-              )}
-              <button type="button" onClick={() => removeArea(area.id)} className="text-xs font-bold text-red-500 hover:text-red-700">
-                Remove
-              </button>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <FormField label="Current use" optional>
-                {(id) => <input id={id} value={area.currentUse} onChange={(e) => updateArea(area.id, { currentUse: e.target.value })} className={inputClass} />}
-              </FormField>
-              <FormField label="Approximate dimensions" optional hint="e.g. 4m x 3.5m">
-                {(id) => <input id={id} value={area.approxDimensions} onChange={(e) => updateArea(area.id, { approxDimensions: e.target.value })} className={inputClass} />}
-              </FormField>
-              <FormField label="Main problem" optional>
-                {(id) => <input id={id} value={area.mainProblem} onChange={(e) => updateArea(area.id, { mainProblem: e.target.value })} className={inputClass} />}
-              </FormField>
-              <FormField label="Desired outcome" optional>
-                {(id) => <input id={id} value={area.desiredOutcome} onChange={(e) => updateArea(area.id, { desiredOutcome: e.target.value })} className={inputClass} />}
-              </FormField>
-
-              <FormField label="Priority">
-                {(id) => (
-                  <Select id={id} value={area.priority} onChange={(e) => updateArea(area.id, { priority: e.target.value as PriorityLevel })} className={inputClass}>
-                    {Object.entries(PRIORITY_LABELS).map(([k, l]) => (
-                      <option key={k} value={k}>
-                        {l}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </FormField>
-
-              <FormField label="Are structural changes expected?">
-                {(id) => (
-                  <Select
-                    id={id}
-                    value={String(area.structuralChangesExpected)}
-                    onChange={(e) => updateArea(area.id, { structuralChangesExpected: e.target.value === "unknown" ? "unknown" : e.target.value === "true" })}
-                    className={inputClass}
-                  >
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                    <option value="unknown">Not sure</option>
-                  </Select>
-                )}
-              </FormField>
-            </div>
-
-            <FormField label="Notes" optional>
-              {(id) => (
-                <textarea
-                  id={id}
-                  value={area.notes}
-                  onChange={(e) => updateArea(area.id, { notes: e.target.value })}
-                  rows={2}
-                  className={`${inputClass} resize-none mt-1.5`}
-                />
-              )}
-            </FormField>
-          </div>
-        ))}
-        {value.length === 0 && <p className="text-slate-400 text-sm text-center py-6">Select at least one area above to continue.</p>}
-      </div>
+      {value.some((a) => a.areaKey === "custom") && (
+        <div className="space-y-3">
+          {value
+            .filter((a) => a.areaKey === "custom")
+            .map((area) => (
+              <div key={area.id} className="flex items-center gap-3">
+                <input value={area.customLabel ?? ""} onChange={(e) => updateArea(area.id, { customLabel: e.target.value })} placeholder="Name this area" aria-label="Name this area" className={`${inputClass} max-w-sm`} />
+                <button type="button" onClick={() => removeArea(area.id)} className="text-xs font-bold text-red-500 hover:text-red-700">
+                  Remove
+                </button>
+              </div>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

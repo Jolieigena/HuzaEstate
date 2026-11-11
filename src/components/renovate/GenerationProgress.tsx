@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { generateConcept, ConceptGenerationInput } from "@/lib/renovate/conceptGenerator";
-import { GENERATION_STAGES, RenovationProject, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
+import { GENERATION_STAGES, RENOVATION_AREA_LABELS, RenovationProject, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
+import AiProgress from "@/components/shared/AiProgress";
 import { useToast } from "@/lib/toast-context";
 import { useAuth } from "@/lib/auth-context";
 import { redesignRooms } from "@/lib/renovate/redesign";
@@ -104,51 +105,20 @@ export default function GenerationProgress({ project }: { project: RenovationPro
     );
   }
 
+  const rooms = project.assessment.areas.slice(0, 4).map((area) => ({
+    src: project.uploads.photos.find((p) => p.relatedAreaId === area.id)?.previewUrl,
+    label: area.customLabel || RENOVATION_AREA_LABELS[area.areaKey],
+  }));
+  const tiles = rooms.some((r) => r.src) ? rooms.filter((r) => r.src) : [];
+
   return (
-    <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 sm:p-10 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-[#2ec440]/10 text-[#2ec440] flex items-center justify-center mx-auto mb-5">
-        <svg className="w-7 h-7 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-        </svg>
-      </div>
-      <h2 className="text-xl font-black text-slate-900 mb-2">Designing your renovation</h2>
-      <p className="text-slate-500 text-sm mb-1">Huza AI is redesigning your rooms from your photos and your brief.</p>
-      <p className="text-slate-400 text-xs mb-8">Elapsed time: {elapsedSec}s</p>
-
-      <div className="max-w-md mx-auto space-y-3 text-left mb-8" aria-live="polite">
-        {GENERATION_STAGES.map((stage, index) => {
-          const done = project.generation.completedStageKeys.includes(stage.key);
-          const active = index === project.generation.currentStageIndex && !done;
-          return (
-            <div key={stage.key} className={`flex items-start gap-3 rounded-xl px-4 py-3 border ${active ? "border-[#2ec440] bg-[#2ec440]/5" : done ? "border-slate-100 bg-slate-50" : "border-slate-100"}`}>
-              <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                  done ? "bg-[#2ec440] text-white" : active ? "bg-[#2ec440]/20 text-[#2ec440]" : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                {done ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                )}
-              </span>
-              <div>
-                <p className={`text-sm font-bold ${done || active ? "text-slate-900" : "text-slate-400"}`}>{stage.label}</p>
-                <p className="text-xs text-slate-400">{stage.helper}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="max-w-lg mx-auto mb-8 h-40 rounded-xl bg-slate-100 animate-pulse" aria-hidden="true" />
-
-      <button type="button" onClick={handleCancel} className="text-sm font-bold text-slate-500 hover:text-red-600 transition-colors">
-        Cancel generation
-      </button>
-    </div>
+    <AiProgress
+      title="Designing your renovation"
+      stages={GENERATION_STAGES}
+      completedKeys={project.generation.completedStageKeys}
+      elapsedSec={elapsedSec}
+      tiles={tiles}
+      onCancel={handleCancel}
+    />
   );
 }

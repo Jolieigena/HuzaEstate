@@ -1,80 +1,44 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { HOME_STYLE_LABELS } from "@/lib/build/types";
 import { collectBriefWarnings } from "@/lib/build/briefValidation";
-import { formatCompactRwf } from "@/lib/build/format";
-import Dialog from "@/components/Dialog";
+import { formatTypedCompact, useStudioMoney } from "@/lib/currency/studioMoney";
+import NewDesignPanel from "@/components/shared/NewDesignPanel";
 import GenerationProgress from "@/components/build/GenerationProgress";
 import { FloorPlanGraphic } from "@/components/build/FloorPlanSvg";
 import RefineDrawer from "@/components/build/RefineDrawer";
 
-function GenerateConceptsModal({ open, onClose, onConfirm }: { open: boolean; onClose: () => void; onConfirm: () => void }) {
+/** What the new design will be made from, in the pane on the right. */
+function NewDesign({ open, onClose, replacing }: { open: boolean; onClose: () => void; replacing: boolean }) {
   const project = useBuildProjectContext();
-  const titleId = useId();
   const bedrooms = project.brief.household.rooms.find((r) => r.key === "bedrooms")?.quantity ?? 0;
-  const warnings = collectBriefWarnings(project.brief);
-  const requirementsCount = project.brief.household.rooms.length + project.brief.sustainability.items.filter((i) => i.priority).length + project.brief.accessibility.items.filter((i) => i.priority).length;
-  const generationAllowed = { allowed: true, message: "" };
-
+  const { toRwf } = useStudioMoney();
+  const warnings = collectBriefWarnings(project.brief, toRwf).map((w) => w.message);
+  const budget = project.brief.budget;
   return (
-    <Dialog open={open} onClose={onClose} labelledBy={titleId} panelClassName="max-w-lg">
-      <div className="p-6 sm:p-8">
-        <h2 id={titleId} className="text-xl font-black text-slate-900 mb-1">
-          Generate your design
-        </h2>
-        <p className="text-slate-500 text-sm mb-6">Huza AI will draw a new design from your confirmed brief. Your current design is kept as a version.</p>
-
-        <dl className="bg-slate-50 border border-slate-200 rounded-2xl p-5 grid grid-cols-2 gap-y-3 text-sm mb-4">
-          <dt className="text-slate-500">Project</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.name}</dd>
-          <dt className="text-slate-500">Plot area</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.brief.plot.areaSqm ? `${project.brief.plot.areaSqm} sqm` : "Not set"}</dd>
-          <dt className="text-slate-500">Floors</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.brief.household.floors}</dd>
-          <dt className="text-slate-500">Bedrooms</dt>
-          <dd className="text-right font-semibold text-slate-900">{bedrooms}</dd>
-          <dt className="text-slate-500">Style</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.brief.style.primaryStyle ? HOME_STYLE_LABELS[project.brief.style.primaryStyle] : "Not set"}</dd>
-          <dt className="text-slate-500">Target budget</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.brief.budget.targetBudget ? formatCompactRwf(project.brief.budget.targetBudget) : "Not set"}</dd>
-          <dt className="text-slate-500">Requirements captured</dt>
-          <dd className="text-right font-semibold text-slate-900">{requirementsCount}</dd>
-        </dl>
-
-        {warnings.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
-            <p className="text-xs font-bold text-amber-800 mb-1.5">Important</p>
-            <ul className="space-y-1">
-              {warnings.slice(0, 3).map((w) => (
-                <li key={w.id} className="text-xs text-amber-700">
-                  {w.message}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {!generationAllowed.allowed && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
-            <p className="text-xs font-bold text-red-800 mb-1.5">Temporarily unavailable</p>
-            <p className="text-xs text-red-700">{generationAllowed.message}</p>
-          </div>
-        )}
-
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
-          <Link href={`/studio/build/${project.id}/brief`} className="px-5 py-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition-colors text-center">
-            Return to Brief
-          </Link>
-          <button type="button" onClick={onConfirm} disabled={!generationAllowed.allowed} className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-slate-900">
-            Generate My Design
-          </button>
-        </div>
-      </div>
-    </Dialog>
+    <NewDesignPanel
+      open={open}
+      onClose={onClose}
+      rows={[
+        ["Project", project.name],
+        ["Plot area", project.brief.plot.areaSqm ? `${project.brief.plot.areaSqm} sqm` : "Not set"],
+        ["Floors", String(project.brief.household.floors)],
+        ["Bedrooms", String(bedrooms)],
+        ["Style", project.brief.style.primaryStyle ? HOME_STYLE_LABELS[project.brief.style.primaryStyle] : "Not set"],
+        ["Target budget", budget.targetBudget ? formatTypedCompact(budget.targetBudget, budget.currency) : "Not set"],
+      ]}
+      warnings={warnings}
+      briefHref={`/studio/build/${project.id}/brief`}
+      confirmLabel={replacing ? "Make a new design" : "Make my design"}
+      onConfirm={() => {
+        onClose();
+        BuildProjectService.startGeneration(project.id);
+      }}
+    />
   );
 }
 
@@ -113,7 +77,7 @@ export default function ConceptsPage() {
         </p>
         {briefReady ? (
           <button type="button" onClick={() => setGenerateOpen(true)} className="inline-block bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 px-8 rounded-xl transition-colors shadow-lg">
-            Generate My Design
+            Design my home
           </button>
         ) : (
           <Link href={`/studio/build/${project.id}/brief`} className="inline-block bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 px-8 rounded-xl transition-colors shadow-lg">
@@ -121,14 +85,7 @@ export default function ConceptsPage() {
           </Link>
         )}
 
-        <GenerateConceptsModal
-          open={generateOpen}
-          onClose={() => setGenerateOpen(false)}
-          onConfirm={() => {
-            setGenerateOpen(false);
-            BuildProjectService.startGeneration(project.id);
-          }}
-        />
+        <NewDesign open={generateOpen} onClose={() => setGenerateOpen(false)} replacing={false} />
       </div>
     );
   }
@@ -143,11 +100,11 @@ export default function ConceptsPage() {
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button type="button" onClick={() => setGenerateOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
-            New design with AI
+          <button type="button" onClick={() => { setRefineOpen(false); setGenerateOpen(true); }} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
+            New design
           </button>
-          <button type="button" onClick={() => setRefineOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-            Edit with AI
+          <button type="button" onClick={() => { setGenerateOpen(false); setRefineOpen(true); }} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+            Edit design
           </button>
         </div>
       </div>
@@ -184,14 +141,7 @@ export default function ConceptsPage() {
 
       <RefineDrawer projectId={project.id} concept={current} open={refineOpen} onClose={() => setRefineOpen(false)} />
 
-      <GenerateConceptsModal
-        open={generateOpen}
-        onClose={() => setGenerateOpen(false)}
-        onConfirm={() => {
-          setGenerateOpen(false);
-          BuildProjectService.startGeneration(project.id);
-        }}
-      />
+      <NewDesign open={generateOpen} onClose={() => setGenerateOpen(false)} replacing />
     </div>
   );
 }

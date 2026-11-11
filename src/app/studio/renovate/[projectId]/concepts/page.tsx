@@ -1,46 +1,38 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 /* eslint-disable @next/next/no-img-element */
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { RENOVATION_STYLE_LABELS } from "@/lib/renovate/types";
 import { hasPicture, redesignRooms } from "@/lib/renovate/redesign";
+import { makeScope } from "@/lib/renovate/makeScope";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import Dialog from "@/components/Dialog";
+import NewDesignPanel from "@/components/shared/NewDesignPanel";
 import GenerationProgress from "@/components/renovate/GenerationProgress";
 import EditPanel from "@/components/shared/EditPanel";
 
-function GenerateDesignModal({ open, onClose, onConfirm, replacing }: { open: boolean; onClose: () => void; onConfirm: () => void; replacing: boolean }) {
+/** What the new design will be made from, in the pane on the right. */
+function NewDesign({ open, onClose, replacing }: { open: boolean; onClose: () => void; replacing: boolean }) {
   const project = useRenovationProjectContext();
-  const titleId = useId();
   return (
-    <Dialog open={open} onClose={onClose} labelledBy={titleId} panelClassName="max-w-lg">
-      <div className="p-6 sm:p-8">
-        <h2 id={titleId} className="mb-1 text-xl font-black text-slate-900">
-          {replacing ? "New design with AI" : "Design your renovation"}
-        </h2>
-        <p className="mb-6 text-sm text-slate-500">Huza AI will redesign your rooms from your photos and your confirmed brief.{replacing ? " Your current design is kept as a version." : ""}</p>
-        <dl className="mb-6 grid grid-cols-2 gap-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm">
-          <dt className="text-slate-500">Property</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.property.name || "Not set"}</dd>
-          <dt className="text-slate-500">Rooms</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.assessment.areas.length}</dd>
-          <dt className="text-slate-500">Style</dt>
-          <dd className="text-right font-semibold text-slate-900">{project.assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[project.assessment.style.primaryStyle] : "Not set"}</dd>
-        </dl>
-        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-          <Link href={`/studio/renovate/${project.id}/assessment`} className="rounded-xl border border-slate-200 px-5 py-3 text-center font-semibold text-slate-700 transition-colors hover:bg-slate-50">
-            Return to the brief
-          </Link>
-          <button type="button" onClick={onConfirm} className="rounded-xl bg-slate-900 px-5 py-3 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-            {replacing ? "Make a new design" : "Design my renovation"}
-          </button>
-        </div>
-      </div>
-    </Dialog>
+    <NewDesignPanel
+      open={open}
+      onClose={onClose}
+      rows={[
+        ["Property", project.property.name || "Not set"],
+        ["Rooms", String(project.assessment.areas.length)],
+        ["Style", project.assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[project.assessment.style.primaryStyle] : "Not set"],
+      ]}
+      briefHref={`/studio/renovate/${project.id}/assessment`}
+      confirmLabel={replacing ? "Make a new design" : "Design my renovation"}
+      onConfirm={() => {
+        onClose();
+        RenovationProjectService.startGeneration(project.id);
+      }}
+    />
   );
 }
 
@@ -60,6 +52,12 @@ export default function ConceptsPage() {
     if (design && project.selectedConceptId !== design.id) RenovationProjectService.selectConcept(project.id, design.id);
   }, [design, project.id, project.selectedConceptId]);
 
+  // The scope of work is made with the design, so it is ready to look at, to change and to put in the download.
+  useEffect(() => {
+    if (design && project.status !== "generating" && project.scope.length === 0 && project.assessment.areas.length > 0) makeScope(project);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design?.id, project.id, project.status, project.scope.length]);
+
   if (project.status === "generating") return <GenerationProgress project={project} />;
 
   if (!design) {
@@ -75,15 +73,7 @@ export default function ConceptsPage() {
             Go to the brief
           </Link>
         )}
-        <GenerateDesignModal
-          open={generateOpen}
-          replacing={false}
-          onClose={() => setGenerateOpen(false)}
-          onConfirm={() => {
-            setGenerateOpen(false);
-            RenovationProjectService.startGeneration(project.id);
-          }}
-        />
+        <NewDesign open={generateOpen} replacing={false} onClose={() => setGenerateOpen(false)} />
       </div>
     );
   }
@@ -105,12 +95,12 @@ export default function ConceptsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-xl font-black text-slate-900">Your redesign</h1>
         <div className="flex flex-col gap-2 sm:flex-row">
-          <button type="button" onClick={() => setGenerateOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
-            New design with AI
+          <button type="button" onClick={() => { setEditOpen(false); setGenerateOpen(true); }} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
+            New design
           </button>
           {views.length > 0 && (
-            <button type="button" onClick={() => setEditOpen(true)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
-              Edit with AI
+            <button type="button" onClick={() => { setGenerateOpen(false); setEditOpen(true); }} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
+              Edit design
             </button>
           )}
         </div>
@@ -143,6 +133,16 @@ export default function ConceptsPage() {
         </p>
       )}
 
+      {project.scope.length > 0 && (
+        <div>
+          <Link href={`/studio/renovate/${project.id}/scope`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400">
+            View and edit scope of work
+          </Link>
+        </div>
+      )}
+
+      <p className="text-xs text-slate-500">These are AI concept pictures, not approved technical designs. Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals.</p>
+
       <EditPanel
         open={editOpen}
         onClose={() => setEditOpen(false)}
@@ -150,15 +150,7 @@ export default function ConceptsPage() {
         placeholder="e.g. Paint the walls light grey and add a green sofa"
         onSubmit={edit}
       />
-      <GenerateDesignModal
-        open={generateOpen}
-        replacing
-        onClose={() => setGenerateOpen(false)}
-        onConfirm={() => {
-          setGenerateOpen(false);
-          RenovationProjectService.startGeneration(project.id);
-        }}
-      />
+      <NewDesign open={generateOpen} replacing onClose={() => setGenerateOpen(false)} />
     </div>
   );
 }

@@ -1,24 +1,32 @@
 "use client";
 
 import { useId } from "react";
-import { BudgetBrief, Currency, FINISH_LEVEL_LABELS, FinishLevel } from "@/lib/build/types";
+import { BudgetBrief, FINISH_LEVEL_LABELS, FinishLevel } from "@/lib/build/types";
+import Select from "@/components/shared/Select";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 import { StepErrors } from "@/lib/build/briefValidation";
 import { Field, inputClass, Toggle } from "./FormField";
 
-export default function BriefStepBudget({ value, onChange, errors }: { value: BudgetBrief; onChange: (patch: Partial<BudgetBrief>) => void; errors: StepErrors }) {
+export default function BriefStepBudget({ value, onChange: change, errors }: { value: BudgetBrief; onChange: (patch: Partial<BudgetBrief>) => void; errors: StepErrors }) {
+  const { code, options } = useStudioMoney();
+  const typed = Boolean(value.minBudget || value.targetBudget || value.maxBudget);
+  // The currency starts as the visitor's own; it is saved with the first amount they type.
+  const shown = typed ? value.currency : code;
+  const list = options.includes(shown) ? options : [shown, ...options];
+  const onChange = (patch: Partial<BudgetBrief>) => change("minBudget" in patch || "targetBudget" in patch || "maxBudget" in patch ? { ...patch, currency: shown } : patch);
   const ids = { min: useId(), target: useId(), max: useId(), completion: useId(), start: useId(), duration: useId() };
 
   return (
     <div className="space-y-6">
       <div>
         <p className="text-sm font-bold text-slate-700 mb-2">Currency</p>
-        <div className="flex gap-2">
-          {(["RWF", "USD"] as Currency[]).map((c) => (
-            <Toggle key={c} pressed={value.currency === c} onClick={() => onChange({ currency: c })}>
+        <Select value={shown} onChange={(e) => change({ currency: e.target.value })} aria-label="Currency" className="w-[110px]">
+          {list.map((c) => (
+            <option key={c} value={c}>
               {c}
-            </Toggle>
+            </option>
           ))}
-        </div>
+        </Select>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-5">

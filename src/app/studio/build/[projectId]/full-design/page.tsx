@@ -73,7 +73,7 @@ export default function FullDesignPage() {
               disabled={busy || !token}
               className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Edit with AI
+              Edit design
             </button>
           )}
           <button
@@ -130,7 +130,7 @@ export default function FullDesignPage() {
       <EditPanel
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit full design with AI"
+        title="Edit full design"
         suggestions={["Change the roof to red tiles", "Make the house look more modern", "Use stone on the front wall", "Add a balcony upstairs", "Paint the walls light grey", "Add more garden and trees"]}
         placeholder="e.g. Make the roof dark grey and add a covered terrace"
         onSubmit={(request) => start(request)}

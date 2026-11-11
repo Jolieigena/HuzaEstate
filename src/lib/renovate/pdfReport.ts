@@ -1,6 +1,7 @@
 import type { jsPDF } from "jspdf";
 import { propertyLocationLabel } from "./format";
 import { hasPicture } from "./redesign";
+import { formatTyped } from "@/lib/currency/studioMoney";
 import { PRIORITY_LABELS, PROPERTY_TYPE_LABELS, RenovationProject, RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS } from "./types";
 
 // A4 portrait, in millimetres.
@@ -206,7 +207,7 @@ export async function downloadRenovationPdf(project: RenovationProject): Promise
     ...(location ? ([["Location", location]] as [string, string][]) : []),
     ["Property type", project.property.propertyType ? PROPERTY_TYPE_LABELS[project.property.propertyType] : "Not provided"],
     ["Approximate area", project.property.approxAreaSqm ? `${project.property.approxAreaSqm} sqm` : "Not provided"],
-    ...(project.assessment.budgetTimeline.targetBudget ? ([["Your budget", `RWF ${project.assessment.budgetTimeline.targetBudget.toLocaleString("en-US")}`]] as [string, string][]) : []),
+    ...(project.assessment.budgetTimeline.targetBudget ? ([["Your budget", formatTyped(project.assessment.budgetTimeline.targetBudget, project.assessment.budgetTimeline.currency)]] as [string, string][]) : []),
   ];
   for (const [label, value] of details) {
     ensure(7);

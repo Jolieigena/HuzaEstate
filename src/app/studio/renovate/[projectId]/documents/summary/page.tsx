@@ -3,7 +3,8 @@
 import { useState } from "react";
 /* eslint-disable @next/next/no-img-element */
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
-import { formatCompactRwf, propertyLocationLabel } from "@/lib/renovate/format";
+import { propertyLocationLabel } from "@/lib/renovate/format";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 import { hasPicture } from "@/lib/renovate/redesign";
 import { downloadRenovationPdf } from "@/lib/renovate/pdfReport";
 import { RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
@@ -11,6 +12,7 @@ import { useToast } from "@/lib/toast-context";
 
 /** The download step: the whole redesign and the document to keep. */
 export default function RenovationDownloadPage() {
+  const money = useStudioMoney();
   const project = useRenovationProjectContext();
   const { showToast } = useToast();
   const [making, setMaking] = useState(false);
@@ -112,7 +114,7 @@ export default function RenovationDownloadPage() {
           <h2 className="mb-2 font-bold text-slate-900">Hiring</h2>
           <p className="text-sm text-slate-600">
             {acceptedQuotation
-              ? `Accepted: ${acceptedQuotation.contractor.companyName}, ${formatCompactRwf(acceptedQuotation.total)}`
+              ? `Accepted: ${acceptedQuotation.contractor.companyName}, ${money.compact(acceptedQuotation.total)}`
               : activeReview
                 ? `${activeReview.type.replace(/_/g, " ")}, ${activeReview.status.replace(/_/g, " ")}`
                 : "No professional hired yet."}

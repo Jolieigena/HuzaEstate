@@ -34,7 +34,8 @@ export const CREATION_MODE_LABELS: Record<CreationMode, string> = {
   template: "Started from a template",
 };
 
-export type Currency = "RWF" | "USD";
+/** An ISO currency code: a budget is kept in the currency it was typed in. */
+export type Currency = string;
 
 export type PropertyUse = "primary_residence" | "rental_property" | "holiday_home" | "mixed_residential";
 

@@ -7,7 +7,6 @@ import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { assessmentStepKeys, ASSESSMENT_STEP_LABELS, AssessmentStepKey, RenovationAssessment, RenovationPropertyInfo } from "@/lib/renovate/types";
 import { collectAssessmentWarnings, validateStep, StepErrors } from "@/lib/renovate/assessmentValidation";
 import { useToast } from "@/lib/toast-context";
-import AgentPanel from "@/components/renovate/AgentPanel";
 import StepProperty from "@/components/renovate/assessment/StepProperty";
 import StepAreas from "@/components/renovate/assessment/StepAreas";
 import StepCondition from "@/components/renovate/assessment/StepCondition";
@@ -28,10 +27,6 @@ function initialStepIndex(assessment: RenovationAssessment): number {
   return firstIncomplete === -1 ? keys.length - 1 : firstIncomplete;
 }
 
-function initialView(project: { creationMode: string; assessment: RenovationAssessment }): "wizard" | "agent" {
-  return project.creationMode === "ai" && project.assessment.completedSteps.includes("review") && project.assessment.disclaimerAccepted ? "agent" : "wizard";
-}
-
 export default function AssessmentWizardPage() {
   const project = useRenovationProjectContext();
   const router = useRouter();
@@ -42,7 +37,6 @@ export default function AssessmentWizardPage() {
   const [stepIndex, setStepIndex] = useState(() => initialStepIndex(project.assessment));
   const [errors, setErrors] = useState<StepErrors>({});
   const [dirty, setDirty] = useState(false);
-  const [view, setView] = useState<"wizard" | "agent">(() => initialView(project));
 
   const [loadedProjectId, setLoadedProjectId] = useState(project.id);
   if (project.id !== loadedProjectId) {
@@ -52,7 +46,6 @@ export default function AssessmentWizardPage() {
     setStepIndex(initialStepIndex(project.assessment));
     setErrors({});
     setDirty(false);
-    setView(initialView(project));
   }
 
   useEffect(() => {
@@ -110,24 +103,14 @@ export default function AssessmentWizardPage() {
   };
 
   const finalizeReview = (): RenovationAssessment | null => {
-    if (!draft.disclaimerAccepted) {
-      setErrors({ disclaimer: "Please confirm this before continuing." });
-      return null;
-    }
     const reviewStep: AssessmentStepKey = "review";
     const completedSteps = draft.completedSteps.includes(reviewStep) ? draft.completedSteps : [...draft.completedSteps, reviewStep];
-    const next = { ...draft, completedSteps };
+    const next = { ...draft, completedSteps, disclaimerAccepted: true };
     setDraft(next);
     persist(next, propertyDraft, "Confirmed the renovation brief.");
     const summary = `Renovate ${next.areas.map((a) => a.customLabel || a.areaKey).join(", ") || "the property"} in a ${next.style.primaryStyle ?? "TBD"} style.`;
     RenovationProjectService.confirmBrief(project.id, summary, []);
     return next;
-  };
-
-  const handleContinueToAgent = () => {
-    if (!finalizeReview()) return;
-    setView("agent");
-    showToast("Brief confirmed. Continue the conversation with Huza AI.");
   };
 
   // Confirming the brief starts the design: the redesign is made right away, with the progress shown on the Redesign page.
@@ -136,20 +119,6 @@ export default function AssessmentWizardPage() {
     RenovationProjectService.startGeneration(project.id);
     router.push(`/studio/renovate/${project.id}/concepts`);
   };
-
-  if (view === "agent") {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-black text-slate-900">Huza AI renovation conversation</h1>
-          <button type="button" onClick={() => setView("wizard")} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] whitespace-nowrap">
-            Edit structured brief
-          </button>
-        </div>
-        <AgentPanel project={project} />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -197,7 +166,7 @@ export default function AssessmentWizardPage() {
         <h1 className="text-xl font-black text-slate-900 mb-6">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
 
         {stepKey === "property" && <StepProperty value={propertyDraft} onChange={(p) => { setPropertyDraft((prev) => ({ ...prev, ...p })); setDirty(true); }} errors={errors} />}
-        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} style={draft.style.primaryStyle} onStyleChange={(primaryStyle) => patch("style", { ...draft.style, primaryStyle })} budget={draft.budgetTimeline.targetBudget} onBudgetChange={(targetBudget) => patch("budgetTimeline", { ...draft.budgetTimeline, targetBudget })} />}
+        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} style={draft.style.primaryStyle} onStyleChange={(primaryStyle) => patch("style", { ...draft.style, primaryStyle })} budget={draft.budgetTimeline.targetBudget} budgetCurrency={draft.budgetTimeline.currency} onBudgetChange={(targetBudget, currency) => patch("budgetTimeline", { ...draft.budgetTimeline, targetBudget, currency })} />}
         {stepKey === "condition" && (
           <StepCondition
             areas={draft.areas}
@@ -214,25 +183,7 @@ export default function AssessmentWizardPage() {
         {stepKey === "keep_remove_change" && <StepKeepRemoveChange areas={draft.areas} items={draft.keepRemoveChange} onChange={(items) => patch("keepRemoveChange", items)} />}
         {stepKey === "safety" && <StepSafety value={draft.safety} onChange={(p) => patch("safety", { ...draft.safety, ...p })} />}
         {stepKey === "review" && (
-          <>
-            <StepReview
-              property={propertyDraft}
-              assessment={draft}
-              uploads={project.uploads}
-              warnings={warnings}
-              onEditStep={(key) => setStepIndex(Math.max(stepKeys.indexOf(key), 0))}
-              onToggleDisclaimer={(accepted) => {
-                setDraft((prev) => ({ ...prev, disclaimerAccepted: accepted }));
-                setDirty(true);
-                setErrors({});
-              }}
-            />
-            {errors.disclaimer && (
-              <p className="text-red-600 text-sm font-semibold mt-3" role="alert">
-                {errors.disclaimer}
-              </p>
-            )}
-          </>
+          <StepReview property={propertyDraft} assessment={draft} uploads={project.uploads} warnings={warnings} onEditStep={(key) => setStepIndex(Math.max(stepKeys.indexOf(key), 0))} />
         )}
       </div>
 
@@ -247,18 +198,9 @@ export default function AssessmentWizardPage() {
         </div>
 
         {stepKey === "review" ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {(
-              <button type="button" onClick={handleContinueToAgent} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl px-4 font-bold text-slate-500 transition-colors hover:text-slate-900">
-                Refine with Huza AI
-              </button>
-            )}
-            {(
-              <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-                Start designing
-              </button>
-            )}
-          </div>
+          <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+            Start designing
+          </button>
         ) : (
           <button type="button" onClick={handleContinue} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             Continue

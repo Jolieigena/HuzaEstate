@@ -1,7 +1,8 @@
 "use client";
 
 import { ContractorQuotation } from "@/lib/renovate/types";
-import { formatCompactRwf, formatDate } from "@/lib/renovate/format";
+import { formatDate } from "@/lib/renovate/format";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 import { QuotationStatusBadge } from "./StatusBadge";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function QuotationCard({ quotation, onAccept, onDecline }: Props) {
+  const money = useStudioMoney();
   const q = quotation;
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6">
@@ -28,7 +30,7 @@ export default function QuotationCard({ quotation, onAccept, onDecline }: Props)
             Quoted {formatDate(q.quotationDate)} · Valid until {formatDate(q.validUntil)}
           </p>
         </div>
-        <p className="text-2xl font-black text-slate-900">{formatCompactRwf(q.total)}</p>
+        <p className="text-2xl font-black text-slate-900">{money.compact(q.total)}</p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4 text-sm mb-4">
@@ -57,15 +59,15 @@ export default function QuotationCard({ quotation, onAccept, onDecline }: Props)
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm mb-4">
         <div className="bg-slate-50 rounded-xl p-3">
           <p className="text-slate-400 text-xs font-bold">Labour</p>
-          <p className="font-bold text-slate-900">{formatCompactRwf(q.labour)}</p>
+          <p className="font-bold text-slate-900">{money.compact(q.labour)}</p>
         </div>
         <div className="bg-slate-50 rounded-xl p-3">
           <p className="text-slate-400 text-xs font-bold">Professional fees</p>
-          <p className="font-bold text-slate-900">{formatCompactRwf(q.professionalFees)}</p>
+          <p className="font-bold text-slate-900">{money.compact(q.professionalFees)}</p>
         </div>
         <div className="bg-slate-50 rounded-xl p-3">
           <p className="text-slate-400 text-xs font-bold">Taxes</p>
-          <p className="font-bold text-slate-900">{formatCompactRwf(q.taxes)}</p>
+          <p className="font-bold text-slate-900">{money.compact(q.taxes)}</p>
         </div>
         <div className="bg-slate-50 rounded-xl p-3">
           <p className="text-slate-400 text-xs font-bold">Duration</p>

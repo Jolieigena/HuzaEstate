@@ -17,8 +17,7 @@ import { PathFooter, PathSteps } from "@/components/shared/PathSteps";
 /** The path a person follows, one step after the other. Pages a step needs (the room designer, quotations) belong to it and are reached from it. */
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
   { key: "brief", label: "Describe your room", segment: "assessment", segments: ["assessment"] },
-  { key: "design", label: "Redesign", segment: "concepts", segments: ["concepts", "compare"] },
-  { key: "scope", label: "Scope of work", segment: "scope", segments: ["scope"] },
+  { key: "design", label: "Redesign", segment: "concepts", segments: ["concepts", "compare", "scope"] },
   { key: "download", label: "Download", segment: "documents/summary", segments: ["documents"] },
   { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals", "quotes"] },
 ];
@@ -27,16 +26,15 @@ const STEPS: { key: string; label: string; segment: string; segments: string[] }
 function pathState(project: RenovationProject) {
   const briefConfirmed = !["draft", "property_setup", "assessment_in_progress"].includes(project.status);
   const designChosen = !!project.selectedConceptId;
-  const scopeDone = project.scope.length > 0;
   const hired = ["awaiting_professional_review", "awaiting_quotations", "quotation_received", "ready_for_execution"].includes(project.status);
-  const done = [briefConfirmed, designChosen, scopeDone, hired, hired];
-  const open = [true, briefConfirmed, designChosen, designChosen, designChosen];
+  const done = [briefConfirmed, designChosen, hired, hired];
+  const open = [true, briefConfirmed, designChosen, designChosen];
   // Where "continue where I left off" goes.
-  const resume = !briefConfirmed ? 0 : !designChosen ? 1 : !scopeDone ? 2 : !hired ? 3 : 4;
+  const resume = !briefConfirmed ? 0 : !designChosen ? 1 : !hired ? 2 : 3;
   return { done, open, resume };
 }
 
-const CONTINUE_HINT = ["Confirm your brief to see your redesign.", "Choose your design to continue.", "", "", ""];
+const CONTINUE_HINT = ["Confirm your brief to see your redesign.", "Choose your design to continue.", "", ""];
 
 function LocationIcon() {
   return (

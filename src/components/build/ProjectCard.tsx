@@ -6,7 +6,8 @@ import ConceptPlan from "./ConceptPlan";
 import { useRouter } from "next/navigation";
 import { BuildProject, CREATION_MODE_LABELS } from "@/lib/build/types";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { formatRelativeTime, formatCompactRwf, projectLocationLabel } from "@/lib/build/format";
+import { formatRelativeTime, projectLocationLabel } from "@/lib/build/format";
+import { formatTypedCompact } from "@/lib/currency/studioMoney";
 import { getProjectProgress } from "@/lib/build/progress";
 import { useToast } from "@/lib/toast-context";
 import { StatusBadge } from "./StatusBadge";
@@ -124,8 +125,8 @@ export default function ProjectCard({ project, selecting = false, selected = fal
         {(budget.targetBudget || budget.minBudget) && (
           <p className="text-sm font-bold text-slate-900 mb-4">
             {budget.minBudget && (budget.maxBudget || budget.targetBudget)
-              ? `${formatCompactRwf(budget.minBudget)} – ${formatCompactRwf((budget.maxBudget || budget.targetBudget) ?? 0)}`
-              : formatCompactRwf(budget.targetBudget || budget.maxBudget || budget.minBudget || 0)}
+              ? `${formatTypedCompact(budget.minBudget, budget.currency)} – ${formatTypedCompact((budget.maxBudget || budget.targetBudget) ?? 0, budget.currency)}`
+              : formatTypedCompact(budget.targetBudget || budget.maxBudget || budget.minBudget || 0, budget.currency)}
           </p>
         )}
 

@@ -1,9 +1,10 @@
 "use client";
 
 import { useId } from "react";
-import { BudgetBrief, Currency, HOME_STYLE_LABELS, HomeStyle, StyleBrief } from "@/lib/build/types";
+import { BudgetBrief, HOME_STYLE_LABELS, HomeStyle, StyleBrief } from "@/lib/build/types";
 import { StepErrors } from "@/lib/build/briefValidation";
-import { Field, Toggle, inputClass } from "./FormField";
+import { Field, inputClass } from "./FormField";
+import BudgetInput from "@/components/shared/BudgetInput";
 
 /** The short path's second screen: the style of the home and, if they know it, what they want to spend. */
 export default function BriefQuickStyle({
@@ -53,22 +54,8 @@ export default function BriefQuickStyle({
         <p className="mb-2 text-sm font-bold text-slate-700">
           Budget <span className="font-normal text-slate-400">(optional)</span>
         </p>
-        <div className="mb-3 flex gap-2">
-          {(["RWF", "USD"] as Currency[]).map((c) => (
-            <Toggle key={c} pressed={budget.currency === c} onClick={() => onChangeBudget({ currency: c })}>
-              {c}
-            </Toggle>
-          ))}
-        </div>
         <Field label="Target budget" htmlFor={targetId} error={errors.targetBudget}>
-          <input
-            id={targetId}
-            type="number"
-            min={0}
-            value={budget.targetBudget ?? ""}
-            onChange={(e) => onChangeBudget({ targetBudget: e.target.value === "" ? null : Number(e.target.value) })}
-            className={inputClass(Boolean(errors.targetBudget))}
-          />
+          <BudgetInput id={targetId} amount={budget.targetBudget} currency={budget.currency} onChange={(targetBudget, currency) => onChangeBudget({ targetBudget, currency })} inputClassName={inputClass(Boolean(errors.targetBudget))} />
         </Field>
       </div>
     </div>

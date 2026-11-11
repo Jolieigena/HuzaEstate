@@ -13,10 +13,6 @@ export function validateStep(step: AssessmentStepKey, assessment: RenovationAsse
     // No hard requirement — an empty list is valid, just less useful.
   }
 
-  if (step === "review") {
-    if (!assessment.disclaimerAccepted) errors.disclaimer = "Please confirm you understand the disclaimer before continuing.";
-  }
-
   return errors;
 }
 

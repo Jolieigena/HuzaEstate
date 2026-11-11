@@ -152,7 +152,7 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[], style: RenovationStyle | null, budget: number | null) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[], style: RenovationStyle | null, budget: number | null, budgetCurrency: string) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
               // What the person said they are renovating becomes the brief's areas, so the first step is already answered.
               const existing = RenovationProjectService.getById(project.id);
@@ -167,7 +167,10 @@ function NewProjectContent() {
                   assessment.areas.push(area);
                 }
                 if (style) assessment.style.primaryStyle = style;
-                if (budget) assessment.budgetTimeline.targetBudget = budget;
+                if (budget) {
+                  assessment.budgetTimeline.targetBudget = budget;
+                  assessment.budgetTimeline.currency = budgetCurrency;
+                }
                 if (!assessment.completedSteps.includes("areas")) assessment.completedSteps.push("areas");
                 // Each photo points at the area it shows.
                 photos = photos.map((p) => ({ ...p, relatedAreaId: p.relatedAreaId ? areaFor(p.relatedAreaId)?.id : undefined }));
@@ -298,7 +301,7 @@ function NewProjectContent() {
               onChange={(e) => setDescription(e.target.value)}
               rows={selected.mode === "ai" ? 5 : 3}
               maxLength={1000}
-              placeholder={selected.mode === "ai" ? "e.g. Open up the kitchen, add more natural light and keep the wooden floor. Budget around RWF 8 million." : "A short note to help you recognise this project later."}
+              placeholder={selected.mode === "ai" ? "e.g. Open up the kitchen, add more natural light and keep the wooden floor. Keep the budget modest." : "A short note to help you recognise this project later."}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-colors resize-none"
             />
 

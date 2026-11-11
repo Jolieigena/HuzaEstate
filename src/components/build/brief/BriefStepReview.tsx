@@ -37,12 +37,10 @@ export default function BriefStepReview({
   brief,
   warnings,
   onEditStep,
-  onToggleDisclaimer,
 }: {
   brief: DesignBrief;
   warnings: BriefWarning[];
   onEditStep: (step: BriefStepKey) => void;
-  onToggleDisclaimer: (accepted: boolean) => void;
 }) {
   const uploadedFiles = [...brief.plot.files, ...brief.style.inspirationFiles];
 
@@ -120,17 +118,6 @@ export default function BriefStepReview({
         )}
       </SummarySection>
 
-      <label className="flex items-start gap-3 bg-white border border-slate-200 rounded-2xl p-5 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={brief.disclaimerAccepted}
-          onChange={(e) => onToggleDisclaimer(e.target.checked)}
-          className="accent-[#2ec440] w-5 h-5 mt-0.5 flex-shrink-0"
-        />
-        <span className="text-sm text-slate-700 leading-relaxed">
-          I understand that HuzaEstate Build produces conceptual design directions and not approved construction drawings.
-        </span>
-      </label>
     </div>
   );
 }

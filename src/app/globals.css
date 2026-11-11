@@ -166,3 +166,28 @@ body {
     transform: none !important;
   }
 }
+
+/* The waiting screen while Huza AI designs: a light sweep over what is being made, and a line of text that shimmers. */
+@keyframes ai-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+@keyframes ai-text {
+  to { background-position: -200% 0; }
+}
+.ai-sweep {
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.65) 50%, transparent 80%);
+  animation: ai-sweep 1.8s ease-in-out infinite;
+}
+.ai-text {
+  background: linear-gradient(90deg, #64748b 0%, #64748b 35%, #2ec440 50%, #64748b 65%, #64748b 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: ai-text 2.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-sweep, .ai-text { animation: none; }
+  .ai-text { color: #64748b; background: none; }
+}

@@ -56,7 +56,7 @@ export function getNextAction(project: RenovationProject): NextAction | null {
       return { label: "View generation progress", href: `${base}/concepts`, description: "Huza AI is preparing your renovation concepts." };
     case "concepts_ready":
       return project.selectedConceptId
-        ? { label: "Review the scope of work", href: `${base}/scope`, description: "Generate a room-by-room scope for your selected concept." }
+        ? { label: "Download your renovation summary", href: `${base}/documents/summary`, description: "Keep the design and the scope of work, or hire a professional." }
         : { label: "See your redesign", href: `${base}/concepts`, description: "Look at your redesign and carry on." };
     case "refinement_in_progress":
       return { label: "Review your latest version", href: `${base}/concepts`, description: "Check the refinement Huza AI just applied as a new version." };

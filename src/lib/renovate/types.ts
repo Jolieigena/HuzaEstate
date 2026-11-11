@@ -42,13 +42,15 @@ export const CREATION_MODE_LABELS: Record<RenovationCreationMode, string> = {
   inspiration: "Start from inspiration",
 };
 
-export type Currency = "RWF" | "USD";
+/** An ISO currency code: a budget is kept in the currency it was typed in. */
+export type Currency = string;
 
 // ---------------------------------------------------------------------------
 // Property
 // ---------------------------------------------------------------------------
 
 export type PropertyType =
+  | "family_home"
   | "detached_house"
   | "semi_detached_house"
   | "townhouse"
@@ -59,6 +61,7 @@ export type PropertyType =
   | "other";
 
 export const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+  family_home: "Family home",
   detached_house: "Detached house",
   semi_detached_house: "Semi-detached house",
   townhouse: "Townhouse",

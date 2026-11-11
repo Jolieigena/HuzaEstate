@@ -62,7 +62,7 @@ export interface BriefWarning {
   message: string;
 }
 
-export function collectBriefWarnings(brief: DesignBrief): BriefWarning[] {
+export function collectBriefWarnings(brief: DesignBrief, toRwf?: (amount: number, currency: string) => number): BriefWarning[] {
   const warnings: BriefWarning[] = [];
 
   if (!brief.plot.areaSqm) warnings.push({ id: "missing-plot-area", message: "Plot area hasn't been provided yet, so floor area suggestions will be less accurate." });
@@ -78,9 +78,11 @@ export function collectBriefWarnings(brief: DesignBrief): BriefWarning[] {
     warnings.push({ id: "structural-review", message: "Homes with more than one floor will need a professional structural review before construction." });
   }
 
-  const { minBudget, targetBudget, finishLevel } = brief.budget;
-  if (targetBudget && brief.plot.areaSqm) {
-    const perSqm = targetBudget / Math.max(brief.plot.areaSqm * 0.55, 1);
+  const { minBudget, targetBudget, finishLevel, currency } = brief.budget;
+  // The cost check compares RWF, so a budget in another currency is converted first, and left out while the rates are not known.
+  const targetRwf = targetBudget ? (currency === "RWF" ? targetBudget : toRwf ? toRwf(targetBudget, currency) : null) : null;
+  if (targetRwf && brief.plot.areaSqm) {
+    const perSqm = targetRwf / Math.max(brief.plot.areaSqm * 0.55, 1);
     if (finishLevel === "luxury" && perSqm < 600_000) {
       warnings.push({ id: "budget-low-for-finish", message: "Your budget may be tight for a luxury finish level at this size — consider Premium or a larger budget." });
     }

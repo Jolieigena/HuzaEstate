@@ -7,7 +7,7 @@ import { BuildProjectService } from "@/lib/build/projectService";
 import { BRIEF_STEP_KEYS, BriefStepKey, DesignBrief, QUICK_BRIEF_STEP_KEYS, isQuickBrief } from "@/lib/build/types";
 import { collectBriefWarnings, validateQuickStep, validateStep, StepErrors } from "@/lib/build/briefValidation";
 import { useToast } from "@/lib/toast-context";
-import AgentPanel from "@/components/build/AgentPanel";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 import BriefStepBasics from "@/components/build/brief/BriefStepBasics";
 import BriefStepPlot from "@/components/build/brief/BriefStepPlot";
 import BriefStepHousehold from "@/components/build/brief/BriefStepHousehold";
@@ -57,14 +57,11 @@ function startKeys(project: { brief: DesignBrief }): readonly BriefStepKey[] {
   return startsDetailed(project) ? BRIEF_STEP_KEYS : QUICK_BRIEF_STEP_KEYS;
 }
 
-function initialView(project: { creationMode: string; brief: DesignBrief }): "wizard" | "agent" {
-  return project.creationMode === "ai" && project.brief.completedSteps.includes("review") && project.brief.disclaimerAccepted ? "agent" : "wizard";
-}
-
 export default function BriefWizardPage() {
   const project = useBuildProjectContext();
   const router = useRouter();
   const { showToast } = useToast();
+  const { toRwf } = useStudioMoney();
 
   const [draft, setDraft] = useState<DesignBrief>(() => cloneBrief(project.brief));
   const [detailed, setDetailed] = useState(() => startsDetailed(project));
@@ -74,7 +71,6 @@ export default function BriefWizardPage() {
   const [stepIndex, setStepIndex] = useState(() => initialStepIndex(project.brief, startKeys(project)));
   const [errors, setErrors] = useState<StepErrors>({});
   const [dirty, setDirty] = useState(false);
-  const [view, setView] = useState<"wizard" | "agent">(() => initialView(project));
 
   // Reset local draft when switching to a different project. Adjusted during
   // render (React's recommended pattern for resetting state from a changed
@@ -87,7 +83,6 @@ export default function BriefWizardPage() {
     setStepIndex(initialStepIndex(project.brief, startKeys(project)));
     setErrors({});
     setDirty(false);
-    setView(initialView(project));
   }
 
   useEffect(() => {
@@ -101,7 +96,7 @@ export default function BriefWizardPage() {
   }, [dirty]);
 
   const stepKey = stepKeys[stepIndex];
-  const warnings = useMemo(() => collectBriefWarnings(draft), [draft]);
+  const warnings = useMemo(() => collectBriefWarnings(draft, toRwf), [draft, toRwf]);
 
   const patchBrief = <K extends keyof DesignBrief>(key: K, patch: Partial<DesignBrief[K]>) => {
     setDraft((prev) => ({ ...prev, [key]: { ...(prev[key] as object), ...patch } }));
@@ -151,22 +146,12 @@ export default function BriefWizardPage() {
   };
 
   const finalizeReview = (): DesignBrief | null => {
-    if (!draft.disclaimerAccepted) {
-      setErrors({ disclaimer: "Please confirm this before continuing." });
-      return null;
-    }
     const reviewStep: BriefStepKey = "review";
     const completedSteps = draft.completedSteps.includes(reviewStep) ? draft.completedSteps : [...draft.completedSteps, reviewStep];
-    const next = { ...draft, completedSteps };
+    const next = { ...draft, completedSteps, disclaimerAccepted: true };
     setDraft(next);
     persist(next, "Confirmed the design brief.");
     return next;
-  };
-
-  const handleContinueToAgent = () => {
-    if (!finalizeReview()) return;
-    setView("agent");
-    showToast("Brief confirmed. Continue the conversation with Huza AI.");
   };
 
   // Confirming the brief starts the design: the three concepts are made right away, with the progress shown on the Concepts page.
@@ -175,23 +160,6 @@ export default function BriefWizardPage() {
     BuildProjectService.startGeneration(project.id);
     router.push(`/studio/build/${project.id}/concepts`);
   };
-
-  if (view === "agent") {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-black text-slate-900">Huza AI design conversation</h1>
-            <p className="text-slate-500 text-sm">Refine your brief in conversation, then generate concepts when you&apos;re ready.</p>
-          </div>
-          <button type="button" onClick={() => setView("wizard")} className="text-sm font-bold text-[#2ec440] hover:text-[#28b039] whitespace-nowrap">
-            Edit structured brief
-          </button>
-        </div>
-        <AgentPanel project={project} />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -252,23 +220,7 @@ export default function BriefWizardPage() {
           <BriefQuickStyle style={draft.style} budget={draft.budget} onChangeStyle={(p) => patchBrief("style", p)} onChangeBudget={(p) => patchBrief("budget", p)} errors={errors} />
         )}
         {quick && stepKey === "review" && (
-          <>
-            <BriefQuickReview
-              brief={draft}
-              onEdit={(key) => setStepIndex(stepKeys.indexOf(key))}
-              onAddDetail={handleAddDetail}
-              onToggleDisclaimer={(accepted) => {
-                setDraft((prev) => ({ ...prev, disclaimerAccepted: accepted }));
-                setDirty(true);
-                setErrors({});
-              }}
-            />
-            {errors.disclaimer && (
-              <p className="text-red-600 text-sm font-semibold mt-3" role="alert">
-                {errors.disclaimer}
-              </p>
-            )}
-          </>
+          <BriefQuickReview brief={draft} onEdit={(key) => setStepIndex(stepKeys.indexOf(key))} onAddDetail={handleAddDetail} />
         )}
 
         {!quick && stepKey === "basics" && <BriefStepBasics value={draft.basics} onChange={(p) => patchBrief("basics", p)} errors={errors} />}
@@ -285,23 +237,7 @@ export default function BriefWizardPage() {
           />
         )}
         {!quick && stepKey === "review" && (
-          <>
-            <BriefStepReview
-              brief={draft}
-              warnings={warnings}
-              onEditStep={(key) => setStepIndex(BRIEF_STEP_KEYS.indexOf(key))}
-              onToggleDisclaimer={(accepted) => {
-                setDraft((prev) => ({ ...prev, disclaimerAccepted: accepted }));
-                setDirty(true);
-                setErrors({});
-              }}
-            />
-            {errors.disclaimer && (
-              <p className="text-red-600 text-sm font-semibold mt-3" role="alert">
-                {errors.disclaimer}
-              </p>
-            )}
-          </>
+          <BriefStepReview brief={draft} warnings={warnings} onEditStep={(key) => setStepIndex(BRIEF_STEP_KEYS.indexOf(key))} />
         )}
       </div>
 
@@ -316,18 +252,9 @@ export default function BriefWizardPage() {
         </div>
 
         {stepKey === "review" ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {(
-              <button type="button" onClick={handleContinueToAgent} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl px-4 font-bold text-slate-500 transition-colors hover:text-slate-900">
-                Refine with Huza AI
-              </button>
-            )}
-            {(
-              <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-                Start designing
-              </button>
-            )}
-          </div>
+          <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
+            Start designing
+          </button>
         ) : (
           <button type="button" onClick={handleContinue} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             Continue

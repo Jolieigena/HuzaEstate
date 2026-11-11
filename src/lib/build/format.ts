@@ -5,16 +5,8 @@ export function statusLabel(status: BuildProjectStatus): string {
 }
 
 export function formatCurrency(amount: number, currency: Currency = "RWF"): string {
-  if (currency === "RWF") {
-    return `RWF ${Math.round(amount).toLocaleString("en-US")}`;
-  }
-  return `$${Math.round(amount).toLocaleString("en-US")}`;
-}
-
-export function formatCompactRwf(amount: number): string {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M RWF`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K RWF`;
-  return `${Math.round(amount)} RWF`;
+  const text = Math.round(amount).toLocaleString("en-US");
+  return currency === "USD" ? `$${text}` : `${currency} ${text}`;
 }
 
 export function formatDate(iso: string | undefined | null): string {

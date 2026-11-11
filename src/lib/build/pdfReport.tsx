@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { jsPDF } from "jspdf";
 import { FloorPlanGraphic, floorPlanSize } from "@/components/build/FloorPlanSvg";
 import { calculateBudget, COST_PER_SQM, PRICE_BASIS } from "./budget";
-import { formatCompactRwf, projectLocationLabel } from "./format";
+import { projectLocationLabel } from "./format";
 import { BuildProject, FINISH_LEVEL_LABELS, ManualFloor, ROOM_LABELS, RoomKey } from "./types";
 
 // A4 portrait, in millimetres.
@@ -92,7 +92,13 @@ function fileName(name: string): string {
 }
 
 /** Makes the project's design document as a real PDF and saves it: the plans, the full design, the requirements. */
-export async function downloadProjectPdf(project: BuildProject): Promise<void> {
+/** The currency the costs are shown in, and how an amount in RWF becomes an amount in it. */
+export interface PdfCurrency {
+  code: string;
+  fromRwf: (amountRwf: number) => number;
+}
+
+export async function downloadProjectPdf(project: BuildProject, currency: PdfCurrency = { code: "RWF", fromRwf: (amount) => amount }): Promise<void> {
   const { jsPDF: PDF } = await import("jspdf");
   const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   if (!design) throw new Error("There is no design to download yet.");
@@ -247,7 +253,22 @@ export async function downloadProjectPdf(project: BuildProject): Promise<void> {
   // ---- Budget: what the design costs and where the money goes
   const finish = project.brief.budget.finishLevel;
   const estimate = calculateBudget({ totalAreaSqm: m.floorAreaSqm, finishLevel: finish, contingencyPct: 10, includeLandscaping: false, includeFurniture: false, includeProfessionalFees: false });
-  const money = (amount: number) => formatCompactRwf(amount).replace(" RWF", "");
+  // The costs come from Kigali prices in RWF; they are shown in the reader's currency, rounded so they do not look exact.
+  const code = currency.code;
+  const rounded = (amountRwf: number) => {
+    const value = currency.fromRwf(amountRwf);
+    if (value < 1000) return Math.round(value);
+    const step = Math.pow(10, Math.max(Math.floor(Math.log10(value)) + 1 - 3, 0));
+    return Math.round(value / step) * step;
+  };
+  const money = (amount: number) => {
+    const value = rounded(amount);
+    if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+    if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+    if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+    return String(value);
+  };
+  const whole = (amountRwf: number) => rounded(amountRwf).toLocaleString("en-US");
   const rowsTotal = estimate.categories.reduce((sum, c) => sum + c.amount, 0) || 1;
 
   ensure(125);
@@ -274,11 +295,11 @@ export async function downloadProjectPdf(project: BuildProject): Promise<void> {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
     colour(INK);
-    doc.text(`${money(amount)} RWF`, x + 4, y + 16);
+    doc.text(`${money(amount)} ${code}`, x + 4, y + 16);
   });
   y += 28;
   paragraph(
-    `${m.floorAreaSqm} sqm built at about RWF ${estimate.costPerSqm.toLocaleString("en-US")} per sqm (${FINISH_LEVEL_LABELS[finish]} finish), plus 10% contingency. The low and high figures follow the price range for that finish level: RWF ${COST_PER_SQM[finish].low.toLocaleString("en-US")} to ${COST_PER_SQM[finish].high.toLocaleString("en-US")} per sqm.`,
+    `${m.floorAreaSqm} sqm built at about ${code} ${whole(estimate.costPerSqm)} per sqm (${FINISH_LEVEL_LABELS[finish]} finish), plus 10% contingency. The low and high figures follow the price range for that finish level: ${code} ${whole(COST_PER_SQM[finish].low)} to ${whole(COST_PER_SQM[finish].high)} per sqm.`,
     MARGIN,
     CONTENT_W,
     9.5,
@@ -311,7 +332,7 @@ export async function downloadProjectPdf(project: BuildProject): Promise<void> {
       doc.text(`${(share * 100).toFixed(0)}%`, MARGIN + 126, y + 4.6, { align: "right" });
       doc.setFont("helvetica", "bold");
       colour(INK);
-      doc.text(`${money(row.amount)} RWF`, PAGE_W - MARGIN, y + 4.6, { align: "right" });
+      doc.text(`${money(row.amount)} ${code}`, PAGE_W - MARGIN, y + 4.6, { align: "right" });
       y += 7;
       doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
       doc.line(MARGIN, y, PAGE_W - MARGIN, y);

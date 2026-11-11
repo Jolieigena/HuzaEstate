@@ -1,14 +1,16 @@
 "use client";
 
 import { ContractorQuotation } from "@/lib/renovate/types";
-import { formatCompactRwf, formatDate } from "@/lib/renovate/format";
+import { formatDate } from "@/lib/renovate/format";
+import { useStudioMoney } from "@/lib/currency/studioMoney";
 import { RenovationQuotationService } from "@/lib/renovate/quotationService";
 
 export default function CompareQuotationsTable({ quotations, onAccept }: { quotations: ContractorQuotation[]; onAccept: (id: string) => void }) {
+  const money = useStudioMoney();
   const highlights = RenovationQuotationService.compareQuotations(quotations);
 
   const rows: { label: string; render: (q: ContractorQuotation) => React.ReactNode }[] = [
-    { label: "Total price", render: (q) => formatCompactRwf(q.total) },
+    { label: "Total price", render: (q) => money.compact(q.total) },
     { label: "Included work", render: (q) => `${q.includedScope.length} item${q.includedScope.length === 1 ? "" : "s"}` },
     { label: "Exclusions", render: (q) => (q.excludedScope.length ? q.excludedScope.join(", ") : "None") },
     { label: "Duration", render: (q) => `${q.proposedDurationWeeks} weeks` },
