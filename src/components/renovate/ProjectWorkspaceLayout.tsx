@@ -17,7 +17,7 @@ import { PathFooter, PathSteps } from "@/components/shared/PathSteps";
 /** The path a person follows, one step after the other. Pages a step needs (the room designer, quotations) belong to it and are reached from it. */
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
   { key: "brief", label: "Describe your room", segment: "assessment", segments: ["assessment"] },
-  { key: "design", label: "Redesign", segment: "concepts", segments: ["concepts", "compare", "designer"] },
+  { key: "design", label: "Redesign", segment: "concepts", segments: ["concepts", "compare"] },
   { key: "scope", label: "Scope of work", segment: "scope", segments: ["scope"] },
   { key: "download", label: "Download", segment: "documents/summary", segments: ["documents"] },
   { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals", "quotes"] },

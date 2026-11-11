@@ -82,9 +82,6 @@ function FeedbackItem({ projectId, review, feedbackId }: { projectId: string; re
         >
           {feedback.addressed ? "Marked as addressed" : "Mark as addressed"}
         </button>
-        <Link href={`/studio/renovate/${projectId}/designer`} className="text-xs font-bold text-slate-500 hover:text-slate-800">
-          Create revision
-        </Link>
       </div>
     </div>
   );

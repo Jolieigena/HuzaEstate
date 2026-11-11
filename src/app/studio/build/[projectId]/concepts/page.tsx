@@ -133,8 +133,6 @@ export default function ConceptsPage() {
     );
   }
 
-  const manualHref = `/studio/build/${project.id}/designer?fromConcept=${current.id}`;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -151,9 +149,6 @@ export default function ConceptsPage() {
           <button type="button" onClick={() => setRefineOpen(true)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
             Edit with AI
           </button>
-          <Link href={manualHref} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
-            Continue manually
-          </Link>
         </div>
       </div>
 

@@ -40,20 +40,6 @@ const MODE_OPTIONS: ModeOption[] = [
     ),
   },
   {
-    mode: "manual",
-    title: "Plan Manually",
-    description: "Organise rooms, finishes, work items and inspiration yourself before requesting professional support.",
-    bestFor: "You already know what you want to change and prefer to organise it room by room.",
-    requires: "Nothing to start — you can add photos, materials and notes at any time as you plan.",
-    outputs: "A room-by-room mood board you can save as versions and later compare or refine.",
-    changeable: "You can bring in Huza AI for suggestions at any point.",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 3.75H6.912a2.25 2.25 0 00-2.15 1.586l-2.35 7.65a2.25 2.25 0 00-.1.661V18a2.25 2.25 0 002.25 2.25h15a2.25 2.25 0 002.25-2.25v-4.353c0-.225-.034-.45-.1-.661l-2.35-7.65a2.25 2.25 0 00-2.15-1.586H15M9 3.75V3a2.25 2.25 0 012.25-2.25h1.5A2.25 2.25 0 0115 3v.75" />
-      </svg>
-    ),
-  },
-  {
     mode: "inspiration",
     title: "Start from Inspiration",
     description: "Choose a renovation style or sample project and adapt it to your property.",

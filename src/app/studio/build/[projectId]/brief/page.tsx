@@ -176,11 +176,6 @@ export default function BriefWizardPage() {
     router.push(`/studio/build/${project.id}/concepts`);
   };
 
-  const handleOpenDesigner = () => {
-    if (!finalizeReview()) return;
-    router.push(`/studio/build/${project.id}/designer`);
-  };
-
   if (view === "agent") {
     return (
       <div className="space-y-4">
@@ -322,15 +317,12 @@ export default function BriefWizardPage() {
 
         {stepKey === "review" ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            {project.creationMode === "ai" && (
+            {(
               <button type="button" onClick={handleContinueToAgent} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl px-4 font-bold text-slate-500 transition-colors hover:text-slate-900">
                 Refine with Huza AI
               </button>
             )}
-            <button type="button" onClick={handleOpenDesigner} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
-              Continue manually
-            </button>
-            {project.creationMode === "ai" && (
+            {(
               <button type="button" onClick={handleStartDesigning} className="inline-flex min-h-12 items-center justify-center whitespace-nowrap rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
                 Start designing
               </button>

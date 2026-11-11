@@ -113,9 +113,6 @@ export default function ConceptsPage() {
               Edit with AI
             </button>
           )}
-          <Link href={`/studio/renovate/${project.id}/designer`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-            Continue manually
-          </Link>
         </div>
       </div>
 
