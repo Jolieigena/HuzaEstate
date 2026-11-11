@@ -11,6 +11,9 @@ interface Props {
   /** The one style for the whole renovation, chosen here. */
   style: RenovationStyle | null;
   onStyleChange: (style: RenovationStyle | null) => void;
+  /** What the person can spend on the renovation, in RWF. */
+  budget: number | null;
+  onBudgetChange: (budget: number | null) => void;
 }
 
 function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
@@ -27,7 +30,7 @@ function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
   };
 }
 
-export default function StepAreas({ value, onChange, errors, style, onStyleChange }: Props) {
+export default function StepAreas({ value, onChange, errors, style, onStyleChange, budget, onBudgetChange }: Props) {
   const selectedKeys = new Set(value.map((a) => a.areaKey));
 
   const toggleArea = (key: RenovationAreaKey) => {
@@ -74,6 +77,21 @@ export default function StepAreas({ value, onChange, errors, style, onStyleChang
               </option>
             ))}
           </Select>
+        )}
+      </FormField>
+
+      <FormField label="Budget (RWF)" optional>
+        {(id) => (
+          <input
+            id={id}
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={budget ?? ""}
+            onChange={(e) => onBudgetChange(e.target.value === "" ? null : Math.max(0, Number(e.target.value)))}
+            placeholder="e.g. 8000000"
+            className={`${inputClass} max-w-sm`}
+          />
         )}
       </FormField>
 

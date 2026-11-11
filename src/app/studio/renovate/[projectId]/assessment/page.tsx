@@ -197,7 +197,7 @@ export default function AssessmentWizardPage() {
         <h1 className="text-xl font-black text-slate-900 mb-6">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
 
         {stepKey === "property" && <StepProperty value={propertyDraft} onChange={(p) => { setPropertyDraft((prev) => ({ ...prev, ...p })); setDirty(true); }} errors={errors} />}
-        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} style={draft.style.primaryStyle} onStyleChange={(primaryStyle) => patch("style", { ...draft.style, primaryStyle })} />}
+        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} style={draft.style.primaryStyle} onStyleChange={(primaryStyle) => patch("style", { ...draft.style, primaryStyle })} budget={draft.budgetTimeline.targetBudget} onBudgetChange={(targetBudget) => patch("budgetTimeline", { ...draft.budgetTimeline, targetBudget })} />}
         {stepKey === "condition" && (
           <StepCondition
             areas={draft.areas}

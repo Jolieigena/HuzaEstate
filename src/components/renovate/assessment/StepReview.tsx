@@ -77,8 +77,12 @@ export default function StepReview({ property, assessment, uploads, warnings, on
         </p>
       </Section>
 
-      <Section title="Style" onEdit={() => onEditStep("style")}>
+      <Section title="Style" onEdit={() => onEditStep("areas")}>
         <p className="text-sm text-slate-600">{assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[assessment.style.primaryStyle] : "No style preference."}</p>
+      </Section>
+
+      <Section title="Budget" onEdit={() => onEditStep("areas")}>
+        <p className="text-sm text-slate-600">{assessment.budgetTimeline.targetBudget ? `${assessment.budgetTimeline.targetBudget.toLocaleString("en-US")} RWF` : "No budget given."}</p>
       </Section>
 
       <Section title="Safety and constraints" onEdit={() => onEditStep("safety")}>

@@ -28,7 +28,7 @@ interface PropertySelectorProps {
   /** Any property the person describes: what is being renovated, the photos (each tagged with the area it shows, as `relatedAreaId`
    *  holding the choice), and where it is. A choice is an area's key, or "custom:" and the words the person typed for something that
    *  is not in the list. It does not have to be one of theirs on the site. */
-  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: string[], style: RenovationStyle | null) => void | Promise<void>;
+  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: string[], style: RenovationStyle | null, budget: number | null) => void | Promise<void>;
 }
 
 /** A photo made small enough to keep with the project (a JPEG of at most 900 px on its longer side), as a data address, so it is
@@ -68,6 +68,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
   const [propertyType, setPropertyType] = useState<PropertyType | "">("");
   const [style, setStyle] = useState<RenovationStyle | "">("");
+  const [budget, setBudget] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -129,6 +130,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       photos,
       areas,
       style || null,
+      budget.trim() && Number(budget) > 0 ? Number(budget) : null,
     );
   };
 
@@ -285,6 +287,12 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
                 </option>
               ))}
             </Select>
+          </div>
+          <div className="sm:max-w-xs">
+            <label htmlFor="renovation-budget" className="block text-sm font-bold text-slate-700 mb-2">
+              Budget (RWF) <span className="font-medium text-slate-400">(optional)</span>
+            </label>
+            <input id="renovation-budget" type="number" inputMode="numeric" min={0} value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="e.g. 8000000" className={inputClass} />
           </div>
           <div className="sm:max-w-xs">
             <label htmlFor="property-type" className="block text-sm font-bold text-slate-700 mb-2">

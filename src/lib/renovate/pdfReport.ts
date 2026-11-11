@@ -206,6 +206,7 @@ export async function downloadRenovationPdf(project: RenovationProject): Promise
     ...(location ? ([["Location", location]] as [string, string][]) : []),
     ["Property type", project.property.propertyType ? PROPERTY_TYPE_LABELS[project.property.propertyType] : "Not provided"],
     ["Approximate area", project.property.approxAreaSqm ? `${project.property.approxAreaSqm} sqm` : "Not provided"],
+    ...(project.assessment.budgetTimeline.targetBudget ? ([["Your budget", `RWF ${project.assessment.budgetTimeline.targetBudget.toLocaleString("en-US")}`]] as [string, string][]) : []),
   ];
   for (const [label, value] of details) {
     ensure(7);

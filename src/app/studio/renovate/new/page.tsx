@@ -152,7 +152,7 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[], style: RenovationStyle | null) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[], style: RenovationStyle | null, budget: number | null) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
               // What the person said they are renovating becomes the brief's areas, so the first step is already answered.
               const existing = RenovationProjectService.getById(project.id);
@@ -167,6 +167,7 @@ function NewProjectContent() {
                   assessment.areas.push(area);
                 }
                 if (style) assessment.style.primaryStyle = style;
+                if (budget) assessment.budgetTimeline.targetBudget = budget;
                 if (!assessment.completedSteps.includes("areas")) assessment.completedSteps.push("areas");
                 // Each photo points at the area it shows.
                 photos = photos.map((p) => ({ ...p, relatedAreaId: p.relatedAreaId ? areaFor(p.relatedAreaId)?.id : undefined }));
