@@ -255,13 +255,9 @@ function PropertiesContent() {
   }
 
   // Defaults the Country filter to the country the visitor is in now (see useCurrentCountry) instead of leaving it on "Any
-  // Country". It follows the detection result until the visitor picks or clears a country themselves, so an earlier
-  // remembered answer is replaced when a fresh lookup says they are somewhere else.
+  // Country", when that country has listings (the effect after the listings load). It follows the detection result until the
+  // visitor picks or clears a country themselves, so an earlier remembered answer is replaced when a fresh lookup says otherwise.
   const currentCountry = useCurrentCountry();
-  useEffect(() => {
-    if (!currentCountry || countryTouched.current) return;
-    setSelectedCountryCodes([currentCountry.code]);
-  }, [currentCountry]);
 
   function closeAllPanels() {
     setIsPriceOpen(false); setIsAreaOpen(false); setIsBedsOpen(false); setIsBathsOpen(false);
@@ -323,6 +319,14 @@ function PropertiesContent() {
   }
 
   const { properties: visibleProperties, loaded: listingsLoaded, failed: listingsFailed } = useAllPropertiesState();
+
+  // The visitor's country is the starting filter only when it has listings: with none there, the filter starts on all countries
+  // so the page is not empty. A country the visitor picks themselves is never changed.
+  useEffect(() => {
+    if (!currentCountry || countryTouched.current || !listingsLoaded) return;
+    const hasListings = visibleProperties.some((p) => getPropertyCountry(p).code === currentCountry.code);
+    setSelectedCountryCodes(hasListings ? [currentCountry.code] : []);
+  }, [currentCountry, listingsLoaded, visibleProperties]);
 
   const filteredProperties = visibleProperties.filter((p) => {
     const propCountryName = getPropertyCountry(p).name;
