@@ -6,7 +6,7 @@ import Image from "@/components/PropertyImage";
 import Select from "@/components/shared/Select";
 import { getMyProperties, MyProperty } from "@/lib/myProperties";
 import { newId } from "@/lib/renovate/factory";
-import { PropertyType, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS, RenovationAreaKey, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
+import { PropertyType, PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS, RenovationAreaKey, RenovationPropertyInfo, RenovationStyle, UploadedFile } from "@/lib/renovate/types";
 
 const MAX_PHOTOS = 6;
 const MAX_SIDE_PX = 900;
@@ -28,7 +28,7 @@ interface PropertySelectorProps {
   /** Any property the person describes: what is being renovated, the photos (each tagged with the area it shows, as `relatedAreaId`
    *  holding the choice), and where it is. A choice is an area's key, or "custom:" and the words the person typed for something that
    *  is not in the list. It does not have to be one of theirs on the site. */
-  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: string[]) => void | Promise<void>;
+  onRegister: (property: RenovationPropertyInfo, photos: UploadedFile[], areas: string[], style: RenovationStyle | null) => void | Promise<void>;
 }
 
 /** A photo made small enough to keep with the project (a JPEG of at most 900 px on its longer side), as a data address, so it is
@@ -67,6 +67,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
   const [areaError, setAreaError] = useState("");
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
   const [propertyType, setPropertyType] = useState<PropertyType | "">("");
+  const [style, setStyle] = useState<RenovationStyle | "">("");
   const [photoError, setPhotoError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -127,6 +128,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       },
       photos,
       areas,
+      style || null,
     );
   };
 
@@ -271,7 +273,20 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
         )}
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div className="sm:col-span-2 sm:max-w-xs">
+          <div className="sm:max-w-xs">
+            <label htmlFor="renovation-style" className="block text-sm font-bold text-slate-700 mb-2">
+              Style
+            </label>
+            <Select id="renovation-style" value={style} onChange={(e) => setStyle(e.target.value as RenovationStyle | "")} className={inputClass}>
+              <option value="">No preference</option>
+              {Object.entries(RENOVATION_STYLE_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="sm:max-w-xs">
             <label htmlFor="property-type" className="block text-sm font-bold text-slate-700 mb-2">
               What kind of property?
             </label>

@@ -9,7 +9,7 @@ import PropertySelector from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { assessmentFromPrompt, newArea } from "@/lib/renovate/assessmentFromPrompt";
 import { analysePhotos, applyPhotoAnalysis } from "@/lib/renovate/photoAnalysis";
-import { RENOVATION_AREA_LABELS, RenovationAreaKey, RenovationCreationMode, RenovationProject, RenovationPropertyInfo, UploadedFile } from "@/lib/renovate/types";
+import { RENOVATION_AREA_LABELS, RenovationAreaKey, RenovationCreationMode, RenovationProject, RenovationPropertyInfo, RenovationStyle, UploadedFile } from "@/lib/renovate/types";
 import type { MyProperty } from "@/lib/myProperties";
 import { useToast } from "@/lib/toast-context";
 
@@ -152,7 +152,7 @@ function NewProjectContent() {
               showToast("Property selected.");
               goToAssessment(project.id);
             }}
-            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[]) => {
+            onRegister={async (propertyInfo: RenovationPropertyInfo, photos: UploadedFile[], choices: string[], style: RenovationStyle | null) => {
               RenovationProjectService.registerProperty(project.id, propertyInfo);
               // What the person said they are renovating becomes the brief's areas, so the first step is already answered.
               const existing = RenovationProjectService.getById(project.id);
@@ -166,6 +166,7 @@ function NewProjectContent() {
                   if (choice.startsWith("custom:")) area.customLabel = choice.slice(7);
                   assessment.areas.push(area);
                 }
+                if (style) assessment.style.primaryStyle = style;
                 if (!assessment.completedSteps.includes("areas")) assessment.completedSteps.push("areas");
                 // Each photo points at the area it shows.
                 photos = photos.map((p) => ({ ...p, relatedAreaId: p.relatedAreaId ? areaFor(p.relatedAreaId)?.id : undefined }));

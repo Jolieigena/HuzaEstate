@@ -13,10 +13,6 @@ export function validateStep(step: AssessmentStepKey, assessment: RenovationAsse
     // No hard requirement — an empty list is valid, just less useful.
   }
 
-  if (step === "style") {
-    if (!assessment.style.primaryStyle) errors.primaryStyle = "Choose one primary style direction.";
-  }
-
   if (step === "review") {
     if (!assessment.disclaimerAccepted) errors.disclaimer = "Please confirm you understand the disclaimer before continuing.";
   }

@@ -39,7 +39,6 @@ function Section({ title, onEdit, children }: { title: string; onEdit: () => voi
 export default function StepReview({ property, assessment, uploads, warnings, onEditStep, onToggleDisclaimer }: Props) {
   const safetyFlags = (Object.entries(assessment.safety.concerns) as [SafetyConcernKey, string][]).filter(([, v]) => v === "yes" || v === "unknown");
   const missing: string[] = [];
-  if (!assessment.style.primaryStyle) missing.push("Primary style");
   if (assessment.areas.length === 0) missing.push("Renovation areas");
   const totalUploads = uploads.photos.length + uploads.videos.length + uploads.floorPlans.length + uploads.inspiration.length;
 
@@ -79,7 +78,7 @@ export default function StepReview({ property, assessment, uploads, warnings, on
       </Section>
 
       <Section title="Style" onEdit={() => onEditStep("style")}>
-        <p className="text-sm text-slate-600">{assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[assessment.style.primaryStyle] : "No style selected yet."}</p>
+        <p className="text-sm text-slate-600">{assessment.style.primaryStyle ? RENOVATION_STYLE_LABELS[assessment.style.primaryStyle] : "No style preference."}</p>
       </Section>
 
       <Section title="Safety and constraints" onEdit={() => onEditStep("safety")}>

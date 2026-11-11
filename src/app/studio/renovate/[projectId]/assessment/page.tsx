@@ -12,7 +12,6 @@ import StepProperty from "@/components/renovate/assessment/StepProperty";
 import StepAreas from "@/components/renovate/assessment/StepAreas";
 import StepCondition from "@/components/renovate/assessment/StepCondition";
 import StepKeepRemoveChange from "@/components/renovate/assessment/StepKeepRemoveChange";
-import StepStyle from "@/components/renovate/assessment/StepStyle";
 import StepSafety from "@/components/renovate/assessment/StepSafety";
 import StepReview from "@/components/renovate/assessment/StepReview";
 
@@ -198,7 +197,7 @@ export default function AssessmentWizardPage() {
         <h1 className="text-xl font-black text-slate-900 mb-6">{ASSESSMENT_STEP_LABELS[stepKey]}</h1>
 
         {stepKey === "property" && <StepProperty value={propertyDraft} onChange={(p) => { setPropertyDraft((prev) => ({ ...prev, ...p })); setDirty(true); }} errors={errors} />}
-        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} />}
+        {stepKey === "areas" && <StepAreas value={draft.areas} onChange={(areas) => patch("areas", areas)} errors={errors} style={draft.style.primaryStyle} onStyleChange={(primaryStyle) => patch("style", { ...draft.style, primaryStyle })} />}
         {stepKey === "condition" && (
           <StepCondition
             areas={draft.areas}
@@ -213,17 +212,6 @@ export default function AssessmentWizardPage() {
           />
         )}
         {stepKey === "keep_remove_change" && <StepKeepRemoveChange areas={draft.areas} items={draft.keepRemoveChange} onChange={(items) => patch("keepRemoveChange", items)} />}
-        {stepKey === "style" && (
-          <StepStyle
-            value={draft.style}
-            onChange={(p) => patch("style", { ...draft.style, ...p })}
-            inspirationFiles={project.uploads.inspiration}
-            onChangeInspirationFiles={(files) => {
-              const added = files.filter((f) => !project.uploads.inspiration.some((e) => e.id === f.id));
-              if (added.length) RenovationProjectService.addUploads(project.id, "inspiration", added);
-            }}
-          />
-        )}
         {stepKey === "safety" && <StepSafety value={draft.safety} onChange={(p) => patch("safety", { ...draft.safety, ...p })} />}
         {stepKey === "review" && (
           <>

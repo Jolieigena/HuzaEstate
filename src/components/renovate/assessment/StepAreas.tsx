@@ -1,6 +1,6 @@
 "use client";
 
-import { PRIORITY_LABELS, PriorityLevel, RENOVATION_AREA_LABELS, RenovationAreaKey, SelectedRenovationArea } from "@/lib/renovate/types";
+import { PRIORITY_LABELS, PriorityLevel, RENOVATION_AREA_LABELS, RENOVATION_STYLE_LABELS, RenovationAreaKey, RenovationStyle, SelectedRenovationArea } from "@/lib/renovate/types";
 import { FormField, inputClass, Chip } from "./FormField";
 import Select from "@/components/shared/Select";
 
@@ -8,6 +8,9 @@ interface Props {
   value: SelectedRenovationArea[];
   onChange: (areas: SelectedRenovationArea[]) => void;
   errors: Record<string, string>;
+  /** The one style for the whole renovation, chosen here. */
+  style: RenovationStyle | null;
+  onStyleChange: (style: RenovationStyle | null) => void;
 }
 
 function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
@@ -24,7 +27,7 @@ function newArea(areaKey: RenovationAreaKey): SelectedRenovationArea {
   };
 }
 
-export default function StepAreas({ value, onChange, errors }: Props) {
+export default function StepAreas({ value, onChange, errors, style, onStyleChange }: Props) {
   const selectedKeys = new Set(value.map((a) => a.areaKey));
 
   const toggleArea = (key: RenovationAreaKey) => {
@@ -60,6 +63,19 @@ export default function StepAreas({ value, onChange, errors }: Props) {
           </p>
         )}
       </div>
+
+      <FormField label="Style" optional>
+        {(id) => (
+          <Select id={id} value={style ?? ""} onChange={(e) => onStyleChange((e.target.value || null) as RenovationStyle | null)} className={`${inputClass} max-w-sm`}>
+            <option value="">No preference</option>
+            {Object.entries(RENOVATION_STYLE_LABELS).map(([k, l]) => (
+              <option key={k} value={k}>
+                {l}
+              </option>
+            ))}
+          </Select>
+        )}
+      </FormField>
 
       <div className="space-y-4">
         {value.map((area) => (

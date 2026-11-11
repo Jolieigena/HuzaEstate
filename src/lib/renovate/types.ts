@@ -431,11 +431,11 @@ export interface SafetyAssessment {
 
 /** Every step a stored brief may mention; budget_timeline is no longer asked, but projects made before may carry it. */
 export type AssessmentStepKey = "property" | "areas" | "condition" | "keep_remove_change" | "style" | "budget_timeline" | "safety" | "review";
-export const ASSESSMENT_STEP_KEYS: readonly AssessmentStepKey[] = ["property", "areas", "condition", "keep_remove_change", "style", "safety", "review"];
+export const ASSESSMENT_STEP_KEYS: readonly AssessmentStepKey[] = ["property", "areas", "condition", "keep_remove_change", "safety", "review"];
 
-/** The short path every renovation brief starts on: what to renovate, the style, then confirm. The property is already
+/** The short path every renovation brief starts on: what to renovate (with one style), then confirm. The property is already
  *  chosen on the screen before the assessment. Condition, what to keep, and safety are optional and come up later or in conversation. */
-export const QUICK_ASSESSMENT_STEP_KEYS: readonly AssessmentStepKey[] = ["areas", "style", "review"];
+export const QUICK_ASSESSMENT_STEP_KEYS: readonly AssessmentStepKey[] = ["areas", "review"];
 const DETAILED_ASSESSMENT_STEP_KEYS: readonly AssessmentStepKey[] = ["condition", "keep_remove_change", "safety"];
 
 /** The steps this assessment has: four on the short path, all eight once a detailed step has been filled in (older projects). */
