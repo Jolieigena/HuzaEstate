@@ -1,29 +1,42 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { RenovationProject } from "@/lib/renovate/types";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { getProjectProgress, getNextAction } from "@/lib/renovate/progress";
+import { getProjectProgress } from "@/lib/renovate/progress";
 import { formatRelativeTime, propertyLocationLabel } from "@/lib/renovate/format";
 import { useToast } from "@/lib/toast-context";
 import { StatusBadge } from "./StatusBadge";
 import ActionMenu, { ActionMenuItem } from "@/components/shared/ActionMenu";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import PromptModal from "@/components/shared/PromptModal";
+import { PathFooter, PathSteps } from "@/components/shared/PathSteps";
 
-const NAV_ITEMS: { key: string; label: string; segment: string }[] = [
-  { key: "overview", label: "Overview", segment: "" },
-  { key: "assessment", label: "Assessment", segment: "assessment" },
-  { key: "designer", label: "Designer", segment: "designer" },
-  { key: "concepts", label: "Concepts", segment: "concepts" },
-  { key: "scope", label: "Scope", segment: "scope" },
-  { key: "professionals", label: "Professionals", segment: "professionals" },
-  { key: "quotes", label: "Quotations", segment: "quotes" },
-  { key: "documents", label: "Documents", segment: "documents" },
-  { key: "activity", label: "Activity", segment: "activity" },
+/** The path a person follows, one step after the other. Pages a step needs (the room designer, quotations) belong to it and are reached from it. */
+const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
+  { key: "brief", label: "Describe your room", segment: "assessment", segments: ["assessment"] },
+  { key: "design", label: "Redesign", segment: "concepts", segments: ["concepts", "compare", "designer"] },
+  { key: "scope", label: "Scope of work", segment: "scope", segments: ["scope"] },
+  { key: "download", label: "Download", segment: "documents/summary", segments: ["documents"] },
+  { key: "hire", label: "Hire a professional", segment: "professionals", segments: ["professionals", "quotes"] },
 ];
+
+/** Which steps are done, and which the person may open now: a step opens once the one before it is done. */
+function pathState(project: RenovationProject) {
+  const briefConfirmed = !["draft", "property_setup", "assessment_in_progress"].includes(project.status);
+  const designChosen = !!project.selectedConceptId;
+  const scopeDone = project.scope.length > 0;
+  const hired = ["awaiting_professional_review", "awaiting_quotations", "quotation_received", "ready_for_execution"].includes(project.status);
+  const done = [briefConfirmed, designChosen, scopeDone, hired, hired];
+  const open = [true, briefConfirmed, designChosen, designChosen, designChosen];
+  // Where "continue where I left off" goes.
+  const resume = !briefConfirmed ? 0 : !designChosen ? 1 : !scopeDone ? 2 : !hired ? 3 : 4;
+  return { done, open, resume };
+}
+
+const CONTINUE_HINT = ["Confirm your brief to see your redesign.", "Choose your design to continue.", "", "", ""];
 
 function LocationIcon() {
   return (
@@ -47,10 +60,19 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
   const base = `/studio/renovate/${project.id}`;
   const activeSegment = pathname === base ? "" : pathname.replace(`${base}/`, "").split("/")[0];
   const progress = getProjectProgress(project);
-  const nextAction = getNextAction(project);
+  const { done, open, resume } = pathState(project);
+  const currentStep = STEPS.findIndex((step) => step.segments.includes(activeSegment));
+  const pathSteps = STEPS.map((step) => ({ key: step.key, label: step.label, href: `${base}/${step.segment}` }));
+
+  // The project's own front page is the path itself: it opens on the step the person is up to.
+  useEffect(() => {
+    if (activeSegment === "") router.replace(`${base}/${STEPS[resume].segment}`);
+  }, [activeSegment, base, resume, router]);
   const location = propertyLocationLabel(project);
 
   const menuItems: ActionMenuItem[] = [
+    { key: "documents", label: "Documents", onSelect: () => router.push(`${base}/documents`) },
+    { key: "activity", label: "Activity", onSelect: () => router.push(`${base}/activity`) },
     { key: "rename", label: "Rename", onSelect: () => setRenameOpen(true) },
     { key: "duplicate", label: "Duplicate", onSelect: () => setDuplicateOpen(true) },
     project.status === "archived"
@@ -103,42 +125,16 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Not shown on the page it points to: pressing it there would do nothing. */}
-              {nextAction && !pathname.startsWith(nextAction.href) && (
-                <Link
-                  href={nextAction.href}
-                  className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-5 sm:px-6 py-3 rounded-xl transition-colors shadow-lg text-sm whitespace-nowrap"
-                >
-                  {nextAction.label}
-                </Link>
-              )}
               <ActionMenu items={menuItems} />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="print:hidden lg:w-56 flex-shrink-0">
-            <nav aria-label="Project sections" className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 lg:sticky lg:top-24">
-              {NAV_ITEMS.map((item) => {
-                const isActive = activeSegment === item.segment;
-                return (
-                  <Link
-                    key={item.key}
-                    href={`${base}${item.segment ? `/${item.segment}` : ""}`}
-                    aria-current={isActive ? "page" : undefined}
-                    className={`flex-shrink-0 px-4 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-all ${
-                      isActive ? "bg-[#2ec440]/10 text-[#2ec440]" : "text-slate-600 hover:bg-white hover:text-slate-900"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </aside>
-          <main className="flex-grow min-w-0">{children}</main>
-        </div>
+        <PathSteps steps={pathSteps} current={currentStep} done={done} open={open} />
+
+        <main className="min-w-0">{activeSegment === "" ? null : children}</main>
+
+        <PathFooter steps={pathSteps} current={currentStep} open={open} hints={CONTINUE_HINT} />
       </div>
 
       <PromptModal

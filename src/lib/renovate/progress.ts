@@ -51,17 +51,17 @@ export function getNextAction(project: RenovationProject): NextAction | null {
     case "assessment_in_progress":
       return { label: "Continue the assessment", href: `${base}/assessment`, description: "Finish the remaining assessment steps and confirm your renovation brief." };
     case "ready_to_generate":
-      return { label: project.creationMode === "ai" ? "Start designing" : "Generate your first concepts", href: `${base}/concepts`, description: "Your brief is confirmed — generate three renovation directions to compare." };
+      return { label: "Design my renovation", href: `${base}/concepts`, description: "Your brief is confirmed — Huza AI can design your renovation." };
     case "generating":
       return { label: "View generation progress", href: `${base}/concepts`, description: "Huza AI is preparing your renovation concepts." };
     case "concepts_ready":
       return project.selectedConceptId
         ? { label: "Review the scope of work", href: `${base}/scope`, description: "Generate a room-by-room scope for your selected concept." }
-        : { label: "Compare your concepts", href: `${base}/compare`, description: "Compare the three generated directions and select your favourite." };
+        : { label: "See your redesign", href: `${base}/concepts`, description: "Look at your redesign and carry on." };
     case "refinement_in_progress":
       return { label: "Review your latest version", href: `${base}/concepts`, description: "Check the refinement Huza AI just applied as a new version." };
     case "scope_ready":
-      return { label: "Review the indicative budget", href: `${base}/budget`, description: "Check the budget and timeline before requesting reviews or quotations." };
+      return { label: "Download your renovation summary", href: `${base}/documents/summary`, description: "Keep the design and the scope of work, or hire a professional." };
     case "awaiting_professional_review":
       return { label: "View review status", href: `${base}/professionals`, description: "Track your professional review request and any feedback received." };
     case "awaiting_quotations":

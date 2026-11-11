@@ -134,7 +134,7 @@ export default function AssessmentWizardPage() {
     showToast("Brief confirmed. Continue the conversation with Huza AI.");
   };
 
-  // Confirming the brief starts the design: the three concepts are made right away, with the progress shown on the Concepts page.
+  // Confirming the brief starts the design: the redesign is made right away, with the progress shown on the Redesign page.
   const handleStartDesigning = () => {
     if (!finalizeReview()) return;
     RenovationProjectService.startGeneration(project.id);

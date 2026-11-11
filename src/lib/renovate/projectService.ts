@@ -324,7 +324,7 @@ export const RenovationProjectService = {
     return mutate(
       id,
       (p) => ({ ...p, status: "generating", generation: { status: "in_progress", currentStageIndex: 0, startedAt: new Date().toISOString(), completedStageKeys: [] } }),
-      { activity: activityEvent("generation_started", "design", "Huza AI", "Started generating three renovation concepts.") }
+      { activity: activityEvent("generation_started", "design", "Huza AI", "Started designing the renovation.") }
     );
   },
 
@@ -356,12 +356,13 @@ export const RenovationProjectService = {
         return {
           ...p,
           status: "concepts_ready",
+          selectedConceptId: concepts[0]?.id ?? p.selectedConceptId,
           concepts: [...p.concepts, ...concepts],
           versions: [...p.versions, ...versions],
           generation: { status: "completed", currentStageIndex: GENERATION_STAGES.length - 1, completedStageKeys: GENERATION_STAGES.map((s) => s.key) },
         };
       },
-      { activity: activityEvent("concepts_created", "design", "Huza AI", "Generated Essential Refresh, Balanced Transformation and Premium Reconfiguration concepts.") }
+      { activity: activityEvent("concepts_created", "design", "Huza AI", "Huza AI designed the renovation of your rooms.") }
     );
   },
 

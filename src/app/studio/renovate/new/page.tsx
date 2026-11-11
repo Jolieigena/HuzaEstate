@@ -31,7 +31,7 @@ const MODE_OPTIONS: ModeOption[] = [
     description: "Upload photographs or plans, describe what you want to change and let Huza AI create renovation directions.",
     bestFor: "You know roughly what you want changed but would rather describe it than plan every detail yourself.",
     requires: "Photos of the space (optional but helpful), the areas you want to change and a rough budget.",
-    outputs: "A structured brief plus three generated before-and-after concepts to compare.",
+    outputs: "A structured brief plus an AI redesign of your rooms, shown before and after.",
     changeable: "You can switch to manual planning at any time without losing your work.",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

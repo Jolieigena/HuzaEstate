@@ -1,176 +1,131 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
+/* eslint-disable @next/next/no-img-element */
 import { useRenovationProjectContext } from "@/components/renovate/RenovationProjectContext";
-import { formatCompactRwf, formatDate, propertyLocationLabel, statusLabel } from "@/lib/renovate/format";
-import { PROPERTY_TYPE_LABELS, RENOVATION_AREA_LABELS, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
+import { formatCompactRwf, propertyLocationLabel } from "@/lib/renovate/format";
+import { hasPicture } from "@/lib/renovate/redesign";
+import { downloadRenovationPdf } from "@/lib/renovate/pdfReport";
+import { RENOVATION_AREA_LABELS } from "@/lib/renovate/types";
+import { useToast } from "@/lib/toast-context";
 
-export default function RenovationSummaryPage() {
+/** The download step: the whole redesign and the document to keep. */
+export default function RenovationDownloadPage() {
   const project = useRenovationProjectContext();
-  const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[0];
+  const { showToast } = useToast();
+  const [making, setMaking] = useState(false);
+  const design = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
+  const views = design?.areaViews.filter(hasPicture) ?? [];
   const activeReview = project.reviewRequests.find((r) => r.status !== "cancelled");
   const acceptedQuotation = project.quotations.find((q) => q.status === "accepted");
-  const safetyFlags = (Object.entries(project.assessment.safety.concerns) as [SafetyConcernKey, string][]).filter(([, v]) => v === "yes" || v === "unknown");
+  const lists: [string, string[]][] = design
+    ? ([
+        ["What changes", design.whatChanges],
+        ["What stays", design.whatRemains],
+        ["What is removed", design.whatIsRemoved],
+        ["Materials", design.suggestedMaterials],
+        ["Colours", design.suggestedColours],
+      ] as [string, string[]][]).filter(([, items]) => items.length > 0)
+    : [];
+  const scope = [...project.scope].sort((a, b) => a.sequence - b.sequence);
 
-  const keep = project.assessment.keepRemoveChange.filter((i) => i.listType === "keep");
-  const remove = project.assessment.keepRemoveChange.filter((i) => i.listType === "remove");
-  const change = project.assessment.keepRemoveChange.filter((i) => i.listType === "change");
+  const download = async () => {
+    setMaking(true);
+    try {
+      await downloadRenovationPdf(project);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "The PDF could not be made. Please try again.", "error");
+    } finally {
+      setMaking(false);
+    }
+  };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white print:max-w-none">
-      <div className="flex items-center justify-between mb-8 print:hidden">
-        <h1 className="text-xl font-black text-slate-900">Renovation summary</h1>
-        <button type="button" onClick={() => window.print()} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-5 py-2.5 rounded-xl transition-colors shadow-lg">
-          Print or Save as PDF
+    <div className="space-y-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-xl font-black text-slate-900">Download</h1>
+        <button
+          type="button"
+          onClick={download}
+          disabled={making || !design}
+          className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-6 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+        >
+          {making ? "Making your PDF…" : "Download PDF"}
         </button>
       </div>
 
-      <div className="border border-slate-200 rounded-2xl p-8 print:border-0 print:p-0 space-y-8">
-        <header className="border-b border-slate-200 pb-6">
-          <p className="text-xs font-bold uppercase tracking-wide text-[#2ec440] mb-2">HuzaEstate Renovate — Project Summary</p>
-          <h1 className="text-3xl font-black text-slate-900 mb-1">{project.name}</h1>
-          <p className="text-slate-500">{project.description || "No description provided."}</p>
-          <p className="text-sm text-slate-400 mt-2">
-            Status: {statusLabel(project.status)} · Generated {formatDate(new Date().toISOString())}
-          </p>
-        </header>
-
+      {views.length > 0 && (
         <section>
-          <h2 className="font-bold text-slate-900 mb-3">Property details</h2>
-          <dl className="grid grid-cols-2 gap-y-2 text-sm">
-            <dt className="text-slate-500">Location</dt>
-            <dd className="text-right font-semibold text-slate-900">{propertyLocationLabel(project)}</dd>
-            <dt className="text-slate-500">Property type</dt>
-            <dd className="text-right font-semibold text-slate-900">{project.property.propertyType ? PROPERTY_TYPE_LABELS[project.property.propertyType] : "Not provided"}</dd>
-            <dt className="text-slate-500">Approx. area</dt>
-            <dd className="text-right font-semibold text-slate-900">{project.property.approxAreaSqm ? `${project.property.approxAreaSqm} sqm` : "Not provided"}</dd>
-            <dt className="text-slate-500">Occupied during works</dt>
-            <dd className="text-right font-semibold text-slate-900">{project.property.willBeOccupiedDuringRenovation === null ? "Not set" : project.property.willBeOccupiedDuringRenovation ? "Yes" : "No"}</dd>
+          <h2 className="mb-3 text-lg font-black text-slate-900">Before and after</h2>
+          <div className="space-y-6">
+            {views.map((view) => (
+              <div key={view.areaKey} className="break-inside-avoid">
+                <h3 className="mb-2 text-sm font-black uppercase tracking-wide text-slate-500">{view.label}</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <img src={view.beforeImage} alt={`${view.label}, before`} className="aspect-[16/10] w-full rounded-xl object-cover" />
+                  <img src={view.afterImage} alt={`${view.label}, redesigned`} className="aspect-[16/10] w-full rounded-xl object-cover" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {lists.length > 0 && (
+        <section className="grid gap-6 sm:grid-cols-2">
+          {lists.map(([title, items]) => (
+            <div key={title} className="break-inside-avoid">
+              <h2 className="mb-2 font-bold text-slate-900">{title}</h2>
+              <ul className="list-inside list-disc space-y-0.5 text-sm text-slate-600">
+                {items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      )}
+
+      {scope.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-lg font-black text-slate-900">Scope of work</h2>
+          <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-100 bg-white">
+            {scope.map((item) => (
+              <div key={item.id} className="grid gap-1 px-5 py-3 sm:grid-cols-[12rem_1fr] sm:gap-4">
+                <dt className="text-sm font-bold text-slate-900">{RENOVATION_AREA_LABELS[item.areaKey]}</dt>
+                <dd className="text-sm text-slate-600">
+                  {item.task}
+                  {item.quantity ? ` (${item.quantity} ${item.unit})` : ""}
+                </dd>
+              </div>
+            ))}
           </dl>
         </section>
+      )}
 
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Selected renovation areas</h2>
-          <div className="flex flex-wrap gap-2">
-            {project.assessment.areas.map((a) => (
-              <span key={a.id} className="bg-slate-100 text-slate-700 text-sm font-semibold px-3 py-1.5 rounded-lg">
-                {a.customLabel || RENOVATION_AREA_LABELS[a.areaKey]}
-              </span>
-            ))}
-            {project.assessment.areas.length === 0 && <p className="text-sm text-slate-500">No areas selected yet.</p>}
-          </div>
-        </section>
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Existing condition summary</h2>
-          <p className="text-sm text-slate-600">
-            {project.assessment.conditions.length} of {project.assessment.areas.length} area{project.assessment.areas.length === 1 ? "" : "s"} assessed ·{" "}
-            {project.uploads.photos.length + project.uploads.videos.length + project.uploads.floorPlans.length} reference file{project.uploads.photos.length + project.uploads.videos.length + project.uploads.floorPlans.length === 1 ? "" : "s"} uploaded
-          </p>
-        </section>
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Keep, remove and change</h2>
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="font-bold text-[#2ec440] mb-1">Keep ({keep.length})</p>
-              <ul className="list-disc list-inside text-slate-600 space-y-0.5">
-                {keep.map((i) => (
-                  <li key={i.id}>{i.item}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-bold text-red-600 mb-1">Remove ({remove.length})</p>
-              <ul className="list-disc list-inside text-slate-600 space-y-0.5">
-                {remove.map((i) => (
-                  <li key={i.id}>{i.item}</li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p className="font-bold text-amber-600 mb-1">Change ({change.length})</p>
-              <ul className="list-disc list-inside text-slate-600 space-y-0.5">
-                {change.map((i) => (
-                  <li key={i.id}>{i.item}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {selectedConcept && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Selected concept — {selectedConcept.name}</h2>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100">
-                <Image src={selectedConcept.beforeImage} alt="Before" fill className="object-cover" sizes="350px" />
-              </div>
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-100">
-                <Image src={selectedConcept.afterImage} alt="After (conceptual)" fill className="object-cover" sizes="350px" />
-              </div>
-            </div>
-            <p className="text-sm text-slate-600 mb-2">{selectedConcept.rationale}</p>
-            <p className="text-sm font-semibold text-slate-900">
-              {selectedConcept.estimatedDurationWeeks} weeks
-            </p>
-          </section>
-        )}
-
-        {project.scope.length > 0 && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Scope summary</h2>
-            <p className="text-sm text-slate-600">
-              {project.scope.length} task{project.scope.length === 1 ? "" : "s"} across {new Set(project.scope.map((s) => s.areaKey)).size} area{new Set(project.scope.map((s) => s.areaKey)).size === 1 ? "" : "s"}. Quantities are indicative only.
-            </p>
-          </section>
-        )}
-
-        {project.timeline && (
-          <section>
-            <h2 className="font-bold text-slate-900 mb-3">Timeline</h2>
-            <p className="text-sm text-slate-600">Estimated total duration: {project.timeline.totalDurationWeeks} weeks across {project.timeline.phases.length} phases.</p>
-          </section>
-        )}
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Safety flags</h2>
-          {safetyFlags.length === 0 ? (
-            <p className="text-sm text-slate-600">No safety concerns flagged during assessment.</p>
-          ) : (
-            <ul className="text-sm text-amber-700 list-disc list-inside space-y-1">
-              {safetyFlags.map(([key]) => (
-                <li key={key}>{SAFETY_CONCERN_LABELS[key]}</li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Professional review status</h2>
-          <p className="text-sm text-slate-600">{activeReview ? `${activeReview.type.replace(/_/g, " ")} — ${activeReview.status.replace(/_/g, " ")}` : "No professional review requested yet."}</p>
-        </section>
-
-        <section>
-          <h2 className="font-bold text-slate-900 mb-3">Quotation status</h2>
+      <section className="grid gap-8 sm:grid-cols-2 break-inside-avoid">
+        <div>
+          <h2 className="mb-2 font-bold text-slate-900">Property</h2>
+          <p className="text-sm text-slate-600">{propertyLocationLabel(project)}</p>
+        </div>
+        <div>
+          <h2 className="mb-2 font-bold text-slate-900">Hiring</h2>
           <p className="text-sm text-slate-600">
             {acceptedQuotation
-              ? `Accepted: ${acceptedQuotation.contractor.companyName} — ${formatCompactRwf(acceptedQuotation.total)}`
-              : project.quotations.length > 0
-              ? `${project.quotations.length} quotation${project.quotations.length === 1 ? "" : "s"} received, none accepted yet.`
-              : "No quotations requested yet."}
+              ? `Accepted: ${acceptedQuotation.contractor.companyName}, ${formatCompactRwf(acceptedQuotation.total)}`
+              : activeReview
+                ? `${activeReview.type.replace(/_/g, " ")}, ${activeReview.status.replace(/_/g, " ")}`
+                : "No professional hired yet."}
           </p>
-        </section>
+        </div>
+      </section>
 
-        <section className="bg-slate-50 rounded-xl p-5 text-sm text-slate-600 leading-relaxed">
-          <p className="font-bold text-slate-900 mb-1">Disclaimer</p>
-          <p>
-            This summary reflects conceptual renovation directions produced by HuzaEstate Renovate and is not an approved technical design. Timeline figures are indicative only.
-            Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals before execution. Accepting a contractor quotation here does
-            not process payment or create a binding contract.
-          </p>
-        </section>
-      </div>
+      <section className="break-inside-avoid rounded-xl bg-slate-50 p-5 text-sm leading-relaxed text-slate-600">
+        <p className="mb-1 font-bold text-slate-900">Disclaimer</p>
+        <p>
+          This is a conceptual renovation design produced by HuzaEstate Renovate and is not an approved technical design. Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals before any work begins.
+        </p>
+      </section>
     </div>
   );
 }

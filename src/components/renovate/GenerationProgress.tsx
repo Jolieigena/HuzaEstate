@@ -2,11 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
-import { generateAllConcepts, ConceptGenerationInput } from "@/lib/renovate/conceptGenerator";
+import { generateConcept, ConceptGenerationInput } from "@/lib/renovate/conceptGenerator";
 import { GENERATION_STAGES, RenovationProject, SAFETY_CONCERN_LABELS, SafetyConcernKey } from "@/lib/renovate/types";
 import { useToast } from "@/lib/toast-context";
 import { useAuth } from "@/lib/auth-context";
-import { previewRenovation, RenovateRoom } from "@/lib/renovate/aiPreview";
+import { redesignRooms } from "@/lib/renovate/redesign";
 
 const STAGE_DELAY_MS = 900;
 
@@ -27,45 +27,6 @@ export function buildGenerationInput(project: RenovationProject): ConceptGenerat
   };
 }
 
-const ROOM_FOR_AREA: Record<string, RenovateRoom> = {
-  kitchen: "kitchen",
-  bathroom: "bathroom",
-  living_room: "living-room",
-  dining_room: "dining-room",
-  bedroom: "bedroom",
-  home_office: "home-office",
-  exterior_facade: "exterior",
-  roofing: "exterior",
-  balcony: "exterior",
-  terrace: "exterior",
-  garage: "exterior",
-  garden: "garden",
-  landscaping: "garden",
-};
-
-const DIRECTION_WISH: Record<string, string> = {
-  essential_refresh: "A light refresh: keep the furniture and layout, change paint, finishes and small details so it feels new on a small budget.",
-  balanced_transformation: "A balanced renovation: new finishes, lighting and some new furniture, with the same layout.",
-  premium_reconfiguration: "A premium renovation: high-end materials, built-in storage, statement lighting and designer furniture.",
-};
-
-/** A small copy of the AI's picture (a JPEG of at most 1100 px), so three of them still fit with the project in the browser. */
-function shrinkPicture(dataUrl: string): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    img.onload = () => {
-      const scale = Math.min(1, 1100 / Math.max(img.width, img.height));
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
-  });
-}
-
 export default function GenerationProgress({ project }: { project: RenovationProject }) {
   const { showToast } = useToast();
   const { token } = useAuth();
@@ -79,23 +40,8 @@ export default function GenerationProgress({ project }: { project: RenovationPro
     cancelledRef.current = false;
 
     const run = async () => {
-      // With a photo of the room, the AI starts renovating it at once, one picture for each of the three directions, while the steps play.
-      const area = project.assessment.areas[0];
-      const photo = project.uploads.photos.find((p) => p.relatedAreaId === area?.id && p.previewUrl?.startsWith("data:image/")) ?? project.uploads.photos.find((p) => p.previewUrl?.startsWith("data:image/"));
-      const directions = ["essential_refresh", "balanced_transformation", "premium_reconfiguration"];
-      const drawing =
-        token && photo?.previewUrl
-          ? Promise.all(
-              directions.map((direction) =>
-                previewRenovation(token, {
-                  photos: [photo.previewUrl as string],
-                  room: ROOM_FOR_AREA[area?.areaKey ?? ""] ?? "living-room",
-                  style: project.assessment.style.primaryStyle ?? "modern",
-                  wish: [DIRECTION_WISH[direction], area?.desiredOutcome].filter(Boolean).join(" "),
-                }),
-              ),
-            )
-          : Promise.resolve(null);
+      // The AI starts renovating the photo of each room at once, while the steps play.
+      const drawing = token ? redesignRooms(token, project) : Promise.resolve(null);
       const startIndex = Math.max(0, project.generation.currentStageIndex);
       for (let i = startIndex; i < GENERATION_STAGES.length; i++) {
         if (cancelledRef.current) return;
@@ -104,21 +50,18 @@ export default function GenerationProgress({ project }: { project: RenovationPro
         RenovationProjectService.advanceGenerationStage(project.id, GENERATION_STAGES[i].key, i);
       }
       if (cancelledRef.current) return;
-      const concepts = generateAllConcepts(buildGenerationInput(project));
-      const pictures = await drawing;
+      const concept = generateConcept("balanced_transformation", buildGenerationInput(project));
+      concept.name = "Your redesign";
+      const outcome = await drawing;
       if (cancelledRef.current) return;
-      if (pictures && photo?.previewUrl) {
-        for (let i = 0; i < concepts.length; i++) {
-          const outcome = pictures[i];
-          if (!outcome?.ok) continue;
-          const after = await shrinkPicture(outcome.result.imageUrl);
-          concepts[i].beforeImage = photo.previewUrl;
-          concepts[i].afterImage = after;
-          concepts[i].areaViews = concepts[i].areaViews.map((view) => ({ ...view, beforeImage: photo.previewUrl as string, afterImage: after }));
-        }
+      if (outcome && outcome.views.length > 0) {
+        const first = outcome.views[0];
+        concept.beforeImage = first.beforeImage;
+        concept.afterImage = first.afterImage;
+        concept.areaViews = outcome.views;
       }
-      RenovationProjectService.completeGeneration(project.id, concepts);
-      showToast("Your three renovation concepts are ready.");
+      RenovationProjectService.completeGeneration(project.id, [concept]);
+      showToast("Your redesign is ready.");
     };
 
     run().finally(() => {
@@ -149,7 +92,7 @@ export default function GenerationProgress({ project }: { project: RenovationPro
           </svg>
         </div>
         <h2 className="text-xl font-black text-slate-900 mb-2">Generation failed</h2>
-        <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">Something went wrong preparing your concepts. Your brief was kept — try again.</p>
+        <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">Something went wrong preparing your redesign. Your brief was kept — try again.</p>
         <button
           type="button"
           onClick={() => RenovationProjectService.startGeneration(project.id)}
@@ -169,8 +112,8 @@ export default function GenerationProgress({ project }: { project: RenovationPro
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
       </div>
-      <h2 className="text-xl font-black text-slate-900 mb-2">Generating your renovation concepts</h2>
-      <p className="text-slate-500 text-sm mb-1">Huza AI is exploring three renovation directions based on your confirmed brief.</p>
+      <h2 className="text-xl font-black text-slate-900 mb-2">Designing your renovation</h2>
+      <p className="text-slate-500 text-sm mb-1">Huza AI is redesigning your rooms from your photos and your brief.</p>
       <p className="text-slate-400 text-xs mb-8">Elapsed time: {elapsedSec}s</p>
 
       <div className="max-w-md mx-auto space-y-3 text-left mb-8" aria-live="polite">
@@ -201,11 +144,7 @@ export default function GenerationProgress({ project }: { project: RenovationPro
         })}
       </div>
 
-      <div className="grid sm:grid-cols-3 gap-3 max-w-lg mx-auto mb-8" aria-hidden="true">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-28 rounded-xl bg-slate-100 animate-pulse" />
-        ))}
-      </div>
+      <div className="max-w-lg mx-auto mb-8 h-40 rounded-xl bg-slate-100 animate-pulse" aria-hidden="true" />
 
       <button type="button" onClick={handleCancel} className="text-sm font-bold text-slate-500 hover:text-red-600 transition-colors">
         Cancel generation

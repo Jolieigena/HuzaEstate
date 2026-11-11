@@ -1184,8 +1184,8 @@ export const GENERATION_STAGES: { key: GenerationStageKey; label: string; helper
   { key: "preserving_elements", label: "Preserving selected elements", helper: "Making sure items you want to keep stay in place." },
   { key: "exploring_style_directions", label: "Exploring style directions", helper: "Matching your preferred style across each area." },
   { key: "preparing_before_after", label: "Preparing before-and-after concepts", helper: "Building visual directions for the areas you selected." },
-  { key: "estimating_scope_cost", label: "Estimating scope and cost", helper: "Putting together an indicative scope and budget range." },
-  { key: "preparing_comparison", label: "Preparing comparison results", helper: "Finalising your three renovation concepts for review." },
+  { key: "estimating_scope_cost", label: "Planning the scope of work", helper: "Listing the work for each area you selected." },
+  { key: "preparing_comparison", label: "Preparing your redesign", helper: "Finalising the redesign of your rooms for review." },
 ];
 
 export type GenerationStatus = "idle" | "in_progress" | "completed" | "failed" | "cancelled";

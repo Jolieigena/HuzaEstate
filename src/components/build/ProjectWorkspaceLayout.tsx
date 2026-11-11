@@ -12,6 +12,7 @@ import { StatusBadge } from "./StatusBadge";
 import ActionMenu, { ActionMenuItem } from "@/components/shared/ActionMenu";
 import ConfirmModal from "@/components/shared/ConfirmModal";
 import PromptModal from "@/components/shared/PromptModal";
+import { PathFooter, PathSteps } from "@/components/shared/PathSteps";
 
 /** The path a person follows, one step after the other. Pages a step needs (comparing, the room editor, the budget) belong to it and are reached from it. */
 const STEPS: { key: string; label: string; segment: string; segments: string[] }[] = [
@@ -37,14 +38,6 @@ function pathState(project: BuildProject) {
 
 const CONTINUE_HINT = ["Confirm your brief to see floor plans.", "Choose one floor plan to continue.", "", "", ""];
 
-function CheckIcon() {
-  return (
-    <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
 function LocationIcon() {
   return (
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -68,7 +61,7 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
   const activeSegment = pathname === base ? "" : pathname.replace(`${base}/`, "").split("/")[0];
   const { done, open, resume } = pathState(project);
   const currentStep = STEPS.findIndex((step) => step.segments.includes(activeSegment));
-  const stepHref = (index: number) => `${base}/${STEPS[index].segment}`;
+  const pathSteps = STEPS.map((step) => ({ key: step.key, label: step.label, href: `${base}/${step.segment}` }));
 
   // The project's own front page is the path itself: it opens on the step the person is up to.
   useEffect(() => {
@@ -133,63 +126,11 @@ export default function ProjectWorkspaceLayout({ project, children }: { project:
           </div>
         </div>
 
-        <ol aria-label="Your path" className="print:hidden mb-8 flex items-center gap-x-3 overflow-x-auto whitespace-nowrap border-b border-slate-200 text-sm sm:gap-x-4 sm:text-base">
-          {STEPS.map((step, index) => {
-            const isCurrent = index === currentStep;
-            const isDone = done[index] && !isCurrent;
-            const reachable = open[index];
-            const tone = isCurrent ? "font-black text-slate-900" : isDone ? "font-bold text-[#2ec440]" : reachable ? "font-bold text-slate-700" : "font-bold text-slate-300";
-            const body = (
-              <span className={`-mb-px inline-flex items-center gap-1.5 border-b-2 pb-3 ${isCurrent ? "border-slate-900" : "border-transparent"} ${tone}`}>
-                {isDone && <CheckIcon />}
-                {step.label}
-              </span>
-            );
-            return (
-              <li key={step.key} ref={isCurrent ? (el) => { const bar = el?.parentElement; if (el && bar) bar.scrollLeft = el.offsetLeft - (bar.clientWidth - el.clientWidth) / 2; } : undefined} className="flex items-center gap-x-3 sm:gap-x-4">
-                {index > 0 && (
-                  <span aria-hidden="true" className="-mt-3 text-slate-300">
-                    ›
-                  </span>
-                )}
-                {reachable ? (
-                  <Link href={stepHref(index)} aria-current={isCurrent ? "step" : undefined} className="block">
-                    {body}
-                  </Link>
-                ) : (
-                  <span aria-disabled="true" className="block cursor-not-allowed">
-                    {body}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ol>
+        <PathSteps steps={pathSteps} current={currentStep} done={done} open={open} />
 
         <main className="min-w-0">{activeSegment === "" ? null : children}</main>
 
-        {/* Back and Continue, so the person is always told where to go next. The brief has its own steps and buttons inside it. */}
-        {currentStep >= 1 && (
-          <div className="print:hidden mt-10 flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <Link href={stepHref(currentStep - 1)} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 font-bold text-slate-700 transition-colors hover:border-slate-400">
-              Back
-            </Link>
-            {currentStep < STEPS.length - 1 && (
-              <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                {!open[currentStep + 1] && CONTINUE_HINT[currentStep] && <p className="text-sm font-semibold text-slate-500 sm:text-right">{CONTINUE_HINT[currentStep]}</p>}
-                {open[currentStep + 1] ? (
-                  <Link href={stepHref(currentStep + 1)} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-900 px-8 font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]">
-                    Continue: {STEPS[currentStep + 1].label}
-                  </Link>
-                ) : (
-                  <span aria-disabled="true" className="inline-flex min-h-12 cursor-not-allowed items-center justify-center rounded-xl bg-slate-200 px-8 font-bold text-slate-400">
-                    Continue: {STEPS[currentStep + 1].label}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <PathFooter steps={pathSteps} current={currentStep} open={open} hints={CONTINUE_HINT} />
       </div>
 
       <PromptModal

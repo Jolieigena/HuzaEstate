@@ -18,6 +18,8 @@ import {
 } from "@/lib/renovate/types";
 import { propertyLocationLabel } from "@/lib/renovate/format";
 import Select from "@/components/shared/Select";
+import ConfirmModal from "@/components/shared/ConfirmModal";
+import { useToast } from "@/lib/toast-context";
 
 type SortKey = "recent" | "oldest" | "name";
 
@@ -66,6 +68,10 @@ export default function RenovateDashboardPage() {
   const [areaFilter, setAreaFilter] = useState<RenovationAreaKey | "all">("all");
   const [modeFilter, setModeFilter] = useState<RenovationCreationMode | "all">("all");
   const [sort, setSort] = useState<SortKey>("recent");
+  const { showToast } = useToast();
+  const [selecting, setSelecting] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [deletePickedOpen, setDeletePickedOpen] = useState(false);
 
   const visibleProjects = useMemo(() => projects.filter((p) => p.status !== "archived"), [projects]);
 
@@ -110,11 +116,27 @@ export default function RenovateDashboardPage() {
           </nav>
 
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 mb-2">My Renovation Projects</h1>
-              <p className="text-slate-500 font-medium">Plan, compare and refine renovations for the properties you own with Huza AI.</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
+            <h1 className="text-3xl font-black text-slate-900">My Renovation Projects</h1>
+            <div className="flex flex-wrap items-center gap-3">
+            {selecting ? (
+              <>
+                <button type="button" onClick={() => setPicked(picked.size === filtered.length ? new Set() : new Set(filtered.map((p) => p.id)))} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition-colors hover:border-slate-400 whitespace-nowrap">
+                  {picked.size === filtered.length && filtered.length > 0 ? "Unselect all" : "Select all"}
+                </button>
+                <button type="button" disabled={picked.size === 0} onClick={() => setDeletePickedOpen(true)} className="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap">
+                  Delete selected ({picked.size})
+                </button>
+                <button type="button" onClick={() => { setSelecting(false); setPicked(new Set()); }} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+            {ready && visibleProjects.length > 1 && (
+              <button type="button" onClick={() => setSelecting(true)} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
+                Select
+              </button>
+            )}
             <Link href="/studio/renovate/new?choose=1" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
               Other ways to start
             </Link>
@@ -127,8 +149,26 @@ export default function RenovateDashboardPage() {
               </svg>
               New Renovation Project
             </Link>
+              </>
+            )}
             </div>
           </div>
+
+          <ConfirmModal
+            open={deletePickedOpen}
+            onClose={() => setDeletePickedOpen(false)}
+            title={`Delete ${picked.size} project${picked.size === 1 ? "" : "s"}`}
+            description="These projects are removed for good, with their assessments and designs."
+            confirmLabel="Delete"
+            destructive
+            onConfirm={() => {
+              picked.forEach((id) => RenovationProjectService.delete(id));
+              showToast(`${picked.size} project${picked.size === 1 ? "" : "s"} deleted.`);
+              setPicked(new Set());
+              setSelecting(false);
+              setDeletePickedOpen(false);
+            }}
+          />
 
           {!ready ? (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-pulse">
@@ -281,7 +321,20 @@ export default function RenovateDashboardPage() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  selecting={selecting}
+                  selected={picked.has(project.id)}
+                  onToggle={() =>
+                    setPicked((current) => {
+                      const next = new Set(current);
+                      if (next.has(project.id)) next.delete(project.id);
+                      else next.add(project.id);
+                      return next;
+                    })
+                  }
+                />
               ))}
             </div>
           )}
