@@ -31,7 +31,7 @@ function RoomIcon() {
   );
 }
 
-export default function ProjectCard({ project }: { project: BuildProject }) {
+export default function ProjectCard({ project, selecting = false, selected = false, onToggle }: { project: BuildProject; selecting?: boolean; selected?: boolean; onToggle?: () => void }) {
   const router = useRouter();
   const { showToast } = useToast();
   const [renameOpen, setRenameOpen] = useState(false);
@@ -63,7 +63,18 @@ export default function ProjectCard({ project }: { project: BuildProject }) {
   ];
 
   return (
-    <div className="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col">
+    <div className={`relative bg-white rounded-3xl overflow-hidden border shadow-sm hover:shadow-xl transition-all group flex flex-col ${selected ? "border-[#2ec440] ring-2 ring-[#2ec440]" : "border-slate-100"}`}>
+      {selecting && (
+        <button type="button" onClick={onToggle} aria-pressed={selected} aria-label={`${selected ? "Unselect" : "Select"} ${project.name}`} className="absolute inset-0 z-10 cursor-pointer">
+          <span className={`absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-lg border-2 ${selected ? "border-[#2ec440] bg-[#2ec440] text-white" : "border-slate-300 bg-white"}`}>
+            {selected && (
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </span>
+        </button>
+      )}
       <Link href={`/studio/build/${project.id}`} className="relative h-44 overflow-hidden block flex-shrink-0">
         {planConcept ? (
           <ConceptPlan concept={planConcept} className="absolute inset-0" />
