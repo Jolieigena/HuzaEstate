@@ -42,6 +42,8 @@ export default function ProjectCard({ project, selecting = false, selected = fal
   const selectedConcept = project.concepts.find((c) => c.id === project.selectedConceptId);
   // A project is shown by the plan of its concept; one with no concept yet gets a plain panel.
   const planConcept = selectedConcept ?? project.concepts[0] ?? null;
+  // Once the full design is made, its front picture is the face of the project; before that, the plan is.
+  const finalPicture = project.fullDesign?.pictures.find((p) => p.key === "front") ?? project.fullDesign?.pictures[0] ?? null;
   const location = projectLocationLabel(project);
   const bedrooms = project.brief.household.rooms.find((r) => r.key === "bedrooms")?.quantity;
   const area = selectedConcept?.metrics.floorAreaSqm ?? project.brief.plot.areaSqm;
@@ -76,7 +78,10 @@ export default function ProjectCard({ project, selecting = false, selected = fal
         </button>
       )}
       <Link href={`/studio/build/${project.id}`} className="relative h-44 overflow-hidden block flex-shrink-0">
-        {planConcept ? (
+        {finalPicture ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={finalPicture.url} alt={`${project.name}, front`} className="absolute inset-0 h-full w-full object-cover" />
+        ) : planConcept ? (
           <ConceptPlan concept={planConcept} className="absolute inset-0" />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#2ec440]/10 via-slate-50 to-slate-100 text-[#2ec440]/50">
@@ -88,7 +93,7 @@ export default function ProjectCard({ project, selecting = false, selected = fal
         <div className="absolute top-3 left-3">
           <StatusBadge status={project.status} className="bg-white/95" />
         </div>
-        {selectedConcept && (
+        {selectedConcept && !finalPicture && (
           <div className="absolute bottom-3 left-3 bg-slate-900/70 text-white text-xs font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg">Conceptual</div>
         )}
       </Link>
