@@ -57,6 +57,25 @@ html[data-shell]:not([data-shell="public"]) .uppercase {
   --font-weight-black: 700;
 }
 
+/* Inside the dashboards and studios (the signed-in shell) text is one step lighter and smaller again: headings and big numbers come
+ * down, and the heavy weights ease to 500 and 600. The utilities read these variables, so every page in the shell follows without a
+ * className changing; the public pages keep the scale above. */
+html[data-shell]:not([data-shell="public"]) {
+  --text-base: 0.8125rem;
+  --text-lg: 0.9375rem;
+  --text-xl: 1.0625rem;
+  --text-2xl: 1.1875rem;
+  --text-3xl: 1.375rem;
+  --text-4xl: 1.5rem;
+  --text-5xl: 1.875rem;
+
+  --font-weight-medium: 500;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 600;
+  --font-weight-black: 600;
+}
+
 /* There used to be an `@media (prefers-color-scheme: dark)` block here that swapped
  * --foreground to a near-white color on dark-mode systems. That's what actually made
  * every form input's typed text invisible sitewide (signup, login, post-property, etc):
