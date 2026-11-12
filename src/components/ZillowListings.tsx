@@ -39,9 +39,12 @@ function asProperty(home: ZillowHome): Property {
   };
 }
 
+/** What the section tells the page: "off" when it shows nothing, "loading" while its homes are on their way, otherwise how many it shows. */
+export type UsHomes = number | "loading" | "off";
+
 /** US homes for sale, for visitors looking at the USA. It shows nothing at all until the server has the feature switched on, and tells the
- *  page how many homes it is showing so the page can count them with its own listings. */
-export default function ZillowListings({ onCount }: { onCount?: (count: number) => void }) {
+ *  page what it is doing so the page can count the homes with its own listings and keep its empty-results box away while they load. */
+export default function ZillowListings({ onCount }: { onCount?: (state: UsHomes) => void }) {
   const [status, setStatus] = useState<ZillowStatus | null>(null);
   const [city, setCity] = useState("");
   const [homes, setHomes] = useState<ZillowHome[] | null>(null);
@@ -74,11 +77,12 @@ export default function ZillowListings({ onCount }: { onCount?: (count: number) 
 
   const cards = useMemo(() => (homes ?? []).map((home) => ({ home, property: asProperty(home) })), [homes]);
 
+  const state: UsHomes = status === null ? "loading" : !status.enabled || status.cities.length === 0 ? "off" : failed ? 0 : homes === null ? "loading" : cards.length;
   useEffect(() => {
     if (!onCount) return;
-    onCount(status?.enabled ? cards.length : 0);
-    return () => onCount(0);
-  }, [onCount, status?.enabled, cards.length]);
+    onCount(state);
+    return () => onCount("off");
+  }, [onCount, state]);
 
   if (!status?.enabled || status.cities.length === 0) return null;
 

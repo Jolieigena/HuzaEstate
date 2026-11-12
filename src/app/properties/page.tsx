@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
-import ZillowListings from '@/components/ZillowListings';
+import ZillowListings, { type UsHomes } from '@/components/ZillowListings';
 import { useCallback } from 'react';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import AISearchCard from '@/components/AISearchCard';
@@ -210,8 +210,9 @@ function PropertiesContent() {
   // later detection result does not replace it.
   const countryTouched = useRef(false);
   // How many US homes the section under the listings is showing (0 when it is not shown), so the page can count them and leave out its empty box.
-  const [usHomes, setUsHomes] = useState(0);
-  const onUsHomes = useCallback((count: number) => setUsHomes(count), []);
+  const [usHomes, setUsHomes] = useState<UsHomes>('off');
+  const onUsHomes = useCallback((state: UsHomes) => setUsHomes(state), []);
+  const usCount = typeof usHomes === 'number' ? usHomes : 0;
   function chooseRegion(next: Continent | '') {
     countryTouched.current = true;
     setRegion(next);
@@ -865,7 +866,7 @@ function PropertiesContent() {
               {heading}
             </h1>
             <p className="text-slate-500 text-sm font-medium">
-              {listingsLoaded ? `${filteredProperties.length + usHomes} ${filteredProperties.length + usHomes === 1 ? 'result' : 'results'}` : listingsFailed ? '' : 'Loading…'}
+              {listingsLoaded && usHomes !== 'loading' ? `${filteredProperties.length + usCount} ${filteredProperties.length + usCount === 1 ? 'result' : 'results'}` : listingsFailed ? '' : 'Loading…'}
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
           </div>
@@ -960,7 +961,7 @@ function PropertiesContent() {
               <PropertyCard key={property.id} property={property} />
             ))}
           </div>
-        ) : usHomes > 0 ? null : (
+        ) : usHomes !== 'off' ? null : (
           <div className="text-center py-32 bg-white rounded-3xl border border-slate-200 mt-4 max-w-2xl mx-auto shadow-sm">
             <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <h3 className="text-xl font-bold text-slate-900 mb-2">No exact matches</h3>
