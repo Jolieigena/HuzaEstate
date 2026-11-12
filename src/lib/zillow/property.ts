@@ -21,7 +21,7 @@ export function homeToProperty(home: ZillowHome): Property {
   return {
     id: `${US_HOME_PREFIX}${home.id}`,
     title: street.trim() || home.address,
-    description: "",
+    description: home.description ?? "",
     price: home.price,
     currency: home.currency,
     location: rest.join(",").trim() || `${home.city}, ${home.state}`,
@@ -31,6 +31,7 @@ export function homeToProperty(home: ZillowHome): Property {
     sqm: home.sqft !== null ? Math.round(home.sqft * SQM_PER_SQFT) : 0,
     imageUrl: home.image,
     galleryImages: home.photos.length > 1 ? home.photos : undefined,
+    amenities: home.amenities && home.amenities.length > 0 ? home.amenities : undefined,
     type: "sale",
     propertyType: propertyTypeOf(home.homeType),
     country: "United States",

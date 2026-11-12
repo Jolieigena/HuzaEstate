@@ -15,6 +15,9 @@ export interface ZillowHome {
   photos: string[];
   url: string;
   daysOnZillow: number | null;
+  /** Present once the home's own page has been opened. */
+  description?: string;
+  amenities?: string[];
 }
 
 export interface ZillowStatus {
