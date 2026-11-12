@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import PropertyCard from '@/components/PropertyCard';
+import ZillowListings from '@/components/ZillowListings';
 import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import AISearchCard from '@/components/AISearchCard';
 import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
@@ -964,6 +965,9 @@ function PropertiesContent() {
             </div>
           </div>
         )}
+
+        {/* US homes from Zillow: for a visitor looking at the USA (picked in the Country filter, or where they are when none is picked). Shows nothing until the server switches it on. */}
+        {(selectedCountryCodes.includes('US') || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings />}
       </div>
 
       {/* ── Floating "Describe Your Desired Property" button ─────────────── */}
