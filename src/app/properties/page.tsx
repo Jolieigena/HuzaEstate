@@ -677,6 +677,15 @@ function PropertiesContent() {
                           </button>
                         );
                       })}
+                      {/* The USA is a country, but it is the one with homes from Zillow, so it can be picked from here too. */}
+                      <div className="my-1 border-t border-slate-100" />
+                      <button
+                        type="button"
+                        onClick={() => { countryTouched.current = true; setRegion(''); setSelectedCountryCodes(['US']); setIsRegionOpen(false); }}
+                        className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-[14px] font-medium transition-colors ${selectedCountryCodes.length === 1 && selectedCountryCodes[0] === 'US' ? 'bg-slate-50 text-[#2ec440]' : 'text-slate-700 hover:bg-slate-50'}`}
+                      >
+                        <span>United States</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -707,7 +716,7 @@ function PropertiesContent() {
                       className="w-full mb-2 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 focus:border-[#2ec440] transition-all text-[14px]"
                     />
                     <div className="grid grid-cols-1 gap-1 max-h-56 overflow-y-auto pr-1">
-                      {COUNTRY_OPTIONS.filter((c) => (!region || continentOf(c.code) === region) && c.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).map((c) => {
+                      {COUNTRY_OPTIONS.filter((c) => (!region || continentOf(c.code) === region) && c.name.toLowerCase().includes(countrySearch.trim().toLowerCase())).sort((a, b) => (a.code === 'US' ? -1 : 0) - (b.code === 'US' ? -1 : 0)).map((c) => {
                         const checked = selectedCountryCodes.includes(c.code);
                         return (
                           <label key={c.code} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-[13px] text-slate-700 font-medium">
@@ -967,7 +976,7 @@ function PropertiesContent() {
         )}
 
         {/* US homes from Zillow: for a visitor looking at the USA (picked in the Country filter, or where they are when none is picked). Shows nothing until the server switches it on. */}
-        {(selectedCountryCodes.includes('US') || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings />}
+        {(selectedCountryCodes.includes('US') || region === 'North America' || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings />}
       </div>
 
       {/* ── Floating "Describe Your Desired Property" button ─────────────── */}
