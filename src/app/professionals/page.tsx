@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib/professional/api";
-import Select from "@/components/shared/Select";
 import { useAuth } from "@/lib/auth-context";
 import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
 import { useMenu } from "@/lib/menus/menus";
@@ -26,7 +25,6 @@ export default function ProfessionalsDirectoryPage() {
   // The services (plumbing, electrical, tiling, glass...) the administrator shows, in their order and with their names. Every service
   // is listed, with how many professionals offer it, so a visitor sees what can be found here, not only what is already taken.
   const serviceItems = useMenu("professionals-categories", SERVICE_CATEGORIES);
-  const [category, setCategory] = useState("");
   const { account, isAuthReady } = useAuth();
   const currentCountry = useCurrentCountry();
   const isProfessional = !!account?.roles.includes("professional");
@@ -55,29 +53,49 @@ export default function ProfessionalsDirectoryPage() {
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
-  const [specialization, setSpecialization] = useState("");
-  const [location, setLocation] = useState("");
+  // Each filter can hold several choices. A service is a whole group ("cat:plumbing") or one trade ("spec:Plumber"); a professional
+  // matches a filter when they match any of its choices.
+  const [services, setServices] = useState<string[]>([]);
+  const [places, setPlaces] = useState<string[]>([]);
+  const [kinds, setKinds] = useState<("individual" | "firm")[]>([]);
   const [experiencedOnly, setExperiencedOnly] = useState(false);
-  const [kindFilter, setKindFilter] = useState<"all" | "individual" | "firm">("all");
+  // The filter whose choices are open under the row of pills.
+  const [openMenu, setOpenMenu] = useState<"" | "services" | "locations" | "type">("");
+  const filtersRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) setOpenMenu("");
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+  const toggle = <T,>(list: T[], value: T): T[] => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
-  // Extract unique options
-  // Every trade a professional can pick, in its group, plus anything a professional typed in themselves.
-  const specializationGroups = useMemo(() => {
-    const listed = new Set(SPECIALISATION_GROUPS.flatMap(g => g.options));
-    const custom = Array.from(new Set(allProfiles.flatMap(p => p.specialisations).filter(o => !listed.has(o)))).sort();
-    return custom.length > 0 ? [...SPECIALISATION_GROUPS, { label: "Other", options: custom }] : SPECIALISATION_GROUPS;
-  }, [allProfiles]);
+  // The service choices: each group the administrator shows (with how many professionals are in it) and the trades inside it. A trade is
+  // listed once, under the first group that has it; trades no group has, and anything a professional typed in themselves, go under "Other".
+  const serviceGroups = useMemo(() => {
+    const seen = new Set<string>();
+    const groups = serviceItems.map(c => {
+      const trades = c.specialisations.filter(t => !seen.has(t.toLowerCase()) && seen.add(t.toLowerCase()));
+      return { key: c.key, label: c.label, count: allProfiles.filter(p => inServiceCategory(p.specialisations, c)).length, trades };
+    });
+    const rest = Array.from(new Set([...SPECIALISATION_GROUPS.flatMap(g => g.options), ...allProfiles.flatMap(p => p.specialisations)])).filter(t => !seen.has(t.toLowerCase())).sort();
+    return { groups, rest };
+  }, [allProfiles, serviceItems]);
   // The cities to choose from are those in the visitor's own country; with nobody listed there, every city. A city is listed once, however
   // it was typed ("Kigali" and "kigali").
   const locations = useMemo(() => {
     const own = currentCountry ? allProfiles.filter(p => (p.country ?? '').trim().toLowerCase() === currentCountry.name.toLowerCase()) : [];
     const source = own.length > 0 ? own : allProfiles;
-    const byKey = new Map<string, string>();
+    const byKey = new Map<string, { name: string; count: number }>();
     for (const p of source) {
       const city = (p.city ?? '').trim();
-      if (city && !byKey.has(city.toLowerCase())) byKey.set(city.toLowerCase(), city.charAt(0).toUpperCase() + city.slice(1));
+      if (!city) continue;
+      const entry = byKey.get(city.toLowerCase());
+      if (entry) entry.count += 1;
+      else byKey.set(city.toLowerCase(), { name: city.charAt(0).toUpperCase() + city.slice(1), count: 1 });
     }
-    return Array.from(byKey.values()).sort();
+    return Array.from(byKey.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [allProfiles, currentCountry]);
 
   const filteredProfiles = useMemo(() => {
@@ -85,29 +103,39 @@ export default function ProfessionalsDirectoryPage() {
       // Every part of a card can be searched: the name, what they do, where they are and their bio.
       const needle = searchTerm.trim().toLowerCase();
       const matchesSearch = !needle || [profile.displayName, profile.bio, profile.city, profile.country, ...profile.specialisations].some(part => (part ?? '').toLowerCase().includes(needle));
-      const matchesSpec = specialization ? profile.specialisations.includes(specialization) : true;
-      const matchesLoc = location ? (profile.city ?? '').trim().toLowerCase() === location.toLowerCase() : true;
+      const matchesSpec = services.length === 0 || services.some(v => {
+        if (v.startsWith('cat:')) {
+          const chosen = serviceItems.find(c => c.key === v.slice(4));
+          return !!chosen && inServiceCategory(profile.specialisations, chosen);
+        }
+        return profile.specialisations.some(t => t.toLowerCase() === v.slice(5).toLowerCase());
+      });
+      const matchesLoc = places.length === 0 || places.some(c => (profile.city ?? '').trim().toLowerCase() === c.toLowerCase());
       const matchesExp = experiencedOnly ? (profile.yearsExperience ?? 0) >= 5 : true;
       
-      const matchesKind = kindFilter === "all" || profile.kind === kindFilter;
-      const chosen = serviceItems.find((c) => c.key === category);
-      const matchesCategory = !chosen || inServiceCategory(profile.specialisations, chosen);
+      const matchesKind = kinds.length === 0 || kinds.includes(profile.kind as "individual" | "firm");
 
-      return matchesSearch && matchesSpec && matchesLoc && matchesExp && matchesKind && matchesCategory;
+      return matchesSearch && matchesSpec && matchesLoc && matchesExp && matchesKind;
     });
-  }, [allProfiles, searchTerm, specialization, location, experiencedOnly, kindFilter, category, serviceItems]);
+  }, [allProfiles, searchTerm, services, places, experiencedOnly, kinds, serviceItems]);
 
-  const serviceChips = serviceItems.map(c => ({ key: c.key, label: c.label, count: allProfiles.filter(p => inServiceCategory(p.specialisations, c)).length }));
-
-  const hasActiveFilters = searchTerm || specialization || location || experiencedOnly || kindFilter !== "all" || category;
+  const labelOfService = (v: string) => (v.startsWith('cat:') ? serviceGroups.groups.find(g => g.key === v.slice(4))?.label ?? v : v.slice(5));
+  // What is switched on, shown as removable chips under the pills.
+  const chips: { label: string; remove: () => void }[] = [
+    ...services.map(v => ({ label: labelOfService(v), remove: () => setServices(list => list.filter(x => x !== v)) })),
+    ...places.map(c => ({ label: c, remove: () => setPlaces(list => list.filter(x => x !== c)) })),
+    ...kinds.map(k => ({ label: k === 'individual' ? 'Individuals' : 'Firms', remove: () => setKinds(list => list.filter(x => x !== k)) })),
+    ...(experiencedOnly ? [{ label: '5+ years', remove: () => setExperiencedOnly(false) }] : []),
+  ];
+  const hasActiveFilters = !!searchTerm || chips.length > 0;
+  const kindCount = (k: 'individual' | 'firm') => allProfiles.filter(p => p.kind === k).length;
 
   const clearAllFilters = () => {
     setSearchTerm("");
-    setSpecialization("");
-    setLocation("");
+    setServices([]);
+    setPlaces([]);
     setExperiencedOnly(false);
-    setKindFilter("all");
-    setCategory("");
+    setKinds([]);
   };
 
   return (
@@ -115,7 +143,7 @@ export default function ProfessionalsDirectoryPage() {
       <div className="max-w-6xl mx-auto px-6 sm:px-10 pt-10">
         
         {/* Header & Filters (No background split or border) */}
-        <div className="mb-8">
+        <div className="mb-8" ref={filtersRef}>
           <div className="mb-2 flex flex-wrap items-start justify-between gap-4">
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Find Top Professionals</h1>
             {!isAuthReady ? null : isProfessional ? (
@@ -147,47 +175,31 @@ export default function ProfessionalsDirectoryPage() {
               />
             </div>
 
-            {/* The filters the administrator chose in Settings, in their order and with their names. */}
+            {/* The filters the administrator chose in Settings, in their order and with their names. A pill opens its choices below the row, and
+                several can be ticked at once. Individuals and Firms are one filter, shown where the first of the two sits. */}
             {filterItems.map((item, index) => {
-              const pill = (cls: boolean) => `px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${cls ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`;
-              const isSelect = item.key === 'services' || item.key === 'locations';
-              const wasSelect = index > 0 && (filterItems[index - 1].key === 'services' || filterItems[index - 1].key === 'locations');
-              const divider = !isSelect && wasSelect ? <div className="hidden sm:block w-px h-5 bg-slate-200 mx-0.5"></div> : null;
-              if (item.key === 'services' || item.key === 'locations') {
-                const isServices = item.key === 'services';
-                const value = isServices ? specialization : location;
+              const pill = (on: boolean, open: boolean) => `inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium border shadow-sm transition-all ${on ? 'bg-slate-900 border-slate-900 text-white' : open ? 'bg-white border-slate-900 text-slate-900' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`;
+              const menuPill = (menu: 'services' | 'locations' | 'type', label: string, picked: number) => {
+                const open = openMenu === menu;
                 return (
-                  <div key={item.key} className="relative flex-shrink-0">
-                    <Select
-                      value={value}
-                      onChange={e => (isServices ? setSpecialization(e.target.value) : setLocation(e.target.value))}
-                      className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${value ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
-                    >
-                      <option value="">{item.label}</option>
-                      {isServices
-                        ? specializationGroups.map(g => (
-                            <optgroup key={g.label} label={g.label}>
-                              {g.options.map(o => <option key={o} value={o}>{o}</option>)}
-                            </optgroup>
-                          ))
-                        : locations.map(o => <option key={o} value={o}>{o}</option>)}
-                    </Select>
-                  </div>
-                );
-              }
-              const toggle =
-                item.key === 'experienced'
-                  ? { on: experiencedOnly, click: () => setExperiencedOnly(!experiencedOnly) }
-                  : item.key === 'individuals'
-                  ? { on: kindFilter === 'individual', click: () => setKindFilter(kindFilter === 'individual' ? 'all' : 'individual') }
-                  : { on: kindFilter === 'firm', click: () => setKindFilter(kindFilter === 'firm' ? 'all' : 'firm') };
-              return (
-                <span key={item.key} className="contents">
-                  {divider}
-                  <button onClick={toggle.click} className={pill(toggle.on)}>
-                    {item.label}
+                  <button key={menu} type="button" aria-haspopup="true" aria-expanded={open} onClick={() => setOpenMenu(open ? '' : menu)} className={pill(picked > 0, open)}>
+                    {label}
+                    {picked > 0 && <span className="rounded-full bg-white/20 px-1.5 text-xs font-bold">{picked}</span>}
+                    <svg className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 9l6 6 6-6" />
+                    </svg>
                   </button>
-                </span>
+                );
+              };
+              if (item.key === 'services') return menuPill('services', item.label, services.length);
+              if (item.key === 'locations') return menuPill('locations', item.label, places.length);
+              if (item.key === 'individuals' || item.key === 'firms') {
+                return filterItems.findIndex(f => f.key === 'individuals' || f.key === 'firms') === index ? menuPill('type', 'Type', kinds.length) : null;
+              }
+              return (
+                <button key={item.key} type="button" aria-pressed={experiencedOnly} onClick={() => setExperiencedOnly(!experiencedOnly)} className={pill(experiencedOnly, false)}>
+                  {item.label}
+                </button>
               );
             })}
 
@@ -202,29 +214,63 @@ export default function ProfessionalsDirectoryPage() {
             )}
           </div>
 
-          {/* Services: one chip for each service, with how many professionals offer it. */}
-          {serviceChips.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Services">
-              <button
-                type="button"
-                onClick={() => setCategory('')}
-                className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === '' ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
-              >
-                All services
-              </button>
-              {serviceChips.map(chip => (
-                <button
-                  key={chip.key}
-                  type="button"
-                  onClick={() => setCategory(category === chip.key ? '' : chip.key)}
-                  aria-pressed={category === chip.key}
-                  className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === chip.key ? 'bg-[#2ec440] border-[#2ec440] text-white' : chip.count === 0 ? 'bg-white border-slate-200 text-slate-400 hover:border-slate-300' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
-                >
-                  {chip.label} <span className={category === chip.key ? 'text-white/80' : 'text-slate-400'}>{chip.count}</span>
+          {openMenu && (
+            <div role="menu" aria-label={`${openMenu} choices`} className={`mt-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${openMenu === 'services' ? 'max-h-[420px] overflow-y-auto' : ''}`}>
+              {openMenu === 'services' && (
+                <div className="space-y-3">
+                  {serviceGroups.groups.map(g => (
+                    <div key={g.key}>
+                      <CheckItem strong label={`All ${g.label}`} count={g.count} picked={services.includes(`cat:${g.key}`)} onToggle={() => setServices(list => toggle(list, `cat:${g.key}`))} />
+                      {g.trades.length > 0 && (
+                        <div className="grid gap-1 pl-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                          {g.trades.map(t => (
+                            <CheckItem key={t} label={t} picked={services.includes(`spec:${t}`)} onToggle={() => setServices(list => toggle(list, `spec:${t}`))} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {serviceGroups.rest.length > 0 && (
+                    <div>
+                      <p className="px-3 py-1.5 text-sm font-bold text-slate-900">Other</p>
+                      <div className="grid gap-1 pl-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {serviceGroups.rest.map(t => (
+                          <CheckItem key={t} label={t} picked={services.includes(`spec:${t}`)} onToggle={() => setServices(list => toggle(list, `spec:${t}`))} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {openMenu === 'locations' && (
+                <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {locations.map(c => (
+                    <CheckItem key={c.name} label={c.name} count={c.count} picked={places.some(x => x.toLowerCase() === c.name.toLowerCase())} onToggle={() => setPlaces(list => (list.some(x => x.toLowerCase() === c.name.toLowerCase()) ? list.filter(x => x.toLowerCase() !== c.name.toLowerCase()) : [...list, c.name]))} />
+                  ))}
+                  {locations.length === 0 && <p className="px-3 py-2.5 text-sm font-semibold text-slate-400">No locations yet</p>}
+                </div>
+              )}
+              {openMenu === 'type' && (
+                <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  <CheckItem label="Individuals" count={kindCount('individual')} picked={kinds.includes('individual')} onToggle={() => setKinds(list => toggle(list, 'individual'))} />
+                  <CheckItem label="Firms" count={kindCount('firm')} picked={kinds.includes('firm')} onToggle={() => setKinds(list => toggle(list, 'firm'))} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {chips.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2" aria-live="polite">
+              {chips.map(chip => (
+                <button key={chip.label} type="button" onClick={chip.remove} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-200">
+                  {chip.label}
+                  <span aria-hidden="true" className="text-slate-400">×</span>
+                  <span className="sr-only">Remove filter</span>
                 </button>
               ))}
             </div>
           )}
+
         </div>
 
         {/* Results Info */}
@@ -323,5 +369,24 @@ export default function ProfessionalsDirectoryPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/** One choice that can be ticked, with how many professionals it has. */
+function CheckItem({ label, count, picked, strong, onToggle }: { label: string; count?: number; picked: boolean; strong?: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" role="menuitemcheckbox" aria-checked={picked} onClick={onToggle} className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50 ${strong ? 'font-bold' : 'font-semibold'} ${picked ? 'bg-slate-50 text-[#219b31]' : strong ? 'text-slate-900' : 'text-slate-700'}`}>
+      <span className="flex items-center gap-2.5">
+        <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${picked ? 'border-[#2ec440] bg-[#2ec440] text-white' : 'border-slate-300 bg-white'}`}>
+          {picked && (
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          )}
+        </span>
+        {label}
+      </span>
+      {count !== undefined && <span className="text-xs font-bold text-slate-400">{count}</span>}
+    </button>
   );
 }
