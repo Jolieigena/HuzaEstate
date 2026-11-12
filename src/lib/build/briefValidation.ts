@@ -46,10 +46,9 @@ export function validateStep(step: BriefStepKey, brief: DesignBrief): StepErrors
   return errors;
 }
 
-/** The short path packs two of the full steps onto each screen, so each checks both. */
+/** The short path packs the home, style and budget onto one screen, so it checks all of them. */
 export function validateQuickStep(step: BriefStepKey, brief: DesignBrief): StepErrors {
-  if (step === "basics") return { ...validateStep("basics", brief), ...validateStep("household", brief) };
-  if (step === "style") return { ...validateStep("style", brief), ...validateStep("budget", brief) };
+  if (step === "basics") return { ...validateStep("basics", brief), ...validateStep("household", brief), ...validateStep("style", brief), ...validateStep("budget", brief) };
   return {};
 }
 

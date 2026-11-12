@@ -19,7 +19,7 @@ export default function BriefQuickReview({
   onAddDetail,
 }: {
   brief: DesignBrief;
-  onEdit: (step: "basics" | "style") => void;
+  onEdit: (step: "basics") => void;
   onAddDetail: () => void;
 }) {
   const quantityOf = (key: string) => brief.household.rooms.find((r) => r.key === key)?.quantity;
@@ -43,7 +43,7 @@ export default function BriefQuickReview({
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-bold text-slate-900">Style and budget</h3>
-          <button type="button" onClick={() => onEdit("style")} className="text-xs font-bold text-[#2ec440] transition-colors hover:text-[#28b039]">
+          <button type="button" onClick={() => onEdit("basics")} className="text-xs font-bold text-[#2ec440] transition-colors hover:text-[#28b039]">
             Edit
           </button>
         </div>

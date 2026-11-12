@@ -32,7 +32,6 @@ const STEP_LABELS: Record<BriefStepKey, string> = {
 // On the short path the same step keys carry different screens, so they are named for what the person sees.
 const QUICK_STEP_LABELS: Partial<Record<BriefStepKey, string>> = {
   basics: "Your home",
-  style: "Style & budget",
   review: "Confirm",
 };
 
@@ -214,13 +213,13 @@ export default function BriefWizardPage() {
         <p className="text-slate-500 text-sm mb-6">Step {stepIndex + 1} of {stepKeys.length}</p>
 
         {quick && stepKey === "basics" && (
-          <BriefQuickHome basics={draft.basics} household={draft.household} onChangeBasics={(p) => patchBrief("basics", p)} onChangeHousehold={(p) => patchBrief("household", p)} errors={errors} />
-        )}
-        {quick && stepKey === "style" && (
-          <BriefQuickStyle style={draft.style} budget={draft.budget} onChangeStyle={(p) => patchBrief("style", p)} onChangeBudget={(p) => patchBrief("budget", p)} errors={errors} />
+          <div className="space-y-6">
+            <BriefQuickHome basics={draft.basics} household={draft.household} onChangeBasics={(p) => patchBrief("basics", p)} onChangeHousehold={(p) => patchBrief("household", p)} errors={errors} />
+            <BriefQuickStyle style={draft.style} budget={draft.budget} onChangeStyle={(p) => patchBrief("style", p)} onChangeBudget={(p) => patchBrief("budget", p)} errors={errors} />
+          </div>
         )}
         {quick && stepKey === "review" && (
-          <BriefQuickReview brief={draft} onEdit={(key) => setStepIndex(stepKeys.indexOf(key))} onAddDetail={handleAddDetail} />
+          <BriefQuickReview brief={draft} onEdit={() => setStepIndex(0)} onAddDetail={handleAddDetail} />
         )}
 
         {!quick && stepKey === "basics" && <BriefStepBasics value={draft.basics} onChange={(p) => patchBrief("basics", p)} errors={errors} />}

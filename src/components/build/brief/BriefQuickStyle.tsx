@@ -33,21 +33,19 @@ export default function BriefQuickStyle({
             {errors.primaryStyle}
           </p>
         )}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <select
+          aria-label="Style"
+          value={style.primaryStyle ?? ""}
+          onChange={(e) => onChangeStyle({ primaryStyle: (e.target.value || null) as HomeStyle | null })}
+          className={inputClass(Boolean(errors.primaryStyle))}
+        >
+          <option value="">Select a style</option>
           {(Object.entries(HOME_STYLE_LABELS) as [HomeStyle, string][]).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onChangeStyle({ primaryStyle: key })}
-              aria-pressed={style.primaryStyle === key}
-              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm font-semibold transition-colors ${
-                style.primaryStyle === key ? "border-[#2ec440] bg-[#2ec440]/10 text-[#2ec440]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-              }`}
-            >
+            <option key={key} value={key}>
               {label}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       <div>

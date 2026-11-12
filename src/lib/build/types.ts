@@ -292,7 +292,7 @@ export interface DesignBrief {
 
 /** The short path every brief starts on: where and what, style and budget, then confirm. Everything else in the full brief
  *  (plot, timeline, sustainability, accessibility) is optional and asked later, or in conversation with Huza AI. */
-export const QUICK_BRIEF_STEP_KEYS: readonly BriefStepKey[] = ["basics", "style", "review"];
+export const QUICK_BRIEF_STEP_KEYS: readonly BriefStepKey[] = ["basics", "review"];
 // Plot is not here: the old brief asked for it second, so a project that only got that far still belongs on the short path.
 const DETAILED_STEP_KEYS: readonly BriefStepKey[] = ["household", "budget", "sustainability"];
 
