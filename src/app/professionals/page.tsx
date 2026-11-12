@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api";
 import { useMenu } from "@/lib/menus/menus";
 import { SERVICE_CATEGORIES, inServiceCategory } from "@/lib/professional/serviceCategories";
+import { SPECIALISATION_GROUPS } from "@/lib/professional/specialisations";
 
 const FILTER_ITEMS = [
   { key: "services", label: "All Services" },
@@ -21,8 +22,8 @@ export default function ProfessionalsDirectoryPage() {
   const [allProfiles, setAllProfiles] = useState<RealProfessionalProfile[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
   const filterItems = useMenu("professionals-filters", FILTER_ITEMS);
-  // The services (plumbing, tiling, glass...) the administrator shows, in their order and with their names. A service only appears once
-  // someone offers it, so a chip never leads to an empty list.
+  // The services (plumbing, electrical, tiling, glass...) the administrator shows, in their order and with their names. Every service
+  // is listed, with how many professionals offer it, so a visitor sees what can be found here, not only what is already taken.
   const serviceItems = useMenu("professionals-categories", SERVICE_CATEGORIES);
   const [category, setCategory] = useState("");
   const { account, isAuthReady } = useAuth();
@@ -58,7 +59,12 @@ export default function ProfessionalsDirectoryPage() {
   const [kindFilter, setKindFilter] = useState<"all" | "individual" | "firm">("all");
 
   // Extract unique options
-  const specializations = useMemo(() => Array.from(new Set(allProfiles.flatMap(p => p.specialisations))).sort(), [allProfiles]);
+  // Every trade a professional can pick, in its group, plus anything a professional typed in themselves.
+  const specializationGroups = useMemo(() => {
+    const listed = new Set(SPECIALISATION_GROUPS.flatMap(g => g.options));
+    const custom = Array.from(new Set(allProfiles.flatMap(p => p.specialisations).filter(o => !listed.has(o)))).sort();
+    return custom.length > 0 ? [...SPECIALISATION_GROUPS, { label: "Other", options: custom }] : SPECIALISATION_GROUPS;
+  }, [allProfiles]);
   const locations = useMemo(() => Array.from(new Set(allProfiles.map(p => p.city))).sort(), [allProfiles]);
 
   const filteredProfiles = useMemo(() => {
@@ -78,9 +84,7 @@ export default function ProfessionalsDirectoryPage() {
     });
   }, [allProfiles, searchTerm, specialization, location, experiencedOnly, kindFilter, category, serviceItems]);
 
-  const serviceChips = serviceItems
-    .map(c => ({ key: c.key, label: c.label, count: allProfiles.filter(p => inServiceCategory(p.specialisations, c)).length }))
-    .filter(c => c.count > 0 || c.key === category);
+  const serviceChips = serviceItems.map(c => ({ key: c.key, label: c.label, count: allProfiles.filter(p => inServiceCategory(p.specialisations, c)).length }));
 
   const hasActiveFilters = searchTerm || specialization || location || experiencedOnly || kindFilter !== "all" || category;
 
@@ -147,7 +151,13 @@ export default function ProfessionalsDirectoryPage() {
                       className={`appearance-none pl-4 pr-9 py-2 bg-white border rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm cursor-pointer transition-all hover:bg-slate-50 ${value ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-700'}`}
                     >
                       <option value="">{item.label}</option>
-                      {(isServices ? specializations : locations).map(o => <option key={o} value={o}>{o}</option>)}
+                      {isServices
+                        ? specializationGroups.map(g => (
+                            <optgroup key={g.label} label={g.label}>
+                              {g.options.map(o => <option key={o} value={o}>{o}</option>)}
+                            </optgroup>
+                          ))
+                        : locations.map(o => <option key={o} value={o}>{o}</option>)}
                     </Select>
                   </div>
                 );
@@ -179,7 +189,7 @@ export default function ProfessionalsDirectoryPage() {
             )}
           </div>
 
-          {/* Services: one chip for each service someone offers, with how many do. */}
+          {/* Services: one chip for each service, with how many professionals offer it. */}
           {serviceChips.length > 0 && (
             <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Services">
               <button
@@ -195,7 +205,7 @@ export default function ProfessionalsDirectoryPage() {
                   type="button"
                   onClick={() => setCategory(category === chip.key ? '' : chip.key)}
                   aria-pressed={category === chip.key}
-                  className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === chip.key ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                  className={`px-3.5 py-1.5 rounded-full text-[13px] font-semibold border transition-all ${category === chip.key ? 'bg-[#2ec440] border-[#2ec440] text-white' : chip.count === 0 ? 'bg-white border-slate-200 text-slate-400 hover:border-slate-300' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}`}
                 >
                   {chip.label} <span className={category === chip.key ? 'text-white/80' : 'text-slate-400'}>{chip.count}</span>
                 </button>
