@@ -104,40 +104,40 @@ export default function BuildDashboardPage() {
           </nav>
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
-            <h1 className="text-3xl font-black text-slate-900">My Build Projects</h1>
+            <h1 className="text-2xl font-black text-slate-900">My Build Projects</h1>
             <div className="flex flex-wrap items-center gap-3">
             {selecting ? (
               <>
-                <button type="button" onClick={() => setPicked(picked.size === filtered.length ? new Set() : new Set(filtered.map((p) => p.id)))} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-700 transition-colors hover:border-slate-400 whitespace-nowrap">
+                <button type="button" onClick={() => setPicked(picked.size === filtered.length ? new Set() : new Set(filtered.map((p) => p.id)))} className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition-colors hover:border-slate-400 whitespace-nowrap">
                   {picked.size === filtered.length && filtered.length > 0 ? "Unselect all" : "Select all"}
                 </button>
-                <button type="button" disabled={picked.size === 0} onClick={() => setDeletePickedOpen(true)} className="inline-flex items-center justify-center rounded-xl bg-red-600 px-5 py-3.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap">
+                <button type="button" disabled={picked.size === 0} onClick={() => setDeletePickedOpen(true)} className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40 whitespace-nowrap">
                   Delete selected ({picked.size})
                 </button>
-                <button type="button" onClick={() => { setSelecting(false); setPicked(new Set()); }} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
+                <button type="button" onClick={() => { setSelecting(false); setPicked(new Set()); }} className="inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
                   Cancel
                 </button>
               </>
             ) : (
               <>
             {ready && visibleProjects.length > 1 && (
-              <button type="button" onClick={() => setSelecting(true)} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
+              <button type="button" onClick={() => setSelecting(true)} className="inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:bg-slate-100 whitespace-nowrap">
                 Select
               </button>
             )}
             {blankDrafts.length > 1 && (
-              <button type="button" onClick={() => setClearOpen(true)} className="inline-flex items-center justify-center rounded-xl px-4 py-3.5 text-sm font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 whitespace-nowrap">
+              <button type="button" onClick={() => setClearOpen(true)} className="inline-flex items-center justify-center rounded-xl px-3 py-2.5 text-sm font-bold text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 whitespace-nowrap">
                 Clear {blankDrafts.length} empty drafts
               </button>
             )}
-            <Link href="/studio/build/sent" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-6 py-3.5 rounded-xl transition-colors whitespace-nowrap">
+            <Link href="/studio/build/sent" className="inline-flex items-center justify-center border border-slate-200 bg-white hover:border-[#2ec440] hover:text-[#219b31] text-slate-700 font-bold px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap text-sm">
               Designs I sent
             </Link>
             <Link
               href="/studio/build/new"
-              className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3.5 rounded-xl transition-colors shadow-lg whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-4 py-2.5 rounded-xl transition-colors shadow-lg whitespace-nowrap text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
               </svg>
               New Build Project
