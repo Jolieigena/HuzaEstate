@@ -28,6 +28,7 @@ export function OrgUsersListPage() {
   const [search, setSearch] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
+  const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
   const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
@@ -57,6 +58,14 @@ export function OrgUsersListPage() {
       setState((prev) => (prev ? { ...prev, users: prev.users?.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)) } : prev));
       showToast(nextStatus === "active" ? "Account restored." : "Account suspended.");
     } else showToast(result.error, "error");
+  }
+
+  async function confirmReset() {
+    if (!token || !resetTarget) return;
+    const result = await AdminApi.sendPasswordReset(token, resetTarget.id);
+    setResetTarget(null);
+    if (result.ok) showToast(`Reset email sent to ${result.data.email}.`);
+    else showToast(result.error, "error");
   }
 
   async function confirmDelete() {
@@ -113,6 +122,11 @@ export function OrgUsersListPage() {
                 <td className="px-6 py-4 text-xs text-slate-500">{formatDate(user.createdAt)}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
+                    {user.status === "active" && (
+                      <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" onClick={() => setResetTarget(user)}>
+                        Reset password
+                      </SecondaryButton>
+                    )}
                     <SecondaryButton className="min-h-9 px-3 py-1.5 text-xs" disabled={busyId === user.id} onClick={() => toggleStatus(user)}>
                       {user.status === "active" ? "Suspend" : "Restore"}
                     </SecondaryButton>
@@ -128,6 +142,15 @@ export function OrgUsersListPage() {
           <EmptyState title="No accounts found" description="Try a different search, or check back once activity picks up in your countries." />
         )}
       </RequirePermission>
+
+      <ConfirmModal
+        open={!!resetTarget}
+        onClose={() => setResetTarget(null)}
+        onConfirm={confirmReset}
+        title="Send a password reset email?"
+        description={resetTarget ? `${resetTarget.name} will get an email at ${resetTarget.email} with a link to choose a new password. It works for 24 hours.` : ""}
+        confirmLabel="Send email"
+      />
 
       <ConfirmModal
         open={!!deleteTarget}

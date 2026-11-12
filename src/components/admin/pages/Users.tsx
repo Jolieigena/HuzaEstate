@@ -267,6 +267,7 @@ export function UserDetailPage({ userId }: { userId: string }) {
   const [saving, setSaving] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [permissionsForm, setPermissionsForm] = useState<{ id: string; selected: Set<OrgPermission> } | null>(null);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [scopeForm, setScopeForm] = useState<{ id: string; selected: string[] } | null>(null);
@@ -436,6 +437,14 @@ export function UserDetailPage({ userId }: { userId: string }) {
       applyUser(result.data);
       showToast(nextStatus === "suspended" ? "Account suspended." : "Account restored.");
     } else showToast(result.error, "error");
+  }
+
+  async function sendReset() {
+    if (!token || !user) return;
+    const result = await AdminApi.sendPasswordReset(token, user.id);
+    setResetOpen(false);
+    if (result.ok) showToast(`Reset email sent to ${result.data.email}.`);
+    else showToast(result.error, "error");
   }
 
   async function remove() {
@@ -681,6 +690,9 @@ export function UserDetailPage({ userId }: { userId: string }) {
             <Card>
               <h3 className="text-lg font-black text-slate-900">Actions</h3>
               <div className="mt-4 flex flex-col gap-2">
+                {canManage && user.status === "active" && (
+                  <SecondaryButton onClick={() => setResetOpen(true)}>Send password reset email</SecondaryButton>
+                )}
                 {canSuspend && (
                   <SecondaryButton disabled={isSelf} onClick={() => setStatusOpen(true)}>
                     {user.status === "active" ? "Suspend account" : "Restore account"}
@@ -697,6 +709,15 @@ export function UserDetailPage({ userId }: { userId: string }) {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onConfirm={sendReset}
+        title="Send a password reset email?"
+        description={`${user.name} will get an email at ${user.email} with a link to choose a new password. It works for 24 hours, and any earlier link stops working. Their current password keeps working until they choose a new one.`}
+        confirmLabel="Send email"
+      />
 
       <ConfirmModal
         open={statusOpen}

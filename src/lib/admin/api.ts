@@ -214,6 +214,9 @@ export const AdminApi = {
     const result = await call<{ user: AdminUser }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}/roles`, token, { method: "PATCH", body: change });
     return result.ok ? ({ ok: true, data: result.data.user } as const) : result;
   },
+  /** Emails the account its own link to choose a new password (platform administrators, and organisation admins for accounts in their scope). */
+  sendPasswordReset: (token: string, id: string) =>
+    call<{ sent: boolean; email: string; expiresInHours: number }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}/password-reset`, token, { method: "POST" }),
   deleteUser: (token: string, id: string) =>
     call<{ deleted: boolean; cleanup: { propertiesRemoved: number | null; subscriptionRemoved: boolean | null } }>(`${ACCESS_API_URL}/auth/admin/users/${encodeURIComponent(id)}`, token, { method: "DELETE" }),
   listSubscriptions: (token: string, query: { tier?: string; status?: string; accountId?: string; page?: number; limit?: number } = {}) =>
