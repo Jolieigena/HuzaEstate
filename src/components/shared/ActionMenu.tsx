@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 
 export interface ActionMenuItem {
@@ -29,6 +30,9 @@ export default function ActionMenu({ items, label = "Project actions", align = "
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   const menuId = useId();
+  const menuRef = useRef<HTMLDivElement>(null);
+  // The menu is drawn on the page itself, not inside the card, so a card that clips its content cannot cut the menu off.
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   // Close the menu whenever the route changes. Adjusted during render
   // (rather than in an effect) so it happens before the closed menu ever paints.
@@ -42,7 +46,8 @@ export default function ActionMenu({ items, label = "Project actions", align = "
     if (!open) return;
 
     const handlePointerDown = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (containerRef.current && !containerRef.current.contains(target) && !menuRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -52,9 +57,14 @@ export default function ActionMenu({ items, label = "Project actions", align = "
         buttonRef.current?.focus();
       }
     };
+    const close = () => setOpen(false);
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
     return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
@@ -69,7 +79,17 @@ export default function ActionMenu({ items, label = "Project actions", align = "
         aria-expanded={open}
         aria-controls={menuId}
         aria-label={label}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!open && buttonRef.current) {
+            const r = buttonRef.current.getBoundingClientRect();
+            const width = 208;
+            const height = items.length * 44 + 16;
+            const left = Math.max(8, Math.min(align === "right" ? r.right - width : r.left, window.innerWidth - width - 8));
+            const top = r.bottom + 8 + height > window.innerHeight ? Math.max(8, r.top - 8 - height) : r.bottom + 8;
+            setPos({ top, left });
+          }
+          setOpen((v) => !v);
+        }}
         className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2ec440]"
       >
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -79,11 +99,13 @@ export default function ActionMenu({ items, label = "Project actions", align = "
         </svg>
       </button>
 
-      {open && (
+      {open && pos && createPortal(
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
-          className={`absolute z-30 mt-2 w-52 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 ${align === "right" ? "right-0" : "left-0"}`}
+          style={{ position: "fixed", top: pos.top, left: pos.left }}
+          className="z-[60] w-52 bg-white border border-slate-100 rounded-2xl shadow-xl py-2"
         >
           {items.map((item) => (
             <button
@@ -103,7 +125,8 @@ export default function ActionMenu({ items, label = "Project actions", align = "
               {item.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
