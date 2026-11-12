@@ -43,9 +43,9 @@ export default function ZillowListings() {
   if (!status?.enabled || status.cities.length === 0) return null;
 
   return (
-    <section aria-label="Homes from Zillow" className="mt-14">
+    <section aria-label="US homes" className="mt-14">
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-slate-900">From Zillow</h2>
+        <h2 className="text-xl font-bold text-slate-900">{`Homes in ${status.cities.find((c) => c.key === city)?.name ?? "the USA"}`}</h2>
         <Select value={city} onChange={(e) => { setHomes(null); setFailed(false); setCity(e.target.value); }} aria-label="City" className="w-[190px] rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm">
           {status.cities.map((c) => (
             <option key={c.key} value={c.key}>
