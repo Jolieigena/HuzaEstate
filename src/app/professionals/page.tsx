@@ -9,6 +9,7 @@ import { OPEN_ADD_ROLE_EVENT, requestableRolesFor } from "@/lib/roleRequests/api
 import { useMenu } from "@/lib/menus/menus";
 import { SERVICE_CATEGORIES, inServiceCategory } from "@/lib/professional/serviceCategories";
 import { SPECIALISATION_GROUPS } from "@/lib/professional/specialisations";
+import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 
 const FILTER_ITEMS = [
   { key: "services", label: "All Services" },
@@ -27,6 +28,7 @@ export default function ProfessionalsDirectoryPage() {
   const serviceItems = useMenu("professionals-categories", SERVICE_CATEGORIES);
   const [category, setCategory] = useState("");
   const { account, isAuthReady } = useAuth();
+  const currentCountry = useCurrentCountry();
   const isProfessional = !!account?.roles.includes("professional");
   const canApply = !!account && requestableRolesFor(account.roles).includes("professional");
 
@@ -65,7 +67,18 @@ export default function ProfessionalsDirectoryPage() {
     const custom = Array.from(new Set(allProfiles.flatMap(p => p.specialisations).filter(o => !listed.has(o)))).sort();
     return custom.length > 0 ? [...SPECIALISATION_GROUPS, { label: "Other", options: custom }] : SPECIALISATION_GROUPS;
   }, [allProfiles]);
-  const locations = useMemo(() => Array.from(new Set(allProfiles.map(p => p.city))).sort(), [allProfiles]);
+  // The cities to choose from are those in the visitor's own country; with nobody listed there, every city. A city is listed once, however
+  // it was typed ("Kigali" and "kigali").
+  const locations = useMemo(() => {
+    const own = currentCountry ? allProfiles.filter(p => (p.country ?? '').trim().toLowerCase() === currentCountry.name.toLowerCase()) : [];
+    const source = own.length > 0 ? own : allProfiles;
+    const byKey = new Map<string, string>();
+    for (const p of source) {
+      const city = (p.city ?? '').trim();
+      if (city && !byKey.has(city.toLowerCase())) byKey.set(city.toLowerCase(), city.charAt(0).toUpperCase() + city.slice(1));
+    }
+    return Array.from(byKey.values()).sort();
+  }, [allProfiles, currentCountry]);
 
   const filteredProfiles = useMemo(() => {
     return allProfiles.filter(profile => {
@@ -73,7 +86,7 @@ export default function ProfessionalsDirectoryPage() {
       const needle = searchTerm.trim().toLowerCase();
       const matchesSearch = !needle || [profile.displayName, profile.bio, profile.city, profile.country, ...profile.specialisations].some(part => (part ?? '').toLowerCase().includes(needle));
       const matchesSpec = specialization ? profile.specialisations.includes(specialization) : true;
-      const matchesLoc = location ? profile.city === location : true;
+      const matchesLoc = location ? (profile.city ?? '').trim().toLowerCase() === location.toLowerCase() : true;
       const matchesExp = experiencedOnly ? (profile.yearsExperience ?? 0) >= 5 : true;
       
       const matchesKind = kindFilter === "all" || profile.kind === kindFilter;
