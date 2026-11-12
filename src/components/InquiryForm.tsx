@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { PropertyApi } from "@/lib/properties/api";
 import type { Property } from "@/lib/properties/types";
+import { isUsHomeId } from "@/lib/zillow/property";
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition-all focus:border-[#2ec440] focus:ring-4 focus:ring-[#2ec440]/10 placeholder:text-slate-400";
 
@@ -34,7 +35,7 @@ export default function InquiryForm({ property }: { property: Property }) {
   const isOwner = !!account && account.id === property.ownerId;
   if (isOwner) return <p className="text-sm text-slate-500">This is your listing. Buyer and renter messages appear in your Inquiries tab.</p>;
 
-  const posterLabel = property.ownerType === "agent" ? "realtor" : "owner";
+  const posterLabel = isUsHomeId(property.id) ? "Huza Estate team" : property.ownerType === "agent" ? "realtor" : "owner";
 
   if (sent) {
     return (

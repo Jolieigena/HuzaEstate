@@ -18,12 +18,11 @@ import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import { COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS } from '@/lib/properties/types';
 import { formatPlace } from '@/lib/properties/place';
 import { useLanguage } from '@/lib/i18n/language';
+import { isUsHomeId } from '@/lib/zillow/property';
 
 interface PropertyCardProps {
   property: Property;
   isFeatured?: boolean;
-  /** For a home that is not one of our own listings: the card opens this page, in a new tab, instead of a page of ours, and offers no save. */
-  externalUrl?: string;
 }
 
 const listedDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
@@ -33,23 +32,9 @@ const listedDateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', d
 // upgrades to "Popular" since that's now a true, earned signal rather than a paid-placement one.
 const POPULAR_INQUIRY_THRESHOLD = 5;
 
-/** The cover's link: a page of ours, or, for a home from elsewhere, its own page in a new tab. */
-function CoverLink({ href, external, className, children }: { href: string; external: boolean; className: string; children: React.ReactNode }) {
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer nofollow" className={className}>
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link href={href} className={className}>
-      {children}
-    </Link>
-  );
-}
-
-export default function PropertyCard({ property, isFeatured, externalUrl }: PropertyCardProps) {
+export default function PropertyCard({ property, isFeatured }: PropertyCardProps) {
+  // A home from the USA has a page of its own here, but it cannot be saved and has no 3D tour.
+  const isUsHome = isUsHomeId(property.id);
   const isSaved = useIsFavorite(property.id);
   const { t } = useLanguage();
   const money = useDisplayCurrency();
@@ -86,10 +71,6 @@ export default function PropertyCard({ property, isFeatured, externalUrl }: Prop
   // they keep doing their own thing instead of also navigating away.
   function handleCardClick(e: React.MouseEvent<HTMLDivElement>) {
     if ((e.target as HTMLElement).closest('a, button')) return;
-    if (externalUrl) {
-      window.open(externalUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
     router.push(`/properties/${property.id}`);
   }
 
@@ -113,7 +94,7 @@ export default function PropertyCard({ property, isFeatured, externalUrl }: Prop
          *  was uploaded, the cover IS that <video>, showing its own first frame
          *  (preload="metadata", no poster override) — not an unrelated uploaded
          *  photo standing in for it. */}
-        <CoverLink href={externalUrl ?? `/properties/${property.id}`} external={!!externalUrl} className="absolute inset-0 block rounded-2xl overflow-hidden">
+        <Link href={`/properties/${property.id}`} className="absolute inset-0 block rounded-2xl overflow-hidden">
           {property.videoUrl ? (
             <video
               src={property.videoUrl}
@@ -140,7 +121,7 @@ export default function PropertyCard({ property, isFeatured, externalUrl }: Prop
               </span>
             </div>
           )}
-        </CoverLink>
+        </Link>
 
         {/* Top Left Badge — every promoted listing (see lib/promotion) gets "Featured" as its
          *  baseline; it only upgrades to "Popular" once real inquiry activity crosses
@@ -172,7 +153,7 @@ export default function PropertyCard({ property, isFeatured, externalUrl }: Prop
         )}
 
         {/* Bottom Left: "Watch the 3D Tour" — only rendered once a tour is ready */}
-        {!externalUrl && <TourWatchBadge propertyId={property.id} className="absolute bottom-3 left-3 z-10" />}
+        {!isUsHome && <TourWatchBadge propertyId={property.id} className="absolute bottom-3 left-3 z-10" />}
 
         {/* Bottom Right: brokerage logo — only ever set for an "agent"-type seller who's added
          *  one (see access-service's User.companyLogoUrl, denormalized onto the listing at post
@@ -235,7 +216,7 @@ export default function PropertyCard({ property, isFeatured, externalUrl }: Prop
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
               </a>
-              {!externalUrl && <button
+              {!isUsHome && <button
                 onClick={toggleSaved}
                 className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${isSaved ? 'bg-red-50 border-red-200 text-red-500' : 'border-slate-200 text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440]'}`}
                 title={isSaved ? t('Remove from saved') : t('Save Property')}

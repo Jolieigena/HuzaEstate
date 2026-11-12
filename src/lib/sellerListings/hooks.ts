@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { PropertyApi } from "@/lib/properties/api";
 import type { Property } from "@/lib/properties/types";
+import { fetchZillowHome } from "@/lib/zillow/api";
+import { homeToProperty, isUsHomeId, US_HOME_PREFIX } from "@/lib/zillow/property";
 
 const PROPERTY_API_URL = process.env.NEXT_PUBLIC_PROPERTY_API_URL || "http://localhost:8081/api/property-service";
 
@@ -113,9 +115,15 @@ export function useProperty(id: string): { property: Property | null; loading: b
   useEffect(() => {
     if (!isAuthReady) return;
     let cancelled = false;
-    PropertyApi.byId(id, token).then((result) => {
-      if (!cancelled) setState({ id, property: result.ok ? result.data : null });
-    });
+    if (isUsHomeId(id)) {
+      fetchZillowHome(id.slice(US_HOME_PREFIX.length)).then((home) => {
+        if (!cancelled) setState({ id, property: home ? homeToProperty(home) : null });
+      });
+    } else {
+      PropertyApi.byId(id, token).then((result) => {
+        if (!cancelled) setState({ id, property: result.ok ? result.data : null });
+      });
+    }
     return () => {
       cancelled = true;
     };

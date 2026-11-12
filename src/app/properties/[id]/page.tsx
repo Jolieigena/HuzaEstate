@@ -16,6 +16,7 @@ import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
 import CurrencyPicker from '@/components/CurrencyPicker';
 import PaymentOptionsInfo from '@/components/PaymentOptionsInfo';
 import { formatPlace } from '@/lib/properties/place';
+import { isUsHomeId } from '@/lib/zillow/property';
 
 /** Poster + a large, unmistakable play button until clicked — native video controls only
  *  appear once playing. Fixes two problems with a bare <video controls poster>: (1) a
@@ -66,6 +67,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
   const { id } = use(params);
   const { property, loading } = useProperty(id);
   const money = useDisplayCurrency();
+  // A home from the USA: no owner to message, so the message goes to our team.
+  const usHome = isUsHomeId(id);
 
   if (loading) {
     return <div className="min-h-[60vh] flex items-center justify-center text-sm font-semibold text-slate-400">Loading listing…</div>;
@@ -201,10 +204,14 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           <PaymentOptionsInfo property={property} />
 
           {/* Description */}
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">About this {property.propertyType}</h2>
-          <p className="text-lg text-slate-600 leading-relaxed mb-10">
-            {property.description}
-          </p>
+          {property.description && (
+            <>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">About this {property.propertyType}</h2>
+              <p className="text-lg text-slate-600 leading-relaxed mb-10">
+                {property.description}
+              </p>
+            </>
+          )}
 
           {/* Amenities — every tag the seller ticked on posting/editing (see
            *  AMENITY_OPTIONS), so a buyer sees the full picture here, not
@@ -226,7 +233,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
           )}
 
           {/* AI-Generated 3D Tour (World Labs Marble) */}
-          <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} virtualTourUrl={property.virtualTourUrl} />
+          {!usHome && <PropertyTourSection propertyId={property.id} imageUrl={property.imageUrl} virtualTourUrl={property.virtualTourUrl} />}
 
           <BackLink>Back</BackLink>
         </div>
@@ -247,7 +254,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
             )}
             <h3 className="text-xl font-bold text-slate-900 mb-2">Interested in this property?</h3>
             <p className="text-slate-500 text-[15px] mb-6 leading-relaxed">
-              Message the {property.ownerType === "agent" ? "realtor" : "owner"} to ask a question or arrange a viewing.
+              {usHome ? "Send us a message to ask a question or arrange a viewing. Our team will get back to you." : `Message the ${property.ownerType === "agent" ? "realtor" : "owner"} to ask a question or arrange a viewing.`}
             </p>
             {(property.ownerName || property.ownerPhone || property.ownerEmail) && (
               <div className="flex flex-col gap-2 mb-6 pb-6 border-b border-slate-200">

@@ -34,6 +34,18 @@ export async function fetchZillowStatus(): Promise<ZillowStatus> {
   }
 }
 
+/** One US home by its number (the part of /properties/us-<number> after "us-"), or null when it is gone. */
+export async function fetchZillowHome(id: string): Promise<ZillowHome | null> {
+  try {
+    const res = await fetch(`${PROPERTY_API_URL}/zillow/homes/${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const body = await res.json();
+    return body?.home ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchZillowHomes(city: string): Promise<{ ok: true; homes: ZillowHome[]; updatedAt: string } | { ok: false }> {
   try {
     const res = await fetch(`${PROPERTY_API_URL}/zillow/listings?city=${encodeURIComponent(city)}`);

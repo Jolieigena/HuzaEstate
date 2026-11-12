@@ -5,39 +5,7 @@ import PropertyCard from "@/components/PropertyCard";
 import { PropertyGridSkeleton } from "@/components/PropertyCardSkeleton";
 import Select from "@/components/shared/Select";
 import { fetchZillowHomes, fetchZillowStatus, type ZillowHome, type ZillowStatus } from "@/lib/zillow/api";
-import type { Property } from "@/lib/properties/types";
-
-const SQM_PER_SQFT = 0.092903;
-
-const propertyTypeOf = (homeType: string): Property["propertyType"] => {
-  const type = homeType.toUpperCase();
-  if (type.includes("CONDO") || type.includes("APARTMENT")) return "apartment";
-  if (type.includes("LOT") || type.includes("LAND")) return "land";
-  return "house";
-};
-
-/** A US home dressed as one of our own listings, so it is drawn by the same card: a street as the title, the town below it. */
-function asProperty(home: ZillowHome): Property {
-  const [street, ...rest] = home.address.split(",");
-  const listed = home.daysOnZillow !== null ? new Date(Date.now() - home.daysOnZillow * 86400000).toISOString() : undefined;
-  return {
-    id: `us-${home.id}`,
-    title: street.trim() || home.address,
-    description: "",
-    price: home.price,
-    currency: home.currency,
-    location: rest.join(",").trim() || `${home.city}, ${home.state}`,
-    city: "",
-    bedrooms: home.bedrooms ?? 0,
-    bathrooms: home.bathrooms ?? 0,
-    sqm: home.sqft !== null ? Math.round(home.sqft * SQM_PER_SQFT) : 0,
-    imageUrl: home.image,
-    type: "sale",
-    propertyType: propertyTypeOf(home.homeType),
-    country: "United States",
-    createdAt: listed,
-  };
-}
+import { homeToProperty } from "@/lib/zillow/property";
 
 /** What the section tells the page: "off" when it shows nothing, "loading" while its homes are on their way, otherwise how many it shows. */
 export type UsHomes = number | "loading" | "off";
@@ -75,7 +43,7 @@ export default function ZillowListings({ onCount }: { onCount?: (state: UsHomes)
     };
   }, [city]);
 
-  const cards = useMemo(() => (homes ?? []).map((home) => ({ home, property: asProperty(home) })), [homes]);
+  const cards = useMemo(() => (homes ?? []).map((home) => ({ home, property: homeToProperty(home) })), [homes]);
 
   const state: UsHomes = status === null ? "loading" : !status.enabled || status.cities.length === 0 ? "off" : failed ? 0 : homes === null ? "loading" : cards.length;
   useEffect(() => {
@@ -108,7 +76,7 @@ export default function ZillowListings({ onCount }: { onCount?: (state: UsHomes)
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {cards.map(({ home, property }) => (
-            <PropertyCard key={home.id} property={property} externalUrl={home.url} />
+            <PropertyCard key={home.id} property={property} />
           ))}
         </div>
       )}
