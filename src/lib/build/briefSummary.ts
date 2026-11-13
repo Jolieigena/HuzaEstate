@@ -21,6 +21,7 @@ export function summariseBrief(brief: DesignBrief) {
       naturalLight: style.naturalLightPriority,
       privacy: style.privacyPriority,
     },
+    facing: brief.plot.orientation,
     parkingSpaces: brief.household.parkingSpaces,
     notes: [brief.household.notes, brief.plot.notes].map((n) => (n ?? "").trim()).filter(Boolean).join(" "),
     priorities: [...brief.sustainability.items, ...brief.accessibility.items].filter((i) => i.priority).map((i) => i.label),

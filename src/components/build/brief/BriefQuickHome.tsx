@@ -66,18 +66,6 @@ export default function BriefQuickHome({
         </Field>
       </div>
 
-      <Field label="Plot size (sqm)" htmlFor={ids.plot} error={errors.areaSqm}>
-        <input
-          id={ids.plot}
-          type="number"
-          min={0}
-          placeholder="e.g. 600"
-          value={plot.areaSqm ?? ""}
-          onChange={(e) => onChangePlot({ areaSqm: e.target.value === "" ? null : Number(e.target.value) })}
-          className={inputClass(Boolean(errors.areaSqm))}
-        />
-      </Field>
-
       <div>
         <p className="mb-1.5 text-sm font-bold text-slate-700">Floors</p>
         {errors.floors && (
@@ -116,9 +104,33 @@ export default function BriefQuickHome({
         </div>
       </div>
 
+      <div className="grid gap-5 sm:grid-cols-2">
+        <Field label="Plot size (sqm)" htmlFor={ids.plot} error={errors.areaSqm}>
+          <input
+            id={ids.plot}
+            type="number"
+            min={0}
+            placeholder="e.g. 600"
+            value={plot.areaSqm ?? ""}
+            onChange={(e) => onChangePlot({ areaSqm: e.target.value === "" ? null : Number(e.target.value) })}
+            className={inputClass(Boolean(errors.areaSqm))}
+          />
+        </Field>
+        <div>
+          <p className="mb-1.5 text-sm font-bold text-slate-700">Parking spaces</p>
+          <Choices options={[0, 1, 2, 3, 4]} selected={household.parkingSpaces} onPick={(parkingSpaces) => onChangeHousehold({ parkingSpaces })} />
+        </div>
+      </div>
+
       <div>
-        <p className="mb-1.5 text-sm font-bold text-slate-700">Parking spaces</p>
-        <Choices options={[0, 1, 2, 3, 4]} selected={household.parkingSpaces} onPick={(parkingSpaces) => onChangeHousehold({ parkingSpaces })} />
+        <p className="mb-1.5 text-sm font-bold text-slate-700">Which way should the front of the house face?</p>
+        <div className="flex flex-wrap gap-2">
+          {["North", "South", "East", "West"].map((side) => (
+            <Toggle key={side} pressed={plot.orientation === side} onClick={() => onChangePlot({ orientation: plot.orientation === side ? "" : side })}>
+              {side}
+            </Toggle>
+          ))}
+        </div>
       </div>
 
       <Field label="Anything else we should know?" htmlFor={ids.notes}>
