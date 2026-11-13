@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import PropertyCard from "@/components/PropertyCard";
 import { PropertyGridSkeleton } from "@/components/PropertyCardSkeleton";
 import Select from "@/components/shared/Select";
@@ -12,7 +13,7 @@ export type UsHomes = number | "loading" | "off";
 
 /** US homes for sale, for visitors looking at the USA. It shows nothing at all until the server has the feature switched on, and tells the
  *  page what it is doing so the page can count the homes with its own listings and keep its empty-results box away while they load. */
-export default function ZillowListings({ onCount }: { onCount?: (state: UsHomes) => void }) {
+export default function ZillowListings({ onCount, citySlot }: { onCount?: (state: UsHomes) => void; citySlot?: HTMLElement | null }) {
   const [status, setStatus] = useState<ZillowStatus | null>(null);
   const [city, setCity] = useState("");
   const [homes, setHomes] = useState<ZillowHome[] | null>(null);
@@ -54,18 +55,27 @@ export default function ZillowListings({ onCount }: { onCount?: (state: UsHomes)
 
   if (!status?.enabled || status.cities.length === 0) return null;
 
+  // When the page offers a spot beside its own title, the city picker goes there, on the same line as the result count.
+  const picker = (
+    <Select value={city} onChange={(e) => { setHomes(null); setFailed(false); setCity(e.target.value); }} aria-label="City" className="w-[190px] rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm">
+      {status.cities.map((c) => (
+        <option key={c.key} value={c.key}>
+          {c.name}
+        </option>
+      ))}
+    </Select>
+  );
+
   return (
-    <section aria-label="US homes" className="mt-10">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-slate-900">{`Homes in ${status.cities.find((c) => c.key === city)?.name ?? "the USA"}`}</h2>
-        <Select value={city} onChange={(e) => { setHomes(null); setFailed(false); setCity(e.target.value); }} aria-label="City" className="w-[190px] rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium shadow-sm">
-          {status.cities.map((c) => (
-            <option key={c.key} value={c.key}>
-              {c.name}
-            </option>
-          ))}
-        </Select>
-      </div>
+    <section aria-label="US homes" className={citySlot ? "mt-4" : "mt-10"}>
+      {citySlot ? (
+        createPortal(picker, citySlot)
+      ) : (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xl font-bold text-slate-900">{`Homes in ${status.cities.find((c) => c.key === city)?.name ?? "the USA"}`}</h2>
+          {picker}
+        </div>
+      )}
 
       {failed ? (
         <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">These homes could not be loaded right now.</p>

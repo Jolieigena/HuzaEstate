@@ -211,6 +211,7 @@ function PropertiesContent() {
   const countryTouched = useRef(false);
   // How many US homes the section under the listings is showing (0 when it is not shown), so the page can count them and leave out its empty box.
   const [usHomes, setUsHomes] = useState<UsHomes>('off');
+  const [citySlot, setCitySlot] = useState<HTMLElement | null>(null);
   const onUsHomes = useCallback((state: UsHomes) => setUsHomes(state), []);
   const usCount = typeof usHomes === 'number' ? usHomes : 0;
   function chooseRegion(next: Continent | '') {
@@ -861,7 +862,7 @@ function PropertiesContent() {
 
         {/* ── Title row ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-3">
-          <div className="flex items-baseline gap-1 flex-wrap">
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {heading}
             </h1>
@@ -869,6 +870,7 @@ function PropertiesContent() {
               {listingsLoaded && usHomes !== 'loading' ? `${filteredProperties.length + usCount} ${filteredProperties.length + usCount === 1 ? 'result' : 'results'}` : listingsFailed ? '' : 'Loading…'}
               {aiFilters && <span className="ml-2 inline-flex items-center gap-1 text-[#2ec440] font-semibold"><svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z" /></svg>AI filtered · <button onClick={clearAll} className="underline underline-offset-2 hover:text-[#28b039]">clear</button></span>}
             </p>
+            <span ref={setCitySlot} className="flex items-center" />
           </div>
           <div className="flex items-center gap-1">
             {/* Saved searches — only appears once there's at least one, so it never crowds a
@@ -981,7 +983,7 @@ function PropertiesContent() {
         )}
 
         {/* US homes from Zillow: for a visitor looking at the USA (picked in the Country filter, or where they are when none is picked). Shows nothing until the server switches it on. */}
-        {(selectedCountryCodes.includes('US') || region === 'North America' || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings onCount={onUsHomes} />}
+        {(selectedCountryCodes.includes('US') || region === 'North America' || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings onCount={onUsHomes} citySlot={citySlot} />}
       </div>
 
       {/* ── Floating "Describe Your Desired Property" button ─────────────── */}
