@@ -16,7 +16,7 @@ function dateTime(value: string) {
 
 /** The steps of an order with the day each was reached: placed, confirmed, on its way, delivered. A declined or cancelled
  *  order shows where it ended instead. */
-export function OrderTimeline({ order }: { order: Order }) {
+export function OrderTimeline({ order, compact = false }: { order: Order; compact?: boolean }) {
   if (order.status === "declined" || order.status === "cancelled") return null;
   const steps = [
     { label: "Placed", at: order.createdAt },
@@ -27,7 +27,7 @@ export function OrderTimeline({ order }: { order: Order }) {
   // A step is done once it has a date, or a later step has one (an order can go straight from confirmed to delivered).
   const lastDone = steps.reduce((last, step, i) => (step.at ? i : last), 0);
   return (
-    <ol className="mt-4 grid grid-cols-4 gap-2" aria-label="Order progress">
+    <ol className={`${compact ? "mt-3" : "mt-4"} grid grid-cols-4 gap-2`} aria-label="Order progress">
       {steps.map((step, i) => {
         const done = i <= lastDone;
         return (
@@ -38,8 +38,8 @@ export function OrderTimeline({ order }: { order: Order }) {
               </span>
               <span className={`h-0.5 flex-1 rounded ${i < lastDone ? "bg-[#2ec440]" : "bg-slate-200"} ${i === steps.length - 1 ? "invisible" : ""}`} aria-hidden="true" />
             </div>
-            <p className={`mt-1.5 truncate text-xs font-bold ${done ? "text-slate-800" : "text-slate-400"}`}>{step.label}</p>
-            {step.at && <p className="text-[11px] text-slate-400">{shortDate(step.at)}</p>}
+            <p className={`mt-1 truncate ${compact ? "text-[11px]" : "text-xs"} font-bold ${done ? "text-slate-800" : "text-slate-400"}`}>{step.label}</p>
+            {step.at && !compact && <p className="text-[11px] text-slate-400">{shortDate(step.at)}</p>}
           </li>
         );
       })}
