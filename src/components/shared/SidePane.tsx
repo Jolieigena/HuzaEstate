@@ -6,7 +6,7 @@ import { ReactNode, useEffect, useId } from "react";
  * A pane docked on the right, not a dialog: the design stays in view and can be scrolled and looked at while the person works in the
  * pane. On a phone it is a sheet at the bottom. While it is open the page makes room for it (see globals.css) instead of being covered.
  */
-export default function SidePane({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
+export default function SidePane({ open, onClose, title, children, actions, bare }: { open: boolean; onClose: () => void; title: string; children: ReactNode; actions?: ReactNode; bare?: boolean }) {
   const titleId = useId();
 
   useEffect(() => {
@@ -29,13 +29,16 @@ export default function SidePane({ open, onClose, title, children }: { open: boo
         <h2 id={titleId} className="text-lg font-black text-slate-900">
           {title}
         </h2>
+        <div className="flex items-center gap-1">
+          {actions}
         <button type="button" onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
+        </div>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
+      <div className={bare ? "flex min-h-0 flex-1 flex-col" : "flex-1 overflow-y-auto px-5 py-5"}>{children}</div>
     </aside>
   );
 }

@@ -8,6 +8,7 @@ import { conceptFromAiFloors } from "@/lib/build/conceptGenerator";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import EditPanel from "@/components/shared/EditPanel";
+import type { Attachment } from "@/lib/ai/attachments";
 
 const SUGGESTED_REQUESTS = [
   "Make the kitchen larger",
@@ -26,9 +27,9 @@ export default function RefineDrawer({ projectId, concept, open, onClose }: { pr
 
   if (!concept) return null;
 
-  const apply = async (request: string): Promise<string | null> => {
+  const apply = async (request: string, attachments: Attachment[]): Promise<string | null> => {
     if (!token) return "Please sign in again.";
-    const outcome = await designWithAi(token, project.brief, { request, floors: concept.floors });
+    const outcome = await designWithAi(token, project.brief, { request, floors: concept.floors, attachments });
     if (!outcome.ok) return outcome.error;
     // The figures (area, rooms) are worked out again from the new plan.
     const { metrics } = conceptFromAiFloors(project.brief, outcome.floors);
@@ -37,5 +38,5 @@ export default function RefineDrawer({ projectId, concept, open, onClose }: { pr
     return null;
   };
 
-  return <EditPanel open={open} onClose={onClose} suggestions={SUGGESTED_REQUESTS} placeholder="e.g. Make the kitchen larger and add a home office" onSubmit={apply} />;
+  return <EditPanel storageKey={`build-plan:${projectId}:${concept.id}`} open={open} onClose={onClose} suggestions={SUGGESTED_REQUESTS} placeholder="e.g. Make the kitchen larger and add a home office" onSubmit={apply} />;
 }

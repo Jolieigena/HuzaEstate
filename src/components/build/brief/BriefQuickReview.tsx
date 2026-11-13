@@ -1,6 +1,7 @@
 "use client";
 
-import { DesignBrief, HOME_STYLE_LABELS, PROPERTY_USE_LABELS } from "@/lib/build/types";
+import { DesignBrief, HOME_STYLE_LABELS, ROOM_LABELS, RoomKey } from "@/lib/build/types";
+import { QUICK_EXTRA_ROOMS } from "./BriefQuickHome";
 import { formatCurrency } from "@/lib/build/format";
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
@@ -34,10 +35,13 @@ export default function BriefQuickReview({
           </button>
         </div>
         <Row label="Location" value={[brief.basics.provinceOrCity, brief.basics.countryValue].filter(Boolean).join(", ")} />
-        <Row label="Property use" value={brief.basics.propertyUse ? PROPERTY_USE_LABELS[brief.basics.propertyUse] : ""} />
+        <Row label="Plot size" value={brief.plot.areaSqm ? `${brief.plot.areaSqm} sqm` : ""} />
         <Row label="Floors" value={brief.household.floors} />
         <Row label="Bedrooms" value={quantityOf("bedrooms")} />
         <Row label="Bathrooms" value={quantityOf("bathrooms")} />
+        <Row label="Other spaces" value={brief.household.rooms.filter((r) => (QUICK_EXTRA_ROOMS as string[]).includes(r.key)).map((r) => ROOM_LABELS[r.key as RoomKey]).join(", ")} />
+        <Row label="Parking" value={brief.household.parkingSpaces} />
+        {brief.household.notes?.trim() && <Row label="Notes" value={brief.household.notes.trim()} />}
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
@@ -48,6 +52,7 @@ export default function BriefQuickReview({
           </button>
         </div>
         <Row label="Style" value={brief.style.primaryStyle ? HOME_STYLE_LABELS[brief.style.primaryStyle] : ""} />
+        {(brief.style.features ?? []).length > 0 && <Row label="Features" value={(brief.style.features ?? []).join(", ")} />}
         <Row label="Target budget" value={brief.budget.targetBudget ? formatCurrency(brief.budget.targetBudget, brief.budget.currency) : ""} />
       </div>
 

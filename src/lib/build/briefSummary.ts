@@ -9,6 +9,7 @@ export function summariseBrief(brief: DesignBrief) {
     style: style.primaryStyle ? HOME_STYLE_LABELS[style.primaryStyle] : "",
     styleDetails: {
       alsoLike: style.secondaryStyles.map((s) => HOME_STYLE_LABELS[s]),
+      features: style.features ?? [],
       roofStyle: style.roofStyle,
       exteriorColours: style.exteriorColours,
       interiorColours: style.interiorColours,
@@ -21,6 +22,7 @@ export function summariseBrief(brief: DesignBrief) {
       privacy: style.privacyPriority,
     },
     parkingSpaces: brief.household.parkingSpaces,
+    notes: [brief.household.notes, brief.plot.notes].map((n) => (n ?? "").trim()).filter(Boolean).join(" "),
     priorities: [...brief.sustainability.items, ...brief.accessibility.items].filter((i) => i.priority).map((i) => i.label),
     rooms: brief.household.rooms.map((r) => ({ label: r.label, quantity: r.quantity, preferredSizeSqm: r.preferredSizeSqm })),
   };

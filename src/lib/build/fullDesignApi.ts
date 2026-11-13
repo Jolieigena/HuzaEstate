@@ -1,5 +1,6 @@
 import { designToSvg } from "./exportPlan";
 import { summariseBrief } from "./briefSummary";
+import type { Attachment } from "@/lib/ai/attachments";
 import { DesignBrief, FullDesign, FullDesignPicture, ManualDesign, ManualFloor } from "./types";
 
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
@@ -94,12 +95,12 @@ export async function createFullDesign(
   conceptId: string,
   onProgress: (design: FullDesign) => void,
   /** An edit: what the person asks to change, and the design as it is now. Without it, a new design is made. */
-  change?: { request: string; previous: FullDesign },
+  change?: { request: string; previous: FullDesign; attachments?: Attachment[] },
 ): Promise<{ ok: true; design: FullDesign } | { ok: false; error: string; unavailable: boolean }> {
   const spec = await post<Spec>(token, "spec", {
     brief: summariseBrief(brief),
     floors: roomsOf(floors),
-    ...(change ? { request: change.request, previous: { summary: change.previous.summary, exterior: change.previous.exterior, interior: change.previous.interior, items: change.previous.items } } : {}),
+    ...(change ? { request: change.request, previous: { summary: change.previous.summary, exterior: change.previous.exterior, interior: change.previous.interior, items: change.previous.items }, ...(change.attachments?.length ? { attachments: change.attachments } : {}) } : {}),
   });
   if (!spec.ok) return spec;
   let design: FullDesign = { generatedAt: new Date().toISOString(), conceptId, ...spec.value, pictures: [] };
@@ -118,6 +119,7 @@ export async function createFullDesign(
       ...(plan ? { plan } : {}),
       ...(reference ? { reference } : {}),
       ...(request ? { change: request } : {}),
+      ...(request && change?.attachments?.length ? { attachments: change.attachments.filter((a) => a.dataUrl?.startsWith("data:image/")) } : {}),
     });
     if (!result.ok) {
       firstError = firstError || result.error;
@@ -126,7 +128,8 @@ export async function createFullDesign(
     const url = await shrinkPicture(result.value.image);
     design = { ...design, pictures: [...design.pictures, { key: view.key, label: view.label, url }] };
     onProgress(design);
-    return result.value.image;
+    // the small copy goes on as the reference: the full picture is too big to send again with each request
+    return url;
   };
   // The front goes first and is shown to all the others, so the pictures are one house in one light and one set of colours.
   const [first, ...others] = FULL_DESIGN_VIEWS;

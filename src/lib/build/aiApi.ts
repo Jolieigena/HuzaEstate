@@ -2,6 +2,7 @@ import { newId } from "./factory";
 import { summariseBrief } from "./briefSummary";
 import { addDefaultOpenings } from "./openings";
 import { DesignBrief, ManualFloor, ManualRoomType } from "./types";
+import type { Attachment } from "@/lib/ai/attachments";
 
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
@@ -21,14 +22,14 @@ function toFloors(aiFloors: AiFloor[]): ManualFloor[] {
 }
 
 /** Asks the AI for a design from the brief, or, with the current floors and a request, for that design changed. */
-export async function designWithAi(token: string, brief: DesignBrief, change?: { request: string; floors: ManualFloor[] }): Promise<AiDesignOutcome> {
+export async function designWithAi(token: string, brief: DesignBrief, change?: { request: string; floors: ManualFloor[]; attachments?: Attachment[] }): Promise<AiDesignOutcome> {
   try {
     const res = await fetch(`${ACCESS_API_URL}/build-ai/design`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-huza-client": "web", Authorization: `Bearer ${token}` },
       body: JSON.stringify({
         brief: summariseBrief(brief),
-        ...(change ? { request: change.request, floors: change.floors.map((f) => ({ name: f.name, rooms: f.rooms.map(({ type, name, x, y, w, h }) => ({ type, name, x, y, w, h })) })) } : {}),
+        ...(change ? { request: change.request, ...(change.attachments?.length ? { attachments: change.attachments } : {}), floors: change.floors.map((f) => ({ name: f.name, rooms: f.rooms.map(({ type, name, x, y, w, h }) => ({ type, name, x, y, w, h })) })) } : {}),
       }),
     });
     const data = await res.json().catch(() => null);

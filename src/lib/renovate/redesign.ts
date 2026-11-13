@@ -1,3 +1,4 @@
+import type { Attachment } from "@/lib/ai/attachments";
 import { previewRenovation, RenovateRoom } from "./aiPreview";
 import { ConceptAreaView, RenovationProject, RENOVATION_AREA_LABELS } from "./types";
 
@@ -46,7 +47,7 @@ export type RedesignOutcome = { views: ConceptAreaView[]; made: number; error: s
  * The AI renovates the photo of every room the person chose. Without `change` it starts from each room's own photo; with it, it starts
  * from the picture it made before and changes only what was asked. A room with no photo gets no picture.
  */
-export async function redesignRooms(token: string, project: RenovationProject, change?: { request: string; current: ConceptAreaView[] }): Promise<RedesignOutcome> {
+export async function redesignRooms(token: string, project: RenovationProject, change?: { request: string; current: ConceptAreaView[]; attachments?: Attachment[] }): Promise<RedesignOutcome> {
   const style = project.assessment.style.primaryStyle ?? "modern";
   const areas = project.assessment.areas.slice(0, 8);
   const photos = project.uploads.photos.filter((p) => p.previewUrl?.startsWith("data:image/"));
@@ -61,7 +62,7 @@ export async function redesignRooms(token: string, project: RenovationProject, c
       if (change) {
         const before = change.current.find((v) => v.areaKey === area.areaKey);
         if (!before || !hasPicture(before)) return before ?? null;
-        const outcome = await previewRenovation(token, { photos: [before.afterImage], room, style, wish: `Keep this room exactly as it is, and change only this: ${change.request}` });
+        const outcome = await previewRenovation(token, { photos: [before.afterImage], room, style, wish: `Keep this room exactly as it is, and change only this: ${change.request}`, attachments: change.attachments });
         if (!outcome.ok) {
           error = error || outcome.error;
           return before;

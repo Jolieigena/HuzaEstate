@@ -214,7 +214,7 @@ export default function BriefWizardPage() {
 
         {quick && stepKey === "basics" && (
           <div className="space-y-6">
-            <BriefQuickHome basics={draft.basics} household={draft.household} onChangeBasics={(p) => patchBrief("basics", p)} onChangeHousehold={(p) => patchBrief("household", p)} errors={errors} />
+            <BriefQuickHome basics={draft.basics} household={draft.household} plot={draft.plot} onChangeBasics={(p) => patchBrief("basics", p)} onChangeHousehold={(p) => patchBrief("household", p)} onChangePlot={(p) => patchBrief("plot", p)} errors={errors} />
             <BriefQuickStyle style={draft.style} budget={draft.budget} onChangeStyle={(p) => patchBrief("style", p)} onChangeBudget={(p) => patchBrief("budget", p)} errors={errors} />
           </div>
         )}

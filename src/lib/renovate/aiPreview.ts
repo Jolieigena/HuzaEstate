@@ -1,3 +1,5 @@
+import type { Attachment } from "@/lib/ai/attachments";
+
 const ACCESS_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081/api/access-service";
 
 export const RENOVATE_ROOMS = [
@@ -44,7 +46,7 @@ export type PreviewOutcome = { ok: true; result: RenovationResult } | { ok: fals
 /** Asks the AI to renovate the photos (already uploaded; their addresses are sent). */
 export async function previewRenovation(
   token: string,
-  input: { photos: string[]; room: RenovateRoom; style: RenovateStyle | string; wish: string },
+  input: { photos: string[]; room: RenovateRoom; style: RenovateStyle | string; wish: string; attachments?: Attachment[] },
 ): Promise<PreviewOutcome> {
   try {
     const res = await fetch(`${ACCESS_API_URL}/renovations/preview`, {

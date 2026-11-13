@@ -173,9 +173,15 @@ export interface HouseholdBrief {
   kitchenType: KitchenType;
   parkingSpaces: number;
   rooms: RoomRequirement[];
+  /** Anything else the family wants the designer to know, in their own words. */
+  notes?: string;
 }
 
 export type HomeStyle =
+  | "modern_rwandan"
+  | "african_traditional"
+  | "swahili_coastal"
+  | "east_african_heritage"
   | "contemporary"
   | "modern_tropical"
   | "contemporary_african"
@@ -187,10 +193,15 @@ export type HomeStyle =
   | "affordable_modern"
   | "custom";
 
+// The African styles come first: they are what the platform is for.
 export const HOME_STYLE_LABELS: Record<HomeStyle, string> = {
+  modern_rwandan: "Modern Rwandan",
+  contemporary_african: "Contemporary African",
+  african_traditional: "African traditional-inspired",
+  east_african_heritage: "East African heritage",
+  swahili_coastal: "Swahili coastal",
   contemporary: "Contemporary",
   modern_tropical: "Modern tropical",
-  contemporary_african: "Contemporary African",
   minimalist: "Minimalist",
   traditional: "Traditional",
   mediterranean: "Mediterranean",
@@ -215,7 +226,25 @@ export interface StyleBrief {
   materialsToAvoid: string;
   inspirationImageIds: string[];
   inspirationFiles: UploadedFile[];
+  /** Features the family ticks on the short path, such as a veranda or an inner courtyard. */
+  features?: string[];
 }
+
+/** Features of a home that matter to many African families; they are ticked on the style screen and the AI is told to include them. */
+export const HOME_FEATURES: string[] = [
+  "Veranda or covered terrace",
+  "Inner courtyard",
+  "Local stone walls",
+  "Clay tile roof",
+  "Imigongo-inspired pattern",
+  "Perimeter wall and gate",
+  "Kitchen garden",
+  "Outdoor cooking area",
+  "Rainwater tank",
+  "Solar power",
+  "Cross ventilation and deep eaves",
+  "Separate guest or staff quarters",
+];
 
 export type FinishLevel = "essential" | "standard" | "premium" | "luxury";
 

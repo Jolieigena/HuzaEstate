@@ -1,9 +1,9 @@
 "use client";
 
 import { useId } from "react";
-import { BudgetBrief, HOME_STYLE_LABELS, HomeStyle, StyleBrief } from "@/lib/build/types";
+import { BudgetBrief, HOME_FEATURES, HOME_STYLE_LABELS, HomeStyle, StyleBrief } from "@/lib/build/types";
 import { StepErrors } from "@/lib/build/briefValidation";
-import { Field, inputClass } from "./FormField";
+import { Field, Toggle, inputClass } from "./FormField";
 import BudgetInput from "@/components/shared/BudgetInput";
 
 /** The short path's second screen: the style of the home and, if they know it, what they want to spend. */
@@ -46,6 +46,20 @@ export default function BriefQuickStyle({
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <p className="mb-1.5 text-sm font-bold text-slate-700">Features you would like</p>
+        <div className="flex flex-wrap gap-2">
+          {HOME_FEATURES.map((feature) => {
+            const on = (style.features ?? []).includes(feature);
+            return (
+              <Toggle key={feature} pressed={on} onClick={() => onChangeStyle({ features: on ? (style.features ?? []).filter((f) => f !== feature) : [...(style.features ?? []), feature] })}>
+                {feature}
+              </Toggle>
+            );
+          })}
+        </div>
       </div>
 
       <div>

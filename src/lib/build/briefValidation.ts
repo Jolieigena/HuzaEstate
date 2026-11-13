@@ -48,7 +48,12 @@ export function validateStep(step: BriefStepKey, brief: DesignBrief): StepErrors
 
 /** The short path packs the home, style and budget onto one screen, so it checks all of them. */
 export function validateQuickStep(step: BriefStepKey, brief: DesignBrief): StepErrors {
-  if (step === "basics") return { ...validateStep("basics", brief), ...validateStep("household", brief), ...validateStep("style", brief), ...validateStep("budget", brief) };
+  if (step === "basics") {
+    const errors = { ...validateStep("basics", brief), ...validateStep("household", brief), ...validateStep("style", brief), ...validateStep("budget", brief), ...validateStep("plot", brief) };
+    // The short path does not ask what the home is for.
+    delete errors.propertyUse;
+    return errors;
+  }
   return {};
 }
 

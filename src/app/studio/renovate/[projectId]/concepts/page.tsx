@@ -13,6 +13,7 @@ import { useToast } from "@/lib/toast-context";
 import NewDesignPanel from "@/components/shared/NewDesignPanel";
 import GenerationProgress from "@/components/renovate/GenerationProgress";
 import EditPanel from "@/components/shared/EditPanel";
+import type { Attachment } from "@/lib/ai/attachments";
 
 /** What the new design will be made from, in the pane on the right. */
 function NewDesign({ open, onClose, replacing }: { open: boolean; onClose: () => void; replacing: boolean }) {
@@ -80,9 +81,9 @@ export default function ConceptsPage() {
 
   const views = design.areaViews.filter(hasPicture);
 
-  const edit = async (request: string): Promise<string | null> => {
+  const edit = async (request: string, attachments: Attachment[]): Promise<string | null> => {
     if (!token) return "Please sign in again.";
-    const outcome = await redesignRooms(token, project, { request, current: design.areaViews });
+    const outcome = await redesignRooms(token, project, { request, current: design.areaViews, attachments });
     if (outcome.made === 0 && outcome.error) return outcome.error;
     const first = outcome.views.find(hasPicture);
     RenovationProjectService.refineConcept(project.id, design.id, request, `Changed with AI: "${request}"`, { areaViews: outcome.views, ...(first ? { afterImage: first.afterImage } : {}) });
@@ -144,6 +145,8 @@ export default function ConceptsPage() {
       <p className="text-xs text-slate-500">These are AI concept pictures, not approved technical designs. Structural, electrical, plumbing, safety and permit-related work must be reviewed by qualified professionals.</p>
 
       <EditPanel
+        storageKey={`renovate:${project.id}`}
+        doneText="Done. Your room pictures were changed."
         open={editOpen}
         onClose={() => setEditOpen(false)}
         suggestions={["Make the room brighter", "Use lighter colours on the walls", "Change the floor to timber", "Add more plants", "Add built-in storage", "Make it feel warmer"]}

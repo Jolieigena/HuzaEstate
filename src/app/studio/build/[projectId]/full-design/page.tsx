@@ -6,6 +6,7 @@ import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import EditPanel from "@/components/shared/EditPanel";
+import type { Attachment } from "@/lib/ai/attachments";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { createFullDesign, FULL_DESIGN_VIEWS } from "@/lib/build/fullDesignApi";
 import { FullDesign } from "@/lib/build/types";
@@ -25,7 +26,7 @@ export default function FullDesignPage() {
   const concept = project.concepts.find((c) => c.id === project.selectedConceptId) ?? project.concepts[project.concepts.length - 1];
   const design = busy ? working : project.fullDesign ?? null;
 
-  const start = async (request?: string): Promise<string | null> => {
+  const start = async (request?: string, attachments?: Attachment[]): Promise<string | null> => {
     if (!concept || !token || runningRef.current) return "Please wait for the current design to finish.";
     runningRef.current = true;
     setBusy(true);
@@ -33,7 +34,7 @@ export default function FullDesignPage() {
     setWorking(null);
     let problem: string | null = null;
     const previous = request ? project.fullDesign ?? undefined : undefined;
-    const outcome = await createFullDesign(token, project.brief, concept.floors, concept.id, setWorking, request && previous ? { request, previous } : undefined);
+    const outcome = await createFullDesign(token, project.brief, concept.floors, concept.id, setWorking, request && previous ? { request, previous, attachments } : undefined);
     if (outcome.ok) {
       BuildProjectService.saveFullDesign(project.id, outcome.design);
       if (outcome.design.pictures.length < FULL_DESIGN_VIEWS.length) showToast("Some pictures could not be made. You can make the full design again.", "info");
@@ -128,12 +129,14 @@ export default function FullDesignPage() {
         </section>
       )}
       <EditPanel
+        storageKey={`build-full:${project.id}`}
+        doneText="Done. Your full design was changed."
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title="Edit full design"
         suggestions={["Change the roof to red tiles", "Make the house look more modern", "Use stone on the front wall", "Add a balcony upstairs", "Paint the walls light grey", "Add more garden and trees"]}
         placeholder="e.g. Make the roof dark grey and add a covered terrace"
-        onSubmit={(request) => start(request)}
+        onSubmit={(request, attachments) => start(request, attachments)}
       />
     </div>
   );
