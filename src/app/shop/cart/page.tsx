@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { lineKey, useBasket, type BasketLine } from "@/lib/furniture/basket";
+import QuantityInput from "@/components/shop/QuantityInput";
 import { useSaved } from "@/lib/furniture/saved";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { useQuote } from "@/lib/furniture/useQuote";
@@ -100,15 +101,7 @@ export default function CartPage() {
                           </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1, line.variantId) : cart.remove(line.productId, line.variantId))} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
-                          −
-                        </button>
-                        <span className="w-8 text-center text-sm font-bold text-slate-900">{line.quantity}</span>
-                        <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1, line.variantId)} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
-                          +
-                        </button>
-                      </div>
+                      <QuantityInput compact label={`Quantity of ${line.name}`} value={line.quantity} onChange={(n) => cart.setQuantity(line.productId, n, line.variantId)} />
                       <p className="w-24 shrink-0 text-right text-sm font-bold text-slate-900">{money.format(line.price * line.quantity, line.currency)}</p>
                     </li>
                   ))}

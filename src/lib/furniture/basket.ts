@@ -8,7 +8,7 @@ import type { Product, ProductVariant } from "./api";
 // like when it was added, so the basket can be shown without asking the server about every item.
 const KEY = "huza_furniture_basket";
 const EVENT = "huza-basket-changed";
-const MAX_QUANTITY = 99;
+const MAX_QUANTITY = 9999;
 
 export interface BasketLine {
   productId: string;

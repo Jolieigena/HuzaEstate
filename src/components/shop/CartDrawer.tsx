@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { lineKey, useBasket } from "@/lib/furniture/basket";
+import QuantityInput from "@/components/shop/QuantityInput";
 import { useDisplayCurrency } from "@/lib/currency/display";
 
 const noop = () => () => {};
@@ -79,13 +80,7 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
                     <p className="truncate text-xs text-slate-400">{line.supplierName}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800">{money.format(line.price * line.quantity, line.currency)}</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1, line.variantId) : cart.remove(line.productId, line.variantId))} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
-                        −
-                      </button>
-                      <span className="w-6 text-center text-sm font-bold text-slate-900">{line.quantity}</span>
-                      <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1, line.variantId)} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
-                        +
-                      </button>
+                      <QuantityInput compact label={`Quantity of ${line.name}`} value={line.quantity} onChange={(n) => cart.setQuantity(line.productId, n, line.variantId)} />
                       <button type="button" onClick={() => cart.remove(line.productId, line.variantId)} className="ml-auto text-xs font-bold text-red-600 hover:text-red-800">
                         Remove
                       </button>

@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import BackLink from "@/components/BackLink";
 import Select from "@/components/shared/Select";
 import ProductCard, { SaveButton } from "@/components/shop/ProductCard";
+import QuantityInput from "@/components/shop/QuantityInput";
 import { RatingSummary, VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
@@ -154,16 +155,12 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     </label>
                   ))}
                 {canBuy && (
-                <label className="block w-28 text-xs font-bold uppercase tracking-wide text-slate-500">
+                <div className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                   Quantity
-                  <Select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800" value={quantity} aria-label="Quantity" onChange={(e) => setQuantity(e.target.value)}>
-                    {Array.from({ length: Math.min(10, product.stock === "in_stock" && left !== undefined ? Math.max(left, 1) : 10) }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={String(n)}>
-                        {n}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
+                  <div className="mt-1.5">
+                    <QuantityInput value={Number(quantity) || 1} onChange={(n) => setQuantity(String(n))} max={product.stock === "in_stock" && left !== undefined ? Math.min(9999, Math.max(left, 1)) : 9999} />
+                  </div>
+                </div>
                 )}
                 {canBuy && (
                 <button

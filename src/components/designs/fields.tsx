@@ -58,15 +58,33 @@ export function CurrencySelect({ value, onChange, className, ariaLabel = "Curren
   );
 }
 
-/** A pick list of whole numbers of days, e.g. how long a quote stays valid or how long delivery takes. */
+/** A number of days, e.g. how long a quote stays valid or how long delivery takes: one of the usual answers, or any number typed in. */
 export function DaysSelect({ value, onChange, options, className, ariaLabel }: SelectFieldProps & { options: { value: string; label: string }[]; ariaLabel: string }) {
+  const listed = options.some((option) => option.value === value);
+  const [typing, setTyping] = useState(false);
+  const custom = typing || !listed;
   return (
-    <Select className={className} value={value} aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)}>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </Select>
+    <div className={custom ? "grid grid-cols-[1fr_6rem] gap-2" : undefined}>
+      <Select
+        className={className}
+        value={custom ? "__other" : value}
+        aria-label={ariaLabel}
+        onChange={(e) => {
+          if (e.target.value === "__other") setTyping(true);
+          else {
+            setTyping(false);
+            onChange(e.target.value);
+          }
+        }}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+        <option value="__other">Other…</option>
+      </Select>
+      {custom && <input inputMode="numeric" aria-label={`${ariaLabel}, days`} placeholder="days" maxLength={3} value={value} onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 3))} className={className} />}
+    </div>
   );
 }
