@@ -38,5 +38,5 @@ export default function RefineDrawer({ projectId, concept, open, onClose }: { pr
     return null;
   };
 
-  return <EditPanel storageKey={`build-plan:${projectId}:${concept.id}`} open={open} onClose={onClose} suggestions={SUGGESTED_REQUESTS} placeholder="e.g. Make the kitchen larger and add a home office" onSubmit={apply} />;
+  return <EditPanel title="Edit with AI" storageKey={`build-plan:${projectId}:${concept.id}`} open={open} onClose={onClose} suggestions={SUGGESTED_REQUESTS} placeholder="e.g. Make the kitchen larger and add a home office" onSubmit={apply} />;
 }
