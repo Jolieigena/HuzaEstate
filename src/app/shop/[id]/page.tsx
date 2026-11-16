@@ -109,32 +109,6 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{product.name}</h1>
           <p className="mt-4 text-2xl font-black text-slate-900">{hasOptions && !variant ? `From ${money.format(product.price, product.currency)}` : money.format(unitPrice, product.currency)}</p>
-          {hasOptions && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {options.map((option, index) => (
-                <label key={option.name} className="block text-xs font-bold uppercase tracking-wide text-slate-500">
-                  {option.name}
-                  <Select
-                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800"
-                    value={shown[index]}
-                    aria-label={option.name}
-                    onChange={(e) => {
-                      const next = [...shown];
-                      next[index] = e.target.value;
-                      setPicked(next);
-                      setQuantity("1");
-                    }}
-                  >
-                    {option.values.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </Select>
-                </label>
-              ))}
-            </div>
-          )}
           {hasOptions && !variant && <p className="mt-3 text-sm font-bold text-red-600">This combination is not available.</p>}
           <p className={`mt-2 text-sm font-bold ${product.stock === "out_of_stock" || variantSoldOut ? "text-red-600" : "text-slate-600"}`}>
             {variantSoldOut ? "Sold out" : STOCK_LABELS[product.stock]}
@@ -153,9 +127,33 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {product.status !== "published" && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
           {product.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{product.description}</p>}
 
-          {canBuy && (
+          {(canBuy || hasOptions) && (
             <div className="mt-6 space-y-3">
-              <div className="flex items-end gap-3">
+              <div className="flex flex-wrap items-end gap-3">
+                {hasOptions &&
+                  options.map((option, index) => (
+                    <label key={option.name} className="block w-36 text-xs font-bold uppercase tracking-wide text-slate-500">
+                      {option.name}
+                      <Select
+                        className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800"
+                        value={shown[index]}
+                        aria-label={option.name}
+                        onChange={(e) => {
+                          const next = [...shown];
+                          next[index] = e.target.value;
+                          setPicked(next);
+                          setQuantity("1");
+                        }}
+                      >
+                        {option.values.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </Select>
+                    </label>
+                  ))}
+                {canBuy && (
                 <label className="block w-28 text-xs font-bold uppercase tracking-wide text-slate-500">
                   Quantity
                   <Select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800" value={quantity} aria-label="Quantity" onChange={(e) => setQuantity(e.target.value)}>
@@ -166,17 +164,21 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                     ))}
                   </Select>
                 </label>
+                )}
+                {canBuy && (
                 <button
                   type="button"
                   onClick={() => {
                     cart.add(product, Number(quantity), variant);
                     showToast(`${product.name}${variant ? ` (${variant.label})` : ""} added to your cart.`);
                   }}
-                  className="min-h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]"
+                  className="min-h-11 min-w-[9rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]"
                 >
                   Add to cart
                 </button>
+                )}
               </div>
+              {canBuy && (<>
               <button
                 type="button"
                 onClick={() => {
@@ -195,6 +197,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                   </Link>
                 </p>
               )}
+              </>)}
             </div>
           )}
 
