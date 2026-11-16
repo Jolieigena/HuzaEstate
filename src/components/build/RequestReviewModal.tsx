@@ -3,11 +3,13 @@
 import { useId, useState } from "react";
 import Dialog from "@/components/Dialog";
 import { BuildProject, REVIEW_TYPE_LABELS, ReviewType } from "@/lib/build/types";
-import { DEMO_PROFESSIONALS } from "@/lib/build/demoProfessionals";
+import { useAuth } from "@/lib/auth-context";
+import ProfessionalPicker from "@/components/shared/ProfessionalPicker";
+import { submitProfessionalContact, type RealProfessionalProfile } from "@/lib/professional/api";
 import { BuildProjectService } from "@/lib/build/projectService";
 import { useToast } from "@/lib/toast-context";
 
-const STEP_LABELS = ["Review type", "Project version", "Documents", "Notes", "Professional", "Review request"];
+const STEP_LABELS = ["Professional", "Review type", "Project version", "Documents", "Notes", "Review request"];
 
 export default function RequestReviewModal({ project, open, onClose }: { project: BuildProject; open: boolean; onClose: () => void }) {
   const { showToast } = useToast();
@@ -17,7 +19,10 @@ export default function RequestReviewModal({ project, open, onClose }: { project
   const [versionId, setVersionId] = useState<string>("current");
   const [documentIds, setDocumentIds] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
-  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const [picked, setPicked] = useState<RealProfessionalProfile | null>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const { account } = useAuth();
   const [submitted, setSubmitted] = useState(false);
 
   const reset = () => {
@@ -26,7 +31,8 @@ export default function RequestReviewModal({ project, open, onClose }: { project
     setVersionId("current");
     setDocumentIds([]);
     setNotes("");
-    setProfessionalId(null);
+    setPicked(null);
+    setError("");
     setSubmitted(false);
   };
 
@@ -35,12 +41,27 @@ export default function RequestReviewModal({ project, open, onClose }: { project
     onClose();
   };
 
-  const professional = DEMO_PROFESSIONALS.find((p) => p.id === professionalId) ?? null;
+  const professional = picked
+    ? { id: picked.accountId, name: picked.displayName, profession: picked.specialisations?.join(", ") || picked.specialisation, location: picked.city, verified: false, rating: picked.averageRating ?? 0, completedReviews: picked.reviewCount ?? 0, estimatedResponseTime: "3-5 business days", avatar: picked.photoUrl }
+    : null;
 
-  const canAdvance = [reviewType !== null, true, true, true, professionalId !== null, true][step];
+  const canAdvance = [picked !== null, reviewType !== null, true, true, true, true][step];
 
-  const handleSubmit = () => {
-    if (!reviewType) return;
+  const handleSubmit = async () => {
+    if (!reviewType || !picked || sending) return;
+    setSending(true);
+    setError("");
+    const result = await submitProfessionalContact(picked.accountId, {
+      name: account?.name || "Huza Estate customer",
+      email: account?.email ?? "",
+      phone: account?.phone,
+      message: `Design review request: ${REVIEW_TYPE_LABELS[reviewType]} for my project "${project.name}" on Huza Estate.${notes.trim() ? `\n\nQuestions: ${notes.trim()}` : ""}`,
+    });
+    setSending(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     BuildProjectService.requestReview(project.id, {
       type: reviewType,
       professional,
@@ -83,7 +104,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
             </p>
 
             <div className="min-h-[220px]">
-              {step === 0 && (
+              {step === 1 && (
                 <div className="grid sm:grid-cols-2 gap-2">
                   {(Object.entries(REVIEW_TYPE_LABELS) as [ReviewType, string][]).map(([key, label]) => (
                     <button
@@ -101,7 +122,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                 </div>
               )}
 
-              {step === 1 && (
+              {step === 2 && (
                 <div className="space-y-2">
                   <label className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 cursor-pointer">
                     <input type="radio" name="version" checked={versionId === "current"} onChange={() => setVersionId("current")} className="accent-[#2ec440]" />
@@ -118,7 +139,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                 </div>
               )}
 
-              {step === 2 && (
+              {step === 3 && (
                 <div className="space-y-2">
                   {project.documents.length === 0 ? (
                     <p className="text-sm text-slate-500">No documents available yet — you can still request a review and add documents later.</p>
@@ -138,7 +159,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                 </div>
               )}
 
-              {step === 3 && (
+              {step === 4 && (
                 <div>
                   <label htmlFor="review-notes" className="block text-sm font-bold text-slate-700 mb-2">
                     Notes and questions for the professional
@@ -154,26 +175,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                 </div>
               )}
 
-              {step === 4 && (
-                <div className="space-y-2">
-                  {DEMO_PROFESSIONALS.map((p) => (
-                    <label key={p.id} className={`flex items-start gap-3 border rounded-xl px-4 py-3 cursor-pointer ${professionalId === p.id ? "border-[#2ec440] bg-[#2ec440]/5" : "border-slate-200 bg-slate-50"}`}>
-                      <input type="radio" name="professional" checked={professionalId === p.id} onChange={() => setProfessionalId(p.id)} className="accent-[#2ec440] mt-1" />
-                      <div className="flex-grow">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 text-sm">{p.name}</span>
-                          {p.verified && <span className="text-[10px] font-bold bg-[#2ec440]/10 text-[#2ec440] px-1.5 py-0.5 rounded">Verified</span>}
-                        </div>
-                        <p className="text-xs text-slate-500">{p.profession} · {p.location}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          ★ {p.rating} · {p.completedReviews} completed reviews · Responds in {p.estimatedResponseTime}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-
+              {step === 0 && <ProfessionalPicker selectedId={picked?.accountId ?? null} onPick={setPicked} />}
               {step === 5 && (
                 <dl className="bg-slate-50 border border-slate-200 rounded-2xl p-5 grid grid-cols-2 gap-y-3 text-sm">
                   <dt className="text-slate-500">Review type</dt>
@@ -192,6 +194,11 @@ export default function RequestReviewModal({ project, open, onClose }: { project
               )}
             </div>
 
+            {error && (
+              <p className="mt-3 text-sm font-semibold text-red-600" role="alert">
+                {error}
+              </p>
+            )}
             <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-6">
               <button
                 type="button"
@@ -210,8 +217,8 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                   Continue
                 </button>
               ) : (
-                <button type="button" onClick={handleSubmit} className="px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg">
-                  Submit Request
+                <button type="button" disabled={sending} onClick={handleSubmit} className="disabled:opacity-50 px-6 py-3 rounded-xl bg-slate-900 hover:bg-[#2ec440] text-white font-bold transition-colors shadow-lg">
+                  {sending ? "Sending…" : "Submit Request"}
                 </button>
               )}
             </div>
