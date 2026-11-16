@@ -39,7 +39,7 @@ export default function BriefQuickReview({
         <Row label="Floors" value={brief.household.floors} />
         <Row label="Bedrooms" value={quantityOf("bedrooms")} />
         <Row label="Bathrooms" value={quantityOf("bathrooms")} />
-        <Row label="Other spaces" value={brief.household.rooms.filter((r) => (QUICK_EXTRA_ROOMS as string[]).includes(r.key)).map((r) => ROOM_LABELS[r.key as RoomKey]).join(", ")} />
+        <Row label="Other spaces" value={brief.household.rooms.filter((r) => r.isCustom || (QUICK_EXTRA_ROOMS as string[]).includes(r.key)).map((r) => (r.isCustom ? r.label : ROOM_LABELS[r.key as RoomKey])).join(", ")} />
         <Row label="Parking" value={brief.household.parkingSpaces} />
         <Row label="Front faces" value={brief.plot.orientation} />
         {brief.household.notes?.trim() && <Row label="Notes" value={brief.household.notes.trim()} />}

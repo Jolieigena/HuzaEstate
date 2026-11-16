@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { HouseholdBrief, PlotInfo, ProjectBasics, ROOM_LABELS, RoomKey } from "@/lib/build/types";
 import { StepErrors } from "@/lib/build/briefValidation";
 import { Field, Toggle, inputClass } from "./FormField";
@@ -39,6 +39,17 @@ export default function BriefQuickHome({
   errors: StepErrors;
 }) {
   const ids = { country: useId(), city: useId(), plot: useId(), notes: useId() };
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const customRooms = household.rooms.filter((r) => r.isCustom);
+  const addCustom = () => {
+    const label = draft.trim().replace(/\s+/g, " ").slice(0, 40);
+    if (label && !household.rooms.some((r) => r.label.toLowerCase() === label.toLowerCase())) {
+      onChangeHousehold({ rooms: [...household.rooms, { key: `custom-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, label, quantity: 1, privacy: "private", isCustom: true }] });
+    }
+    setDraft("");
+    setAdding(false);
+  };
   const quantityOf = (key: RoomKey) => household.rooms.find((r) => r.key === key)?.quantity ?? 0;
 
   const toggleRoom = (key: RoomKey) => {
@@ -101,6 +112,36 @@ export default function BriefQuickHome({
               {ROOM_LABELS[key]}
             </Toggle>
           ))}
+          {customRooms.map((room) => (
+            <Toggle key={room.key} pressed onClick={() => onChangeHousehold({ rooms: household.rooms.filter((r) => r.key !== room.key) })}>
+              {room.label} <span aria-label={`Remove ${room.label}`}>×</span>
+            </Toggle>
+          ))}
+          {adding ? (
+            <input
+              autoFocus
+              value={draft}
+              maxLength={40}
+              placeholder="e.g. Prayer room"
+              aria-label="Another space"
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={addCustom}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCustom();
+                } else if (e.key === "Escape") {
+                  setDraft("");
+                  setAdding(false);
+                }
+              }}
+              className="w-44 rounded-2xl border border-[#2ec440] bg-white px-4 py-2.5 text-sm outline-none"
+            />
+          ) : (
+            <Toggle pressed={false} onClick={() => setAdding(true)}>
+              + Add another
+            </Toggle>
+          )}
         </div>
       </div>
 
