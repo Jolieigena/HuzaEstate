@@ -10,6 +10,7 @@ import LandlordProfileCard from '@/components/LandlordProfileCard';
 import WhatsappChatButton from '@/components/shared/WhatsappChatButton';
 import { internationalPhone } from '@/lib/whatsapp/chat';
 import InquiryForm from '@/components/InquiryForm';
+import ReportListing from '@/components/ReportListing';
 import BackLink from '@/components/BackLink';
 import { useDisplayCurrency } from '@/lib/currency/display';
 import { isPerSqm, totalPriceOf } from '@/lib/properties/price';
@@ -289,6 +290,8 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
               </Suspense>
             )}
           </div>
+
+          <div className="mt-4 flex justify-center"><ReportListing propertyId={property.id} title={property.title} /></div>
 
           {property.type === 'rent' && <LandlordProfileCard ownerId={property.ownerId} />}
           </div>
