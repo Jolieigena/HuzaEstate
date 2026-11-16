@@ -981,6 +981,8 @@ export interface ProfessionalFeedback {
 export interface ProfessionalReviewRequest {
   id: string;
   type: ReviewType;
+  /** Every kind of review asked for; `type` is the first of them. Absent on requests made before several could be chosen. */
+  types?: ReviewType[];
   areasRequiringReview: RenovationAreaKey[];
   projectVersionId: string | null;
   documentIds: string[];

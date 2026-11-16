@@ -112,7 +112,7 @@ export default function ProfessionalsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h2 className="font-bold text-slate-900">{REVIEW_TYPE_LABELS[review.type]}</h2>
+                    <h2 className="font-bold text-slate-900">{(review.types?.length ? review.types : [review.type]).map((t) => REVIEW_TYPE_LABELS[t]).join(", ")}</h2>
                     <ReviewStatusBadge status={review.status} />
                   </div>
                   <p className="text-sm text-slate-500">

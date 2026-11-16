@@ -15,7 +15,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
   const { showToast } = useToast();
   const titleId = useId();
   const [step, setStep] = useState(0);
-  const [reviewType, setReviewType] = useState<ReviewType | null>(null);
+  const [reviewTypes, setReviewTypes] = useState<ReviewType[]>([]);
   const [areaKeys, setAreaKeys] = useState<RenovationAreaKey[]>([]);
   const [versionId, setVersionId] = useState<string>("current");
   const [documentIds, setDocumentIds] = useState<string[]>([]);
@@ -28,7 +28,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
 
   const reset = () => {
     setStep(0);
-    setReviewType(null);
+    setReviewTypes([]);
     setAreaKeys([]);
     setVersionId("current");
     setDocumentIds([]);
@@ -47,17 +47,17 @@ export default function RequestReviewModal({ project, open, onClose }: { project
     ? { id: picked.accountId, name: picked.displayName, profession: picked.specialisations?.join(", ") || picked.specialisation, location: picked.city, verified: false, rating: picked.averageRating ?? 0, completedProjects: picked.reviewCount ?? 0, estimatedResponseTime: "3-5 business days", avatar: picked.photoUrl }
     : null;
 
-  const canAdvance = [picked !== null, reviewType !== null, true, true, true, true, true][step];
+  const canAdvance = [picked !== null, reviewTypes.length > 0, true, true, true, true, true][step];
 
   const handleSubmit = async () => {
-    if (!reviewType || !picked || sending) return;
+    if (reviewTypes.length === 0 || !picked || sending) return;
     setSending(true);
     setError("");
     const result = await submitProfessionalContact(picked.accountId, {
       name: account?.name || "Huza Estate customer",
       email: account?.email ?? "",
       phone: account?.phone,
-      message: `Design review request: ${REVIEW_TYPE_LABELS[reviewType]} for my project "${project.name}" on Huza Estate.${notes.trim() ? `\n\nQuestions: ${notes.trim()}` : ""}`,
+      message: `Design review request: ${reviewTypes.map((t) => REVIEW_TYPE_LABELS[t]).join(", ")} for my project "${project.name}" on Huza Estate.${notes.trim() ? `\n\nQuestions: ${notes.trim()}` : ""}`,
     });
     setSending(false);
     if (!result.ok) {
@@ -65,7 +65,8 @@ export default function RequestReviewModal({ project, open, onClose }: { project
       return;
     }
     RenovationProjectService.requestReview(project.id, {
-      type: reviewType,
+      type: reviewTypes[0],
+      types: reviewTypes,
       areasRequiringReview: areaKeys,
       professional,
       projectVersionId: versionId === "current" ? null : versionId,
@@ -91,7 +92,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
               Review requested
             </h2>
             <p className="text-slate-500 text-sm mb-6">
-              Your {reviewType ? REVIEW_TYPE_LABELS[reviewType].toLowerCase() : "review"} request has been submitted{professional ? ` to ${professional.name}` : ""}. You&apos;ll see updates on the Professionals page.
+              Your {reviewTypes.length ? reviewTypes.map((t) => REVIEW_TYPE_LABELS[t]).join(", ").toLowerCase() : "review"} request has been submitted{professional ? ` to ${professional.name}` : ""}. You&apos;ll see updates on the Professionals page.
             </p>
             <button type="button" onClick={handleClose} className="bg-slate-900 hover:bg-[#2ec440] text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-lg">
               Done
@@ -113,10 +114,10 @@ export default function RequestReviewModal({ project, open, onClose }: { project
                     <button
                       key={key}
                       type="button"
-                      onClick={() => setReviewType(key)}
-                      aria-pressed={reviewType === key}
+                      onClick={() => setReviewTypes((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))}
+                      aria-pressed={reviewTypes.includes(key)}
                       className={`px-4 py-3 rounded-xl text-sm font-semibold border text-left transition-colors ${
-                        reviewType === key ? "bg-[#2ec440]/10 border-[#2ec440] text-[#2ec440]" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                        reviewTypes.includes(key) ? "bg-[#2ec440]/10 border-[#2ec440] text-[#2ec440]" : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                       }`}
                     >
                       {label}
@@ -201,7 +202,7 @@ export default function RequestReviewModal({ project, open, onClose }: { project
               {step === 6 && (
                 <dl className="bg-slate-50 border border-slate-200 rounded-2xl p-5 grid grid-cols-2 gap-y-3 text-sm">
                   <dt className="text-slate-500">Review type</dt>
-                  <dd className="text-right font-semibold text-slate-900">{reviewType ? REVIEW_TYPE_LABELS[reviewType] : "—"}</dd>
+                  <dd className="text-right font-semibold text-slate-900">{reviewTypes.length ? reviewTypes.map((t) => REVIEW_TYPE_LABELS[t]).join(", ") : "—"}</dd>
                   <dt className="text-slate-500">Areas</dt>
                   <dd className="text-right font-semibold text-slate-900">{areaKeys.length || "All"}</dd>
                   <dt className="text-slate-500">Professional</dt>
