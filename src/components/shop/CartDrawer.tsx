@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useBasket } from "@/lib/furniture/basket";
+import { lineKey, useBasket } from "@/lib/furniture/basket";
 import { useDisplayCurrency } from "@/lib/currency/display";
 
 const noop = () => () => {};
@@ -68,24 +68,25 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
           <>
             <ul className="flex-1 divide-y divide-slate-100 overflow-y-auto px-5">
               {cart.lines.map((line) => (
-                <li key={line.productId} className="flex gap-3 py-4">
+                <li key={lineKey(line)} className="flex gap-3 py-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {line.image ? <img src={line.image} alt="" className="h-20 w-20 shrink-0 rounded-xl object-cover" /> : <div className="h-20 w-20 shrink-0 rounded-xl bg-slate-100" />}
                   <div className="min-w-0 flex-1">
                     <Link href={`/shop/${line.productId}`} onClick={onClose} className="block truncate text-sm font-bold text-slate-900 hover:underline">
                       {line.name}
                     </Link>
+                    {line.variantLabel && <p className="truncate text-xs font-semibold text-slate-600">{line.variantLabel}</p>}
                     <p className="truncate text-xs text-slate-400">{line.supplierName}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-800">{money.format(line.price * line.quantity, line.currency)}</p>
                     <div className="mt-2 flex items-center gap-2">
-                      <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1) : cart.remove(line.productId))} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
+                      <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1, line.variantId) : cart.remove(line.productId, line.variantId))} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
                         −
                       </button>
                       <span className="w-6 text-center text-sm font-bold text-slate-900">{line.quantity}</span>
-                      <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1)} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
+                      <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1, line.variantId)} className="h-7 w-7 rounded-lg border border-slate-200 text-sm font-bold text-slate-600 hover:border-slate-300">
                         +
                       </button>
-                      <button type="button" onClick={() => cart.remove(line.productId)} className="ml-auto text-xs font-bold text-red-600 hover:text-red-800">
+                      <button type="button" onClick={() => cart.remove(line.productId, line.variantId)} className="ml-auto text-xs font-bold text-red-600 hover:text-red-800">
                         Remove
                       </button>
                     </div>

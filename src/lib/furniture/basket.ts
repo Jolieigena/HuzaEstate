@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useSyncExternalStore } from "react";
-import type { Product } from "./api";
+import type { Product, ProductVariant } from "./api";
 
 // The order basket: what someone has picked from the furniture catalogue so far. It lives in this browser
 // (nothing is saved on the server until the order request is sent). Each line keeps what the product looked
@@ -12,6 +12,9 @@ const MAX_QUANTITY = 99;
 
 export interface BasketLine {
   productId: string;
+  /** The option combination chosen, for a product that has options. */
+  variantId?: string;
+  variantLabel?: string;
   name: string;
   image?: string;
   price: number;
@@ -20,6 +23,12 @@ export interface BasketLine {
   supplierName: string;
   quantity: number;
 }
+
+/** Two lines are the same line when they are the same product and the same option combination. */
+const same = (l: BasketLine, productId: string, variantId?: string) => l.productId === productId && (l.variantId ?? "") === (variantId ?? "");
+
+/** A key for a line, for lists. */
+export const lineKey = (l: Pick<BasketLine, "productId" | "variantId">) => `${l.productId}#${l.variantId ?? ""}`;
 
 function read(): string {
   try {
@@ -60,16 +69,17 @@ export function useBasket() {
   const raw = useSyncExternalStore(subscribe, read, () => "[]");
   const lines = useMemo(() => parse(raw), [raw]);
 
-  const add = useCallback((product: Product, quantity = 1) => {
+  const add = useCallback((product: Product, quantity = 1, variant?: ProductVariant) => {
     const current = parse(read());
-    const existing = current.find((l) => l.productId === product.id);
+    const existing = current.find((l) => same(l, product.id, variant?.id));
     if (existing) existing.quantity = Math.min(existing.quantity + quantity, MAX_QUANTITY);
     else
       current.push({
         productId: product.id,
         name: product.name,
         image: product.images[0],
-        price: product.price,
+        ...(variant ? { variantId: variant.id, variantLabel: variant.label } : {}),
+        price: variant?.price ?? product.price,
         currency: product.currency,
         supplierId: product.supplier?.accountId ?? "",
         supplierName: product.supplier?.companyName ?? "Supplier",
@@ -80,17 +90,17 @@ export function useBasket() {
 
   const addLine = useCallback((line: BasketLine) => {
     const current = parse(read());
-    const existing = current.find((l) => l.productId === line.productId);
+    const existing = current.find((l) => same(l, line.productId, line.variantId));
     if (existing) existing.quantity = Math.min(existing.quantity + line.quantity, MAX_QUANTITY);
     else current.push({ ...line, quantity: Math.min(line.quantity, MAX_QUANTITY) });
     write(current);
   }, []);
 
-  const setQuantity = useCallback((productId: string, quantity: number) => {
-    write(parse(read()).map((l) => (l.productId === productId ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY) } : l)));
+  const setQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
+    write(parse(read()).map((l) => (same(l, productId, variantId) ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY) } : l)));
   }, []);
 
-  const remove = useCallback((productId: string) => write(parse(read()).filter((l) => l.productId !== productId)), []);
+  const remove = useCallback((productId: string, variantId?: string) => write(parse(read()).filter((l) => !same(l, productId, variantId))), []);
   const clear = useCallback(() => write([]), []);
 
   const count = lines.reduce((sum, l) => sum + l.quantity, 0);

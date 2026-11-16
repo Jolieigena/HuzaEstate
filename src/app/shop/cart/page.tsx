@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { useBasket, type BasketLine } from "@/lib/furniture/basket";
+import { lineKey, useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { useQuote } from "@/lib/furniture/useQuote";
@@ -74,37 +74,38 @@ export default function CartPage() {
                 </div>
                 <ul className="mt-3 divide-y divide-slate-100">
                   {group.lines.map((line) => (
-                    <li key={line.productId} className="flex flex-wrap items-center gap-4 py-3">
+                    <li key={lineKey(line)} className="flex flex-wrap items-center gap-4 py-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       {line.image ? <img src={line.image} alt="" className="h-20 w-20 shrink-0 rounded-xl object-cover" /> : <div className="h-20 w-20 shrink-0 rounded-xl bg-slate-100" />}
                       <div className="min-w-0 flex-1">
                         <Link href={`/shop/${line.productId}`} className="block truncate font-bold text-slate-900 hover:underline">
                           {line.name}
                         </Link>
+                        {line.variantLabel && <p className="text-sm font-semibold text-slate-600">{line.variantLabel}</p>}
                         <p className="text-sm text-slate-500">{money.format(line.price, line.currency)} each</p>
                         <div className="mt-2 flex items-center gap-3 text-xs font-bold">
                           <button
                             type="button"
                             onClick={() => {
-                              saved.saveItem({ productId: line.productId, name: line.name, image: line.image, price: line.price, currency: line.currency, stock: "in_stock", supplierId: line.supplierId, supplierName: line.supplierName });
-                              cart.remove(line.productId);
+                              saved.saveItem({ productId: line.productId, name: line.name, image: line.image, price: line.price, currency: line.currency, stock: "in_stock", supplierId: line.supplierId, supplierName: line.supplierName, hasOptions: Boolean(line.variantId) });
+                              cart.remove(line.productId, line.variantId);
                               showToast(`${line.name} saved for later.`);
                             }}
                             className="text-slate-500 hover:text-slate-900"
                           >
                             Save for later
                           </button>
-                          <button type="button" onClick={() => cart.remove(line.productId)} className="text-red-600 hover:text-red-800">
+                          <button type="button" onClick={() => cart.remove(line.productId, line.variantId)} className="text-red-600 hover:text-red-800">
                             Remove
                           </button>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
-                        <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1) : cart.remove(line.productId))} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
+                        <button type="button" aria-label={`Fewer ${line.name}`} onClick={() => (line.quantity > 1 ? cart.setQuantity(line.productId, line.quantity - 1, line.variantId) : cart.remove(line.productId, line.variantId))} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
                           −
                         </button>
                         <span className="w-8 text-center text-sm font-bold text-slate-900">{line.quantity}</span>
-                        <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1)} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
+                        <button type="button" aria-label={`More ${line.name}`} onClick={() => cart.setQuantity(line.productId, line.quantity + 1, line.variantId)} className="h-8 w-8 rounded-lg border border-slate-200 font-bold text-slate-600 hover:border-slate-300">
                           +
                         </button>
                       </div>

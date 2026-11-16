@@ -9,7 +9,8 @@ import { Card, EmptyState, PageFrame, PrimaryButton, SecondaryButton, fieldClass
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { uploadProfessionalImage } from "@/lib/professional/api";
-import { useSuggestedCategories } from "@/lib/furniture/groups";
+import { useShopTabs, useSuggestedCategories } from "@/lib/furniture/groups";
+import ProductOptionsEditor, { initialOptions, optionInputs, optionsReady } from "@/components/supplier/ProductOptionsEditor";
 import { FurnitureApi, STOCK_LABELS, formatPrice, type Product, type ProductInput, type StockStatus } from "@/lib/furniture/api";
 import { useLanguage } from "@/lib/i18n/language";
 
@@ -114,7 +115,7 @@ export default function SupplierProductsPage() {
                 </div>
                 <h3 className="font-black text-slate-900">{product.name}</h3>
                 <p className="mt-1 text-sm font-semibold text-slate-700">
-                  {formatPrice(product.price, product.currency)} <span className="font-normal text-slate-400">· {STOCK_LABELS[product.stock]}</span>
+                  {(product.variants ?? []).length > 0 ? "From " : ""}{formatPrice(product.price, product.currency)} <span className="font-normal text-slate-400">· {STOCK_LABELS[product.stock]}</span>
                 </p>
                 {product.hidden && <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{product.hiddenReason || "Taken down by the platform."}</p>}
                 {product.status === "published" && (product.review === "changes_requested" || product.review === "rejected") && product.reviewNote && (
@@ -158,7 +159,7 @@ export default function SupplierProductsPage() {
 }
 
 function toInput(product: Product): ProductInput {
-  return { name: product.name, description: product.description, category: product.category, images: product.images, price: product.price, currency: product.currency, stock: product.stock, leadTimeDays: product.leadTimeDays, quantity: product.quantity, lowStockAt: product.lowStockAt, status: product.status };
+  return { name: product.name, description: product.description, category: product.category, images: product.images, price: product.price, currency: product.currency, stock: product.stock, leadTimeDays: product.leadTimeDays, quantity: product.quantity, lowStockAt: product.lowStockAt, status: product.status, ...((product.variants ?? []).length > 0 ? { options: product.options, variants: (product.variants ?? []).map((v) => ({ values: v.values, price: v.price, quantity: v.quantity })) } : {}) };
 }
 
 function ProductDialog({ editing, onClose, onSaved }: { editing: Product | "new" | null; onClose: () => void; onSaved: () => void }) {
@@ -179,6 +180,8 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
   const [name, setName] = useState(product?.name ?? "");
   const [category, setCategory] = useState(product?.category ?? "");
   const suggestedCategories = useSuggestedCategories();
+  const tabs = useShopTabs();
+  const [optionState, setOptionState] = useState(() => initialOptions(product));
   const [description, setDescription] = useState(product?.description ?? "");
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [priceText, setPriceText] = useState(product ? String(product.price) : "");
@@ -213,7 +216,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
     if (!token) return;
     setBusy(true);
     setError("");
-    const input: ProductInput = { name: name.trim(), description: description.trim(), category: category.trim(), images, price: Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), ...(stock === "in_stock" && quantityText.trim() !== "" ? { quantity: Number(quantityText), lowStockAt: Number(lowText || "3") } : {}), status };
+    const input: ProductInput = { name: name.trim(), description: description.trim(), category: category.trim(), images, price: hasOptions ? 0 : Number(priceText), currency, stock, ...(stock === "made_to_order" ? { leadTimeDays: Number(leadTime) } : {}), ...(!hasOptions && stock === "in_stock" && quantityText.trim() !== "" ? { quantity: Number(quantityText), lowStockAt: Number(lowText || "3") } : {}), ...optionInputs(optionState.options, optionState.edits), status };
     const result = product ? await FurnitureApi.update(token, product.id, input) : await FurnitureApi.create(token, input);
     setBusy(false);
     if (!result.ok) {
@@ -224,7 +227,10 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
     onSaved();
   };
 
-  const complete = name.trim() !== "" && category.trim() !== "" && Number(priceText) > 0;
+  // Size, type and the like are offered for building materials (and kept on a product that already has them), not for furniture.
+  const hasOptions = optionState.options.length > 0;
+  const allowsOptions = hasOptions || (tabs?.groups ?? []).some((g) => g.name.toLowerCase() !== "furniture" && g.categories.some((c) => c.name.toLowerCase() === category.trim().toLowerCase()));
+  const complete = name.trim() !== "" && category.trim() !== "" && (hasOptions ? optionsReady(optionState.options, optionState.edits) : Number(priceText) > 0);
 
   return (
     <div className="flex max-h-[88vh] flex-col p-6">
@@ -274,16 +280,19 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
             </label>
             {category.trim() !== "" && (
               <>
-                <div className="grid grid-cols-[1fr_7rem] gap-3">
-                  <label className="block text-sm font-bold text-slate-700">
-                    {t("Price")}
-                    <input className={`${fieldClass} mt-1`} inputMode="decimal" value={priceText} onChange={(e) => setPriceText(e.target.value.replace(/[^\d.]/g, ""))} />
-                  </label>
+                <div className={hasOptions ? "grid grid-cols-[7rem] gap-3" : "grid grid-cols-[1fr_7rem] gap-3"}>
+                  {!hasOptions && (
+                    <label className="block text-sm font-bold text-slate-700">
+                      {t("Price")}
+                      <input className={`${fieldClass} mt-1`} inputMode="decimal" value={priceText} onChange={(e) => setPriceText(e.target.value.replace(/[^\d.]/g, ""))} />
+                    </label>
+                  )}
                   <label className="block text-sm font-bold text-slate-700">
                     {t("Currency")}
                     <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
                   </label>
                 </div>
+                {allowsOptions && <ProductOptionsEditor options={optionState.options} edits={optionState.edits} currency={currency} onChange={(options, edits) => setOptionState({ options, edits })} />}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-sm font-bold text-slate-700">
                     {t("Availability")}
@@ -301,14 +310,14 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
                       <DaysSelect className={`${fieldClass} mt-1`} ariaLabel={t("Ready in")} value={leadTime} onChange={setLeadTime} options={MAKING_TIMES} />
                     </label>
                   )}
-                  {stock === "in_stock" && (
+                  {stock === "in_stock" && !hasOptions && (
                     <label className="block text-sm font-bold text-slate-700">
                       How many in stock <span className="font-normal text-slate-400">(optional)</span>
                       <input className={`${fieldClass} mt-1`} inputMode="numeric" value={quantityText} maxLength={6} onChange={(e) => setQuantityText(e.target.value.replace(/\D/g, ""))} />
                     </label>
                   )}
                 </div>
-                {stock === "in_stock" && quantityText.trim() !== "" && (
+                {stock === "in_stock" && !hasOptions && quantityText.trim() !== "" && (
                   <label className="block text-sm font-bold text-slate-700 sm:max-w-xs">
                     {t("Warn me when this many are left")}
                     <input className={`${fieldClass} mt-1`} inputMode="numeric" value={lowText} maxLength={4} onChange={(e) => setLowText(e.target.value.replace(/\D/g, ""))} />

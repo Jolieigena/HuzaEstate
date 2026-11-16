@@ -95,13 +95,31 @@ export interface SupplierDelivery {
   freeOver?: number;
 }
 
+/** A choice a buyer makes on a product, such as Size with 12 mm and 16 mm. */
+export interface ProductOption {
+  name: string;
+  values: string[];
+}
+
+/** One combination of the options that is on sale, with its own price and, when the supplier counts it, its own stock. */
+export interface ProductVariant {
+  id: string;
+  values: string[];
+  label: string;
+  price: number;
+  quantity?: number;
+}
+
 export interface Product {
   id: string;
   name: string;
   description: string;
   category: string;
   images: string[];
+  /** With options, the lowest price of the combinations. */
   price: number;
+  options?: ProductOption[];
+  variants?: ProductVariant[];
   currency: string;
   stock: StockStatus;
   /** How many are left, when the supplier counts them. */
@@ -125,6 +143,8 @@ export interface ProductInput {
   category: string;
   images: string[];
   price: number;
+  options?: ProductOption[];
+  variants?: { values: string[]; price: number; quantity?: number }[];
   currency: string;
   stock: StockStatus;
   /** Leave out when the supplier does not count stock. */
@@ -208,6 +228,8 @@ export function paymentMethodLabel(method?: string): string {
 
 export interface OrderItem {
   productId: string;
+  /** The options the buyer chose, such as "16 mm · Ribbed". */
+  variantLabel?: string;
   name: string;
   image?: string;
   unitPrice: number;
@@ -337,7 +359,7 @@ export interface OrderQuote {
 }
 
 export interface OrderInput {
-  items: { productId: string; quantity: number }[];
+  items: { productId: string; variantId?: string; quantity: number }[];
   city: string;
   address?: string;
   location?: { lat: number; lng: number };
@@ -425,7 +447,7 @@ export const FurnitureApi = {
   },
   createPayout: (token: string, input: { supplierId: string; currency: string; reference: string; note?: string; orderIds?: string[] }) => call<{ payout: Payout }>("/furniture/payouts", { token, method: "POST", body: input }),
   retryRefund: (token: string, orderId: string) => call<{ refunded: boolean; paymentStatus: PaymentStatus; error?: string }>(`/furniture/orders/${encodeURIComponent(orderId)}/retry-refund`, { token, method: "POST" }),
-  quoteOrder: (token: string, items: { productId: string; quantity: number }[]) => call<{ groups: OrderQuote[] }>("/furniture/orders/quote", { token, method: "POST", body: { items } }),
+  quoteOrder: (token: string, items: { productId: string; variantId?: string; quantity: number }[]) => call<{ groups: OrderQuote[] }>("/furniture/orders/quote", { token, method: "POST", body: { items } }),
   shipOrder: (token: string, id: string, trackingNote?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/ship`, { token, method: "POST", body: { trackingNote } }),
   postMessage: (token: string, id: string, text: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/messages`, { token, method: "POST", body: { text } }),
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),

@@ -18,6 +18,8 @@ export interface SavedItem {
   stock: StockStatus;
   supplierId: string;
   supplierName: string;
+  /** A product with options is chosen on its own page, so it cannot be moved to the cart from here. */
+  hasOptions?: boolean;
 }
 
 function read(): string {
@@ -67,7 +69,7 @@ export function useSaved() {
       return false;
     }
     write([
-      { productId: product.id, name: product.name, image: product.images[0], price: product.price, currency: product.currency, stock: product.stock, supplierId: product.supplier?.accountId ?? "", supplierName: product.supplier?.companyName ?? "Supplier" },
+      { productId: product.id, name: product.name, image: product.images[0], price: product.price, currency: product.currency, stock: product.stock, supplierId: product.supplier?.accountId ?? "", supplierName: product.supplier?.companyName ?? "Supplier", hasOptions: (product.variants ?? []).length > 0 },
       ...current,
     ].slice(0, MAX));
     return true;

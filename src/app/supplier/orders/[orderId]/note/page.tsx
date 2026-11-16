@@ -88,8 +88,8 @@ export default function DeliveryNotePage({ params }: { params: Promise<{ orderId
           </thead>
           <tbody className="divide-y divide-slate-100">
             {order.items.map((item) => (
-              <tr key={item.productId}>
-                <td className="py-2.5 pr-3 font-semibold text-slate-800">{item.name}</td>
+              <tr key={`${item.productId}#${item.variantLabel ?? ""}`}>
+                <td className="py-2.5 pr-3 font-semibold text-slate-800">{item.name}{item.variantLabel ? ` · ${item.variantLabel}` : ""}</td>
                 <td className="px-3 py-2.5 text-right text-slate-700">{item.quantity}</td>
                 <td className="px-3 py-2.5 text-right text-slate-700">{formatPrice(item.unitPrice, order.currency)}</td>
                 <td className="py-2.5 pl-3 text-right font-semibold text-slate-900">{formatPrice(item.unitPrice * item.quantity, order.currency)}</td>

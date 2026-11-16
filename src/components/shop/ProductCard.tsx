@@ -39,6 +39,7 @@ export default function ProductCard({ product }: { product: Product }) {
   const { showToast } = useToast();
   const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
   const out = product.stock === "out_of_stock";
+  const hasOptions = (product.variants ?? []).length > 0;
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -61,7 +62,7 @@ export default function ProductCard({ product }: { product: Product }) {
       </Link>
       <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
         <div className="min-w-0">
-          <p className="font-bold text-slate-900">{money.format(product.price, product.currency)}</p>
+          <p className="font-bold text-slate-900">{hasOptions ? "From " : ""}{money.format(product.price, product.currency)}</p>
           {product.supplier && (
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className="truncate">{product.supplier.companyName}</span>
@@ -70,6 +71,11 @@ export default function ProductCard({ product }: { product: Product }) {
           )}
           {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 && <p className="text-xs font-bold text-amber-600">Only {product.quantity} left</p>}
         </div>
+        {hasOptions ? (
+          <Link href={`/shop/${product.id}`} className={`shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31] ${out ? "pointer-events-none opacity-40" : ""}`}>
+            Choose options
+          </Link>
+        ) : (
         <button
           type="button"
           disabled={out}
@@ -81,6 +87,7 @@ export default function ProductCard({ product }: { product: Product }) {
         >
           {inCart > 0 ? `In cart (${inCart})` : "Add to cart"}
         </button>
+        )}
       </div>
     </div>
   );

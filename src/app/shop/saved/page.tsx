@@ -41,6 +41,11 @@ export default function SavedPage() {
                   </p>
                 </div>
                 <div className="flex gap-2">
+                  {item.hasOptions ? (
+                    <Link href={`/shop/${item.productId}`} className="inline-flex min-h-10 items-center rounded-xl bg-slate-900 px-4 text-sm font-bold text-white transition-colors hover:bg-[#2ec440]">
+                      Choose options
+                    </Link>
+                  ) : (
                   <button
                     type="button"
                     disabled={out}
@@ -53,6 +58,7 @@ export default function SavedPage() {
                   >
                     Move to cart
                   </button>
+                  )}
                   <button type="button" onClick={() => saved.remove(item.productId)} className="min-h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition-colors hover:border-red-300 hover:text-red-600">
                     Remove
                   </button>

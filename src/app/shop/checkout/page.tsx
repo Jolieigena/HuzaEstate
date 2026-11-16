@@ -6,7 +6,7 @@ import RequireAuth from "@/components/shared/RequireAuth";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
-import { useBasket, type BasketLine } from "@/lib/furniture/basket";
+import { lineKey, useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useQuote } from "@/lib/furniture/useQuote";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { FurnitureApi, type Order } from "@/lib/furniture/api";
@@ -92,7 +92,7 @@ function Checkout() {
     setBusy(true);
     setError("");
     const result = await FurnitureApi.createOrder(token, {
-      items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+      items: cart.lines.map((l) => ({ productId: l.productId, variantId: l.variantId, quantity: l.quantity })),
       city: city.trim(),
       location: location ?? undefined,
       phone: cleanPhone(phone),
@@ -204,9 +204,9 @@ function Checkout() {
                 <p className="text-xs font-bold uppercase tracking-wider text-slate-400">{group.supplierName}</p>
                 <ul className="mt-2 divide-y divide-white/10">
                   {group.lines.map((line) => (
-                    <li key={line.productId} className="flex items-center justify-between gap-4 py-3 text-sm">
+                    <li key={lineKey(line)} className="flex items-center justify-between gap-4 py-3 text-sm">
                       <span className="min-w-0 truncate text-slate-300">
-                        {line.name} <span className="text-slate-500">× {line.quantity}</span>
+                        {line.name}{line.variantLabel ? ` (${line.variantLabel})` : ""} <span className="text-slate-500">× {line.quantity}</span>
                       </span>
                       <span className="shrink-0 font-bold">{money.format(line.price * line.quantity, line.currency)}</span>
                     </li>

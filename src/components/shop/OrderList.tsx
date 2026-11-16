@@ -118,11 +118,11 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
           <OrderTimeline order={order} compact />
           <ul className="mt-2 divide-y divide-slate-100">
             {order.items.map((item) => (
-              <li key={item.productId} className="flex items-center gap-2.5 py-1.5">
+              <li key={`${item.productId}#${item.variantLabel ?? ""}`} className="flex items-center gap-2.5 py-1.5">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {item.image ? <img src={item.image} alt="" className="h-9 w-9 shrink-0 rounded-md object-cover" /> : <div className="h-9 w-9 shrink-0 rounded-md bg-slate-100" />}
                 <Link href={`/shop/${item.productId}`} className="min-w-0 flex-1 truncate text-xs font-bold text-slate-800 hover:underline">
-                  {item.name}
+                  {item.name}{item.variantLabel ? ` · ${item.variantLabel}` : ""}
                 </Link>
                 <span className="shrink-0 text-xs text-slate-600">
                   {item.quantity} × {money.format(item.unitPrice, order.currency)}

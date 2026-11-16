@@ -24,6 +24,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const [related, setRelated] = useState<Product[]>([]);
   const [active, setActive] = useState(0);
   const [quantity, setQuantity] = useState("1");
+  // What the buyer picked for each option, in the order of the product's options; empty until they pick (the first combination on sale shows).
+  const [picked, setPicked] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isAuthReady) return;
@@ -69,7 +71,17 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const supplier = product.supplier;
   const paused = supplier?.paused === true;
   const orderable = product.status === "published" && product.stock !== "out_of_stock" && !paused && !product.hidden;
-  const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
+  const options = product.options ?? [];
+  const variants = product.variants ?? [];
+  const hasOptions = options.length > 0 && variants.length > 0;
+  // The combination shown: what was picked, else the first one that can be bought.
+  const shown = hasOptions ? (picked.length === options.length && picked.every((value, i) => options[i].values.includes(value)) ? picked : (variants.find((v) => v.quantity !== 0) ?? variants[0]).values) : [];
+  const variant = hasOptions ? variants.find((v) => v.values.every((value, i) => value === shown[i])) : undefined;
+  const variantSoldOut = variant?.quantity === 0;
+  const canBuy = orderable && (!hasOptions || (variant !== undefined && !variantSoldOut));
+  const unitPrice = variant?.price ?? product.price;
+  const left = variant ? variant.quantity : product.stock === "in_stock" ? product.quantity : undefined;
+  const inCart = cart.lines.find((l) => l.productId === product.id && (l.variantId ?? "") === (variant?.id ?? ""))?.quantity ?? 0;
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
@@ -96,11 +108,38 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">{product.name}</h1>
-          <p className="mt-4 text-2xl font-black text-slate-900">{money.format(product.price, product.currency)}</p>
-          <p className={`mt-2 text-sm font-bold ${product.stock === "out_of_stock" ? "text-red-600" : "text-slate-600"}`}>
-            {STOCK_LABELS[product.stock]}
+          <p className="mt-4 text-2xl font-black text-slate-900">{hasOptions && !variant ? `From ${money.format(product.price, product.currency)}` : money.format(unitPrice, product.currency)}</p>
+          {hasOptions && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {options.map((option, index) => (
+                <label key={option.name} className="block text-xs font-bold uppercase tracking-wide text-slate-500">
+                  {option.name}
+                  <Select
+                    className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800"
+                    value={shown[index]}
+                    aria-label={option.name}
+                    onChange={(e) => {
+                      const next = [...shown];
+                      next[index] = e.target.value;
+                      setPicked(next);
+                      setQuantity("1");
+                    }}
+                  >
+                    {option.values.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+              ))}
+            </div>
+          )}
+          {hasOptions && !variant && <p className="mt-3 text-sm font-bold text-red-600">This combination is not available.</p>}
+          <p className={`mt-2 text-sm font-bold ${product.stock === "out_of_stock" || variantSoldOut ? "text-red-600" : "text-slate-600"}`}>
+            {variantSoldOut ? "Sold out" : STOCK_LABELS[product.stock]}
             {product.stock === "made_to_order" && product.leadTimeDays ? ` · ready in about ${product.leadTimeDays} days` : ""}
-            {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 ? ` · only ${product.quantity} left` : ""}
+            {left !== undefined && left > 0 && left <= 5 ? ` · only ${left} left` : ""}
           </p>
           {supplier?.delivery && (
             <p className="mt-1 text-sm text-slate-500">
@@ -114,13 +153,13 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {product.status !== "published" && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
           {product.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{product.description}</p>}
 
-          {orderable && (
+          {canBuy && (
             <div className="mt-6 space-y-3">
               <div className="flex items-end gap-3">
                 <label className="block w-28 text-xs font-bold uppercase tracking-wide text-slate-500">
                   Quantity
                   <Select className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm normal-case tracking-normal text-slate-800" value={quantity} aria-label="Quantity" onChange={(e) => setQuantity(e.target.value)}>
-                    {Array.from({ length: Math.min(10, product.stock === "in_stock" && product.quantity !== undefined ? Math.max(product.quantity, 1) : 10) }, (_, i) => i + 1).map((n) => (
+                    {Array.from({ length: Math.min(10, product.stock === "in_stock" && left !== undefined ? Math.max(left, 1) : 10) }, (_, i) => i + 1).map((n) => (
                       <option key={n} value={String(n)}>
                         {n}
                       </option>
@@ -130,8 +169,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                 <button
                   type="button"
                   onClick={() => {
-                    cart.add(product, Number(quantity));
-                    showToast(`${product.name} added to your cart.`);
+                    cart.add(product, Number(quantity), variant);
+                    showToast(`${product.name}${variant ? ` (${variant.label})` : ""} added to your cart.`);
                   }}
                   className="min-h-11 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:border-[#2ec440] hover:text-[#219b31]"
                 >
@@ -141,7 +180,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
               <button
                 type="button"
                 onClick={() => {
-                  cart.add(product, Number(quantity));
+                  cart.add(product, Number(quantity), variant);
                   router.push("/shop/checkout");
                 }}
                 className="min-h-11 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-[#2ec440]"
