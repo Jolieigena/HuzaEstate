@@ -315,11 +315,6 @@ export const BuildProjectService = {
     });
   },
 
-  /** Keeps the 3D pictures of a design's floors with the design. */
-  savePlan3d(id: string, conceptId: string, plan3d: NonNullable<Concept["plan3d"]>): BuildProject | undefined {
-    return mutate(id, (p) => ({ ...p, concepts: p.concepts.map((c) => (c.id === conceptId ? { ...c, plan3d } : c)) }));
-  },
-
   duplicateConceptAsVersion(id: string, conceptId: string): BuildProject | undefined {
     const project = this.getById(id);
     const source = project?.concepts.find((c) => c.id === conceptId);
@@ -354,7 +349,7 @@ export const BuildProjectService = {
       version: source.version + 1,
       generatedAt: new Date().toISOString(),
       metrics: { ...source.metrics, ...patch },
-      ...(floors ? { floors, plan3d: undefined } : {}),
+      ...(floors ? { floors } : {}),
     };
     return mutate(
       id,
