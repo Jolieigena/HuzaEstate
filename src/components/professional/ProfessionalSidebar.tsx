@@ -1,12 +1,27 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { fetchMyProfessionalInquiries } from "@/lib/professional/api";
 import { PROFESSIONAL_NAV_ITEMS } from "./professionalNavItems";
 import { CUSTOM_LINK_ICON, useMenu } from "@/lib/menus/menus";
 
 export function ProfessionalNavLinks() {
   const pathname = usePathname();
+  const { token, isAuthReady } = useAuth();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!isAuthReady || !token) return;
+    let cancelled = false;
+    fetchMyProfessionalInquiries(token).then((list) => {
+      if (!cancelled) setUnread(list.filter((i) => !i.read).length);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token, pathname]);
   const items = useMenu("professional", PROFESSIONAL_NAV_ITEMS, { custom: (e) => ({ key: e.key, label: e.label, href: e.href ?? "/", iconPath: CUSTOM_LINK_ICON }) });
 
   return (
@@ -24,6 +39,11 @@ export function ProfessionalNavLinks() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.iconPath} />
             </svg>
             <span className="truncate">{item.label}</span>
+            {item.key === "inquiries" && unread > 0 && (
+              <span aria-label={`${unread} unread`} className="ml-auto rounded-full bg-[#2ec440] px-2 py-0.5 text-[11px] font-bold text-white">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
           </Link>
         );
       })}
