@@ -504,6 +504,8 @@ export interface Concept {
   interiorDirections: InteriorDirection[];
   decisions: DesignDecisions;
   risks: ConceptRisks;
+  /** The floors drawn as 3D cutaway pictures by the AI; made after the plan, and dropped when the plan changes. */
+  plan3d?: { floorId: string; label: string; url: string }[];
 }
 
 export type VersionSource = "ai_generation" | "ai_refinement" | "manual_edit" | "template" | "professional_revision";

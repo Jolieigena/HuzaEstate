@@ -34,7 +34,7 @@ async function post<T>(token: string, path: string, body: unknown): Promise<Outc
 const roomsOf = (floors: ManualFloor[]) => floors.map((f) => ({ name: f.name, rooms: f.rooms.map(({ type, name, x, y, w, h }) => ({ type, name, x, y, w, h })) }));
 
 /** A picture of the ground floor, for the AI to follow. Empty if the browser cannot make it. */
-async function groundFloorPicture(floors: ManualFloor[]): Promise<string | undefined> {
+export async function groundFloorPicture(floors: ManualFloor[]): Promise<string | undefined> {
   const ground = floors.find((f) => f.rooms.length > 0);
   if (!ground) return undefined;
   try {
@@ -66,7 +66,7 @@ async function groundFloorPicture(floors: ManualFloor[]): Promise<string | undef
 }
 
 /** A smaller copy of a picture (a JPEG of at most 1000 px), so five of them still fit with the project in the browser. */
-function shrinkPicture(dataUrl: string): Promise<string> {
+export function shrinkPicture(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new window.Image();
     img.onload = () => {

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useBuildProjectContext } from "@/components/build/BuildProjectContext";
 import { BuildProjectService } from "@/lib/build/projectService";
-import { HOME_STYLE_LABELS, ManualFloor, ManualRoom, ManualRoomType } from "@/lib/build/types";
+import { Concept, HOME_STYLE_LABELS, ManualFloor, ManualRoom, ManualRoomType } from "@/lib/build/types";
 import { conceptFromAiFloors } from "@/lib/build/conceptGenerator";
 import { addDefaultOpenings } from "@/lib/build/openings";
 import { newRoom, overlappingRoomIds } from "@/lib/build/planEdit";
 import { useToast } from "@/lib/toast-context";
+import { useAuth } from "@/lib/auth-context";
+import { makePlan3d } from "@/lib/build/plan3dApi";
 import PlanEditPanel from "@/components/build/PlanEditPanel";
 import { collectBriefWarnings } from "@/lib/build/briefValidation";
 import { formatTypedCompact, useStudioMoney } from "@/lib/currency/studioMoney";
@@ -53,6 +55,13 @@ export default function ConceptsPage() {
   const [refineOpen, setRefineOpen] = useState(false);
   const [viewId, setViewId] = useState<string | null>(null);
   const { showToast } = useToast();
+  const { token } = useAuth();
+  const [view, setView] = useState<"3d" | "plan">("3d");
+  const [drawing, setDrawing] = useState(false);
+  const [drawError, setDrawError] = useState("");
+  const [partial, setPartial] = useState<{ conceptId: string; pictures: NonNullable<Concept["plan3d"]> } | null>(null);
+  const triedRef = useRef<Set<string>>(new Set());
+  const runningRef = useRef(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<ManualFloor[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -65,6 +74,28 @@ export default function ConceptsPage() {
   useEffect(() => {
     if (current && project.status !== "generating" && !project.selectedConceptId) BuildProjectService.selectConcept(project.id, current.id);
   }, [current, project.id, project.status, project.selectedConceptId]);
+
+  // Each design is drawn in 3D once, as soon as it is on show; "Draw again" makes it anew. The flat plan is one click away.
+  const draw3d = async () => {
+    if (!current || !token || runningRef.current) return;
+    runningRef.current = true;
+    triedRef.current.add(current.id);
+    setDrawing(true);
+    setDrawError("");
+    setPartial(null);
+    const conceptId = current.id;
+    const outcome = await makePlan3d(token, project.brief, current.floors, (pictures) => setPartial({ conceptId, pictures }));
+    if (outcome.ok) BuildProjectService.savePlan3d(project.id, conceptId, outcome.pictures);
+    else setDrawError(outcome.unavailable ? "AI is not switched on yet." : outcome.error);
+    setPartial(null);
+    setDrawing(false);
+    runningRef.current = false;
+  };
+  useEffect(() => {
+    if (!current || !token || editing || project.status === "generating" || current.plan3d?.length || triedRef.current.has(current.id)) return;
+    void draw3d();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, token, editing, project.status]);
 
   if (project.status === "generating") {
     return <GenerationProgress project={project} />;
@@ -191,12 +222,53 @@ export default function ConceptsPage() {
         </div>
       )}
 
+      {!editing && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="inline-flex rounded-xl bg-slate-100 p-1" role="group" aria-label="View">
+            {(["3d", "plan"] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                onClick={() => setView(key)}
+                className={`rounded-lg px-4 py-1.5 text-sm font-bold transition-colors ${view === key ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
+              >
+                {key === "3d" ? "3D" : "Plan"}
+              </button>
+            ))}
+          </div>
+          {view === "3d" && (
+            <button type="button" onClick={() => void draw3d()} disabled={drawing || !token} className="text-sm font-bold text-slate-500 transition-colors hover:text-slate-900 disabled:opacity-50">
+              {drawing ? "Drawing in 3D…" : "Draw again"}
+            </button>
+          )}
+        </div>
+      )}
+
+      {!editing && view === "3d" && drawError && (
+        <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {drawError}
+        </p>
+      )}
+
       <div className="space-y-10">
         {shownFloors.map((floor, index) => (
           <section key={floor.id}>
             {shownFloors.length > 1 && <h2 className="mb-2 text-sm font-black uppercase tracking-wide text-slate-500">{floor.name}</h2>}
             <div className="w-full [&>svg]:h-auto [&>svg]:w-full">
-              {editing ? (
+              {!editing && view === "3d" ? (
+                (() => {
+                  const picture = (partial?.conceptId === current.id ? partial.pictures : current.plan3d ?? []).find((p) => p.floorId === floor.id);
+                  return picture ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={picture.url} alt={`${floor.name} in 3D`} className="aspect-[4/3] max-h-[70vh] w-full rounded-2xl bg-white object-contain" />
+                  ) : drawing ? (
+                    <div className="aspect-[4/3] max-h-[70vh] w-full animate-pulse rounded-2xl bg-slate-100" />
+                  ) : (
+                    <FloorPlanGraphic floor={floor} />
+                  );
+                })()
+              ) : editing ? (
                 <FloorPlanGraphic
                   floor={floor}
                   interactive

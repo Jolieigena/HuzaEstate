@@ -46,7 +46,7 @@ export type PreviewOutcome = { ok: true; result: RenovationResult } | { ok: fals
 /** Asks the AI to renovate the photos (already uploaded; their addresses are sent). */
 export async function previewRenovation(
   token: string,
-  input: { photos: string[]; room: RenovateRoom; style: RenovateStyle | string; wish: string; attachments?: Attachment[] },
+  input: { photos: string[]; room: RenovateRoom; style: RenovateStyle | string; wish: string; attachments?: Attachment[]; roomLabel?: string },
 ): Promise<PreviewOutcome> {
   try {
     const res = await fetch(`${ACCESS_API_URL}/renovations/preview`, {

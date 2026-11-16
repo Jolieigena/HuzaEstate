@@ -57,12 +57,14 @@ export async function redesignRooms(token: string, project: RenovationProject, c
     areas.map(async (area, index): Promise<ConceptAreaView | null> => {
       const label = area.customLabel || RENOVATION_AREA_LABELS[area.areaKey];
       const room = ROOM_FOR_AREA[area.areaKey] ?? "living-room";
+      // An area with no room of its own (a swimming pool, a ceiling, anything typed in) is called by its name, so it is not drawn as a living room.
+      const roomLabel = ROOM_FOR_AREA[area.areaKey] ? undefined : label;
       // The room's own photo; the first room may use any photo, so a single upload still gets its picture.
       const own = photos.find((p) => p.relatedAreaId === area.id)?.previewUrl ?? (index === 0 ? photos[0]?.previewUrl : undefined);
       if (change) {
         const before = change.current.find((v) => v.areaKey === area.areaKey);
         if (!before || !hasPicture(before)) return before ?? null;
-        const outcome = await previewRenovation(token, { photos: [before.afterImage], room, style, wish: `Keep this room exactly as it is, and change only this: ${change.request}`, attachments: change.attachments });
+        const outcome = await previewRenovation(token, { photos: [before.afterImage], room, style, wish: `Keep this room exactly as it is, and change only this: ${change.request}`, attachments: change.attachments, roomLabel });
         if (!outcome.ok) {
           error = error || outcome.error;
           return before;
@@ -70,7 +72,7 @@ export async function redesignRooms(token: string, project: RenovationProject, c
         return { ...before, afterImage: await shrinkPicture(outcome.result.imageUrl) };
       }
       if (!own) return null;
-      const outcome = await previewRenovation(token, { photos: [own], room, style, wish: [DEFAULT_WISH, area.desiredOutcome].filter(Boolean).join(" ") });
+      const outcome = await previewRenovation(token, { photos: [own], room, style, wish: [DEFAULT_WISH, area.desiredOutcome].filter(Boolean).join(" "), roomLabel });
       if (!outcome.ok) {
         error = error || outcome.error;
         return null;
