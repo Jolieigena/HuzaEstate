@@ -10,6 +10,7 @@ import { PropertyGridSkeleton } from '@/components/PropertyCardSkeleton';
 import AISearchCard from '@/components/AISearchCard';
 import { notifyPropertiesChanged, useAllPropertiesState } from '@/lib/sellerListings/hooks';
 import type { AIPropertyFilters } from '@/app/api/ai-property-search/route';
+import type { Property } from '@/lib/properties/types';
 import { CONTINENTS, COUNTRY_OPTIONS, continentOf, getPropertyCountry, type Continent } from '@/lib/countries';
 import CurrencyChips from '@/components/CurrencyChips';
 import { useIsNativeApp } from '@/lib/nativeApp';
@@ -335,7 +336,8 @@ function PropertiesContent() {
     setSelectedCountryCodes(hasListings ? [currentCountry.code] : []);
   }, [currentCountry, listingsLoaded, visibleProperties]);
 
-  const filteredProperties = visibleProperties.filter((p) => {
+  // The same test for our own listings and for the US homes shown under them, so every filter applies to both.
+  const matchesFilters = (p: Property): boolean => {
     const propCountryName = getPropertyCountry(p).name;
     const searchLower = searchTerm.toLowerCase();
     const propText = `${p.title} ${p.location} ${p.city} ${p.propertyType} ${propCountryName}`.toLowerCase();
@@ -392,7 +394,8 @@ function PropertiesContent() {
     const matchesTopPicks = !topPicksOnly || isPromotedNow(p);
     const matchesInstallments = !installmentsOnly || !!installmentsOf(p);
     return matchesSearch && matchesType && matchesPropType && matchesPrice && matchesBeds && matchesBaths && matchesSqm && matchesCity && matchesKeywords && matchesCountry && matchesAi && matchesTopPicks && matchesInstallments;
-  }).sort((a, b) => {
+  };
+  const compareProperties = (a: Property, b: Property): number => {
     // Listings a seller paid to promote (see lib/promotion) always lead the
     // first row, the same "boosted ads always come first" convention
     // marketplaces like Property24/Jiji/Lamudi use — the chosen sort order
@@ -404,7 +407,8 @@ function PropertiesContent() {
     if (sortBy === 'price-desc') return money.toUsd(totalPriceOf(b), b.currency) - money.toUsd(totalPriceOf(a), a.currency);
     if (sortBy === 'largest') return b.sqm - a.sqm;
     return 0;
-  });
+  };
+  const filteredProperties = visibleProperties.filter(matchesFilters).sort(compareProperties);
 
   // The heading follows whatever the visitor is looking for instead of a fixed place name.
   const selectedCountryNames = COUNTRY_OPTIONS.filter((c) => selectedCountryCodes.includes(c.code)).map((c) => c.name);
@@ -983,7 +987,7 @@ function PropertiesContent() {
         )}
 
         {/* US homes from Zillow: for a visitor looking at the USA (picked in the Country filter, or where they are when none is picked). Shows nothing until the server switches it on. */}
-        {(selectedCountryCodes.includes('US') || region === 'North America' || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings onCount={onUsHomes} citySlot={citySlot} />}
+        {(selectedCountryCodes.includes('US') || region === 'North America' || (selectedCountryCodes.length === 0 && currentCountry?.code === 'US')) && <ZillowListings onCount={onUsHomes} citySlot={citySlot} matches={matchesFilters} compare={compareProperties} cityHint={cityInput.trim() || searchTerm.trim()} />}
       </div>
 
       {/* ── Floating "Describe Your Desired Property" button ─────────────── */}
