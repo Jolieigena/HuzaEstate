@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useAuth, type Account } from "@/lib/auth-context";
-import { useIsNativeApp } from "@/lib/nativeApp";
+import { useIsNativeApp, useIsNativeIosApp } from "@/lib/nativeApp";
 import { useLanguage } from "@/lib/i18n/language";
 
 interface GoogleIdentity {
@@ -102,6 +102,7 @@ function PlainGoogleButton({ label, busy, onClick }: { label: string; busy?: boo
 export default function GoogleAuthButton({ text = "signin_with", allowCreate = false, beforeSubmit, country, onSuccess, onError }: GoogleAuthButtonProps) {
   const { loginWithGoogle } = useAuth();
   const isNativeApp = useIsNativeApp();
+  const isIosApp = useIsNativeIosApp();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -181,6 +182,9 @@ export default function GoogleAuthButton({ text = "signin_with", allowCreate = f
       if (window.__huzaNativeGoogle === bridge) delete window.__huzaNativeGoogle;
     };
   }, [isNativeApp]);
+
+  // Not offered in the iPhone app (Google sign-in is set up for Android only there); people sign in with email and password.
+  if (isIosApp) return null;
 
   if (isNativeApp) {
     return (

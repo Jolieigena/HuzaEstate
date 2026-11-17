@@ -14,3 +14,12 @@ export function useIsNativeApp(): boolean {
     () => false,
   );
 }
+
+/** True inside the HuzaEstate iPhone app. Google sign-in is not offered there (it is set up for Android only). */
+export function useIsNativeIosApp(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => typeof navigator !== "undefined" && navigator.userAgent.includes("HuzaEstateApp") && /iPhone|iPad|iPod/.test(navigator.userAgent),
+    () => false,
+  );
+}
