@@ -107,6 +107,29 @@ export default function ConceptsPage() {
         </div>
       </div>
 
+      {project.concepts.length > 1 && (
+        <div>
+          <p className="mb-2 text-sm font-bold text-slate-700">Earlier designs</p>
+          <div className="flex flex-wrap gap-2">
+            {project.concepts.map((c, index) => {
+              const shown = c.id === design.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={shown}
+                  onClick={() => RenovationProjectService.selectConcept(project.id, c.id)}
+                  className={`rounded-xl border px-3.5 py-2 text-left text-sm font-semibold transition-colors ${shown ? "border-[#2ec440] bg-[#2ec440]/10 text-[#2ec440]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"}`}
+                >
+                  Design {index + 1}
+                  <span className="block text-xs font-medium text-slate-400">{new Date(c.generatedAt).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {views.length > 0 ? (
         <div className="space-y-8">
           {views.map((view) => (

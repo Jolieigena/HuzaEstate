@@ -117,6 +117,7 @@ export default function AssessmentWizardPage() {
   const handleStartDesigning = () => {
     if (!finalizeReview()) return;
     RenovationProjectService.startGeneration(project.id);
+    showToast("Brief confirmed. Huza AI is designing your renovation.");
     router.push(`/studio/renovate/${project.id}/concepts`);
   };
 
