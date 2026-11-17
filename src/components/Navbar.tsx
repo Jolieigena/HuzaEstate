@@ -39,11 +39,11 @@ export default function Navbar() {
 
   return (
     // Above the floating buttons on a page (z-40) while the menu is open, so they never sit on top of it.
-    <header className={`w-full py-4 px-6 sm:px-10 flex items-center justify-between sticky top-0 ${menuOpen ? 'z-50' : 'z-40'} bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200`}>
+    <header className={`w-full py-4 px-3 min-[400px]:px-6 sm:px-10 flex items-center justify-between sticky top-0 ${menuOpen ? 'z-50' : 'z-40'} bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200`}>
       {/* Brand Logo */}
       <Link href="/" aria-label="HuzaEstate Home" className="flex items-center gap-2">
         <Logo className="h-8 w-auto" />
-        <CountryFlagBadge className="w-6 h-6" />
+        <CountryFlagBadge className="hidden min-[400px]:block w-6 h-6" />
       </Link>
 
       {/* Center Navigation Links */}
@@ -52,11 +52,11 @@ export default function Navbar() {
       </nav>
 
       {/* Right Actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 min-[400px]:gap-2 sm:gap-3">
         <CartButton />
         <Link
           href="/post-property"
-          className="hidden min-[420px]:max-sm:inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-sm px-4 py-2 rounded-full whitespace-nowrap transition-colors"
+          className="sm:hidden inline-flex items-center bg-slate-900 hover:bg-[#2ec440] text-white font-semibold text-xs min-[420px]:text-sm px-3 min-[420px]:px-4 py-2 rounded-full whitespace-nowrap transition-colors"
         >
           {t('+ Post')}
         </Link>
