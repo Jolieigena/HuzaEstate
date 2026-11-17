@@ -81,7 +81,7 @@ function SuggestInput({ value, onChange, options, placeholder, widthClass, clear
   const exact = options.some((o) => o.toLowerCase() === q);
   const matches = !q || exact ? options : options.filter((o) => o.toLowerCase().includes(q));
   return (
-    <div className="relative">
+    <div className="relative grow">
       <input
         type="text"
         placeholder={placeholder}
@@ -479,7 +479,7 @@ function PropertiesContent() {
               actual full width instead of leaving a trailing gap and wrapping
               early. */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className={sheet ? 'relative min-w-0 flex-1' : 'relative w-full sm:w-[280px]'}>
+            <div className={sheet ? 'relative min-w-0 flex-1' : 'relative w-full sm:w-[280px] sm:grow'}>
               <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input type="text" placeholder="City, district or country" className="w-full pl-11 pr-4 py-2.5 bg-white/60 border border-transparent rounded-full focus:outline-none focus:bg-white focus:ring-1 focus:ring-slate-200 transition-all text-slate-900 placeholder:text-slate-500 font-medium text-[15px] shadow-sm" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
@@ -518,15 +518,15 @@ function PropertiesContent() {
                   <div className={sheet ? 'flex flex-wrap items-center gap-2 overflow-y-auto px-5 pb-4' : 'contents'}>
 
               {/* Status — typeable, with suggestions so "renting"/"buy" etc still resolve */}
-              <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-[150px]" clearLabel="Clear status" showChevron />
+              <SuggestInput value={statusInput} onChange={setStatusInput} options={STATUS_OPTIONS} placeholder="Any Status" widthClass="w-full min-w-[150px]" clearLabel="Clear status" showChevron />
 
               {/* Price */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={priceButtonRef}
                   data-filter-trigger
                   onClick={() => (isPriceOpen ? setIsPriceOpen(false) : openPanel(priceButtonRef, 320, setPricePanelPos, () => setIsPriceOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {customMinPrice || customMaxPrice ? `Price: ${priceSign}${withCommas(customMinPrice) || '0'} – ${priceSign}${withCommas(customMaxPrice) || 'Any'}` : `Any Price${money.currency ? ` (${money.currency})` : ''}`}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -554,12 +554,12 @@ function PropertiesContent() {
 
               {/* Beds — dropdown with quick presets plus a custom number input the
                   user can type any value into, same pattern as Price/Area Size. */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={bedsButtonRef}
                   data-filter-trigger
                   onClick={() => (isBedsOpen ? setIsBedsOpen(false) : openPanel(bedsButtonRef, 220, setBedsPanelPos, () => setIsBedsOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {bedsInput ? `${bedsInput}+ Beds` : 'Any Beds'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -588,12 +588,12 @@ function PropertiesContent() {
               </div>
 
               {/* Baths — same dropdown + custom-number pattern as Beds */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={bathsButtonRef}
                   data-filter-trigger
                   onClick={() => (isBathsOpen ? setIsBathsOpen(false) : openPanel(bathsButtonRef, 220, setBathsPanelPos, () => setIsBathsOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {bathsInput ? `${bathsInput}+ Baths` : 'Any Baths'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -624,12 +624,12 @@ function PropertiesContent() {
               {/* Type — exhaustive checklist of every type a buyer would actually look
                   for (see TYPE_OPTIONS), not collapsed to the 3 underlying buckets —
                   same two-column pattern as Amenities since there are as many options. */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={typeButtonRef}
                   data-filter-trigger
                   onClick={() => (isTypeOpen ? setIsTypeOpen(false) : openPanel(typeButtonRef, 288, setTypePanelPos, () => setIsTypeOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {selectedTypeLabels.length === 0
                     ? 'Any Type'
@@ -659,12 +659,12 @@ function PropertiesContent() {
               {/* Country — checklist panel supporting multiple selections at once
                   (see COUNTRY_OPTIONS), rather than a single free-text field that
                   silently matched nothing if you typed a city instead of a country. */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={regionButtonRef}
                   data-filter-trigger
                   onClick={() => (isRegionOpen ? setIsRegionOpen(false) : openPanel(regionButtonRef, 256, setRegionPanelPos, () => setIsRegionOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {region || 'Any Region'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -701,12 +701,12 @@ function PropertiesContent() {
                 )}
               </div>
 
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={countryButtonRef}
                   data-filter-trigger
                   onClick={() => (isCountryOpen ? setIsCountryOpen(false) : openPanel(countryButtonRef, 288, setCountryPanelPos, () => setIsCountryOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {selectedCountryCodes.length === 0
                     ? 'Any Country'
@@ -749,7 +749,7 @@ function PropertiesContent() {
                 type="button"
                 onClick={() => setTopPicksOnly((v) => !v)}
                 aria-pressed={topPicksOnly}
-                className={`rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm flex items-center gap-2 transition-all border ${
+                className={`grow justify-center rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm flex items-center gap-2 transition-all border ${
                   topPicksOnly ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
@@ -761,7 +761,7 @@ function PropertiesContent() {
                 type="button"
                 onClick={() => setInstallmentsOnly((v) => !v)}
                 aria-pressed={installmentsOnly}
-                className={`rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm transition-all border ${
+                className={`grow rounded-full px-5 py-2.5 font-medium text-[14px] shadow-sm transition-all border ${
                   installmentsOnly ? 'bg-[#2ec440] border-[#2ec440] text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
                 }`}
               >
@@ -771,12 +771,12 @@ function PropertiesContent() {
               {/* Area Size — a pill button matching Status/Price/Beds/etc, opening a
                   small popover with custom min/max sqm inputs (same fixed-position
                   pattern as Price) rather than exposing two inline number inputs. */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={areaButtonRef}
                   data-filter-trigger
                   onClick={() => (isAreaOpen ? setIsAreaOpen(false) : openPanel(areaButtonRef, 264, setAreaPanelPos, () => setIsAreaOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {minSqm || maxSqm ? `${minSqm || '0'} – ${maxSqm || 'Any'} sqm` : 'Area Size'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
@@ -794,13 +794,13 @@ function PropertiesContent() {
               </div>
 
               {/* City / District */}
-              <div className="relative">
+              <div className="relative grow">
                 <input
                   type="text"
                   placeholder="City / District"
                   value={cityInput}
                   onChange={(e) => setCityInput(e.target.value)}
-                  className="w-[160px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
+                  className="w-full min-w-[160px] bg-white border border-slate-200 rounded-full pl-5 pr-8 py-2.5 font-medium text-[14px] text-slate-700 placeholder:text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2ec440]/20 shadow-sm transition-all"
                 />
                 {cityInput && (
                   <button onClick={() => setCityInput('')} aria-label="Clear city" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700">
@@ -813,12 +813,12 @@ function PropertiesContent() {
                   want) plus a free-text field for anything not in the list; both
                   read/write the same comma-separated keywordsInput (see
                   toggleAmenity above), matched against any one, not all. */}
-              <div className="relative">
+              <div className="relative grow">
                 <button
                   ref={amenitiesButtonRef}
                   data-filter-trigger
                   onClick={() => (isAmenitiesOpen ? setIsAmenitiesOpen(false) : openPanel(amenitiesButtonRef, 288, setAmenitiesPanelPos, () => setIsAmenitiesOpen(true)))}
-                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex items-center gap-2 transition-all"
+                  className="bg-white border border-slate-200 rounded-full px-5 py-2.5 font-medium text-[14px] text-slate-700 hover:border-slate-300 shadow-sm flex w-full items-center justify-between gap-2 transition-all"
                 >
                   {selectedAmenities.length > 0 ? `Amenities (${selectedAmenities.length})` : 'Amenities'}
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
