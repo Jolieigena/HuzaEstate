@@ -5,6 +5,7 @@ import Dialog from './Dialog';
 import CategorizedPhotoUpload from './CategorizedPhotoUpload';
 import PhotoLimitNotice from './PhotoLimitNotice';
 import { useAuth } from '@/lib/auth-context';
+import { MAX_VIDEO_BYTES, uploadMedia, videoContentType } from '@/lib/media/upload';
 import FormattedNumberInput from '@/components/shared/FormattedNumberInput';
 import PhoneInput, { cleanPhone, phoneProblem } from '@/components/shared/PhoneInput';
 import { notifyPropertiesChanged } from '@/lib/sellerListings/hooks';
@@ -31,6 +32,12 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
   const [form, setForm] = useState(() => toFormState(property));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // The video: a new file to upload (replacing any current one), or the current one marked for removal.
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoRemoved, setVideoRemoved] = useState(false);
+  const [videoInputKey, setVideoInputKey] = useState(0);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
   // Display/entry convenience only — form.sqm stays the sqm source of truth
   // (matches Property.sqm and the /properties Area Size filter, sqm-only),
   // same pattern as post-property/page.tsx.
@@ -47,6 +54,9 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     setForm(toFormState(property));
     setError('');
     setSqmUnit('sqm');
+    setVideoFile(null);
+    setVideoRemoved(false);
+    setVideoInputKey((n) => n + 1);
   }
 
   if (!property) return null;
@@ -55,7 +65,12 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
     e.preventDefault();
     if (saving) return;
     setError('');
+    if (uploadingPhotos) { setError('Wait for the photos to finish uploading, then save.'); return; }
     if (form.photos.length === 0) { setError('Add at least one photo of the property.'); return; }
+    if (videoFile) {
+      if (!videoContentType(videoFile)) { setError('Video must be MP4, WebM, or MOV.'); return; }
+      if (videoFile.size > MAX_VIDEO_BYTES) { setError('That video is too large. Choose one under 150 MB, or record it in a lower quality.'); return; }
+    }
     if (!(Number(form.sqm) > 0)) { setError('Enter the size of the property.'); return; }
     if (offersPayment) { const problem = paymentOptionsProblem(form.paymentOptions, t); if (problem) { setError(problem); return; } }
     if (form.type === 'sale' && !isLandType && !isCommercialType && !(Number(form.bedrooms) >= 1 && Number(form.bathrooms) >= 1)) { setError('A property for sale needs at least 1 bedroom and 1 bathroom.'); return; }
@@ -68,6 +83,22 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       if (phoneError) { setError(phoneError); return; }
     }
     setSaving(true);
+    // A new video goes up first; if that fails nothing else is saved. Removing the current one is sent as an empty videoUrl.
+    let videoUrl: string | undefined;
+    if (videoFile) {
+      setUploadingVideo(true);
+      try {
+        videoUrl = await uploadMedia(videoFile, videoContentType(videoFile) as string, token);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not upload the video. Please try again.');
+        setUploadingVideo(false);
+        setSaving(false);
+        return;
+      }
+      setUploadingVideo(false);
+    } else if (videoRemoved && property.videoUrl) {
+      videoUrl = '';
+    }
     const { imageUrl, galleryImages } = deriveImageFields(form.photos, property.imageUrl);
     const propertyType = PROPERTY_TYPE_OPTIONS.find((o) => o.label === form.propertyTypeLabel)?.bucket ?? 'house';
     const patch = {
@@ -84,6 +115,7 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
       imageUrl,
       galleryImages,
       photos: form.photos,
+      ...(videoUrl !== undefined ? { videoUrl } : {}),
       amenities: isLandType ? form.amenities.filter((a) => LAND_FEATURE_OPTIONS.includes(a)) : isCommercialType ? form.amenities.filter((a) => COMMERCIAL_FEATURE_OPTIONS.includes(a)) : form.amenities,
       ...(offersPayment ? { paymentOptions: paymentOptionsBody(form.paymentOptions) } : {}),
       ...(isCommercialType ? { priceBasis: form.priceBasis, floors: form.floors === '' ? 0 : Number(form.floors), parkingSpaces: form.parkingSpaces === '' ? 0 : Number(form.parkingSpaces) } : {}),
@@ -314,8 +346,44 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
 
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Photos')}</label>
-          <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} />
+          <CategorizedPhotoUpload photos={form.photos} onChange={(photos) => setForm((f) => ({ ...f, photos }))} onUploadingChange={setUploadingPhotos} disabled={saving} />
           <PhotoLimitNotice photoCount={form.photos.length} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-slate-700 mb-2">{t('Property Video (Optional)')}</label>
+          {property.videoUrl && !videoRemoved && (
+            <div className="mb-3 max-w-md overflow-hidden rounded-xl bg-black">
+              <video src={property.videoUrl} controls playsInline preload="metadata" className="w-full max-h-56 object-contain" />
+            </div>
+          )}
+          <div className="flex items-center gap-4 p-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+            <div className="flex-shrink-0 w-12 h-12 bg-[#2ec440]/10 text-[#2ec440] rounded-lg flex items-center justify-center">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </div>
+            <div className="flex-grow min-w-0">
+              <input
+                key={videoInputKey}
+                type="file"
+                accept="video/*,.mp4,.m4v,.mov,.webm"
+                disabled={saving}
+                onChange={(e) => { setVideoFile(e.target.files?.[0] || null); setVideoRemoved(false); }}
+                aria-label={property.videoUrl && !videoRemoved ? t('Replace video') : t('Add a video')}
+                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#2ec440]/10 file:text-[#2ec440] hover:file:bg-[#2ec440]/20 transition-colors"
+              />
+              {videoFile && <p className="text-xs text-slate-500 mt-2 truncate">{t('Selected')}: {videoFile.name}</p>}
+            </div>
+          </div>
+          {((property.videoUrl && !videoRemoved) || videoFile) && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => { setVideoFile(null); setVideoRemoved(true); setVideoInputKey((n) => n + 1); }}
+              className="mt-2 text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+            >
+              {t('Remove video')}
+            </button>
+          )}
         </div>
 
         <div className="grid sm:grid-cols-3 gap-5">
@@ -387,8 +455,8 @@ export default function EditPropertyModal({ property, onClose }: EditPropertyMod
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" disabled={saving} className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60">
-            {saving ? t('Saving…') : t('Save Changes')}
+          <button type="submit" disabled={saving || uploadingPhotos} className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60">
+            {uploadingVideo ? t('Uploading video…') : saving ? t('Saving…') : t('Save Changes')}
           </button>
           <button type="button" onClick={onClose} className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition-colors">
             {t('Cancel')}
