@@ -10,6 +10,7 @@ import { getGalleryImages } from '@/lib/properties/gallery';
 import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 import type { Property } from '@/lib/properties/types';
 import { useLanguage } from '@/lib/i18n/language';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 // Kept in sync with property-service's own PUBLIC_PHOTO_LIMIT (capMedia in
 // modules/properties/service.ts) — buyers see this many photos, no video, until promoted.
@@ -28,6 +29,7 @@ interface PromoteListingModalProps {
 export default function PromoteListingModal({ property, onClose }: PromoteListingModalProps) {
   const { t } = useLanguage();
   const { token } = useAuth();
+  const iosApp = useIsNativeIosApp();
   const [selectedDays, setSelectedDays] = useState(PROMOTION_PACKAGES[1].days);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +43,8 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
     setDemoMode(false);
   }
 
-  if (!property) return null;
+  // Not available in the iPhone app: promotions are bought outside it (App Store rule 3.1.1).
+  if (!property || iosApp) return null;
 
   const alreadyActive = isPromotedNow(property);
   const daysLeft = promotionDaysLeft(property);

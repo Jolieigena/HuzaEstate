@@ -5,6 +5,7 @@ import type { PropertyStatus } from '@/lib/properties/types';
 import { useTourForProperty } from '@/lib/tours/hooks';
 import { TourService } from '@/lib/tours/tourService';
 import { useLanguage } from '@/lib/i18n/language';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 export default function ListingActionsMenu({
   listing,
@@ -26,6 +27,7 @@ export default function ListingActionsMenu({
   onSubmitDraft: (property: Property) => void;
 }) {
   const { t } = useLanguage();
+  const iosApp = useIsNativeIosApp();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   
@@ -83,7 +85,7 @@ export default function ListingActionsMenu({
           ) : (
             <>
               {item('Edit', () => onEdit(listing.property))}
-              {item('Promote listing', () => onPromote(listing.property))}
+              {!iosApp && item('Promote listing', () => onPromote(listing.property))}
 
               {tour && (tour.status === 'ready' || tour.status === 'failed') && (
                 item('Regenerate 3D Tour', () => { TourService.requestTour(listing.property); })

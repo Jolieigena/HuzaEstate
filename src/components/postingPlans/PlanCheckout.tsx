@@ -11,6 +11,7 @@ import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/finance/ui";
 import RedeemAccessCode from "./RedeemAccessCode";
 import { useLanguage } from "@/lib/i18n/language";
+import { useIsNativeIosApp } from "@/lib/nativeApp";
 
 type Mode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "per_post" };
 
@@ -30,6 +31,7 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [updatedTier, setUpdatedTier] = useState<PlanTier | null>(null);
+  const iosApp = useIsNativeIosApp();
 
   const amount = mode.kind === "subscribe" ? PLAN_PRICES[mode.tier] : PER_POST_PRICE;
   const title = mode.kind === "subscribe" ? t("Subscribe to {plan}", { plan: t(PLAN_LABELS[mode.tier]) }) : t("Pay for one extra post");
@@ -61,6 +63,9 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
     }
     window.location.href = result.url;
   };
+
+  // Not available in the iPhone app: plans are bought outside it (App Store rule 3.1.1).
+  if (iosApp) return null;
 
   if (updatedTier) {
     return (

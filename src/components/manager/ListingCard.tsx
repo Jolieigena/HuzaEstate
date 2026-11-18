@@ -13,6 +13,7 @@ import { isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import { formatListingPrice } from '@/lib/properties/price';
 import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 const STATUS_BADGE: Record<Listing['status'], string> = {
   Draft: 'bg-slate-100 text-slate-500',
@@ -87,6 +88,7 @@ export default function ListingCard({
   onSubmitDraft: (property: Property) => void;
 }) {
   const { t } = useLanguage();
+  const iosApp = useIsNativeIosApp();
   const isLeased = listing.status === 'Off market';
   const marketStatus: PropertyStatus = listing.property.status ?? 'published';
   const marketBadge = MARKET_STATUS_BADGE[marketStatus];
@@ -170,7 +172,7 @@ export default function ListingCard({
           {promoted && (
             <div className="text-xs mt-1 font-semibold text-amber-600">{t('Promoted · {days}d left', { days: promotionDaysLeft(listing.property) })}</div>
           )}
-          {hasHiddenMedia && (
+          {hasHiddenMedia && !iosApp && (
             <button
               type="button"
               onClick={() => onPromote(listing.property)}

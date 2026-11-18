@@ -5,9 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PricingCards from '@/components/postingPlans/PricingCards';
 import { SUPPLIER_CATEGORIES } from '@/lib/suppliers/api';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 export default function SellPage() {
   const router = useRouter();
+  // The iPhone app does not sell plans (App Store rule 3.1.1), so the plans section is left out there.
+  const iosApp = useIsNativeIosApp();
 
   return (
     <div className="min-h-screen bg-white">
@@ -18,32 +21,34 @@ export default function SellPage() {
             Sell/Rent your property <br className="hidden sm:block" /> faster, <span className="text-[#2ec440]">for more</span>
           </h1>
           <p className="text-slate-500 text-base sm:text-lg leading-relaxed">
-            List your property, reach buyers across Rwanda and choose the plan that fits.
+            {iosApp ? 'List your property and reach buyers across Rwanda.' : 'List your property, reach buyers across Rwanda and choose the plan that fits.'}
           </p>
         </div>
       </section>
 
       {/* Plans */}
-      <section id="plans" className="py-10 sm:py-12 bg-slate-50 border-t border-slate-100 scroll-mt-20">
-        <div className="max-w-6xl mx-auto px-6 sm:px-10">
-          <div className="text-center max-w-2xl mx-auto mb-8">
-            <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Choose your selling plan</h2>
-            <p className="text-base text-slate-500">Start free, or subscribe to post more and get priority placement.</p>
-          </div>
+      {!iosApp && (
+        <section id="plans" className="py-10 sm:py-12 bg-slate-50 border-t border-slate-100 scroll-mt-20">
+          <div className="max-w-6xl mx-auto px-6 sm:px-10">
+            <div className="text-center max-w-2xl mx-auto mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">Choose your selling plan</h2>
+              <p className="text-base text-slate-500">Start free, or subscribe to post more and get priority placement.</p>
+            </div>
 
-          <PricingCards
-            onSelect={(tier) => {
-              router.push(`/become-a-seller?plan=${tier}`);
-            }}
-          />
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Got an access code?{' '}
-            <button type="button" onClick={() => router.push('/become-a-seller?redeem=1')} className="font-bold text-[#2ec440] hover:underline">
-              Use it here
-            </button>
-          </p>
-        </div>
-      </section>
+            <PricingCards
+              onSelect={(tier) => {
+                router.push(`/become-a-seller?plan=${tier}`);
+              }}
+            />
+            <p className="mt-6 text-center text-sm text-slate-500">
+              Got an access code?{' '}
+              <button type="button" onClick={() => router.push('/become-a-seller?redeem=1')} className="font-bold text-[#2ec440] hover:underline">
+                Use it here
+              </button>
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* For suppliers and manufacturers: open a shop */}
       <section className="px-6 py-12 sm:px-10 sm:py-16">

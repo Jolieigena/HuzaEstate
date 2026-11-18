@@ -3,6 +3,7 @@ import { FREE_PLAN_PRICE, PLAN_EXPIRY_DAYS, PLAN_FEATURES, PLAN_LABELS, PER_POST
 import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { useLanguage } from "@/lib/i18n/language";
+import { useIsNativeIosApp } from "@/lib/nativeApp";
 
 const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
 
@@ -42,7 +43,10 @@ export default function PricingCards({
 }) {
   const { t } = useLanguage();
   const { show } = usePlanMoney();
+  const iosApp = useIsNativeIosApp();
   const yesNo = (value: boolean) => (value ? t("Yes") : "—");
+  // Not shown in the iPhone app: plans are bought outside it (App Store rule 3.1.1).
+  if (iosApp) return null;
   return (
     <div>
       <div className="mb-3 flex justify-end">

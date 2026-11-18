@@ -9,6 +9,7 @@ import { usePlanMoney } from '@/lib/postingPlans/usePlanMoney';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PER_POST_PRICE, type PlanTier } from '@/lib/postingPlans/types';
 import { useLanguage } from '@/lib/i18n/language';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 type Checkout = { kind: 'subscribe'; tier: Exclude<PlanTier, 'free'> } | { kind: 'per_post' } | null;
 
@@ -21,6 +22,17 @@ export default function PlanTab() {
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<Checkout>(null);
   const [cancelling, setCancelling] = useState(false);
+  const iosApp = useIsNativeIosApp();
+
+  // The iPhone app does not sell plans (App Store rule 3.1.1), so nothing here can be bought.
+  if (iosApp) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-6">
+        <h3 className="text-lg font-semibold text-slate-900">{t('Plan & billing')}</h3>
+        <p className="mt-1 text-sm text-slate-500">{t('Plans and billing are not available in the app.')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">

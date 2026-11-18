@@ -8,6 +8,7 @@ import { useSubscription } from "@/lib/postingPlans/hooks";
 import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { useLanguage } from "@/lib/i18n/language";
+import { useIsNativeIosApp } from "@/lib/nativeApp";
 
 type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { kind: "per_post" } | null;
 
@@ -21,6 +22,18 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
   const { show } = usePlanMoney();
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<CheckoutMode>(null);
+  const iosApp = useIsNativeIosApp();
+
+  // The iPhone app does not sell plans or extra posts (App Store rule 3.1.1): only say the limit was reached.
+  if (iosApp) {
+    return (
+      <div className="max-w-lg mx-auto py-10 text-center">
+        <h2 className="text-2xl font-black text-slate-900 mb-2">{t("You've used your free posts this month")}</h2>
+        <p className="text-slate-500 mb-6">{t("You can't add more listings right now.")}</p>
+        <button onClick={onClose} className="text-sm font-semibold text-slate-500 hover:text-slate-800">{t("Back to the form")}</button>
+      </div>
+    );
+  }
 
   if (checkout) {
     return (

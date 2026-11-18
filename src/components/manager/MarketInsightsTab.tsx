@@ -9,10 +9,12 @@ import { useAllProperties } from "@/lib/sellerListings/hooks";
 import { useSubscription } from "@/lib/postingPlans/hooks";
 import { PLAN_FEATURES, PLAN_LABELS, type PlanTier } from "@/lib/postingPlans/types";
 import { useLanguage } from "@/lib/i18n/language";
+import { useIsNativeIosApp } from "@/lib/nativeApp";
 
 function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
   const { t } = useLanguage();
   const [checkoutTier, setCheckoutTier] = useState<Exclude<PlanTier, "free"> | null>(null);
+  const iosApp = useIsNativeIosApp();
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,7 +24,7 @@ function UpgradeGate({ currentTier }: { currentTier: PlanTier }) {
       </div>
       <Card className="text-center py-10">
         <p className="font-bold text-slate-900 mb-1">{t("Market Insights is a Gold/Diamond feature")}</p>
-        <p className="text-sm text-slate-500 mb-6">{t("You're on the {plan} plan. Upgrade to see how your listings are priced against the market.", { plan: t(PLAN_LABELS[currentTier]) })}</p>
+        <p className="text-sm text-slate-500 mb-6">{iosApp ? t("Market Insights isn't available on your current plan.") : t("You're on the {plan} plan. Upgrade to see how your listings are priced against the market.", { plan: t(PLAN_LABELS[currentTier]) })}</p>
         {checkoutTier ? (
           <div className="max-w-sm mx-auto text-left">
             <PlanCheckout mode={{ kind: "subscribe", tier: checkoutTier }} onClose={() => setCheckoutTier(null)} />

@@ -18,6 +18,7 @@ import { AccessCodeField } from '@/components/postingPlans/RedeemAccessCode';
 import { usePlanMoney } from '@/lib/postingPlans/usePlanMoney';
 import Select from "@/components/shared/Select";
 import { useLanguage } from '@/lib/i18n/language';
+import { useIsNativeIosApp } from '@/lib/nativeApp';
 
 function isPlanTier(value: string | null): value is PlanTier {
   return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
@@ -42,7 +43,9 @@ function BecomeASellerForm() {
   // reaching this page some other way  gets no plan badge and the original unconditional /manager
   // redirect, same as before /sell started passing ?plan=.
   const selectedTier = isPlanTier(planParam) ? planParam : null;
-  const paidTier = isPaidTier(selectedTier) ? selectedTier : null;
+  // The iPhone app does not sell plans (App Store rule 3.1.1): there, signing up as a seller always uses the free plan.
+  const iosApp = useIsNativeIosApp();
+  const paidTier = !iosApp && isPaidTier(selectedTier) ? selectedTier : null;
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
