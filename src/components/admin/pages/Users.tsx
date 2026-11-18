@@ -9,7 +9,7 @@ import ConfirmModal from "@/components/shared/ConfirmModal";
 import { useAuth } from "@/lib/auth-context";
 import { useIsAdministrator } from "@/lib/admin/hooks";
 import { AdminApi, type AdminOrganization, type AdminSubscription, type AdminUser, type AdminUserList, type UserAccountType, type UserStatus } from "@/lib/admin/api";
-import { fetchProfessionalsDirectory, type RealProfessionalProfile } from "@/lib/professional/api";
+import { fetchProfessionalProfile, fetchProfessionalsDirectory, setProfessionalDirectoryHidden, type RealProfessionalProfile } from "@/lib/professional/api";
 import { ORG_PERMISSIONS, type OrgPermission } from "@/lib/orgPermissions";
 import { regionsForCountry } from "@/lib/regions";
 import { useToast } from "@/lib/toast-context";
@@ -285,6 +285,32 @@ export function UserDetailPage({ userId }: { userId: string }) {
       if (result.ok) setOrgChoices(result.data);
     });
   }, [roleToAdd, token, orgChoices.length]);
+  // Whether this professional is kept out of the public Professionals list (null until known).
+  const [directoryHidden, setDirectoryHidden] = useState<{ id: string; hidden: boolean } | null>(null);
+  const [savingVisibility, setSavingVisibility] = useState(false);
+  useEffect(() => {
+    if (!isAuthReady || !token || !canManage) return;
+    let cancelled = false;
+    fetchProfessionalProfile(userId, token).then((profile) => {
+      if (!cancelled && profile) setDirectoryHidden({ id: userId, hidden: profile.hiddenFromDirectory === true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, token, isAuthReady, canManage]);
+  const toggleDirectory = async () => {
+    if (!token || savingVisibility || directoryHidden?.id !== userId) return;
+    const next = !directoryHidden.hidden;
+    setSavingVisibility(true);
+    const ok = await setProfessionalDirectoryHidden(token, userId, next);
+    setSavingVisibility(false);
+    if (!ok) {
+      showToast("Could not change that. Please try again.", "error");
+      return;
+    }
+    setDirectoryHidden({ id: userId, hidden: next });
+    showToast(next ? "Hidden from the Professionals list." : "Shown in the Professionals list.");
+  };
   const [savingRole, setSavingRole] = useState(false);
   const [roleToRemove, setRoleToRemove] = useState<UserAccountType | null>(null);
 
@@ -482,6 +508,16 @@ export function UserDetailPage({ userId }: { userId: string }) {
               <Field label="Joined" value={formatDateTime(user.createdAt)} />
               <Field label="Last updated" value={formatDateTime(user.updatedAt)} />
               {user.roles.includes("professional") && <Field label="Public profile" value={user.professionalProfileCompleted ? <Link className="text-[#219b31] underline" href={`/professionals/${user.id}`}>View profile</Link> : "Not completed yet"} />}
+              {canManage && user.roles.includes("professional") && user.professionalProfileCompleted && directoryHidden?.id === user.id && (
+                <Field
+                  label="Professionals list"
+                  value={
+                    <button type="button" onClick={() => void toggleDirectory()} disabled={savingVisibility} className="font-semibold text-[#219b31] underline disabled:opacity-50">
+                      {directoryHidden.hidden ? "Hidden · show it" : "Shown · hide it"}
+                    </button>
+                  }
+                />
+              )}
               {user.organizationId && <Field label="Organisation" value={<Link className="text-[#219b31] underline" href={`/admin/organizations/${user.organizationId}`}>{user.organizationName ?? "View organisation"}</Link>} />}
               {user.mustChangePassword && <Field label="Password" value="Still on the emailed temporary password" />}
             </dl>

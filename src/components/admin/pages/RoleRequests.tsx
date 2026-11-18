@@ -58,6 +58,7 @@ function RequestRow({ record, onDecided }: { record: RoleRequestRecord; onDecide
           {[record.details.companyName, record.details.specialisations?.join(", "), record.details.categories?.join(", "), record.details.city, record.details.phone, record.details.yearsExperience !== undefined ? `${record.details.yearsExperience} years` : ""].filter(Boolean).join(" · ")}
         </p>
       )}
+      {record.details?.bio && <p className="mt-2 text-sm text-slate-600 whitespace-pre-line">{record.details.bio}</p>}
       {(record.details?.documents?.length || record.details?.workLink) && (
         <div className="mt-3 rounded-xl border border-slate-200 p-3">
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Documents</p>

@@ -343,6 +343,13 @@ export default function ProfessionalProfileForm() {
   // the state update for it has not landed yet when this runs.
   const persist = async (overrides?: { services?: ServiceOfferingInput[]; portfolio?: PortfolioItemInput[] }, message = "Profile updated.") => {
     if (!token || saving) return;
+    // The same two requirements the server holds every profile to.
+    const problem = !(Number(yearsExperience) >= 1) ? "Enter your years of experience (1 or more)." : bio.trim().length < 50 ? "Write at least 50 characters about yourself and your work." : "";
+    if (problem) {
+      setError(problem);
+      showToast(problem, "error");
+      return;
+    }
     setSaving(true);
     setError("");
     const result = await saveMyProfessionalProfile(token, {
@@ -369,8 +376,8 @@ export default function ProfessionalProfileForm() {
   const required = [
     { label: "Display name", done: !!displayName.trim(), href: "#details" },
     { label: "Specialisations", done: specialisations.length > 0, href: "#details" },
-    { label: "Years of experience", done: yearsExperience !== "", href: "#details" },
-    { label: "Biography", done: !!bio.trim(), href: "#details" },
+    { label: "Years of experience", done: Number(yearsExperience) >= 1, href: "#details" },
+    { label: "Biography (50 characters or more)", done: bio.trim().length >= 50, href: "#details" },
     { label: "Phone", done: !!phone.trim(), href: "#contact" },
     { label: "City", done: !!city.trim(), href: "#contact" },
   ];
@@ -422,7 +429,7 @@ export default function ProfessionalProfileForm() {
           <Section id="details" step={1} title="About you">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Display name"><input className={fieldClass} value={displayName} onChange={(e) => setDisplayName(e.target.value)} /></Field>
-              <Field label="Years of experience"><input type="number" min={0} max={80} className={fieldClass} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} /></Field>
+              <Field label="Years of experience"><input type="number" min={1} max={80} className={fieldClass} value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} /></Field>
               <div className="text-sm font-bold text-slate-700 sm:col-span-2">
                 <span id="specialisations-label">Specialisations</span>
                 <div className="mt-1.5">

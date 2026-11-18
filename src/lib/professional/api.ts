@@ -47,6 +47,8 @@ export type ProfessionalKind = "individual" | "firm";
 
 export interface RealProfessionalProfile {
   accountId: string;
+  /** Set when an administrator keeps this profile out of the public Professionals list. */
+  hiddenFromDirectory?: boolean;
   kind: ProfessionalKind;
   displayName: string;
   photoUrl?: string;
@@ -145,6 +147,20 @@ export async function fetchProfessionalsDirectory(): Promise<RealProfessionalPro
 }
 
 /** With a token, the response also carries the professional's phone and email. */
+/** Administrators: keep a profile out of the public Professionals list, or show it again. */
+export async function setProfessionalDirectoryHidden(token: string, accountId: string, hidden: boolean): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}/directory`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "x-huza-client": "web" },
+      body: JSON.stringify({ hidden }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchProfessionalProfile(accountId: string, token?: string | null): Promise<RealProfessionalProfile | null> {
   try {
     const res = await fetch(`${API_URL}/professionals/${encodeURIComponent(accountId)}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);

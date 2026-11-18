@@ -101,6 +101,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
   const [phone, setPhone] = useState("");
   const [specialisations, setSpecialisations] = useState<string[]>([]);
   const [years, setYears] = useState("");
+  const [bio, setBio] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [note, setNote] = useState("");
   const [pending, setPending] = useState<RequestableRole[]>([]);
@@ -135,6 +136,7 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
       setPhone("");
       setSpecialisations([]);
       setYears("");
+      setBio("");
       setCompanyName("");
       setNote("");
       setError("");
@@ -157,6 +159,11 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
     if (needsProfile) {
       if (!country) found.country = t("Please choose your country.");
       if (role === "professional" && specialisations.length === 0) found.specialisations = t("Choose at least one specialisation.");
+      if (role === "professional") {
+        const yearsNumber = Number(years);
+        if (years === "" || !Number.isFinite(yearsNumber) || yearsNumber < 1 || yearsNumber > 80) found.years = t("Enter your years of experience (1 or more).");
+        if (bio.trim().length < 50) found.bio = t("Write at least 50 characters about yourself and your work.");
+      }
       if (role === "professional") {
         const has = (docKind: DocumentKind) => documents.some((d) => d.kind === docKind);
         if (kind === "firm" && !has("business")) found.business = t("Upload your business registration certificate.");
@@ -211,7 +218,8 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
             city: city.trim(),
             phone: cleanPhone(phone),
             specialisations,
-            ...(years !== "" ? { yearsExperience: Number(years) } : {}),
+            yearsExperience: Number(years),
+            bio: bio.trim(),
             // Only what applies to how they work: an individual's degree and ID, a firm's registration, and proof of work for both.
             documents: documents.filter((d) => (kind === "firm" ? d.kind !== "id" : d.kind !== "business")),
             ...(workLink.trim() ? { workLink: workLink.trim() } : {}),
@@ -279,8 +287,14 @@ export default function AddRoleDialog({ open, onClose, roles }: { open: boolean;
                 <FieldError message={fieldErrors.specialisations} />
               </div>
               <label className="block text-sm font-bold text-slate-700">
-                {t("Years of experience")} <span className="font-normal text-slate-400">({t("optional")})</span>
-                <input type="number" min={0} max={80} className={`${fieldClass} mt-1`} value={years} onChange={(e) => setYears(e.target.value)} />
+                {t("Years of experience")}
+                <input type="number" min={1} max={80} className={`${fieldClass} mt-1`} value={years} onChange={(e) => setYears(e.target.value)} />
+                <FieldError message={fieldErrors.years} />
+              </label>
+              <label className="block text-sm font-bold text-slate-700">
+                {t("About you and your work")}
+                <textarea className={`${fieldClass} mt-1 min-h-28`} value={bio} maxLength={4000} onChange={(e) => setBio(e.target.value)} />
+                <FieldError message={fieldErrors.bio} />
               </label>
 
               {kind === "firm" ? (

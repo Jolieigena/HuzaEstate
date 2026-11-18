@@ -54,6 +54,8 @@ export interface RoleRequestDetails {
   /** Professionals. */
   specialisations?: string[];
   yearsExperience?: number;
+  /** Professionals: what they wrote about themselves and their work. */
+  bio?: string;
   /** Professionals: what they sent to show who they are and what they have done (kept privately; an administrator opens them). */
   documents?: VerificationDocument[];
   /** Professionals: a link to their work, in place of (or with) uploaded proof of work. */
