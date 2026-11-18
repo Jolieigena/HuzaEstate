@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useId, useState } from "react";
 import Link from "next/link";
 import { formatServicePrice, fetchProfessionalProfile, fetchProfessionalReviews, submitProfessionalReview, type ProfessionalReviewList, type RealProfessionalProfile } from "@/lib/professional/api";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { StarRating } from "@/components/professional/ui";
+import Dialog from "@/components/Dialog";
 import ContactForm from "@/components/professional/ContactForm";
 import WhatsappContactButton from "@/components/shared/WhatsappContactButton";
 import { ProfessionalDesignsSection, RequestCustomDesignButton } from "@/components/designs/ProfessionalDesigns";
@@ -46,6 +47,110 @@ function ProjectMedia({ item }: { item: RealProfessionalProfile["portfolio"][num
         </button>
       )}
     </div>
+  );
+}
+
+type Project = RealProfessionalProfile["portfolio"][number];
+
+const projectImages = (item: Project) => (item.images?.length ? item.images : item.imageUrl ? [item.imageUrl] : []);
+
+/** One project opened full size: every photo (with previous and next), the video if there is one, and the whole description. */
+function ProjectDialog({ item, place, open, onClose }: { item: Project; place: string; open: boolean; onClose: () => void }) {
+  const titleId = useId();
+  const images = projectImages(item);
+  // The slides are the video first (when there is one), then the photos.
+  const slides: { kind: "video" | "image"; src: string }[] = [...(item.videoUrl ? [{ kind: "video" as const, src: item.videoUrl }] : []), ...images.map((src) => ({ kind: "image" as const, src }))];
+  const [index, setIndex] = useState(0);
+  const at = Math.min(index, Math.max(slides.length - 1, 0));
+  const current = slides[at];
+  const go = (step: number) => setIndex((i) => (i + step + slides.length) % slides.length);
+
+  return (
+    <Dialog open={open} onClose={onClose} labelledBy={titleId} panelClassName="max-w-3xl">
+      <div className="relative">
+        <button
+          type="button"
+          data-dialog-close
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute top-4 right-4 z-20 h-9 w-9 flex items-center justify-center rounded-full bg-white/95 shadow text-slate-600 hover:text-slate-900 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2ec440]"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
+        {current && (
+          <div className="relative bg-black aspect-[16/10] flex items-center justify-center">
+            {current.kind === "video" ? (
+              <video key={current.src} src={current.src} controls playsInline className="h-full w-full object-contain" />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={current.src} src={current.src} alt={item.title} className="h-full w-full object-contain" />
+            )}
+            {slides.length > 1 && (
+              <>
+                <button type="button" onClick={() => go(-1)} aria-label="Previous" className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 shadow flex items-center justify-center text-slate-700 hover:bg-white transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button type="button" onClick={() => go(1)} aria-label="Next" className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/90 shadow flex items-center justify-center text-slate-700 hover:bg-white transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                </button>
+                <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-bold text-white">{at + 1} / {slides.length}</span>
+              </>
+            )}
+          </div>
+        )}
+
+        {slides.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto p-3 bg-slate-50">
+            {slides.map((slide, i) => (
+              <button key={`${slide.kind}-${slide.src}`} type="button" onClick={() => setIndex(i)} aria-label={slide.kind === "video" ? "Show video" : `Show photo ${i + 1}`} className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-slate-800 ${i === at ? "border-[#2ec440]" : "border-transparent opacity-70 hover:opacity-100"}`}>
+                {slide.kind === "image" ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={slide.src} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <span className="absolute inset-0 flex items-center justify-center text-white">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="p-6">
+          <h2 id={titleId} className="text-xl font-bold text-slate-900">{item.title}</h2>
+          <p className="text-sm text-slate-500 mt-1">{place}{item.year ? ` · ${item.year}` : ""}</p>
+          {item.description && <p className="mt-4 text-sm text-slate-600 leading-relaxed whitespace-pre-line">{item.description}</p>}
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+/** A project in the list. Clicking anywhere on it (or its title, with the keyboard) opens it full size; the video's own play button keeps playing in place. */
+function ProjectCard({ item, place, level }: { item: Project; place: string; level: "h3" | "h4" }) {
+  const [open, setOpen] = useState(false);
+  const Heading = level;
+  return (
+    <>
+      <div
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a, button, video")) return;
+          setOpen(true);
+        }}
+        className="border border-slate-100 rounded-2xl overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      >
+        <ProjectMedia item={item} />
+        <div className="p-4">
+          <Heading className="font-bold text-slate-900 text-sm mb-0.5">
+            <button type="button" onClick={() => setOpen(true)} className="text-left hover:underline focus:outline-none focus-visible:underline">{item.title}</button>
+          </Heading>
+          <p className="text-xs text-slate-500 mb-2">{place}{item.year ? ` · ${item.year}` : ""}</p>
+          {item.description && <p className="text-xs text-slate-600 leading-relaxed line-clamp-3">{item.description}</p>}
+        </div>
+      </div>
+      {open && <ProjectDialog item={item} place={place} open={open} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
@@ -230,14 +335,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
                   {(service.projects ?? []).length > 0 && (
                     <div className="mt-4 grid sm:grid-cols-2 gap-4">
                       {(service.projects ?? []).map((item, projectIndex) => (
-                        <div key={`${item.title}-${projectIndex}`} className="border border-slate-100 rounded-2xl overflow-hidden">
-                          <ProjectMedia item={item} />
-                          <div className="p-4">
-                            <h4 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h4>
-                            <p className="text-xs text-slate-500 mb-1">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
-                            {item.description && <p className="text-xs text-slate-600 leading-relaxed">{item.description}</p>}
-                          </div>
-                        </div>
+                        <ProjectCard key={`${item.title}-${projectIndex}`} item={item} place={[profile.city, profile.country].filter(Boolean).join(", ")} level="h4" />
                       ))}
                     </div>
                   )}
@@ -252,14 +350,7 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
                 <h2 className="text-xl font-bold text-slate-900 mb-4">Other projects</h2>
                 <div className="grid sm:grid-cols-2 gap-5 mb-10">
                   {profile.portfolio.map((item, index) => (
-                    <div key={`${item.title}-${index}`} className="border border-slate-100 rounded-2xl overflow-hidden">
-                      <ProjectMedia item={item} />
-                      <div className="p-4">
-                        <h3 className="font-bold text-slate-900 text-sm mb-0.5">{item.title}</h3>
-                        <p className="text-xs text-slate-500 mb-2">{[profile.city, profile.country].filter(Boolean).join(", ")}{item.year ? ` · ${item.year}` : ""}</p>
-                        <p className="text-xs text-slate-600 leading-relaxed mb-2">{item.description}</p>
-                      </div>
-                    </div>
+                    <ProjectCard key={`${item.title}-${index}`} item={item} place={[profile.city, profile.country].filter(Boolean).join(", ")} level="h3" />
                   ))}
                 </div>
               </>

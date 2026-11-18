@@ -23,8 +23,7 @@ import { useCurrentCountry } from '@/lib/geo/useCurrentCountry';
 import { AMENITY_OPTIONS, PROPERTY_TYPE_OPTIONS as TYPE_OPTIONS } from '@/lib/properties/types';
 import { useMenu } from '@/lib/menus/menus';
 import { isPromotedNow } from '@/lib/promotion/types';
-import { useSavedSearches } from '@/lib/savedSearches/hooks';
-import { SavedSearchesStoreEngine } from '@/lib/savedSearches/store';
+import { useSavedSearchActions, useSavedSearches } from '@/lib/savedSearches/hooks';
 import type { SavedSearchCriteria } from '@/lib/savedSearches/types';
 import { useToast } from '@/lib/toast-context';
 import LanguagePicker from '@/components/LanguagePicker';
@@ -244,6 +243,7 @@ function PropertiesContent() {
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const savedSearches = useSavedSearches();
+  const savedSearchActions = useSavedSearchActions();
   const [isSavedOpen, setIsSavedOpen] = useState(false);
   const { showToast } = useToast();
   // Buyers already see the "Top Pick" badge on a promoted card (see PropertyCard.tsx) — this
@@ -430,11 +430,19 @@ function PropertiesContent() {
     setTopPicksOnly(false); setInstallmentsOnly(false);
   }
 
+  async function toggleSearchAlerts(id: string, on: boolean) {
+    const result = await savedSearchActions.setAlerts(id, on);
+    if (result === 'signin') showToast('Sign in to get alerts for new homes.', 'error');
+    else if (!result) showToast('Could not change the alert. Please try again.', 'error');
+    else showToast(on ? "Alert on. We'll tell you when a new home matches." : 'Alert off.');
+  }
+
   function saveCurrentSearch() {
     const criteria: SavedSearchCriteria = {
       searchTerm,
       filterType,
       propertyTypeFilter: selectedTypeLabels.length ? selectedTypeLabels.join(', ') : 'all',
+      propertyTypes: Array.from(selectedTypeBuckets),
       minPrice: customMinPrice,
       maxPrice: customMaxPrice,
       bedsFilter: bedsInput,
@@ -444,8 +452,8 @@ function PropertiesContent() {
       city: cityInput,
       keywords: keywordsInput,
     };
-    const outcome = SavedSearchesStoreEngine.save(criteria);
-    if (outcome === 'saved') showToast('Search saved.');
+    const outcome = savedSearchActions.save(criteria, priceCode);
+    if (outcome === 'saved') showToast(savedSearchActions.signedIn ? "Search saved. We'll tell you when a new home matches." : 'Search saved.');
     else if (outcome === 'duplicate') showToast("You've already saved this search.");
     else showToast('Add a filter first to save a search.', 'error');
   }
@@ -898,7 +906,16 @@ function PropertiesContent() {
                           {s.label}
                         </button>
                         <button
-                          onClick={() => SavedSearchesStoreEngine.remove(s.id)}
+                          type="button"
+                          onClick={() => toggleSearchAlerts(s.id, s.alerts !== true)}
+                          aria-label={s.alerts ? `Turn off alerts for: ${s.label}` : `Get alerts for: ${s.label}`}
+                          aria-pressed={s.alerts === true}
+                          className={`shrink-0 p-1.5 transition-colors ${s.alerts ? 'text-[#2ec440]' : 'text-slate-300 hover:text-slate-600'}`}
+                        >
+                          <svg className="w-4 h-4" fill={s.alerts ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2a2 2 0 01-.6 1.4L4 17h5m6 0a3 3 0 11-6 0" /></svg>
+                        </button>
+                        <button
+                          onClick={() => savedSearchActions.remove(s.id)}
                           aria-label={`Remove saved search: ${s.label}`}
                           className="shrink-0 p-1.5 text-slate-300 hover:text-red-500 transition-colors"
                         >

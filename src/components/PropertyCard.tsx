@@ -19,6 +19,8 @@ import { COMMERCIAL_FEATURE_OPTIONS, LAND_FEATURE_OPTIONS } from '@/lib/properti
 import { formatPlace } from '@/lib/properties/place';
 import { useLanguage } from '@/lib/i18n/language';
 import { isUsHomeId } from '@/lib/zillow/property';
+import { useCompareIds } from '@/lib/compare/hooks';
+import { CompareStoreEngine, MAX_COMPARE } from '@/lib/compare/store';
 
 interface PropertyCardProps {
   property: Property;
@@ -56,6 +58,11 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
   const galleryImageCount = getGalleryImages(property).length;
 
   const toggleFavorite = useToggleFavorite();
+  const inCompare = useCompareIds().includes(property.id);
+
+  function toggleCompare() {
+    if (CompareStoreEngine.toggle(property.id) === 'full') showToast(t(`You can compare up to ${MAX_COMPARE} homes.`), 'error');
+  }
 
   async function toggleSaved() {
     const result = await toggleFavorite(property.id);
@@ -216,6 +223,15 @@ export default function PropertyCard({ property, isFeatured }: PropertyCardProps
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
               </a>
+              <button
+                type="button"
+                onClick={toggleCompare}
+                className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${inCompare ? 'bg-[#2ec440]/10 border-[#2ec440] text-[#2ec440]' : 'border-slate-200 text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440]'}`}
+                title={inCompare ? t('Remove from compare') : t('Compare')}
+                aria-pressed={inCompare}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 4H5a2 2 0 00-2 2v12a2 2 0 002 2h4m6-16h4a2 2 0 012 2v12a2 2 0 01-2 2h-4M12 3v18"></path></svg>
+              </button>
               {!isUsHome && <button
                 onClick={toggleSaved}
                 className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all ${isSaved ? 'bg-red-50 border-red-200 text-red-500' : 'border-slate-200 text-slate-400 hover:bg-[#2ec440]/10 hover:text-[#2ec440] hover:border-[#2ec440]'}`}
