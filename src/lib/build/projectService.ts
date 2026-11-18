@@ -94,6 +94,13 @@ export const BuildProjectService = {
     return ensureLoaded();
   },
 
+  /** Replaces every project at once. Used only by the account sync (lib/projectSync), which brings the account's projects in. */
+  replaceAll(list: BuildProject[]): void {
+    projects = list;
+    persist();
+    notify();
+  },
+
   isStorageAvailable(): boolean {
     return BuildStorageService.isAvailable();
   },

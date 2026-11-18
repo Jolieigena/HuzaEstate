@@ -96,6 +96,13 @@ export const RenovationProjectService = {
     return () => listeners.delete(listener);
   },
 
+  /** Replaces every project at once. Used only by the account sync (lib/projectSync), which brings the account's projects in. */
+  replaceAll(list: RenovationProject[]): void {
+    projects = list;
+    persist();
+    notify();
+  },
+
   getSnapshot(): RenovationProject[] {
     return ensureLoaded();
   },

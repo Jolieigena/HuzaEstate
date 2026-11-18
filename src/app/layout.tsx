@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
 import CompareBar from "@/components/CompareBar";
+import ProjectSyncHost from "@/components/ProjectSyncHost";
 import ConditionalFooter from "@/components/ConditionalFooter";
 import NavigationTracker from "@/components/NavigationTracker";
 import AddRoleHost from "@/components/shared/AddRoleHost";
@@ -45,6 +46,7 @@ export default function RootLayout({
             <CompareBar />
             <ConditionalFooter />
             <AddRoleHost />
+            <ProjectSyncHost />
           </ToastProvider>
         </AuthProvider>
       </body>
