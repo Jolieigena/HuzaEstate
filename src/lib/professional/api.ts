@@ -52,6 +52,8 @@ export interface RealProfessionalProfile {
   kind: ProfessionalKind;
   displayName: string;
   photoUrl?: string;
+  /** The wide picture across the top of the profile's card and page. */
+  coverUrl?: string;
   bio: string;
   /** What the professional practises, picked from lib/professional/specialisations.ts (or typed in). */
   specialisations: string[];

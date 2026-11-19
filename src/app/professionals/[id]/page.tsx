@@ -288,6 +288,11 @@ export default function ProfessionalProfilePage({ params }: { params: Promise<{ 
           Back to professionals
         </Link>
 
+        {profile.coverUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profile.coverUrl} alt="" className="mb-8 h-40 w-full rounded-3xl object-cover sm:h-56" />
+        )}
+
         <div className="flex flex-col sm:flex-row sm:items-start gap-6 mb-10">
           <div className="w-20 h-20 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-3xl flex-shrink-0 overflow-hidden">
             {profile.photoUrl ? (

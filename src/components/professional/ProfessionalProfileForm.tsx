@@ -111,6 +111,8 @@ export default function ProfessionalProfileForm() {
   const [error, setError] = useState("");
   const [kind, setKind] = useState<string | undefined>(undefined);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+  const [coverUrl, setCoverUrl] = useState<string | undefined>(undefined);
+  const [coverUploading, setCoverUploading] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const [displayName, setDisplayName] = useState(account?.name ?? "");
   const [bio, setBio] = useState("");
@@ -143,6 +145,7 @@ export default function ProfessionalProfileForm() {
       if (cancelled || !profile) return;
       setKind(profile.kind);
       setPhotoUrl(profile.photoUrl);
+      setCoverUrl(profile.coverUrl);
       // A professional who hasn't completed their profile yet has none of these saved, so the
       // API can hand back undefined — every text field here must stay a string.
       setDisplayName((current) => profile.displayName ?? current);
@@ -187,6 +190,19 @@ export default function ProfessionalProfileForm() {
       setError(err instanceof Error ? err.message : "Could not upload photo.");
     } finally {
       setPhotoUploading(false);
+    }
+  };
+
+  const uploadCoverFile = async (file?: File) => {
+    if (!file || !token) return;
+    setCoverUploading(true);
+    setError("");
+    try {
+      setCoverUrl(await uploadProfessionalImage(file, file.type, token));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload the cover picture.");
+    } finally {
+      setCoverUploading(false);
     }
   };
 
@@ -356,6 +372,8 @@ export default function ProfessionalProfileForm() {
       displayName, bio, specialisations, city, phone,
       yearsExperience: yearsExperience ? Number(yearsExperience) : undefined,
       portfolio: overrides?.portfolio ?? portfolio, services: overrides?.services ?? services, photoUrl,
+      // An empty text removes the cover; the server leaves it alone only when this field is missing altogether.
+      coverUrl: coverUrl ?? "",
     });
     setSaving(false);
     if (!result.ok) {
@@ -422,6 +440,28 @@ export default function ProfessionalProfileForm() {
                     </button>
                   )}
                 </div>
+              </div>
+            </ImageDropArea>
+          </Section>
+
+          <Section id="cover">
+            <ImageDropArea className="flex flex-col gap-3" onFiles={(files) => void uploadCoverFile(files[0])} disabled={coverUploading}>
+              <div className="h-28 w-full overflow-hidden rounded-2xl bg-gradient-to-r from-slate-50 to-slate-100 sm:h-36">
+                {coverUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={coverUrl} alt="" className="h-full w-full object-cover" />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className={`${coverUploading ? "opacity-50" : ""} inline-block cursor-pointer rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]`}>
+                  {coverUploading ? "Uploading…" : coverUrl ? "Change cover picture" : "Upload cover picture"}
+                  <input type="file" accept="image/*" className="hidden" disabled={coverUploading} onChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; void uploadCoverFile(file); }} />
+                </label>
+                {coverUrl && (
+                  <button type="button" disabled={coverUploading} onClick={() => setCoverUrl(undefined)} className="rounded-xl px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    Remove cover picture
+                  </button>
+                )}
               </div>
             </ImageDropArea>
           </Section>

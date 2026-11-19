@@ -310,11 +310,15 @@ export default function ProfessionalsDirectoryPage() {
                   href={`/professionals/${profile.accountId}`}
                   className="group relative bg-white rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  {/* Subtle Colored Top Banner */}
-                  <div className="h-20 bg-gradient-to-r from-slate-50 to-slate-100/50 w-full rounded-t-[2rem]"></div>
+                  {/* Cover picture across the top (a soft band when there is none) */}
+                  <div className="relative h-28 bg-gradient-to-r from-slate-50 to-slate-100/50 w-full rounded-t-[2rem] overflow-hidden">
+                    {profile.coverUrl && (
+                      <img src={profile.coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    )}
+                  </div>
 
                   {/* Prominent Circular Profile Picture (Headshot or Logo) */}
-                  <div className="absolute top-6 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-white z-10">
+                  <div className="absolute top-[4.25rem] left-1/2 -translate-x-1/2 w-24 h-24 rounded-full border-[3px] border-white shadow-sm overflow-hidden bg-white z-10">
                     {avatarImage ? (
                       <img
                         src={avatarImage}
@@ -327,7 +331,7 @@ export default function ProfessionalsDirectoryPage() {
                   </div>
 
                   {/* Card Content - Centered */}
-                  <div className="px-6 pt-12 pb-6 flex flex-col flex-1 items-center text-center">
+                  <div className="px-6 pt-16 pb-6 flex flex-col flex-1 items-center text-center">
                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-[#2ec440] transition-colors mb-1 inline-flex items-center gap-1.5 justify-center">
                       {profile.displayName}
                     </h3>
