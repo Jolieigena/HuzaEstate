@@ -213,7 +213,11 @@ function Catalog() {
                   aria-selected={active}
                   aria-haspopup="true"
                   aria-expanded={open}
-                  onClick={() => setOpenTab(open ? "" : tab.key)}
+                  onClick={() => {
+                    // Choosing a tab shows its products straight away (and turns it black); the menu below narrows to categories.
+                    if (!active) update({ group: tab.key, category: undefined });
+                    setOpenTab(open ? "" : tab.key);
+                  }}
                   className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-5 text-sm font-bold transition-colors ${active ? "border-slate-900 bg-slate-900 text-white" : open ? "border-slate-900 bg-white text-slate-900" : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"}`}
                 >
                   {tab.label}
