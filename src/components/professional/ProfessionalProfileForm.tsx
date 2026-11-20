@@ -600,8 +600,8 @@ export default function ProfessionalProfileForm() {
                               <label className="text-xs font-bold text-slate-700">
                                 Quote
                                 <Select className={`${fieldClass} mt-1.5`} value={newProject.priceType} aria-label="Design quote" onChange={(e) => setNewProject((v) => ({ ...v, priceType: e.target.value as "fixed" | "on_request" }))}>
-                                  <option value="on_request">Quote on request</option>
-                                  <option value="fixed">Fixed quote</option>
+                                  <option value="on_request">Fee on request</option>
+                                  <option value="fixed">Fixed fee</option>
                                 </Select>
                               </label>
                               {newProject.priceType === "fixed" && (

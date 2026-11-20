@@ -7,9 +7,9 @@ export type DesignCategory = "house" | "interior" | "exterior" | "furniture" | "
 export type DesignPriceType = "fixed" | "per_sqm" | "on_request";
 export type DesignStatus = "draft" | "published";
 
-export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { house: "Houses", interior: "Interior", exterior: "Exterior", furniture: "Furniture", accessories: "Accessories" };
+export const DESIGN_CATEGORY_LABELS: Record<DesignCategory, string> = { house: "Residential", interior: "Interiors", exterior: "Exteriors & landscape", furniture: "Furniture", accessories: "Décor & styling" };
 export const DESIGN_TAB_ITEMS = (Object.keys(DESIGN_CATEGORY_LABELS) as DesignCategory[]).filter((c) => c !== "furniture").map((c) => ({ key: c, label: DESIGN_CATEGORY_LABELS[c] }));
-export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed quote", per_sqm: "Quote per square metre", on_request: "Quote on request" };
+export const DESIGN_PRICE_TYPE_LABELS: Record<DesignPriceType, string> = { fixed: "Fixed fee", per_sqm: "Fee per square metre", on_request: "Fee on request" };
 
 export interface DesignDesigner {
   accountId: string;
@@ -252,9 +252,9 @@ async function call<T>(path: string, init: { token?: string | null; method?: str
   }
 }
 
-/** "$450", "$25/m²" or "Quote on request". */
+/** "$450", "$25/m²" or "Fee on request". */
 export function formatDesignPrice(design: Pick<Design, "priceType" | "price" | "currency">, format?: (amount: number, currency: string) => string): string {
-  if (design.priceType === "on_request" || !design.price) return "Quote on request";
+  if (design.priceType === "on_request" || !design.price) return "Fee on request";
   const amount = Math.round(design.price).toLocaleString("en-US");
   const money = format ? format(design.price, design.currency) : design.currency === "USD" ? `$${amount}` : `${design.currency} ${amount}`;
   return design.priceType === "per_sqm" ? `${money}/m²` : money;

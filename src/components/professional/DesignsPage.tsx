@@ -260,7 +260,7 @@ function DesignForm({ titleId, id, initial, onClose, onSaved }: { titleId: strin
 
           <div>
             <p className="text-sm font-bold text-slate-700">
-              Furniture list <span className="font-normal text-slate-400">({form.furniture.length}/{MAX_FURNITURE})</span>
+              Furniture schedule <span className="font-normal text-slate-400">({form.furniture.length}/{MAX_FURNITURE})</span>
             </p>
             <div className="mt-2 space-y-2">
               {form.furniture.map((item, index) => (

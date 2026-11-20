@@ -110,10 +110,6 @@ function Catalog() {
   // The tab a view belongs to: the one chosen, or the one that lists the chosen category.
   const firstPicked = pickedCategories[0] ?? "";
   const activeTab = group || (firstPicked ? tabs?.groups.find((g) => g.categories.some((c) => c.name === firstPicked))?.name ?? (tabs?.other.some((c) => c.name === firstPicked) ? OTHER : "") : "");
-  const toggleCategory = (name: string) => {
-    const next = pickedCategories.includes(name) ? pickedCategories.filter((c) => c !== name) : [...pickedCategories, name];
-    update({ category: next.join("|") || undefined, group: undefined });
-  };
   const [openTab, setOpenTab] = useState("");
   const tabsRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -239,8 +235,7 @@ function Catalog() {
                 setOpenTab("");
                 update(next);
               }}
-              onToggle={toggleCategory}
-              tab={openTab}
+                            tab={openTab}
             />
           )}
         </div>
@@ -348,7 +343,7 @@ function Catalog() {
 }
 
 /** The dropdown under a shop tab: the whole tab, then each of its categories with how many products it has. Categories can be ticked several at a time. */
-function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected, onPick, onToggle }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategories: string[]; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void; onToggle: (name: string) => void }) {
+function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected, onPick }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategories: string[]; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void }) {
   const item = "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50";
   return (
     <div role="menu" aria-label={`${label} categories`} className="mt-3 grid gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -358,17 +353,8 @@ function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected,
       {categories.map((c) => {
         const picked = selectedCategories.includes(c.name);
         return (
-          <button key={c.name} type="button" role="menuitemcheckbox" aria-checked={picked} onClick={() => onToggle(c.name)} className={`${item} font-semibold ${picked ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
-            <span className="flex items-center gap-2.5">
-              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${picked ? "border-[#2ec440] bg-[#2ec440] text-white" : "border-slate-300 bg-white"}`}>
-                {picked && (
-                  <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="3.5" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </span>
-              {c.name}
-            </span>
+          <button key={c.name} type="button" role="menuitem" onClick={() => onPick({ category: c.name, group: undefined })} className={`${item} font-semibold ${picked ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
+            {c.name}
             <span className="text-xs font-bold text-slate-400">{c.count}</span>
           </button>
         );

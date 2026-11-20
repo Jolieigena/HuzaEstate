@@ -52,7 +52,7 @@ export default function DesignItems({
         className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <span className="text-sm font-bold text-slate-800">
-          Furniture list{" "}
+          Furniture schedule{" "}
           <span className="font-semibold text-slate-500">({items.length})</span>
         </span>
         <svg

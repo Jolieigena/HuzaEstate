@@ -363,7 +363,7 @@ function Catalog() {
                   {design.images[0] ? <img src={design.images[0]} alt={design.title} className="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <div className="h-56 w-full bg-slate-100" />}
                   {design.furniture.length > 0 && (
                     <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-800 shadow">
-                      Furniture list · {design.furniture.length} {design.furniture.length === 1 ? "item" : "items"}
+                      Furniture schedule · {design.furniture.length} {design.furniture.length === 1 ? "item" : "items"}
                     </span>
                   )}
                 </div>
