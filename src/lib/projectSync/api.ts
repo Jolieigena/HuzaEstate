@@ -13,7 +13,7 @@ export interface RemoteProject {
 }
 
 export type PutOutcome =
-  | { ok: true }
+  | { ok: true; /** The time the account recorded, which is earlier than the one sent when this device's clock runs ahead. */ updatedAt?: string }
   | { ok: false; reason: "newer_on_server"; server: { updatedAt: string; data: unknown } }
   | { ok: false; reason: "deleted"; deletedAt?: string }
   | { ok: false; reason: "missing_assets"; missing: string[] }
@@ -43,8 +43,8 @@ export async function listRemote(token: string, kind: ProjectKind): Promise<Remo
 export async function putRemote(token: string, kind: ProjectKind, id: string, data: unknown, updatedAt: string): Promise<PutOutcome> {
   try {
     const res = await fetch(`${API_URL}/projects/${kind}/${encodeURIComponent(id)}`, { method: "PUT", headers: headers(token), body: JSON.stringify({ data, updatedAt }) });
-    if (res.ok) return { ok: true };
     const body = await readBody(res);
+    if (res.ok) return { ok: true, updatedAt: typeof body.updatedAt === "string" ? body.updatedAt : undefined };
     const message = typeof body.message === "string" ? body.message : "Could not save to your account.";
     if (res.status === 409) {
       const reason = body.reason;

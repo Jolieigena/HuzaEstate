@@ -14,6 +14,8 @@ const RECHECK_AFTER_MS = 60 * 1000;
  */
 export default function ProjectSyncHost() {
   const { account, token, isAuthReady } = useAuth();
+  // The account object is replaced whenever it is refreshed (a role change, a saved profile); the sync only needs to restart when the person changes.
+  const accountId = account?.id;
   const { showToast } = useToast();
   const syncs = useRef<Syncs | null>(null);
   const toast = useRef(showToast);
@@ -25,7 +27,7 @@ export default function ProjectSyncHost() {
     if (!isAuthReady) return;
     if (!syncs.current) syncs.current = createProjectSyncs((message) => toast.current(message, "error"));
     const engines = syncs.current;
-    if (!account || !token) {
+    if (!accountId || !token) {
       engines.build.stop();
       engines.renovate.stop();
       engines.build.cleanupForSignedOut();
@@ -33,8 +35,8 @@ export default function ProjectSyncHost() {
       return;
     }
     if (typeof crypto === "undefined" || !crypto.subtle) return; // pictures are identified by a hash, which needs a secure page (https)
-    void engines.build.start(account.id, token);
-    void engines.renovate.start(account.id, token);
+    void engines.build.start(accountId, token);
+    void engines.renovate.start(accountId, token);
 
     let lastSeen = Date.now();
     const onVisible = () => {
@@ -53,7 +55,7 @@ export default function ProjectSyncHost() {
       engines.build.stop();
       engines.renovate.stop();
     };
-  }, [account, token, isAuthReady]);
+  }, [accountId, token, isAuthReady]);
 
   return null;
 }

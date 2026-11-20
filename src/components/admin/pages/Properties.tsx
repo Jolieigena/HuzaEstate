@@ -8,7 +8,7 @@ import { PropertyApi } from "@/lib/properties/api";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import type { Property, PropertyStatus } from "@/lib/properties/types";
-import { usePropertyFilters } from "@/lib/admin/usePropertyFilters";
+import { usePropertyFilters, type StatusFilter } from "@/lib/admin/usePropertyFilters";
 import { useToast } from "@/lib/toast-context";
 import EditPropertyModal from "@/components/EditPropertyModal";
 import { ListingReviewDialog, SellerAutoPublishToggle, useSellerAutoPublish } from "../ListingModerationDialogs";
@@ -17,10 +17,11 @@ import { AdminTable, Card, EmptyState, PageFrame, RequirePermission, SecondaryBu
 import Select from "@/components/shared/Select";
 import { formatPlace } from "@/lib/properties/place";
 
-const STATUS_FILTERS: { key: "all" | PropertyStatus; label: string }[] = [
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "All" },
   { key: "under_review", label: "Under review" },
   { key: "published", label: "Published" },
+  { key: "expired", label: "Expired" },
   { key: "unpublished", label: "Unpublished" },
   { key: "changes_requested", label: "Changes requested" },
   { key: "rejected", label: "Rejected" },
@@ -75,14 +76,29 @@ export function PropertiesListPage() {
     [token, showToast]
   );
 
+  // A listing whose time ran out keeps its "published" status but is off the public pages, so it counts as Expired, not Published.
+  const isExpired = (p: Property) => (p.status ?? "published") === "published" && !!p.expired;
+  const matchesStatus = (p: Property, key: StatusFilter) => key === "all" || (key === "expired" ? isExpired(p) : (p.status ?? "published") === key && !isExpired(p));
+  const relist = useCallback(
+    async (property: Property) => {
+      if (!token) return;
+      const result = await PropertyApi.renew(token, property.id);
+      if (result.ok) {
+        showToast("Listing relisted.");
+        setReload((n) => n + 1);
+      } else showToast(result.error, "error");
+    },
+    [token, showToast]
+  );
+
   const q = search.trim().toLowerCase();
   const rows = (properties ?? []).filter((p) => {
     const matchesSearch = !q || `${p.title} ${p.location} ${p.city} ${p.ownerName ?? ""}`.toLowerCase().includes(q);
-    return matchesSearch && (type === "all" || p.type === type) && (status === "all" || (p.status ?? "published") === status);
+    return matchesSearch && (type === "all" || p.type === type) && matchesStatus(p, status);
   });
   // Each listing keeps the currency its seller typed; the page shows every price in the currency picked at the top.
   const { format: formatMoney_ } = useDisplayCurrency();
-  const count = (key: "all" | PropertyStatus) => (properties ?? []).filter((p) => key === "all" || (p.status ?? "published") === key).length;
+  const count = (key: StatusFilter) => (properties ?? []).filter((p) => matchesStatus(p, key)).length;
 
   return (
     <PageFrame
@@ -201,6 +217,11 @@ export function PropertiesListPage() {
                         {current === "under_review" && (
                           <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => setReviewing(property)}>
                             Review
+                          </SecondaryButton>
+                        )}
+                        {isExpired(property) && (
+                          <SecondaryButton className="min-h-0! px-3! py-1.5! text-xs!" onClick={() => relist(property)}>
+                            Relist
                           </SecondaryButton>
                         )}
                         {current !== "published" && (

@@ -79,6 +79,11 @@ export const PropertyApi = {
     const result = await call<{ property: Property }>(`/properties/${encodeURIComponent(id)}/status`, { token, method: "PATCH", body: { status, reason } });
     return result.ok ? ({ ok: true, data: result.data.property } as const) : result;
   },
+  /** Staff only: puts a published listing whose time ran out back on the public pages. */
+  renew: async (token: string, id: string) => {
+    const result = await call<{ property: Property }>(`/properties/${encodeURIComponent(id)}/renew`, { token, method: "POST" });
+    return result.ok ? ({ ok: true, data: result.data.property } as const) : result;
+  },
   /** Submits a draft for review/publishing — full validation runs server-side now (a draft can
    *  be missing almost everything up to this point), and this is also where the seller's posting
    *  quota actually gets consumed for the listing. */

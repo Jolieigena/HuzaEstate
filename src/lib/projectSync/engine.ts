@@ -24,6 +24,8 @@ export interface ProjectStore<T extends SyncedProject> {
 interface Registry {
   accountId: string | null;
   synced: Record<string, string>;
+  /** Projects the app itself saw removed here that the account has not been told about yet. Only these are ever deleted from the account: a project that is merely missing here (unreadable or cleared storage) is brought back, never deleted. */
+  deleted: Record<string, true>;
 }
 
 const MAX_PROJECT_JSON_BYTES = 800 * 1024;
@@ -43,7 +45,8 @@ export class ProjectSyncEngine<T extends SyncedProject> {
   private blocked = new Map<string, string>();
   private reported = new Set<string>();
   private assetCache = new Map<string, string>();
-  private registry: Registry = { accountId: null, synced: {} };
+  private registry: Registry = { accountId: null, synced: {}, deleted: {} };
+  private lastIds: Set<string> = new Set();
 
   constructor(private kind: ProjectKind, private store: ProjectStore<T>, private onProblem: (message: string) => void) {}
 
@@ -54,9 +57,9 @@ export class ProjectSyncEngine<T extends SyncedProject> {
   private loadRegistry() {
     try {
       const raw = JSON.parse(window.localStorage.getItem(this.registryKey) || "null");
-      this.registry = raw && typeof raw === "object" && raw.synced && typeof raw.synced === "object" ? { accountId: raw.accountId ?? null, synced: raw.synced } : { accountId: null, synced: {} };
+      this.registry = raw && typeof raw === "object" && raw.synced && typeof raw.synced === "object" ? { accountId: raw.accountId ?? null, synced: raw.synced, deleted: raw.deleted && typeof raw.deleted === "object" ? raw.deleted : {} } : { accountId: null, synced: {}, deleted: {} };
     } catch {
-      this.registry = { accountId: null, synced: {} };
+      this.registry = { accountId: null, synced: {}, deleted: {} };
     }
   }
 
@@ -75,6 +78,21 @@ export class ProjectSyncEngine<T extends SyncedProject> {
     } finally {
       this.applying = false;
     }
+    this.lastIds = new Set(this.store.getSnapshot().map((p) => p.id));
+  }
+
+  /** Called when the app changed the list: a project that was synced and has now gone was removed on purpose, and is queued for deletion from the account. */
+  private noteRemovals() {
+    const current = new Set(this.store.getSnapshot().map((p) => p.id));
+    let changed = false;
+    for (const id of this.lastIds) {
+      if (!current.has(id) && id in this.registry.synced && !this.registry.deleted[id]) {
+        this.registry.deleted[id] = true;
+        changed = true;
+      }
+    }
+    this.lastIds = current;
+    if (changed) this.saveRegistry();
   }
 
   private report(message: string) {
@@ -102,13 +120,16 @@ export class ProjectSyncEngine<T extends SyncedProject> {
       // These projects belong to the account that used this browser before: they are on that account, so they are removed here.
       const local = this.store.getSnapshot();
       this.apply(local.filter((p) => !(p.id in this.registry.synced)));
-      this.registry = { accountId, synced: {} };
+      this.registry = { accountId, synced: {}, deleted: {} };
     } else {
       this.registry.accountId = accountId;
     }
     this.saveRegistry();
+    this.lastIds = new Set(this.store.getSnapshot().map((p) => p.id));
     this.unsubscribe = this.store.subscribe(() => {
-      if (!this.applying) this.schedule();
+      if (this.applying) return;
+      this.noteRemovals();
+      this.schedule();
     });
     await this.pull();
     await this.flush();
@@ -168,11 +189,15 @@ export class ProjectSyncEngine<T extends SyncedProject> {
           delete this.registry.synced[r.id];
           changed = true;
         }
+        delete this.registry.deleted[r.id];
         continue;
       }
-      // A project this browser had already synced, gone here, and unchanged on the account since, was deleted here and the account has not been
-      // told yet: it is not brought back (the next flush sends the deletion). If it was edited elsewhere after that, the edit wins and it returns.
-      if (!local && this.registry.synced[r.id] === r.updatedAt) continue;
+      // Removed here on purpose and the account not told yet: it stays removed (the next flush sends the deletion), unless it was edited elsewhere
+      // after that, in which case the edit wins and it comes back. A project that is merely missing here, with no recorded removal, is restored.
+      if (!local && this.registry.deleted[r.id]) {
+        if (ts(r.updatedAt) > ts(this.registry.synced[r.id])) delete this.registry.deleted[r.id];
+        else continue;
+      }
       if (!local || ts(r.updatedAt) > ts(local.updatedAt)) {
         const project = await this.hydrate(r.data);
         if (!project) continue; // its pictures could not be fetched this time; tried again next time
@@ -214,9 +239,14 @@ export class ProjectSyncEngine<T extends SyncedProject> {
     const local = this.store.getSnapshot();
     const localIds = new Set(local.map((p) => p.id));
 
-    for (const id of Object.keys(this.registry.synced)) {
-      if (localIds.has(id)) continue;
+    for (const id of Object.keys(this.registry.deleted)) {
+      if (localIds.has(id)) {
+        delete this.registry.deleted[id]; // it came back, so there is nothing to delete
+        this.saveRegistry();
+        continue;
+      }
       if (await deleteRemote(token, this.kind, id)) {
+        delete this.registry.deleted[id];
         delete this.registry.synced[id];
         this.saveRegistry();
       } else retry = true;
@@ -276,7 +306,16 @@ export class ProjectSyncEngine<T extends SyncedProject> {
       outcome = await putRemote(token, this.kind, project.id, sent.data, project.updatedAt);
     }
     if (outcome.ok) {
-      this.registry.synced[project.id] = project.updatedAt;
+      const stored = outcome.updatedAt;
+      if (stored && stored !== project.updatedAt) {
+        // The account recorded an earlier time (this device's clock runs ahead). Adopt it, so edits made on other devices are picked up here instead of
+        // looking older than this one forever.
+        const current = this.store.getSnapshot().find((p) => p.id === project.id);
+        if (current && current.updatedAt === project.updatedAt) this.apply(this.store.getSnapshot().map((p) => (p.id === project.id ? { ...p, updatedAt: stored } : p)));
+        this.registry.synced[project.id] = stored;
+      } else {
+        this.registry.synced[project.id] = project.updatedAt;
+      }
       this.saveRegistry();
       return "done";
     }

@@ -5,9 +5,9 @@ import { useSearchParams } from "next/navigation";
 import type { PropertyStatus } from "@/lib/properties/types";
 
 export type TypeFilter = "all" | "sale" | "rent";
-export type StatusFilter = "all" | PropertyStatus;
+export type StatusFilter = "all" | PropertyStatus | "expired";
 
-const STATUSES: StatusFilter[] = ["all", "draft", "under_review", "published", "unpublished", "archived", "changes_requested", "rejected"];
+const STATUSES: StatusFilter[] = ["all", "draft", "under_review", "published", "expired", "unpublished", "archived", "changes_requested", "rejected"];
 const TYPES: TypeFilter[] = ["all", "sale", "rent"];
 
 /** The Properties moderation tables' search / type / status filters, mirrored into the URL
