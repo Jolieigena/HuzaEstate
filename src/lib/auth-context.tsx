@@ -258,6 +258,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  // When the server turns this browser's own session away (it ran out, or the password was changed elsewhere), the person is signed out
+  // at once and the protected pages send them to the sign-in page, instead of the page staying open with a "session expired" error.
+  useEffect(() => {
+    const original = window.fetch;
+    window.fetch = async (input, init) => {
+      const res = await original(input, init);
+      if (res.status === 401) {
+        try {
+          const sent = new Headers(init?.headers ?? (input instanceof Request ? input.headers : undefined)).get("authorization");
+          const stored = localStorage.getItem(TOKEN_STORAGE_KEY);
+          if (sent && stored && sent === `Bearer ${stored}`) {
+            res.clone().json().then((body) => {
+              if (/session has expired|sign in/i.test(String(body?.message))) clearSession();
+            }).catch(() => { /* not a message we know: leave it */ });
+          }
+        } catch { /* leave the response as it is */ }
+      }
+      return res;
+    };
+    return () => { window.fetch = original; };
+  }, []);
+
   const signup = async (input: SignupInput): Promise<AuthResult> => {
     try {
       const res = await fetch(`${API_URL}/auth/signup`, {
