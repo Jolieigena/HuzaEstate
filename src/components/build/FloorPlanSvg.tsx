@@ -95,6 +95,7 @@ export function floorPlanSize(floor: ManualFloor, margin: number = MARGIN): { wi
 // ---- Labels that fit their room ----------------------------------------------------------------------------------------------------
 
 const PAD = 3;
+const DIMS_SIZE = 7; // the font size of the room's measurements
 const CHAR = 0.56; // the average width of a bold letter, as a share of the font size
 
 /** The words split into lines of at most `maxChars` letters, or nothing when one word is longer than a line. */
@@ -116,9 +117,9 @@ function wrapWords(name: string, maxChars: number): string[] | null {
 
 type Label = { lines: string[]; size: number };
 
-/** The largest size (up to 11) at which the name fits the box, wrapped onto as many lines as needed; cut short only as a last resort. */
+/** The largest size (up to 9) at which the name fits the box, wrapped onto as many lines as needed; cut short only as a last resort. */
 function fitName(name: string, availW: number, availH: number): Label | null {
-  for (let size = 11; size >= 5.5; size -= 0.5) {
+  for (let size = 9; size >= 5.5; size -= 0.5) {
     const maxChars = Math.floor(availW / (size * CHAR));
     if (maxChars < 2) break;
     const lines = wrapWords(name, maxChars);
@@ -137,11 +138,11 @@ function labelFor(room: ManualRoom): RoomLabel | null {
   const height = room.h * UNIT;
   const full = `${room.w.toFixed(1)}m × ${room.h.toFixed(1)}m`;
   const short = `${room.w.toFixed(1)}×${room.h.toFixed(1)}`;
-  const dimsFit = (text: string) => text.length * 8 * 0.56 <= width - PAD * 2;
+  const dimsFit = (text: string) => text.length * DIMS_SIZE * 0.56 <= width - PAD * 2;
   const dims = dimsFit(full) ? full : dimsFit(short) ? short : null;
 
   // Across the room, with the size at the foot when there is space for both.
-  const withDims = dims ? fitName(room.name, width - PAD * 2, height - PAD * 2 - 11) : null;
+  const withDims = dims ? fitName(room.name, width - PAD * 2, height - PAD * 2 - DIMS_SIZE - 3) : null;
   if (withDims && withDims.size >= 7) return { name: withDims, sideways: false, dims };
   const across = fitName(room.name, width - PAD * 2, height - PAD * 2);
   // A tall, narrow room reads better with its name turned on its side.
@@ -173,22 +174,80 @@ function RoomText({ room }: { room: ManualRoom }) {
       </g>
     );
   }
+  // Door swings and windows sit on the walls: put the name and the measurements where they are not crossed (and not on each other).
+  const w = room.w * UNIT;
+  const h = room.h * UNIT;
+  const overlaps = (a: Box, b: Box) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  const keepOut = openingBoxes(room);
+  const firstFree = <T extends { box: Box }>(options: T[], blockers: Box[]) => options.find((o) => !blockers.some((k) => overlaps(o.box, k))) ?? options[0];
+
+  // The name at full size where it is clear; in a small room crossed by a door it is made smaller instead of drawn over the door.
+  const placeName = ([factor, lines]: [number, string[]]) => {
+    const size = Math.max(4.5, name.size * factor);
+    const lh = size * 1.15;
+    const nameW = Math.max(...lines.map((l) => l.length)) * size * CHAR;
+    const nameH = lines.length * lh;
+    const dys = [PAD, Math.max(PAD, (h - nameH) / 2), Math.max(PAD, h - PAD - nameH - DIMS_SIZE - 4)];
+    const options = dys.flatMap((dy) => [
+      { box: { x: x + PAD, y: y + dy, w: nameW, h: nameH }, right: false, dy, size, lh, lines },
+      { box: { x: x + w - PAD - nameW, y: y + dy, w: nameW, h: nameH }, right: true, dy, size, lh, lines },
+    ]);
+    return { options, free: options.find((o) => !keepOut.some((k) => overlaps(o.box, k))) };
+  };
+  const tries: [number, string[]][] = [];
+  for (const factor of [1, 0.8, 0.65, 0.5]) {
+    tries.push([factor, name.lines]);
+    if (name.lines.length > 1 && room.name.length * name.size * factor * CHAR <= w - PAD * 2) tries.push([factor, [room.name]]);
+  }
+  const placed = tries.map(placeName);
+  const namePick = placed.find((p) => p.free)?.free ?? placed[placed.length - 1].options[0];
+
+  const shortDims = `${room.w.toFixed(1)}×${room.h.toFixed(1)}`;
+  const dimsTexts = dims ? (dims === shortDims ? [dims] : [dims, shortDims]) : [];
+  const dimsOptions = dimsTexts.flatMap((text) => {
+    const tw = text.length * DIMS_SIZE * 0.56;
+    return [
+      { text, right: false, box: { x: x + PAD, y: y + h - PAD - DIMS_SIZE, w: tw, h: DIMS_SIZE } },
+      { text, right: true, box: { x: x + w - PAD - tw, y: y + h - PAD - DIMS_SIZE, w: tw, h: DIMS_SIZE } },
+    ];
+  });
+  const dimsPick = dimsOptions.length ? firstFree(dimsOptions, [...keepOut, namePick.box]) : null;
+  const dimsClear = dimsPick ? ![...keepOut, namePick.box].some((k) => overlaps(dimsPick.box, k)) : false;
+
+  const nameX = namePick.right ? x + w - PAD : x + PAD;
   return (
     <g pointerEvents="none">
-      <text x={x + PAD} y={y + PAD + name.size} fontSize={name.size} fontWeight="700" fill="#334155">
-        {name.lines.map((line, i) => (
-          <tspan key={i} x={x + PAD} dy={i === 0 ? 0 : lineHeight}>
+      <text x={nameX} y={y + namePick.dy + namePick.size} fontSize={namePick.size} fontWeight="700" fill="#334155" textAnchor={namePick.right ? "end" : "start"}>
+        {namePick.lines.map((line, i) => (
+          <tspan key={i} x={nameX} dy={i === 0 ? 0 : namePick.lh}>
             {line}
           </tspan>
         ))}
       </text>
-      {dims && (
-        <text x={x + PAD} y={y + room.h * UNIT - PAD - 1} fontSize="8" fill="#64748b">
-          {dims}
+      {dimsPick && dimsClear && (
+        <text x={dimsPick.right ? x + w - PAD : x + PAD} y={y + h - PAD - 1} fontSize={DIMS_SIZE} fill="#64748b" textAnchor={dimsPick.right ? "end" : "start"}>
+          {dimsPick.text}
         </text>
       )}
     </g>
   );
+}
+
+type Box = { x: number; y: number; w: number; h: number };
+
+/** The space each door swing and window takes up at the wall, in drawing units. */
+function openingBoxes(room: ManualRoom): Box[] {
+  return (room.openings ?? []).map((raw) => {
+    const o = clampOpening(room, raw);
+    const f = wallFrame(room, o.wall);
+    const x1 = f.sx + f.dx * o.offset * UNIT;
+    const y1 = f.sy + f.dy * o.offset * UNIT;
+    const len = o.width * UNIT;
+    const reach = o.kind === "door" ? len : 3;
+    const xs = [x1, x1 + f.dx * len, x1 + f.nx * reach, x1 + f.dx * len + f.nx * reach];
+    const ys = [y1, y1 + f.dy * len, y1 + f.ny * reach, y1 + f.dy * len + f.ny * reach];
+    return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
+  });
 }
 
 /** Just the drawing of one floor, with no frame around it. */
