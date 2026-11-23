@@ -24,7 +24,17 @@ export function areaChoiceLabel(choice: string): string {
   return choice === WHOLE_HOUSE ? "Whole house" : RENOVATION_AREA_LABELS[choice as RenovationAreaKey] ?? choice;
 }
 
+/** What the form starts with when a project's first step is reopened, so it can be changed instead of started again. */
+export interface PropertySelectorInitial {
+  areas: string[];
+  style: RenovationStyle | "";
+  budget: number | null;
+  budgetCurrency: string;
+  propertyType: PropertyType | "";
+}
+
 interface PropertySelectorProps {
+  initial?: PropertySelectorInitial;
   onSelectOwned: (property: MyProperty) => void;
   /** Any property the person describes: what is being renovated, the photos (each tagged with the area it shows, as `relatedAreaId`
    *  holding the choice), and where it is. A choice is an area's key, or "custom:" and the words the person typed for something that
@@ -58,19 +68,20 @@ function readPhoto(file: File): Promise<UploadedFile | null> {
 
 const inputClass = "w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-[15px] focus:outline-none focus:ring-4 focus:ring-[#2ec440]/15 focus:border-[#2ec440] transition";
 
-export default function PropertySelector({ onSelectOwned, onRegister }: PropertySelectorProps) {
+export default function PropertySelector({ initial, onSelectOwned, onRegister }: PropertySelectorProps) {
   const properties = getMyProperties();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const [areas, setAreas] = useState<string[]>([]);
+  const [areas, setAreas] = useState<string[]>(initial?.areas ?? []);
   const [customText, setCustomText] = useState("");
   const [customOpen, setCustomOpen] = useState(false);
   const [areaError, setAreaError] = useState("");
   const [photos, setPhotos] = useState<UploadedFile[]>([]);
-  const [propertyType, setPropertyType] = useState<PropertyType | "">("");
-  const [style, setStyle] = useState<RenovationStyle | "">("");
-  const [budget, setBudget] = useState<number | null>(null);
-  const [budgetCurrency, setBudgetCurrency] = useState("RWF");
+  const [propertyType, setPropertyType] = useState<PropertyType | "">(initial?.propertyType ?? "");
+  const [style, setStyle] = useState<RenovationStyle | "">(initial?.style ?? "");
+  const [budget, setBudget] = useState<number | null>(initial?.budget ?? null);
+  const [budgetCurrency, setBudgetCurrency] = useState(initial?.budgetCurrency ?? "RWF");
+  const [typeError, setTypeError] = useState("");
   const [photoError, setPhotoError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +121,10 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       setAreaError("Choose what you are renovating.");
       return;
     }
+    if (!propertyType) {
+      setTypeError("Choose the kind of property.");
+      return;
+    }
     onRegister(
       {
         source: "registered",
@@ -142,7 +157,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
       <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-8">What are you renovating?</h2>
 
       <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 sm:p-8 shadow-sm">
-        <p className="text-sm font-bold text-slate-700 mb-3">What do you want to renovate?</p>
+        <p className="text-sm font-bold text-slate-700 mb-3">What do you want to renovate? <span className="text-red-500">*</span></p>
         <div className="flex flex-wrap gap-2" role="group" aria-label="What do you want to renovate?">
           {AREA_CHOICES.map((key) => {
             const on = areas.includes(key);
@@ -299,9 +314,9 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
           </div>
           <div className="sm:max-w-xs">
             <label htmlFor="property-type" className="block text-sm font-bold text-slate-700 mb-2">
-              What kind of property?
+              What kind of property? <span className="text-red-500">*</span>
             </label>
-            <Select id="property-type" value={propertyType} onChange={(e) => setPropertyType(e.target.value as PropertyType | "")} className={inputClass}>
+            <Select id="property-type" value={propertyType} onChange={(e) => { setPropertyType(e.target.value as PropertyType | ""); setTypeError(""); }} className={inputClass}>
               <option value="">Select</option>
               {Object.entries(PROPERTY_TYPE_LABELS).map(([key, label]) => (
                 <option key={key} value={key}>
@@ -309,6 +324,7 @@ export default function PropertySelector({ onSelectOwned, onRegister }: Property
                 </option>
               ))}
             </Select>
+            {typeError && <p className="mt-2 text-sm font-semibold text-red-600">{typeError}</p>}
           </div>
         </div>
 

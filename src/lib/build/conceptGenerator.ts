@@ -79,6 +79,11 @@ const ROOM_KEY_MAP: Record<string, { type: ManualRoomType; area: number; ground:
   entertainment_room: { type: "custom", area: 16, ground: true },
 };
 
+/** "Bedrooms" numbered one by one reads "Bedroom 1", "Bedroom 2". */
+function singular(label: string): string {
+  return /[^s]s$/i.test(label) ? label.slice(0, -1) : label;
+}
+
 function expandRoomSpecs(brief: DesignBrief): RoomSpec[] {
   const specs: RoomSpec[] = [{ type: "kitchen", name: "Kitchen", areaSqm: 14, ground: true }];
   for (const room of brief.household.rooms) {
@@ -87,18 +92,15 @@ function expandRoomSpecs(brief: DesignBrief): RoomSpec[] {
     for (let i = 0; i < Math.max(1, room.quantity); i++) {
       specs.push({
         type: mapped.type,
-        name: room.quantity > 1 ? `${room.label} ${i + 1}` : room.label,
+        name: room.quantity > 1 ? `${singular(room.label)} ${i + 1}` : room.label,
         areaSqm: room.preferredSizeSqm ?? mapped.area,
         ground: mapped.ground,
       });
     }
   }
-  // A home always has somewhere to sit and somewhere to wash, even when the brief only gave the bedrooms.
+  // A home always has somewhere to sit and somewhere to wash, even when the brief only gave the bedrooms: one of each, no more than that.
   if (!specs.some((r) => r.type === "living_room")) specs.push({ type: "living_room", name: "Living room", areaSqm: 26, ground: true });
-  if (!specs.some((r) => r.type === "bathroom")) {
-    const bedrooms = specs.filter((r) => r.type === "bedroom").length;
-    for (let i = 0; i < Math.max(1, Math.ceil(bedrooms / 2)); i++) specs.push({ type: "bathroom", name: i === 0 ? "Bathroom" : `Bathroom ${i + 1}`, areaSqm: 5, ground: false });
-  }
+  if (!specs.some((r) => r.type === "bathroom")) specs.push({ type: "bathroom", name: "Bathroom", areaSqm: 5, ground: false });
   return specs;
 }
 
@@ -127,11 +129,12 @@ function buildFloorsForDirection(brief: DesignBrief, direction: ConceptDirection
   const floorCount = Math.max(1, brief.household.floors);
   const allSpecs = expandRoomSpecs(brief).map((s) => ({ ...s, areaSqm: Math.round(s.areaSqm * meta.areaFactor * 10) / 10 }));
 
-  // An open space (a yard or an open living-and-dining area) beside the rooms: about a twelfth of the plot, between 12 and 36 sqm. A plot
-  // smaller than 150 sqm has no room to give up, so it gets none. It is drawn with a dashed edge and has no doors or windows.
+  // An open space (a yard or an open living-and-dining area) beside the rooms, only when a plot size was given and is large enough to
+  // spare one: about a twelfth of the plot, between 12 and 36 sqm. With no plot size, or a plot under 150 sqm, nothing is added that the
+  // brief did not ask for. It is drawn with a dashed edge and has no doors or windows.
   const plot = brief.plot.areaSqm;
-  if (!plot || plot >= 150) {
-    const openArea = plot ? Math.min(36, Math.max(12, Math.round(plot / 12))) : 16;
+  if (plot && plot >= 150) {
+    const openArea = Math.min(36, Math.max(12, Math.round(plot / 12)));
     allSpecs.push({ type: "open_space", name: "Open space", areaSqm: Math.round(openArea * meta.areaFactor * 10) / 10, ground: true });
   }
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import RequireAuth from "@/components/shared/RequireAuth";
 import Dialog from "@/components/Dialog";
-import PropertySelector from "@/components/renovate/PropertySelector";
+import PropertySelector, { type PropertySelectorInitial } from "@/components/renovate/PropertySelector";
 import { RenovationProjectService } from "@/lib/renovate/projectService";
 import { assessmentFromPrompt, newArea } from "@/lib/renovate/assessmentFromPrompt";
 import { analysePhotos, applyPhotoAnalysis } from "@/lib/renovate/photoAnalysis";
@@ -57,6 +57,35 @@ const MODE_OPTIONS: ModeOption[] = [
 
 type FlowStep = "mode" | "property";
 
+// The project this tab started and has not gone past the first question on: coming back to this page (Back, or a second click on New project)
+// reopens it with its answers, to change them, instead of starting another project.
+const DRAFT_KEY = "huza_renovate_first_step";
+function readDraftId(): string | null {
+  try {
+    return sessionStorage.getItem(DRAFT_KEY);
+  } catch {
+    return null;
+  }
+}
+function writeDraftId(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(DRAFT_KEY, id);
+    else sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Without storage a new project is simply started each time.
+  }
+}
+function initialFrom(project: RenovationProject): PropertySelectorInitial {
+  const a = project.assessment;
+  return {
+    areas: a.areas.map((x) => (x.areaKey === "custom" ? `custom:${x.customLabel ?? ""}` : x.areaKey)),
+    style: a.style.primaryStyle ?? "",
+    budget: a.budgetTimeline.targetBudget,
+    budgetCurrency: a.budgetTimeline.currency,
+    propertyType: project.property.source === "registered" ? (project.property.propertyType ?? "") : "",
+  };
+}
+
 
 /** A project name made from what the visitor typed into the designs search: the words, capitalised and
  *  kept short, so they only have to press Create. */
@@ -83,6 +112,7 @@ function NewProjectContent() {
   const [step, setStep] = useState<FlowStep>("mode");
   const [project, setProject] = useState<RenovationProject | null>(null);
   const [analysing, setAnalysing] = useState(false);
+  const [initial, setInitial] = useState<PropertySelectorInitial | undefined>(undefined);
 
   const titleId = useId();
 
@@ -94,9 +124,19 @@ function NewProjectContent() {
     if (choose || autoStarted.current) return;
     autoStarted.current = true;
     const words = brief.slice(0, 500);
+    const draftId = readDraftId();
+    const draft = draftId ? RenovationProjectService.getById(draftId) : undefined;
+    // Still on the first question (nothing past "what are you renovating" done) and not started from a search: reopen it.
+    if (draft && !words.trim() && draft.assessment.completedSteps.every((k) => k === "areas") && !draft.concepts?.length) {
+      setProject(draft);
+      setInitial(initialFrom(draft));
+      setStep("property");
+      return;
+    }
     const created = RenovationProjectService.create({ name: nameFromBrief(words) || "My renovation", description: words.trim(), creationMode: "ai" });
     if (words.trim()) RenovationProjectService.saveAssessment(created.id, assessmentFromPrompt(created.assessment, words), "Filled in from the description.");
     RenovationProjectService.beginPropertySetup(created.id);
+    writeDraftId(created.id);
     setProject(created);
     setStep("property");
   }, [choose, brief]);
@@ -147,6 +187,8 @@ function NewProjectContent() {
           </nav>
 
           <PropertySelector
+            key={project.id}
+            initial={initial}
             onSelectOwned={(myProperty: MyProperty) => {
               RenovationProjectService.selectOwnedProperty(project.id, myProperty);
               showToast("Property selected.");
@@ -160,12 +202,15 @@ function NewProjectContent() {
                 const assessment = JSON.parse(JSON.stringify(existing.assessment)) as typeof existing.assessment;
                 // A choice is an area's key, or "custom:" and what the person typed for something that is not in the list.
                 const areaFor = (choice: string) => assessment.areas.find((a) => (choice.startsWith("custom:") ? a.customLabel === choice.slice(7) : a.areaKey === choice));
-                for (const choice of choices) {
-                  if (areaFor(choice)) continue;
+                // The areas are exactly what was chosen now: one that was taken off when this step was changed goes, the others keep what they hold.
+                const chosen = choices.map((choice) => {
+                  const kept = areaFor(choice);
+                  if (kept) return kept;
                   const area = newArea(choice.startsWith("custom:") ? "custom" : (choice as RenovationAreaKey));
                   if (choice.startsWith("custom:")) area.customLabel = choice.slice(7);
-                  assessment.areas.push(area);
-                }
+                  return area;
+                });
+                assessment.areas = chosen;
                 if (style) assessment.style.primaryStyle = style;
                 if (budget) {
                   assessment.budgetTimeline.targetBudget = budget;
