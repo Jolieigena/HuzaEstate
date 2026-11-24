@@ -6,6 +6,7 @@ import BackLink from "@/components/BackLink";
 import ProductCard from "@/components/shop/ProductCard";
 import { RatingSummary, StarRow, VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useDisplayCurrency } from "@/lib/currency/display";
+import { deliveryText } from "@/lib/furniture/deliveryText";
 import { FurnitureApi, type Product, type Review, type Storefront } from "@/lib/furniture/api";
 
 const date = (value: string) => new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
@@ -87,9 +88,7 @@ export default function StorefrontPage({ supplierId }: { supplierId: string }) {
             </div>
           )}
           <p className="mt-3 text-sm text-slate-500">
-            {store.delivery.fee > 0 && store.delivery.currency
-              ? `Delivery ${money.format(store.delivery.fee, store.delivery.currency)} per order${store.delivery.freeOver ? `, free above ${money.format(store.delivery.freeOver, store.delivery.currency)}` : ""}`
-              : "Free delivery"}
+            {deliveryText(store.delivery, money.format)}
           </p>
         </div>
       </header>

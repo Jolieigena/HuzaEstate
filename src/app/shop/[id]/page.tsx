@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
 import { useBasket } from "@/lib/furniture/basket";
 import { useDisplayCurrency } from "@/lib/currency/display";
+import { deliveryText } from "@/lib/furniture/deliveryText";
 import { FurnitureApi, STOCK_LABELS, type Product } from "@/lib/furniture/api";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -118,9 +119,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </p>
           {supplier?.delivery && (
             <p className="mt-1 text-sm text-slate-500">
-              {supplier.delivery.fee > 0 && supplier.delivery.currency
-                ? `Delivery ${money.format(supplier.delivery.fee, supplier.delivery.currency)} per order${supplier.delivery.freeOver ? `, free above ${money.format(supplier.delivery.freeOver, supplier.delivery.currency)}` : ""}`
-                : "Free delivery"}
+              {deliveryText(supplier.delivery, money.format)}
             </p>
           )}
           {paused && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">This shop is not taking orders right now.</p>}

@@ -45,7 +45,7 @@ function Checkout() {
     group.lines.push(line);
     groups.set(key, group);
   }
-  const { quote, problem } = useQuote(cart.lines, token);
+  const { quote, problem } = useQuote(cart.lines, token, city);
   const totals = new Map<string, number>();
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
   const feeOf = (supplierName: string, currency: string) => quote?.find((g) => g.supplierName === supplierName && g.currency === currency);

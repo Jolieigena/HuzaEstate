@@ -81,6 +81,28 @@ function Catalog() {
   const brackets = useMemo(() => priceBracketsFor(money, USD_EDGES), [money]);
   const activeBracket = brackets.findIndex((b) => String(b.min ?? "") === minPrice && String(b.max ?? "") === maxPrice);
   const priced = minPrice !== "" || maxPrice !== "";
+  // A typed range: the boxes show while "Custom range" is chosen, or when the address holds a range that is not one of the ready-made ones.
+  const [customOpen, setCustomOpen] = useState(false);
+  const [draftMin, setDraftMin] = useState(minPrice);
+  const [draftMax, setDraftMax] = useState(maxPrice);
+  const [priceError, setPriceError] = useState("");
+  // The boxes follow the address when something else changes it (clearing the filter, a shared link).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDraftMin(minPrice);
+    setDraftMax(maxPrice);
+  }, [minPrice, maxPrice]);
+  const customPrice = customOpen || (priced && activeBracket < 0);
+  const applyCustom = (low: string, high: string) => {
+    setDraftMin(low);
+    setDraftMax(high);
+    if (low !== "" && high !== "" && Number(low) > Number(high)) {
+      setPriceError("The lowest price is higher than the highest price.");
+      return;
+    }
+    setPriceError("");
+    update({ min: low || undefined, max: high || undefined, currency: low || high ? currency : undefined });
+  };
 
   // The products keep loading as you scroll, so there are no page buttons. The key stands for every filter: they all come from the address.
   const feedKey = `${params.toString()}|${money.currency ?? ""}`;
@@ -265,26 +287,60 @@ function Catalog() {
               ))}
             </Select>
           </label>
-          <label className={labelClass}>
-            Price
-            <Select
-              className={`${selectClass} mt-1.5 normal-case tracking-normal`}
-              value={activeBracket >= 0 ? String(activeBracket) : priced ? "custom" : ""}
-              aria-label="Price"
-              onChange={(e) => {
-                const bracket = e.target.value === "" || e.target.value === "custom" ? undefined : brackets[Number(e.target.value)];
-                update({ min: bracket?.min !== undefined ? String(bracket.min) : undefined, max: bracket?.max !== undefined ? String(bracket.max) : undefined, currency: bracket ? currency : undefined });
-              }}
-            >
-              <option value="">Any price</option>
-              {priced && activeBracket < 0 && <option value="custom">{minPrice || 0} to {maxPrice || "any"}</option>}
-              {brackets.map((b, i) => (
-                <option key={b.label} value={String(i)}>
-                  {b.label}
-                </option>
-              ))}
-            </Select>
-          </label>
+          <div className={labelClass}>
+            <label>
+              Price
+              <Select
+                className={`${selectClass} mt-1.5 normal-case tracking-normal`}
+                value={customPrice ? "custom" : activeBracket >= 0 ? String(activeBracket) : ""}
+                aria-label="Price"
+                onChange={(e) => {
+                  if (e.target.value === "custom") {
+                    setCustomOpen(true);
+                    return;
+                  }
+                  setCustomOpen(false);
+                  setPriceError("");
+                  const bracket = e.target.value === "" ? undefined : brackets[Number(e.target.value)];
+                  setDraftMin(bracket?.min !== undefined ? String(bracket.min) : "");
+                  setDraftMax(bracket?.max !== undefined ? String(bracket.max) : "");
+                  update({ min: bracket?.min !== undefined ? String(bracket.min) : undefined, max: bracket?.max !== undefined ? String(bracket.max) : undefined, currency: bracket ? currency : undefined });
+                }}
+              >
+                <option value="">Any price</option>
+                {brackets.map((b, i) => (
+                  <option key={b.label} value={String(i)}>
+                    {b.label}
+                  </option>
+                ))}
+                <option value="custom">Custom range</option>
+              </Select>
+            </label>
+            {customPrice && (
+              <div className="mt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    inputMode="numeric"
+                    aria-label={`Lowest price in ${currency}`}
+                    placeholder="From"
+                    value={draftMin}
+                    onChange={(e) => applyCustom(e.target.value.replace(/[^\d]/g, ""), draftMax)}
+                    className={`${selectClass} min-w-0 flex-1 normal-case tracking-normal ${priceError ? "!border-red-300" : ""}`}
+                  />
+                  <span aria-hidden="true" className="text-slate-400">to</span>
+                  <input
+                    inputMode="numeric"
+                    aria-label={`Highest price in ${currency}`}
+                    placeholder="To"
+                    value={draftMax}
+                    onChange={(e) => applyCustom(draftMin, e.target.value.replace(/[^\d]/g, ""))}
+                    className={`${selectClass} min-w-0 flex-1 normal-case tracking-normal ${priceError ? "!border-red-300" : ""}`}
+                  />
+                </div>
+                {priceError && <p className="mt-1.5 text-xs font-bold normal-case tracking-normal text-red-600">{priceError}</p>}
+              </div>
+            )}
+          </div>
           <label className={labelClass}>
             Currency
             <div className="mt-1.5"><CurrencyPicker className={`${selectClass} normal-case tracking-normal`} onChange={() => update({ min: undefined, max: undefined, currency: undefined })} /></div>
