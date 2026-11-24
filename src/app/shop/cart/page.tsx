@@ -84,6 +84,7 @@ export default function CartPage() {
                         </Link>
                         {line.variantLabel && <p className="text-sm font-semibold text-slate-600">{line.variantLabel}</p>}
                         <p className="text-sm text-slate-500">{money.format(line.price, line.currency)} each</p>
+                        {line.available !== undefined && line.available <= 5 && <p className="text-xs font-bold text-amber-600">Only {line.available} left</p>}
                         <div className="mt-2 flex items-center gap-3 text-xs font-bold">
                           <button
                             type="button"
@@ -101,7 +102,7 @@ export default function CartPage() {
                           </button>
                         </div>
                       </div>
-                      <QuantityInput compact label={`Quantity of ${line.name}`} value={line.quantity} onChange={(n) => cart.setQuantity(line.productId, n, line.variantId)} />
+                      <QuantityInput compact label={`Quantity of ${line.name}`} value={line.quantity} max={line.available} onChange={(n) => cart.setQuantity(line.productId, n, line.variantId)} />
                       <p className="w-24 shrink-0 text-right text-sm font-bold text-slate-900">{money.format(line.price * line.quantity, line.currency)}</p>
                     </li>
                   ))}

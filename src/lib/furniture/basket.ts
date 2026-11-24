@@ -22,6 +22,8 @@ export interface BasketLine {
   supplierId: string;
   supplierName: string;
   quantity: number;
+  /** How many the supplier has, when they keep count: the basket never holds more than this. */
+  available?: number;
 }
 
 /** Two lines are the same line when they are the same product and the same option combination. */
@@ -72,8 +74,12 @@ export function useBasket() {
   const add = useCallback((product: Product, quantity = 1, variant?: ProductVariant) => {
     const current = parse(read());
     const existing = current.find((l) => same(l, product.id, variant?.id));
-    if (existing) existing.quantity = Math.min(existing.quantity + quantity, MAX_QUANTITY);
-    else
+    const left = variant ? variant.quantity : product.stock === "in_stock" ? product.quantity : undefined;
+    const cap = left !== undefined ? Math.max(left, 1) : MAX_QUANTITY;
+    if (existing) {
+      existing.quantity = Math.min(existing.quantity + quantity, MAX_QUANTITY, cap);
+      if (left !== undefined) existing.available = left;
+    } else
       current.push({
         productId: product.id,
         name: product.name,
@@ -83,7 +89,8 @@ export function useBasket() {
         currency: product.currency,
         supplierId: product.supplier?.accountId ?? "",
         supplierName: product.supplier?.companyName ?? "Supplier",
-        quantity: Math.min(quantity, MAX_QUANTITY),
+        quantity: Math.min(quantity, MAX_QUANTITY, cap),
+        ...(left !== undefined ? { available: left } : {}),
       });
     write(current);
   }, []);
@@ -91,13 +98,14 @@ export function useBasket() {
   const addLine = useCallback((line: BasketLine) => {
     const current = parse(read());
     const existing = current.find((l) => same(l, line.productId, line.variantId));
-    if (existing) existing.quantity = Math.min(existing.quantity + line.quantity, MAX_QUANTITY);
-    else current.push({ ...line, quantity: Math.min(line.quantity, MAX_QUANTITY) });
+    const cap = line.available !== undefined ? Math.max(line.available, 1) : MAX_QUANTITY;
+    if (existing) existing.quantity = Math.min(existing.quantity + line.quantity, MAX_QUANTITY, cap);
+    else current.push({ ...line, quantity: Math.min(line.quantity, MAX_QUANTITY, cap) });
     write(current);
   }, []);
 
   const setQuantity = useCallback((productId: string, quantity: number, variantId?: string) => {
-    write(parse(read()).map((l) => (same(l, productId, variantId) ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY) } : l)));
+    write(parse(read()).map((l) => (same(l, productId, variantId) ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY, l.available !== undefined ? Math.max(l.available, 1) : MAX_QUANTITY) } : l)));
   }, []);
 
   const remove = useCallback((productId: string, variantId?: string) => write(parse(read()).filter((l) => !same(l, productId, variantId))), []);

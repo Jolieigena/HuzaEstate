@@ -13,6 +13,7 @@ import { useShopTabs, useSuggestedCategories } from "@/lib/furniture/groups";
 import ProductOptionsEditor, { initialOptions, optionInputs, optionsReady } from "@/components/supplier/ProductOptionsEditor";
 import { FurnitureApi, STOCK_LABELS, formatPrice, type Product, type ProductInput, type StockStatus } from "@/lib/furniture/api";
 import { useLanguage } from "@/lib/i18n/language";
+import { SuppliersApi } from "@/lib/suppliers/api";
 
 const MAX_IMAGES = 6;
 
@@ -25,6 +26,9 @@ export default function SupplierProductsPage() {
   const [error, setError] = useState("");
   const [editing, setEditing] = useState<Product | "new" | null>(null);
   const [reload, setReload] = useState(0);
+  // A paused shop is left out of the catalogue, so none of these products can be seen or ordered while it is.
+  const [shopPaused, setShopPaused] = useState(false);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     if (!isAuthReady || !token) return;
@@ -38,6 +42,30 @@ export default function SupplierProductsPage() {
       cancelled = true;
     };
   }, [isAuthReady, token, reload]);
+
+  useEffect(() => {
+    if (!isAuthReady || !token) return;
+    let cancelled = false;
+    SuppliersApi.getMine(token).then((result) => {
+      if (!cancelled && result.ok) setShopPaused(result.data.profile?.paused === true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthReady, token]);
+
+  const openShop = async () => {
+    if (!token) return;
+    setOpening(true);
+    const result = await SuppliersApi.setPaused(token, false);
+    setOpening(false);
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    setShopPaused(false);
+    showToast(t("Shop is open again."));
+  };
 
   const remove = async (product: Product) => {
     if (!token || !window.confirm(t("Delete \"{name}\"?", { name: product.name }))) return;
@@ -81,6 +109,14 @@ export default function SupplierProductsPage() {
         </PrimaryButton>
       }
     >
+      {shopPaused && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4">
+          <p className="font-black text-amber-800">{t("Your shop is paused: buyers cannot see or order your products.")}</p>
+          <button type="button" disabled={opening} onClick={openShop} className="min-h-11 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#2ec440] disabled:opacity-50">
+            {t("Open shop")}
+          </button>
+        </div>
+      )}
       {error ? (
         <p className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>
       ) : products === null ? (
@@ -109,6 +145,8 @@ export default function SupplierProductsPage() {
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.review === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
                       {product.review === "pending" ? t("Waiting for review") : product.review === "changes_requested" ? t("Changes needed") : t("Not approved")}
                     </span>
+                  ) : shopPaused && product.status === "published" ? (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">{t("Hidden: shop paused")}</span>
                   ) : (
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${product.status === "published" ? "bg-[#2ec440]/10 text-[#219b31]" : "bg-slate-100 text-slate-500"}`}>{product.status === "published" ? t("Published") : t("Draft")}</span>
                   )}

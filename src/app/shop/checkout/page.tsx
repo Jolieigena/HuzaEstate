@@ -53,7 +53,6 @@ function Checkout() {
 
   // Delivery details are asked in order: where, then who to call. Each appears once the one before it is filled.
   const showMore = city.trim().length > 1;
-  const ready = showMore && phoneProblem(phone) === null && cleanPhone(phone) !== "";
 
   const shareLocation = () => {
     if (!navigator.geolocation) {
@@ -88,7 +87,16 @@ function Checkout() {
   };
 
   const placeOrder = async () => {
-    if (!token || !ready || busy) return;
+    if (!token || busy) return;
+    if (!showMore) {
+      setError("Enter the city or town to deliver to.");
+      return;
+    }
+    const phoneIssue = phoneProblem(phone);
+    if (phoneIssue || cleanPhone(phone) === "") {
+      setError(phoneIssue ?? "Enter a phone number the supplier can call.");
+      return;
+    }
     setBusy(true);
     setError("");
     const result = await FurnitureApi.createOrder(token, {
@@ -187,7 +195,7 @@ function Checkout() {
             )}
           </div>
           {(problem || error) && <p className="mt-5 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">{problem || error}</p>}
-          <button type="button" disabled={!ready || busy || !!problem} onClick={placeOrder} className="mt-6 min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-50">
+          <button type="button" disabled={busy || !!problem} onClick={placeOrder} className="mt-6 min-h-12 w-full rounded-xl bg-[#2ec440] px-4 py-3 text-sm font-black text-white shadow-lg transition-colors hover:bg-[#219b31] disabled:opacity-50">
             {busy ? "Please wait…" : groups.size > 1 ? `Place ${groups.size} orders` : "Place order and pay"}
           </button>
           <Link href="/shop/cart" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-900">
