@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RequireAuth from "@/components/shared/RequireAuth";
 import PhoneInput, { cleanPhone, phoneProblem } from "@/components/shared/PhoneInput";
 import { useAuth } from "@/lib/auth-context";
@@ -45,7 +45,11 @@ function Checkout() {
     group.lines.push(line);
     groups.set(key, group);
   }
-  const { quote, problem } = useQuote(cart.lines, token, city);
+  const { quote, problem, lines: freshLines } = useQuote(cart.lines, token, city);
+  const { updatePrices } = cart;
+  useEffect(() => {
+    if (freshLines.length) updatePrices(freshLines);
+  }, [freshLines, updatePrices]);
   const totals = new Map<string, number>();
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
   const feeOf = (supplierName: string, currency: string) => quote?.find((g) => g.supplierName === supplierName && g.currency === currency);
@@ -214,7 +218,7 @@ function Checkout() {
                   {group.lines.map((line) => (
                     <li key={lineKey(line)} className="flex items-center justify-between gap-4 py-3 text-sm">
                       <span className="min-w-0 truncate text-slate-300">
-                        {line.name}{line.variantLabel ? ` (${line.variantLabel})` : ""} <span className="text-slate-500">× {line.quantity}</span>
+                        {line.name}{line.variantLabel ? ` (${line.variantLabel})` : ""} <span className="text-slate-500">× {line.quantity}</span>{line.wasPrice !== undefined && line.wasPrice !== line.price && <span className="ml-2 text-xs font-bold text-amber-600">Price changed from {money.format(line.wasPrice, line.currency)}</span>}
                       </span>
                       <span className="shrink-0 font-bold">{money.format(line.price * line.quantity, line.currency)}</span>
                     </li>

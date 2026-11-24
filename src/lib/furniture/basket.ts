@@ -22,6 +22,8 @@ export interface BasketLine {
   supplierId: string;
   supplierName: string;
   quantity: number;
+  /** The price this line had before the supplier changed it: shown so the buyer sees what changed. */
+  wasPrice?: number;
   /** How many the supplier has, when they keep count: the basket never holds more than this. */
   available?: number;
 }
@@ -108,9 +110,22 @@ export function useBasket() {
     write(parse(read()).map((l) => (same(l, productId, variantId) ? { ...l, quantity: Math.min(Math.max(quantity, 1), MAX_QUANTITY, l.available !== undefined ? Math.max(l.available, 1) : MAX_QUANTITY) } : l)));
   }, []);
 
+  // The supplier may have changed a price since the item went into the basket: the line takes the real price and remembers the old one.
+  const updatePrices = useCallback((current: { productId: string; variantId?: string; unitPrice: number }[]) => {
+    const lines = parse(read());
+    let changed = false;
+    const next = lines.map((l) => {
+      const fresh = current.find((c) => c.productId === l.productId && (c.variantId ?? "") === (l.variantId ?? ""));
+      if (!fresh || fresh.unitPrice === l.price) return l;
+      changed = true;
+      return { ...l, wasPrice: l.wasPrice ?? l.price, price: fresh.unitPrice };
+    });
+    if (changed) write(next);
+  }, []);
+
   const remove = useCallback((productId: string, variantId?: string) => write(parse(read()).filter((l) => !same(l, productId, variantId))), []);
   const clear = useCallback(() => write([]), []);
 
   const count = lines.reduce((sum, l) => sum + l.quantity, 0);
-  return { lines, count, add, addLine, setQuantity, remove, clear };
+  return { lines, count, add, addLine, setQuantity, updatePrices, remove, clear };
 }

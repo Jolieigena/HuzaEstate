@@ -355,6 +355,14 @@ export interface PayoutSummary {
   refundsPending: { id: string; supplierId: string; supplierName: string; clientName: string; currency: string; total: number; error?: string; updatedAt: string }[];
 }
 
+/** What one basket line costs right now. */
+export interface QuoteLine {
+  productId: string;
+  variantId?: string;
+  unitPrice: number;
+  currency: string;
+}
+
 /** What a basket costs for one supplier, with their delivery fee. */
 export interface OrderQuote {
   supplierId: string;
@@ -456,7 +464,7 @@ export const FurnitureApi = {
   },
   createPayout: (token: string, input: { supplierId: string; currency: string; reference: string; note?: string; orderIds?: string[] }) => call<{ payout: Payout }>("/furniture/payouts", { token, method: "POST", body: input }),
   retryRefund: (token: string, orderId: string) => call<{ refunded: boolean; paymentStatus: PaymentStatus; error?: string }>(`/furniture/orders/${encodeURIComponent(orderId)}/retry-refund`, { token, method: "POST" }),
-  quoteOrder: (token: string, items: { productId: string; variantId?: string; quantity: number }[], city?: string) => call<{ groups: OrderQuote[] }>("/furniture/orders/quote", { token, method: "POST", body: { items, ...(city ? { city } : {}) } }),
+  quoteOrder: (token: string, items: { productId: string; variantId?: string; quantity: number }[], city?: string) => call<{ groups: OrderQuote[]; lines?: QuoteLine[] }>("/furniture/orders/quote", { token, method: "POST", body: { items, ...(city ? { city } : {}) } }),
   shipOrder: (token: string, id: string, trackingNote?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/ship`, { token, method: "POST", body: { trackingNote } }),
   postMessage: (token: string, id: string, text: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/messages`, { token, method: "POST", body: { text } }),
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),

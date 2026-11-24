@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useToast } from "@/lib/toast-context";
@@ -23,7 +24,11 @@ export default function CartPage() {
     group.lines.push(line);
     groups.set(key, group);
   }
-  const { quote, problem } = useQuote(cart.lines, token);
+  const { quote, problem, lines: freshLines } = useQuote(cart.lines, token);
+  const { updatePrices } = cart;
+  useEffect(() => {
+    if (freshLines.length) updatePrices(freshLines);
+  }, [freshLines, updatePrices]);
   const totals = new Map<string, number>();
   for (const line of cart.lines) totals.set(line.currency, (totals.get(line.currency) ?? 0) + line.price * line.quantity);
   // With the delivery fees, once the server has priced the basket.
@@ -84,6 +89,7 @@ export default function CartPage() {
                         </Link>
                         {line.variantLabel && <p className="text-sm font-semibold text-slate-600">{line.variantLabel}</p>}
                         <p className="text-sm text-slate-500">{money.format(line.price, line.currency)} each</p>
+                        {line.wasPrice !== undefined && line.wasPrice !== line.price && <p className="text-xs font-bold text-amber-600">Price changed from {money.format(line.wasPrice, line.currency)}</p>}
                         {line.available !== undefined && line.available <= 5 && <p className="text-xs font-bold text-amber-600">Only {line.available} left</p>}
                         <div className="mt-2 flex items-center gap-3 text-xs font-bold">
                           <button
