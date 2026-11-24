@@ -124,14 +124,14 @@ export default function DeliverySettings() {
           {places.length > 0 && (
             <ul className="space-y-2">
               {places.map((p, i) => (
-                <li key={i} className="flex flex-wrap items-center gap-2">
-                  <input className={`${fieldClass} min-w-0 flex-1 basis-40`} value={p.place} maxLength={60} placeholder={t("Place, for example Kigali")} aria-label={t("Place")} onChange={(e) => setPlace(i, { place: e.target.value })} />
-                  <Select className={`${fieldClass} w-36`} value={p.kind} aria-label={t("How it is charged")} onChange={(e) => setPlace(i, { kind: e.target.value as Place["kind"] })}>
+                <li key={i} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_7rem_auto] sm:items-center">
+                  <input className={fieldClass} value={p.place} maxLength={60} placeholder={t("Place, for example Kigali")} aria-label={t("Place")} onChange={(e) => setPlace(i, { place: e.target.value })} />
+                  <Select className={fieldClass} value={p.kind} aria-label={t("How it is charged")} onChange={(e) => setPlace(i, { kind: e.target.value as Place["kind"] })}>
                     <option value="fee">{t("Fee per order")}</option>
                     <option value="percent">{t("% of the order")}</option>
                   </Select>
-                  <input className={`${fieldClass} w-28`} inputMode="decimal" value={p.value} aria-label={p.kind === "percent" ? t("Percentage") : t("Fee")} placeholder={p.kind === "percent" ? "%" : t("Fee")} onChange={(e) => setPlace(i, { value: e.target.value.replace(/[^\d.]/g, "") })} />
-                  <button type="button" onClick={() => setPlaces((prev) => prev.filter((_, j) => j !== i))} className="min-h-11 px-2 text-sm font-bold text-red-600 hover:text-red-800">
+                  <input className={fieldClass} inputMode="decimal" value={p.value} aria-label={p.kind === "percent" ? t("Percentage") : t("Fee")} placeholder={p.kind === "percent" ? "%" : t("Fee")} onChange={(e) => setPlace(i, { value: e.target.value.replace(/[^\d.]/g, "") })} />
+                  <button type="button" onClick={() => setPlaces((prev) => prev.filter((_, j) => j !== i))} className="min-h-11 justify-self-start px-2 text-sm font-bold text-red-600 hover:text-red-800">
                     {t("Remove")}
                   </button>
                 </li>
