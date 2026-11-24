@@ -91,9 +91,15 @@ export interface Insights {
 
 /** A place with its own delivery cost: a flat fee, or a share (percent) of the order value. */
 export interface DeliveryArea {
-  place: string;
+  /** The country (empty: the supplier's own) and the place in it (empty: the whole country). */
+  country?: string;
+  place?: string;
   fee?: number;
   percent?: number;
+  /** The currency of this place's flat fee. */
+  currency?: string;
+  /** How many days delivery takes to this place. */
+  days?: number;
 }
 
 export interface SupplierDelivery {
@@ -102,6 +108,10 @@ export interface SupplierDelivery {
   freeOver?: number;
   /** Places that cost something other than the fee above. */
   areas?: DeliveryArea[];
+  /** How many days delivery takes to the other places. */
+  days?: number;
+  /** The supplier has entered their delivery. When false, nothing is known and nothing is said about delivery. */
+  set?: boolean;
 }
 
 /** A choice a buyer makes on a product, such as Size with 12 mm and 16 mm. */
@@ -247,6 +257,8 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  /** The country the order is delivered to. */
+  country?: string;
   supplierId: string;
   supplierName?: string;
   /** Only the supplier who has to deliver the order sees these. */
@@ -372,12 +384,17 @@ export interface OrderQuote {
   deliveryFee: number;
   /** Orders above this value are delivered free. */
   freeOver?: number;
+  /** How many days delivery takes to the buyer's city, when the supplier gave it. */
+  deliveryDays?: number;
+  /** The supplier has entered their delivery: without it nothing is said about it. */
+  deliverySet?: boolean;
   total: number;
 }
 
 export interface OrderInput {
   items: { productId: string; variantId?: string; quantity: number }[];
   city: string;
+  country?: string;
   address?: string;
   location?: { lat: number; lng: number };
   phone: string;
@@ -464,7 +481,7 @@ export const FurnitureApi = {
   },
   createPayout: (token: string, input: { supplierId: string; currency: string; reference: string; note?: string; orderIds?: string[] }) => call<{ payout: Payout }>("/furniture/payouts", { token, method: "POST", body: input }),
   retryRefund: (token: string, orderId: string) => call<{ refunded: boolean; paymentStatus: PaymentStatus; error?: string }>(`/furniture/orders/${encodeURIComponent(orderId)}/retry-refund`, { token, method: "POST" }),
-  quoteOrder: (token: string, items: { productId: string; variantId?: string; quantity: number }[], city?: string) => call<{ groups: OrderQuote[]; lines?: QuoteLine[] }>("/furniture/orders/quote", { token, method: "POST", body: { items, ...(city ? { city } : {}) } }),
+  quoteOrder: (token: string, items: { productId: string; variantId?: string; quantity: number }[], city?: string, country?: string) => call<{ groups: OrderQuote[]; lines?: QuoteLine[] }>("/furniture/orders/quote", { token, method: "POST", body: { items, ...(city ? { city } : {}), ...(country ? { country } : {}) } }),
   shipOrder: (token: string, id: string, trackingNote?: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/ship`, { token, method: "POST", body: { trackingNote } }),
   postMessage: (token: string, id: string, text: string) => call<{ order: Order }>(`/furniture/orders/${encodeURIComponent(id)}/messages`, { token, method: "POST", body: { text } }),
   incomingOrders: (token: string) => call<{ orders: Order[] }>("/furniture/orders/incoming", { token }),

@@ -6,6 +6,7 @@ import { VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useBasket } from "@/lib/furniture/basket";
 import { useSaved } from "@/lib/furniture/saved";
 import { STOCK_LABELS, type Product } from "@/lib/furniture/api";
+import { deliveryDaysText } from "@/lib/furniture/deliveryText";
 import { useDisplayCurrency } from "@/lib/currency/display";
 
 /** The heart that saves a product for later. */
@@ -40,6 +41,17 @@ export default function ProductCard({ product }: { product: Product }) {
   const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
   const out = product.stock === "out_of_stock";
   const hasOptions = (product.variants ?? []).length > 0;
+  const rating = product.supplier?.rating;
+  const delivery = product.supplier?.delivery;
+  // One short line about delivery: free, a flat fee, or that it depends on where the buyer is.
+  const deliveryLine = !delivery || !delivery.set
+    ? null
+    : (delivery.areas ?? []).length > 0
+      ? "Delivery by location"
+      : delivery.fee > 0 && delivery.currency
+        ? `Delivery ${money.format(delivery.fee, delivery.currency)}`
+        : "Free delivery";
+  const deliveryDays = delivery?.set ? deliveryDaysText(delivery) : "";
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -58,6 +70,11 @@ export default function ProductCard({ product }: { product: Product }) {
         <div className="px-4 pt-4">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{product.category}</p>
           <h2 title={product.name} className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-slate-900">{product.name}</h2>
+          {hasOptions && (
+            <p title={(product.options ?? []).map((o) => o.name).join(" · ")} className="mt-1 text-xs font-semibold text-slate-500">
+              {(product.variants ?? []).length} options
+            </p>
+          )}
         </div>
       </Link>
       <div className="mt-auto flex items-center justify-between gap-3 p-4 pt-3">
@@ -67,8 +84,15 @@ export default function ProductCard({ product }: { product: Product }) {
             <p className="flex items-center gap-1.5 text-xs text-slate-400">
               <span className="truncate">{product.supplier.companyName}</span>
               {product.supplier.verified && <VerifiedBadge />}
+              {rating && rating.count > 0 && (
+                <span className="inline-flex shrink-0 items-center gap-0.5 font-semibold text-slate-500">
+                  <span aria-hidden="true" className="text-amber-500">★</span>
+                  {rating.average.toFixed(1)} <span className="font-normal text-slate-400">({rating.count})</span>
+                </span>
+              )}
             </p>
           )}
+          {deliveryLine && <p className="text-xs text-slate-400">{deliveryLine}{deliveryDays ? ` · ${deliveryDays}` : ""}</p>}
           {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 && <p className="text-xs font-bold text-amber-600">Only {product.quantity} left</p>}
         </div>
         {hasOptions ? (

@@ -44,7 +44,8 @@ export interface Delivery {
   fee: number;
   currency?: string;
   freeOver?: number;
-  areas?: { place: string; fee?: number; percent?: number }[];
+  areas?: { country?: string; place?: string; fee?: number; percent?: number; currency?: string; days?: number }[];
+  days?: number;
 }
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -77,7 +78,7 @@ export const SuppliersApi = {
   getPayout: (token: string) => call<{ payout: Payout | null }>("/suppliers/me/payout", token),
   savePayout: (token: string, input: Payout) => call<{ payout: Payout }>("/suppliers/me/payout", token, { method: "PUT", body: input }),
   getDelivery: (token: string) => call<{ delivery: Delivery }>("/suppliers/me/delivery", token),
-  saveDelivery: (token: string, input: { fee: number; currency?: string; freeOver?: number | null; areas?: { place: string; fee?: number; percent?: number }[] }) => call<{ delivery: Delivery }>("/suppliers/me/delivery", token, { method: "PUT", body: input }),
+  saveDelivery: (token: string, input: { fee: number; currency?: string; freeOver?: number | null; days?: number | null; areas?: { country?: string; place?: string; fee?: number; percent?: number; currency?: string; days?: number }[] }) => call<{ delivery: Delivery }>("/suppliers/me/delivery", token, { method: "PUT", body: input }),
   setPaused: (token: string, paused: boolean) => call<{ paused: boolean }>("/suppliers/me/shop", token, { method: "PUT", body: { paused } }),
   staffFlags: (token: string) => call<{ flags: Record<string, StaffFlags> }>("/suppliers/staff/flags", token),
   setVerified: (token: string, id: string, verified: boolean) => call<{ verified: boolean }>(`/suppliers/staff/${encodeURIComponent(id)}/verified`, token, { method: "PUT", body: { verified } }),

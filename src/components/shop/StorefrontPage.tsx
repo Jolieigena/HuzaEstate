@@ -87,9 +87,7 @@ export default function StorefrontPage({ supplierId }: { supplierId: string }) {
               ))}
             </div>
           )}
-          <p className="mt-3 text-sm text-slate-500">
-            {deliveryText(store.delivery, money.format)}
-          </p>
+          {store.delivery.set && <p className="mt-3 text-sm text-slate-500">{deliveryText(store.delivery, money.format)}</p>}
         </div>
       </header>
 

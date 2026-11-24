@@ -130,7 +130,7 @@ export default function OrderList({ orders, onChanged }: { orders: Order[] | nul
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-xs text-slate-500">Deliver to {[order.address, order.city].filter(Boolean).join(", ")}</p>
+          <p className="mt-2 text-xs text-slate-500">Deliver to {[order.address, order.city, order.country].filter(Boolean).join(", ")}</p>
           {order.reply && <p className="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">{order.reply}</p>}
           {order.status === "confirmed" && order.deliveryDays !== undefined && <p className="mt-2 text-sm font-semibold text-slate-700">Delivery in about {order.deliveryDays} days</p>}
           {order.status === "shipped" && order.trackingNote && <p className="mt-2 rounded-xl bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{order.trackingNote}</p>}

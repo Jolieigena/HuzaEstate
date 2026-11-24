@@ -91,7 +91,7 @@ export default function SupplierOrdersPage() {
               <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-xs font-bold uppercase tracking-wider text-slate-400">{t("Deliver to")}</dt>
-                  <dd className="font-semibold text-slate-800">{[order.address, order.city].filter(Boolean).join(", ")}
+                  <dd className="font-semibold text-slate-800">{[order.address, order.city, order.country].filter(Boolean).join(", ")}
                     {order.mapLink && (
                       <a href={order.mapLink} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#219b31] hover:underline">
                         {t("Open map")}
@@ -145,12 +145,15 @@ export default function SupplierOrdersPage() {
                     </SecondaryButton>
                   </>
                 )}
+                {(order.status === "confirmed" || order.status === "shipped") && order.paymentStatus !== "paid" && (
+                  <p className="w-full text-sm font-semibold text-amber-700">{t("Waiting for the buyer's payment. Send the order out after it arrives.")}</p>
+                )}
                 {order.status === "confirmed" && (
                   <>
-                    <PrimaryButton type="button" onClick={() => setAction({ order, kind: "ship" })}>
+                    <PrimaryButton type="button" disabled={order.paymentStatus !== "paid"} onClick={() => setAction({ order, kind: "ship" })}>
                       {t("Mark as on its way")}
                     </PrimaryButton>
-                    <SecondaryButton type="button" onClick={() => complete(order)}>
+                    <SecondaryButton type="button" disabled={order.paymentStatus !== "paid"} onClick={() => complete(order)}>
                       {t("Mark as delivered")}
                     </SecondaryButton>
                     <SecondaryButton type="button" onClick={() => setAction({ order, kind: "decline" })}>
@@ -159,7 +162,7 @@ export default function SupplierOrdersPage() {
                   </>
                 )}
                 {order.status === "shipped" && (
-                  <PrimaryButton type="button" onClick={() => complete(order)}>
+                  <PrimaryButton type="button" disabled={order.paymentStatus !== "paid"} onClick={() => complete(order)}>
                     {t("Mark as delivered")}
                   </PrimaryButton>
                 )}

@@ -117,7 +117,7 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             {product.stock === "made_to_order" && product.leadTimeDays ? ` · ready in about ${product.leadTimeDays} days` : ""}
             {left !== undefined && left > 0 && left <= 5 ? ` · only ${left} left` : ""}
           </p>
-          {supplier?.delivery && (
+          {supplier?.delivery?.set && (
             <p className="mt-1 text-sm text-slate-500">
               {deliveryText(supplier.delivery, money.format)}
             </p>

@@ -98,6 +98,8 @@ function Catalog() {
     setDraftMax(high);
     if (low !== "" && high !== "" && Number(low) > Number(high)) {
       setPriceError("The lowest price is higher than the highest price.");
+      // No half-applied range stays behind while the boxes disagree.
+      update({ min: undefined, max: undefined, currency: undefined });
       return;
     }
     setPriceError("");

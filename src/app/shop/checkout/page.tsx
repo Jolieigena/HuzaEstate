@@ -10,6 +10,9 @@ import { lineKey, useBasket, type BasketLine } from "@/lib/furniture/basket";
 import { useQuote } from "@/lib/furniture/useQuote";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { FurnitureApi, type Order } from "@/lib/furniture/api";
+import Select from "@/components/shared/Select";
+import { COUNTRY_OPTIONS, DEFAULT_COUNTRY } from "@/lib/countries";
+import { districtsForCountry } from "@/lib/regions";
 
 const field = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-[#2ec440] focus:ring-2 focus:ring-[#2ec440]/15";
 const label = "block text-sm font-bold text-slate-700";
@@ -27,7 +30,10 @@ function Checkout() {
   const { token, account } = useAuth();
   const { showToast } = useToast();
   const cart = useBasket();
+  // The country starts as the account's, or Rwanda.
+  const ownCountry = account?.country || DEFAULT_COUNTRY.name;
   const [city, setCity] = useState("");
+  const [country, setCountry] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
@@ -45,7 +51,7 @@ function Checkout() {
     group.lines.push(line);
     groups.set(key, group);
   }
-  const { quote, problem, lines: freshLines } = useQuote(cart.lines, token, city);
+  const { quote, problem, lines: freshLines } = useQuote(cart.lines, token, city, country);
   const { updatePrices } = cart;
   useEffect(() => {
     if (freshLines.length) updatePrices(freshLines);
@@ -106,6 +112,7 @@ function Checkout() {
     const result = await FurnitureApi.createOrder(token, {
       items: cart.lines.map((l) => ({ productId: l.productId, variantId: l.variantId, quantity: l.quantity })),
       city: city.trim(),
+      country: country || undefined,
       location: location ?? undefined,
       phone: cleanPhone(phone),
     });
@@ -169,8 +176,23 @@ function Checkout() {
           <h1 className="text-3xl font-black tracking-tight text-slate-900">Secure Checkout</h1>
           <div className="mt-8 space-y-5">
             <label className={label}>
-              City
-              <input className={`${field} mt-1.5`} value={city} onChange={(e) => setCity(e.target.value)} autoComplete="address-level2" />
+              Country
+              <Select value={country || ownCountry} onChange={(e) => setCountry(e.target.value)} className={field}>
+                {COUNTRY_OPTIONS.map((c) => (
+                  <option key={c.code} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            <label className={label}>
+              City or district
+              <input list="checkout-districts" value={city} onChange={(e) => setCity(e.target.value)} className={field} autoComplete="address-level2" />
+              <datalist id="checkout-districts">
+                {districtsForCountry(country || ownCountry).map((d) => (
+                  <option key={d} value={d} />
+                ))}
+              </datalist>
             </label>
             {showMore && (
               <div>
@@ -224,9 +246,12 @@ function Checkout() {
                     </li>
                   ))}
                 </ul>
-                {feeOf(group.supplierName, group.currency) && (
+                {feeOf(group.supplierName, group.currency)?.deliverySet && (
                   <p className="mt-1 flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-sm">
-                    <span className="text-slate-300">Delivery</span>
+                    <span className="text-slate-300">
+                      Delivery
+                      {feeOf(group.supplierName, group.currency)?.deliveryDays ? <span className="block text-xs text-slate-400">About {feeOf(group.supplierName, group.currency)?.deliveryDays} {feeOf(group.supplierName, group.currency)?.deliveryDays === 1 ? "day" : "days"}</span> : null}
+                    </span>
                     <span className="font-bold">{(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0) > 0 ? money.format(feeOf(group.supplierName, group.currency)?.deliveryFee ?? 0, group.currency) : "Free"}</span>
                   </p>
                 )}
