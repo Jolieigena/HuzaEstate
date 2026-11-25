@@ -118,6 +118,8 @@ export interface SupplierDelivery {
 export interface ProductOption {
   name: string;
   values: string[];
+  /** What a value means, shown when the buyer picks it: its own words and one of the product's pictures. */
+  details?: { value: string; description?: string; image?: string }[];
 }
 
 /** One combination of the options that is on sale, with its own price and, when the supplier counts it, its own stock. */

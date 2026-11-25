@@ -83,6 +83,8 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
   const canBuy = orderable && (!hasOptions || (variant !== undefined && !variantSoldOut));
   const unitPrice = variant?.price ?? product.price;
   const left = variant ? variant.quantity : product.stock === "in_stock" ? product.quantity : undefined;
+  // What each picked value means, when the supplier described it: its words, and its picture.
+  const chosenDetails = hasOptions ? options.map((o, i) => o.details?.find((d) => d.value === shown[i])).filter((d): d is NonNullable<typeof d> => Boolean(d)) : [];
   const inCart = cart.lines.find((l) => l.productId === product.id && (l.variantId ?? "") === (variant?.id ?? ""))?.quantity ?? 0;
 
   return (
@@ -125,7 +127,17 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           {paused && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">This shop is not taking orders right now.</p>}
           {product.hidden && <p className="mt-3 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">Hidden from buyers{product.hiddenReason ? `: ${product.hiddenReason}` : ""}</p>}
           {product.status !== "published" && <p className="mt-2 inline-block rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700">Draft, only you can see this</p>}
-          {product.description && <p className="mt-6 whitespace-pre-line text-sm leading-7 text-slate-600">{product.description}</p>}
+          {chosenDetails.some((d) => d.description) && (
+            <div className="mt-6 space-y-2">
+              {chosenDetails.filter((d) => d.description).map((d) => (
+                <p key={d.value} className="whitespace-pre-line text-sm leading-7 text-slate-800">
+                  <span className="font-bold">{d.value}: </span>
+                  {d.description}
+                </p>
+              ))}
+            </div>
+          )}
+          {product.description && <p className={`${chosenDetails.some((d) => d.description) ? "mt-3" : "mt-6"} whitespace-pre-line text-sm leading-7 text-slate-600`}>{product.description}</p>}
 
           {(canBuy || hasOptions) && (
             <div className="mt-6 space-y-3">
@@ -143,6 +155,10 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
                           next[index] = e.target.value;
                           setPicked(next);
                           setQuantity("1");
+                          // A value with its own picture shows that picture.
+                          const picture = option.details?.find((d) => d.value === e.target.value)?.image;
+                          const at = picture ? product.images.indexOf(picture) : -1;
+                          if (at >= 0) setActive(at);
                         }}
                       >
                         {option.values.map((value) => (

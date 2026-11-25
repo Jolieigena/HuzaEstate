@@ -403,12 +403,14 @@ function Catalog() {
 /** The dropdown under a shop tab: the whole tab, then each of its categories with how many products it has. Categories can be ticked several at a time. */
 function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected, onPick }: { label: string; tab: string; categories: { name: string; count: number }[]; selectedCategories: string[]; wholeTabSelected: boolean; onPick: (next: Record<string, string | undefined>) => void }) {
   const item = "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors hover:bg-slate-50";
+  // A category with nothing in it is left out, so buyers are never sent to an empty page. It comes back as soon as it has a product.
+  const shown = categories.filter((c) => c.count > 0 || selectedCategories.includes(c.name));
   return (
     <div role="menu" aria-label={`${label} categories`} className="mt-3 grid gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <button type="button" role="menuitem" onClick={() => onPick({ group: tab, category: undefined })} className={`${item} font-bold ${wholeTabSelected ? "bg-slate-50 text-[#219b31]" : "text-slate-900"}`}>
         All in {label}
       </button>
-      {categories.map((c) => {
+      {shown.map((c) => {
         const picked = selectedCategories.includes(c.name);
         return (
           <button key={c.name} type="button" role="menuitem" onClick={() => onPick({ category: c.name, group: undefined })} className={`${item} font-semibold ${picked ? "bg-slate-50 text-[#219b31]" : "text-slate-700"}`}>
@@ -417,7 +419,7 @@ function TabMenu({ label, tab, categories, selectedCategories, wholeTabSelected,
           </button>
         );
       })}
-      {categories.length === 0 && <p className="px-3 py-2.5 text-sm font-semibold text-slate-400">No categories in this tab yet</p>}
+      {shown.length === 0 && <p className="px-3 py-2.5 text-sm font-semibold text-slate-400">No categories in this tab yet</p>}
     </div>
   );
 }

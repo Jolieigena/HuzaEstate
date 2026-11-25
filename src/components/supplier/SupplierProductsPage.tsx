@@ -330,7 +330,7 @@ function ProductForm({ titleId, product, onClose, onSaved }: { titleId: string; 
                     <CurrencySelect className={`${fieldClass} mt-1`} value={currency} onChange={setCurrency} />
                   </label>
                 </div>
-                {allowsOptions && <ProductOptionsEditor options={optionState.options} edits={optionState.edits} currency={currency} onChange={(options, edits) => setOptionState({ options, edits })} />}
+                {allowsOptions && <ProductOptionsEditor options={optionState.options} edits={optionState.edits} currency={currency} images={images} onChange={(options, edits) => setOptionState({ options, edits })} />}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-sm font-bold text-slate-700">
                     {t("Availability")}

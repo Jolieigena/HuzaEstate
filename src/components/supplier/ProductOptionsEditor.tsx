@@ -4,8 +4,10 @@ import { useState } from "react";
 import { fieldClass } from "@/components/professional/ui";
 import type { Product, ProductInput } from "@/lib/furniture/api";
 
-/** One choice a buyer makes, such as Size with 12 mm and 16 mm. */
-export type OptionRow = { name: string; values: string[] };
+/** What one value means: words, and one of the product's pictures, shown when the buyer picks it. */
+export type ValueDetail = { description: string; image: string };
+/** One choice a buyer makes, such as Size with 12 mm and 16 mm, and what each value means. */
+export type OptionRow = { name: string; values: string[]; details?: Record<string, ValueDetail> };
 /** What the supplier typed for one combination, keyed by {@link keyOf}. */
 export type VariantEdits = Record<string, { price: string; quantity: string; on: boolean }>;
 
@@ -23,7 +25,11 @@ export function combinations(options: OptionRow[]): string[][] {
 
 /** The editor's starting point for a product: its options and the prices and counts of its combinations. */
 export function initialOptions(product: Product | null): { options: OptionRow[]; edits: VariantEdits } {
-  const options = (product?.options ?? []).map((o) => ({ name: o.name, values: [...o.values] }));
+  const options = (product?.options ?? []).map((o) => ({
+    name: o.name,
+    values: [...o.values],
+    details: Object.fromEntries((o.details ?? []).map((d) => [d.value, { description: d.description ?? "", image: d.image ?? "" }])),
+  }));
   const edits: VariantEdits = {};
   for (const variant of product?.variants ?? []) edits[keyOf(variant.values)] = { price: String(variant.price), quantity: variant.quantity !== undefined ? String(variant.quantity) : "", on: true };
   // A combination the product does not sell is switched off, not given a price.
@@ -41,7 +47,16 @@ export function optionInputs(options: OptionRow[], edits: VariantEdits): Pick<Pr
       const edit = edits[keyOf(combo)];
       return { values: combo, price: Number(edit.price), ...(edit.quantity.trim() !== "" ? { quantity: Number(edit.quantity) } : {}) };
     });
-  return { options: usable.map((o) => ({ name: o.name.trim(), values: o.values })), variants };
+  return {
+    options: usable.map((o) => {
+      const details = o.values
+        .map((value) => ({ value, description: (o.details?.[value]?.description ?? "").trim(), image: o.details?.[value]?.image ?? "" }))
+        .filter((d) => d.description || d.image)
+        .map((d) => ({ value: d.value, ...(d.description ? { description: d.description } : {}), ...(d.image ? { image: d.image } : {}) }));
+      return { name: o.name.trim(), values: o.values, ...(details.length ? { details } : {}) };
+    }),
+    variants,
+  };
 }
 
 /** True when the options are in a state that can be saved: any option has a name and values, and every combination on sale has a price. */
@@ -93,8 +108,14 @@ function ValueInput({ values, onChange }: { values: string[]; onChange: (values:
 }
 
 /** Size, type and similar choices for a product, and the price and stock of each combination. */
-export default function ProductOptionsEditor({ options, edits, currency, onChange }: { options: OptionRow[]; edits: VariantEdits; currency: string; onChange: (options: OptionRow[], edits: VariantEdits) => void }) {
+export default function ProductOptionsEditor({ options, edits, currency, images = [], onChange }: { options: OptionRow[]; edits: VariantEdits; currency: string; images?: string[]; onChange: (options: OptionRow[], edits: VariantEdits) => void }) {
   const combos = combinations(options);
+  const [describing, setDescribing] = useState<number | null>(null);
+  const setDetail = (index: number, value: string, patch: Partial<ValueDetail>) =>
+    onChange(
+      options.map((o, i) => (i === index ? { ...o, details: { ...(o.details ?? {}), [value]: { description: o.details?.[value]?.description ?? "", image: o.details?.[value]?.image ?? "", ...patch } } } : o)),
+      edits,
+    );
 
   // Changing the options keeps the entries of combinations that still exist, and switches new ones on.
   const update = (nextOptions: OptionRow[]) => {
@@ -132,6 +153,41 @@ export default function ProductOptionsEditor({ options, edits, currency, onChang
               ×
             </button>
           </div>
+          {option.values.length > 0 && (
+            <button type="button" onClick={() => setDescribing(describing === index ? null : index)} className="mt-2 text-xs font-bold text-[#219b31] hover:underline">
+              {describing === index ? "Hide the description of each value" : "Describe each value"}
+            </button>
+          )}
+          {describing === index && (
+            <ul className="mt-2 space-y-3">
+              {option.values.map((value) => (
+                <li key={value} className="rounded-lg border border-slate-200 bg-white p-2.5">
+                  <p className="text-xs font-bold text-slate-700">{value}</p>
+                  <textarea
+                    aria-label={`Description of ${value}`}
+                    rows={2}
+                    maxLength={600}
+                    value={option.details?.[value]?.description ?? ""}
+                    onChange={(e) => setDetail(index, value, { description: e.target.value })}
+                    className={`${fieldClass} mt-1 text-sm`}
+                  />
+                  {images.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2" role="radiogroup" aria-label={`Picture of ${value}`}>
+                      {images.map((url) => {
+                        const on = option.details?.[value]?.image === url;
+                        return (
+                          <button key={url} type="button" role="radio" aria-checked={on} onClick={() => setDetail(index, value, { image: on ? "" : url })} className={`h-12 w-12 overflow-hidden rounded-lg border-2 ${on ? "border-[#2ec440]" : "border-transparent opacity-70 hover:opacity-100"}`}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={url} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ))}
       <datalist id="option-names">
