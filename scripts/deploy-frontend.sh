@@ -72,4 +72,6 @@ for j in 1 2 3 4 5 6; do
   echo "load retry"; sleep 8
 done
 rm -f "$OUT"
+# UAT (uat.huzaestate.com) follows live: copy the new image there in the background.
+ssh -o ConnectTimeout=20 "$HOST" 'nohup /root/huzaestate/uat-sync.sh >/dev/null 2>&1 &' 2>/dev/null && echo "UAT update started"
 echo DONE
