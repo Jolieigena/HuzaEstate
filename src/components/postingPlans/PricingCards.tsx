@@ -49,6 +49,8 @@ export default function PricingCards({
   const { token } = useAuth();
   // A discount an administrator gave this client on plans: their own price is shown, with the usual one struck through.
   const discount = useMyDiscount(token, "plans");
+  const postDiscount = useMyDiscount(token, "extra_post");
+  const postPrice = postDiscount ? discounted(PER_POST_PRICE, postDiscount.percent) : PER_POST_PRICE;
   const yesNo = (value: boolean) => (value ? t("Yes") : "—");
   // Not shown in the iPhone app: plans are bought outside it (App Store rule 3.1.1).
   if (iosApp) return null;
@@ -90,7 +92,7 @@ export default function PricingCards({
                     <svg className="w-4 h-4 text-[#2ec440] flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    {t(f, { days: PLAN_EXPIRY_DAYS[tier], price: show(PER_POST_PRICE) })}
+                    {t(f, { days: PLAN_EXPIRY_DAYS[tier], price: show(postPrice) })}
                   </li>
                 ))}
               </ul>
