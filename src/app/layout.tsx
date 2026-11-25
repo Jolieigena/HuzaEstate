@@ -20,9 +20,13 @@ const nunitoSans = localFont({
   display: "swap",
 });
 
+// The link preview (WhatsApp, X, Facebook) shows app/opengraph-image.png, the HuzaEstate mark; its address needs a full URL.
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.huzaestate.com"),
   title: "HuzaEstate",
   description: "Real Estate platform for Rwanda",
+  openGraph: { siteName: "HuzaEstate", title: "HuzaEstate", description: "Real Estate platform for Rwanda", type: "website" },
+  twitter: { card: "summary", title: "HuzaEstate", description: "Real Estate platform for Rwanda" },
 };
 
 export default function RootLayout({
