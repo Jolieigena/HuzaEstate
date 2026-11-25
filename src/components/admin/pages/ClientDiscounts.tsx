@@ -8,7 +8,7 @@ import { useIsAdministrator } from "@/lib/admin/hooks";
 import { hasOrgPermission } from "@/lib/orgPermissions";
 import { useToast } from "@/lib/toast-context";
 import { ClientDiscountsApi, DISCOUNT_KINDS, DISCOUNT_KIND_LABELS, DISCOUNT_STATUS_LABELS, type ClientDiscount, type DiscountKind, type DiscountStatus } from "@/lib/clientDiscounts/api";
-import { AdminTable, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
+import { AdminTable, EmptyState, SectionFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
 
 const STATUS_STYLE: Record<DiscountStatus, string> = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-100",
@@ -34,7 +34,7 @@ function addMonths(day: string, months: number): string {
 }
 
 /** Give one client a percentage off plans, extra posts or promotions for a while, and see and stop the discounts given. */
-export function ClientDiscountsPage({ scope }: { scope: "platform" | "org" }) {
+export function ClientDiscountsPage({ scope, embedded = false }: { scope: "platform" | "org"; embedded?: boolean }) {
   const { token, account, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const isAdmin = useIsAdministrator();
@@ -77,7 +77,7 @@ export function ClientDiscountsPage({ scope }: { scope: "platform" | "org" }) {
   };
 
   return (
-    <PageFrame title="Client discounts" action={canManage ? <PrimaryButton type="button" onClick={() => setCreating(true)}>Give a discount</PrimaryButton> : undefined}>
+    <SectionFrame embedded={embedded} title="Client discounts" action={canManage ? <PrimaryButton type="button" onClick={() => setCreating(true)}>Give a discount</PrimaryButton> : undefined}>
       <RequirePermission granted={canManage}>
         <input value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Search by email" aria-label="Search by email" className={`${fieldClass} mb-5 max-w-sm`} />
         {error ? (
@@ -124,7 +124,7 @@ export function ClientDiscountsPage({ scope }: { scope: "platform" | "org" }) {
           }}
         />
       )}
-    </PageFrame>
+    </SectionFrame>
   );
 }
 

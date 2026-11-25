@@ -1,7 +1,12 @@
 "use client";
 
-import { AccessCodesPage } from "@/components/admin/pages/AccessCodes";
+import { Suspense } from "react";
+import { AccessAndDiscountsPage } from "@/components/admin/pages/AccessAndDiscounts";
 
 export default function Page() {
-  return <AccessCodesPage scope="platform" />;
+  return (
+    <Suspense fallback={null}>
+      <AccessAndDiscountsPage scope="platform" />
+    </Suspense>
+  );
 }

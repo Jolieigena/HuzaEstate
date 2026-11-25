@@ -19,7 +19,7 @@ import {
 } from "@/lib/accessCodes/api";
 import { PLAN_LABELS, PLAN_LIMITS } from "@/lib/postingPlans/types";
 import ReasonFormModal from "../ReasonFormModal";
-import { AdminTable, Card, EmptyState, PageFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
+import { AdminTable, Card, EmptyState, SectionFrame, PrimaryButton, RequirePermission, SecondaryButton, fieldClass, formatDate } from "../ui";
 import Select from "@/components/shared/Select";
 import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
 import { useInfinitePages } from "@/lib/useInfinitePages";
@@ -50,7 +50,7 @@ type EndTarget = { code: AccessCode; mode: "end" | "cancel" };
 /** Access codes: time-limited access to a paid plan, issued by email and redeemed by the seller. One
  *  page for both portals: a platform admin sees every code (and can filter by who issued it); an
  *  organisation admin sees and manages only their own organisation's. The server enforces that scope. */
-export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
+export function AccessCodesPage({ scope, embedded = false }: { scope: "platform" | "org"; embedded?: boolean }) {
   const { token, account, isAuthReady } = useAuth();
   const { showToast } = useToast();
   const isAdmin = useIsAdministrator();
@@ -128,7 +128,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
   ];
 
   return (
-    <PageFrame
+    <SectionFrame embedded={embedded}
       title="Access codes"
       action={
         canManage ? (
@@ -378,7 +378,7 @@ export function AccessCodesPage({ scope }: { scope: "platform" | "org" }) {
 
       <ExtendDialog code={extendTarget} onClose={() => setExtendTarget(null)} onExtended={refresh} token={token} />
       <UpgradeDialog code={upgradeTarget} onClose={() => setUpgradeTarget(null)} onUpgraded={refresh} token={token} />
-    </PageFrame>
+    </SectionFrame>
   );
 }
 

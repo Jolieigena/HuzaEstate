@@ -1,7 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { ClientDiscountsPage } from "@/components/admin/pages/ClientDiscounts";
-
+// Discounts now sit on the Access & discounts page, as its second tab.
 export default function Page() {
-  return <ClientDiscountsPage scope="org" />;
+  redirect("/org-admin/access-codes?tab=discounts");
 }

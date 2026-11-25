@@ -20,6 +20,17 @@ export function PageFrame({ title, description, action, children }: { title: str
   );
 }
 
+/** A page's own frame, or, when it sits inside another page (as a tab), just its action button above its content. */
+export function SectionFrame({ embedded = false, title, action, children }: { embedded?: boolean; title: string; action?: React.ReactNode; children: React.ReactNode }) {
+  if (!embedded) return <PageFrame title={title} action={action}>{children}</PageFrame>;
+  return (
+    <div>
+      {action && <div className="mb-5 flex justify-end">{action}</div>}
+      {children}
+    </div>
+  );
+}
+
 export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) { 
   return (
     <section className={`rounded-2xl border border-slate-200/80 bg-white p-6 shadow-[0_2px_8px_rgb(0,0,0,0.04)] ${className}`}>
