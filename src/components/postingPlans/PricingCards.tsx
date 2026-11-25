@@ -4,6 +4,8 @@ import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { useLanguage } from "@/lib/i18n/language";
 import { useIsNativeIosApp } from "@/lib/nativeApp";
+import { useAuth } from "@/lib/auth-context";
+import { discounted, useMyDiscount } from "@/lib/clientDiscounts/api";
 
 const TIERS: PlanTier[] = ["free", "silver", "gold", "diamond"];
 
@@ -44,6 +46,9 @@ export default function PricingCards({
   const { t } = useLanguage();
   const { show } = usePlanMoney();
   const iosApp = useIsNativeIosApp();
+  const { token } = useAuth();
+  // A discount an administrator gave this client on plans: their own price is shown, with the usual one struck through.
+  const discount = useMyDiscount(token, "plans");
   const yesNo = (value: boolean) => (value ? t("Yes") : "—");
   // Not shown in the iPhone app: plans are bought outside it (App Store rule 3.1.1).
   if (iosApp) return null;
@@ -71,8 +76,12 @@ export default function PricingCards({
 
               <h3 className="font-bold text-slate-900 text-[15px]">{t(PLAN_LABELS[tier])}</h3>
               <div className="mt-2 mb-4">
-                <span className="text-2xl font-black text-slate-900">{show(price ?? FREE_PLAN_PRICE)}</span>
+                {price && discount && <span className="mr-2 text-base font-semibold text-slate-400 line-through">{show(price)}</span>}
+                <span className="text-2xl font-black text-slate-900">{show(price ? (discount ? discounted(price, discount.percent) : price) : FREE_PLAN_PRICE)}</span>
                 <span className="text-slate-500 text-sm font-medium">{tier === "free" ? "" : t("/month")}</span>
+                {price && discount && (
+                  <p className="mt-1 text-xs font-bold text-[#219b31]">{t("Your price: {percent}% off until {date}", { percent: discount.percent, date: new Date(discount.endsAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) })}</p>
+                )}
               </div>
 
               <ul className="flex flex-col gap-2 mb-6 flex-1">
@@ -135,7 +144,7 @@ export default function PricingCards({
                 <th className="px-3 py-2.5 font-semibold text-slate-700">{t("Price")}</th>
                 {TIERS.map((tier) => (
                   <td key={tier} className="px-3 py-2.5">
-                    {tier === "free" ? show(FREE_PLAN_PRICE) : `${show(PLAN_PRICES[tier])}${t("/month")}`}
+                    {tier === "free" ? show(FREE_PLAN_PRICE) : `${show(discount ? discounted(PLAN_PRICES[tier], discount.percent) : PLAN_PRICES[tier])}${t("/month")}`}
                   </td>
                 ))}
               </tr>

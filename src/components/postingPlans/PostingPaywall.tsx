@@ -7,6 +7,8 @@ import RedeemAccessCode from "./RedeemAccessCode";
 import { useSubscription } from "@/lib/postingPlans/hooks";
 import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
+import { useAuth } from "@/lib/auth-context";
+import { discounted, useMyDiscount } from "@/lib/clientDiscounts/api";
 import { useLanguage } from "@/lib/i18n/language";
 import { useIsNativeIosApp } from "@/lib/nativeApp";
 
@@ -20,6 +22,9 @@ type CheckoutMode = { kind: "subscribe"; tier: Exclude<PlanTier, "free"> } | { k
 export default function PostingPaywall({ onClose }: { onClose: () => void }) {
   const { t } = useLanguage();
   const { show } = usePlanMoney();
+  const { token: discountToken } = useAuth();
+  const postDiscount = useMyDiscount(discountToken, "extra_post");
+  const postPrice = postDiscount ? discounted(PER_POST_PRICE, postDiscount.percent) : PER_POST_PRICE;
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<CheckoutMode>(null);
   const iosApp = useIsNativeIosApp();
@@ -69,7 +74,7 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
             onClick={() => setCheckout({ kind: "per_post" })}
             className="bg-white border border-slate-300 hover:border-slate-900 text-slate-900 font-bold px-6 py-3 rounded-xl transition-colors"
           >
-            {t("Pay {price} to post once", { price: show(PER_POST_PRICE) })}
+            {t("Pay {price} to post once", { price: show(postPrice) })}
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { formatMoney } from '@/lib/finance/money';
 import { PROMOTION_PACKAGES, isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { createPromoteCheckout } from '@/lib/promotion/api';
+import { discounted, useMyDiscount } from '@/lib/clientDiscounts/api';
 import { getGalleryImages } from '@/lib/properties/gallery';
 import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 import type { Property } from '@/lib/properties/types';
@@ -29,6 +30,8 @@ interface PromoteListingModalProps {
 export default function PromoteListingModal({ property, onClose }: PromoteListingModalProps) {
   const { t } = useLanguage();
   const { token } = useAuth();
+  const promoDiscount = useMyDiscount(token, 'promotion');
+  const priceOf = (pkg: (typeof PROMOTION_PACKAGES)[number]) => (promoDiscount ? discounted(pkg.price, promoDiscount.percent) : pkg.price);
   const iosApp = useIsNativeIosApp();
   const [selectedDays, setSelectedDays] = useState(PROMOTION_PACKAGES[1].days);
   const [submitting, setSubmitting] = useState(false);
@@ -126,7 +129,7 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
             }`}
           >
             <div className="text-lg font-black text-slate-900">{t('{days}d', { days: pkg.days })}</div>
-            <div className="text-sm font-bold text-slate-700 mt-1">{formatMoney(pkg.price)}</div>
+            <div className="text-sm font-bold text-slate-700 mt-1">{promoDiscount && <span className="mr-1 font-semibold text-slate-400 line-through">{formatMoney(pkg.price)}</span>}{formatMoney(priceOf(pkg))}</div>
           </button>
         ))}
       </div>
@@ -140,7 +143,7 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
           disabled={submitting}
           className="flex-1 bg-slate-900 hover:bg-[#2ec440] text-white font-bold text-sm py-3.5 rounded-xl transition-colors shadow-lg disabled:opacity-60 whitespace-nowrap"
         >
-          {submitting ? t('Redirecting…') : t('Continue to Payment — {price}', { price: formatMoney(selectedPackage.price) })}
+          {submitting ? t('Redirecting…') : t('Continue to Payment — {price}', { price: formatMoney(priceOf(selectedPackage)) })}
         </button>
         <button type="button" onClick={onClose} className="px-6 py-3.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
           {t('Cancel')}

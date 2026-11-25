@@ -8,6 +8,8 @@ import RedeemAccessCode from '@/components/postingPlans/RedeemAccessCode';
 import { usePlanMoney } from '@/lib/postingPlans/usePlanMoney';
 import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PER_POST_PRICE, type PlanTier } from '@/lib/postingPlans/types';
+import { useAuth } from '@/lib/auth-context';
+import { discounted, useMyDiscount } from '@/lib/clientDiscounts/api';
 import { useLanguage } from '@/lib/i18n/language';
 import { useIsNativeIosApp } from '@/lib/nativeApp';
 
@@ -19,6 +21,9 @@ type Checkout = { kind: 'subscribe'; tier: Exclude<PlanTier, 'free'> } | { kind:
 export default function PlanTab() {
   const { t } = useLanguage();
   const { show } = usePlanMoney();
+  const { token: discountToken } = useAuth();
+  const postDiscount = useMyDiscount(discountToken, 'extra_post');
+  const postPrice = postDiscount ? discounted(PER_POST_PRICE, postDiscount.percent) : PER_POST_PRICE;
   const subscription = useSubscription();
   const [checkout, setCheckout] = useState<Checkout>(null);
   const [cancelling, setCancelling] = useState(false);
@@ -65,7 +70,7 @@ export default function PlanTab() {
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5">
           <h3 className="text-base font-semibold text-slate-900">{t('Just one more post?')}</h3>
-          <p className="mb-3 text-sm text-slate-500">{t('Pay {price} for a single extra listing without changing plan.', { price: show(PER_POST_PRICE) })}</p>
+          <p className="mb-3 text-sm text-slate-500">{t('Pay {price} for a single extra listing without changing plan.', { price: show(postPrice) })}</p>
           <button type="button" onClick={() => setCheckout({ kind: 'per_post' })} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:border-slate-900">
             {t('Buy one extra post')}
           </button>

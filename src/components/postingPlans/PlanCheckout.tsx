@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/finance/money";
 import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { PLAN_LABELS, PLAN_PRICES, PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
+import { discounted, useMyDiscount } from "@/lib/clientDiscounts/api";
 import { createPerPostCheckout, createSubscribeCheckout } from "@/lib/postingPlans/api";
 import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/finance/ui";
@@ -33,7 +34,11 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
   const [updatedTier, setUpdatedTier] = useState<PlanTier | null>(null);
   const iosApp = useIsNativeIosApp();
 
-  const amount = mode.kind === "subscribe" ? PLAN_PRICES[mode.tier] : PER_POST_PRICE;
+  const planDiscount = useMyDiscount(token, "plans");
+  const postDiscount = useMyDiscount(token, "extra_post");
+  const discount = mode.kind === "subscribe" ? planDiscount : postDiscount;
+  const fullAmount = mode.kind === "subscribe" ? PLAN_PRICES[mode.tier] : PER_POST_PRICE;
+  const amount = discount ? discounted(fullAmount, discount.percent) : fullAmount;
   const title = mode.kind === "subscribe" ? t("Subscribe to {plan}", { plan: t(PLAN_LABELS[mode.tier]) }) : t("Pay for one extra post");
 
   const handleCheckout = async () => {
