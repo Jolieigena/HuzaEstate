@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import QuickAddDialog from "@/components/shop/QuickAddDialog";
 import { useToast } from "@/lib/toast-context";
 import { VerifiedBadge } from "@/components/shop/SupplierBadges";
 import { useBasket } from "@/lib/furniture/basket";
@@ -38,7 +40,9 @@ export default function ProductCard({ product }: { product: Product }) {
   const money = useDisplayCurrency();
   const cart = useBasket();
   const { showToast } = useToast();
-  const inCart = cart.lines.find((l) => l.productId === product.id)?.quantity ?? 0;
+  // All of this product in the cart, whatever the size or colour.
+  const inCart = cart.lines.filter((l) => l.productId === product.id).reduce((sum, l) => sum + l.quantity, 0);
+  const [choosing, setChoosing] = useState(false);
   const out = product.stock === "out_of_stock";
   const hasOptions = (product.variants ?? []).length > 0;
   const rating = product.supplier?.rating;
@@ -95,23 +99,26 @@ export default function ProductCard({ product }: { product: Product }) {
           {deliveryLine && <p className="text-xs text-slate-400">{deliveryLine}{deliveryDays ? ` · ${deliveryDays}` : ""}</p>}
           {product.stock === "in_stock" && product.quantity !== undefined && product.quantity > 0 && product.quantity <= 5 && <p className="text-xs font-bold text-amber-600">Only {product.quantity} left</p>}
         </div>
-        {hasOptions ? (
-          <Link href={`/shop/${product.id}`} className={`shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-[#2ec440] hover:text-[#219b31] ${out ? "pointer-events-none opacity-40" : ""}`}>
-            Choose options
-          </Link>
-        ) : (
         <button
           type="button"
           disabled={out}
+          aria-label={inCart > 0 ? `${product.name}: ${inCart} in your cart, add more` : `Add ${product.name} to your cart`}
           onClick={() => {
+            if (hasOptions) {
+              setChoosing(true);
+              return;
+            }
             cart.add(product);
             showToast(`${product.name} added to your cart.`);
           }}
-          className={`shrink-0 rounded-xl border px-3 py-2 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${inCart > 0 ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]"}`}
+          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${inCart > 0 ? "border-[#2ec440] bg-[#2ec440]/10 text-[#219b31]" : "border-slate-200 text-slate-700 hover:border-[#2ec440] hover:text-[#219b31]"}`}
         >
-          {inCart > 0 ? `In cart (${inCart})` : "Add to cart"}
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l2.4 12.2a1 1 0 001 .8h9.7a1 1 0 001-.8L21 7H6M9 20a1 1 0 100-2 1 1 0 000 2zm9 0a1 1 0 100-2 1 1 0 000 2z" />
+          </svg>
+          {inCart > 0 && <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2ec440] px-1 text-[11px] font-bold text-white">{inCart}</span>}
         </button>
-        )}
+        {hasOptions && choosing && <QuickAddDialog product={product} open={choosing} onClose={() => setChoosing(false)} />}
       </div>
     </div>
   );

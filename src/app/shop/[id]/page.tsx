@@ -14,6 +14,8 @@ import { useBasket } from "@/lib/furniture/basket";
 import { useDisplayCurrency } from "@/lib/currency/display";
 import { deliveryText } from "@/lib/furniture/deliveryText";
 import { FurnitureApi, STOCK_LABELS, type Product } from "@/lib/furniture/api";
+import InfiniteSentinel from "@/components/shared/InfiniteSentinel";
+import { useInfinitePages } from "@/lib/useInfinitePages";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const money = useDisplayCurrency();
@@ -249,6 +251,34 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
           </div>
         </section>
       )}
+
+      <MoreFromShop exclude={[product.id, ...related.map((r) => r.id)]} />
     </main>
+  );
+}
+
+/** The rest of the shop under a product, newest first, loading more as the buyer scrolls, so the page never ends in a dead end. */
+function MoreFromShop({ exclude }: { exclude: string[] }) {
+  const money = useDisplayCurrency();
+  const feed = useInfinitePages<Product>(
+    `more|${money.currency ?? ""}`,
+    (page) =>
+      FurnitureApi.list({ sort: "newest", page, limit: 24, inCurrency: money.currency ?? undefined }).then((result) =>
+        result.ok ? { ok: true as const, items: result.data.products, total: result.data.total } : { ok: false as const, error: result.error },
+      ),
+    (item) => item.id,
+  );
+  const items = feed.items.filter((item) => !exclude.includes(item.id));
+  if (items.length === 0) return null;
+  return (
+    <section className="mt-14">
+      <h2 className="text-xl font-black text-slate-900">More from the shop</h2>
+      <div className="mt-5 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((item) => (
+          <ProductCard key={item.id} product={item} />
+        ))}
+      </div>
+      <InfiniteSentinel onVisible={feed.loadMore} hasMore={feed.hasMore} loading={feed.loadingMore} />
+    </section>
   );
 }
