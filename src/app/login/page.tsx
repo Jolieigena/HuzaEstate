@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,7 +16,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useLanguage();
-  const { loginWithCredentials } = useAuth();
+  const { loginWithCredentials, account, isAuthReady } = useAuth();
   const [email, setEmail] = useState(() => (searchParams.get('email') ?? '').slice(0, 254));
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -24,11 +24,20 @@ function LoginForm() {
   const [error, setError] = useState('');
 
   const redirectParam = searchParams.get('redirect');
+
+  // A link that asks for sign-in and then a page (the discount email does) goes straight to that page for someone already signed in,
+  // unless it names another email address, when they sign in with that one.
+  const emailParam = (searchParams.get('email') ?? '').trim().toLowerCase();
+  useEffect(() => {
+    if (!isAuthReady || !account || !redirectParam || isSubmitting || account.mustChangePassword) return;
+    if (emailParam && account.email?.toLowerCase() !== emailParam) return;
+    router.replace(accountDestination(account, redirectParam));
+  }, [isAuthReady, account, redirectParam, emailParam, isSubmitting, router]);
   // Everything to do with an access code is for sellers, so someone who came here from the access-code page signs up as a seller (code kept), not as a customer.
   const fromAccessCode = redirectParam?.startsWith('/redeem-code') ?? false;
   const signupHref = fromAccessCode
     ? `/become-a-seller${redirectParam!.includes('?') ? redirectParam!.slice(redirectParam!.indexOf('?')) : ''}`
-    : redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}` : '/signup';
+    : redirectParam ? `/signup?redirect=${encodeURIComponent(redirectParam)}${emailParam ? `&email=${encodeURIComponent(emailParam)}` : ''}` : '/signup';
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

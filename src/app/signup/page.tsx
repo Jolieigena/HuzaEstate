@@ -24,7 +24,7 @@ function SignupForm() {
   const detectedCountry = useCurrentCountry();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => (searchParams.get('email') ?? '').slice(0, 254));
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
