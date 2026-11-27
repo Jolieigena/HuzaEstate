@@ -75,8 +75,9 @@ async function call<T>(path: string, token: string, init: { method?: string; bod
 
 export const ClientDiscountsApi = {
   list: (token: string, search = "") => call<{ discounts: ClientDiscount[] }>(`/client-discounts${search ? `?search=${encodeURIComponent(search)}` : ""}`, token),
-  create: (token: string, input: DiscountInput) => call<{ discount: ClientDiscount }>("/client-discounts", token, { method: "POST", body: input }),
+  create: (token: string, input: DiscountInput) => call<{ discount: ClientDiscount; emailDelivered: boolean }>("/client-discounts", token, { method: "POST", body: input }),
   end: (token: string, id: string) => call<{ discount: ClientDiscount }>(`/client-discounts/${encodeURIComponent(id)}/end`, token, { method: "POST", body: {} }),
+  resend: (token: string, id: string) => call<{ discount: ClientDiscount; emailDelivered: boolean }>(`/client-discounts/${encodeURIComponent(id)}/resend`, token, { method: "POST", body: {} }),
   mine: (token: string) => call<{ discounts: MyDiscount[] }>("/client-discounts/me", token),
 };
 

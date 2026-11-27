@@ -76,6 +76,13 @@ export function ClientDiscountsPage({ scope, embedded = false }: { scope: "platf
     }
   };
 
+  const resend = async (discount: ClientDiscount) => {
+    if (!token) return;
+    const result = await ClientDiscountsApi.resend(token, discount.id);
+    if (!result.ok) showToast(result.error, "error");
+    else showToast(result.data.emailDelivered ? `Email sent again to ${discount.email}.` : "The email couldn't be delivered. Tell the client yourself.", result.data.emailDelivered ? "success" : "error");
+  };
+
   return (
     <SectionFrame embedded={embedded} title="Client discounts" action={canManage ? <PrimaryButton type="button" onClick={() => setCreating(true)}>Give a discount</PrimaryButton> : undefined}>
       <RequirePermission granted={canManage}>
@@ -105,9 +112,14 @@ export function ClientDiscountsPage({ scope, embedded = false }: { scope: "platf
                 <td className="px-6 py-4 text-slate-500">{d.organizationName || d.issuedBy}</td>
                 <td className="px-6 py-4 text-right">
                   {(d.status === "active" || d.status === "scheduled") && (
-                    <SecondaryButton type="button" onClick={() => end(d)}>
-                      End now
-                    </SecondaryButton>
+                    <div className="flex justify-end gap-2 whitespace-nowrap">
+                      <SecondaryButton type="button" onClick={() => resend(d)}>
+                        Send again
+                      </SecondaryButton>
+                      <SecondaryButton type="button" onClick={() => end(d)}>
+                        End now
+                      </SecondaryButton>
+                    </div>
                   )}
                 </td>
               </tr>
@@ -160,7 +172,8 @@ function GiveDiscountDialog({ onClose, onSaved }: { onClose: () => void; onSaved
     const result = await ClientDiscountsApi.create(token, { email: email.trim(), percent: pct, appliesTo: kinds, startsAt, endsAt, ...(note.trim() ? { note: note.trim() } : {}) });
     setBusy(false);
     if (!result.ok) return setError(result.error);
-    showToast(`${pct}% discount given to ${result.data.discount.email}.`);
+    if (result.data.emailDelivered) showToast(`${pct}% discount given to ${result.data.discount.email}. They were emailed.`);
+    else showToast(`${pct}% discount given, but the email couldn't be delivered. Tell the client yourself.`, "error");
     onSaved();
   };
 
