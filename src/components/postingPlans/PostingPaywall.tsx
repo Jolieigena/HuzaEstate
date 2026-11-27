@@ -9,6 +9,7 @@ import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import { PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { useAuth } from "@/lib/auth-context";
 import { discounted, useMyDiscount } from "@/lib/clientDiscounts/api";
+import ConfirmEmailForDiscount from "@/components/shared/ConfirmEmailForDiscount";
 import { useLanguage } from "@/lib/i18n/language";
 import { useIsNativeIosApp } from "@/lib/nativeApp";
 
@@ -54,6 +55,8 @@ export default function PostingPaywall({ onClose }: { onClose: () => void }) {
         <h2 className="text-2xl font-black text-slate-900 mb-2">{t("You've used your free posts this month")}</h2>
         <p className="text-slate-500">{t("Pick a plan below, or pay once to publish just this listing.")}</p>
       </div>
+
+      <ConfirmEmailForDiscount token={discountToken} className="mb-8" />
 
       <PricingCards
         currentTier={subscription.paidTier}

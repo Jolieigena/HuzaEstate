@@ -9,6 +9,7 @@ import { accountDestination } from '@/lib/navigation';
 import PasswordInput from '@/components/shared/PasswordInput';
 import GoogleAuthButton, { GOOGLE_NO_ACCOUNT_MESSAGE } from '@/components/auth/GoogleAuthButton';
 import WhatsappSignIn from '@/components/auth/WhatsappSignIn';
+import CheckYourEmail from '@/components/auth/CheckYourEmail';
 import { useLanguage } from '@/lib/i18n/language';
 import LanguagePicker from '@/components/LanguagePicker';
 
@@ -22,6 +23,8 @@ function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // The password was right, but this sign-up has not confirmed its email yet.
+  const [unconfirmed, setUnconfirmed] = useState(false);
 
   const redirectParam = searchParams.get('redirect');
   // Everything to do with an access code is for sellers, so someone who came here from the access-code page signs up as a seller (code kept), not as a customer.
@@ -34,10 +37,12 @@ function LoginForm() {
     e.preventDefault();
     if (isSubmitting) return;
     setError('');
+    setUnconfirmed(false);
     setIsSubmitting(true);
     const result = await loginWithCredentials(email, password, rememberMe);
     if (!result.ok) {
-      setError(result.error);
+      if (result.reason === 'email_unconfirmed') setUnconfirmed(true);
+      else setError(result.error);
       setIsSubmitting(false);
       return;
     }
@@ -52,6 +57,12 @@ function LoginForm() {
     <>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('Welcome back')}</h1>
       <p className="text-slate-500 mb-8">{t('Please enter your details to sign in.')}</p>
+
+      {unconfirmed && (
+        <div className="mb-5">
+          <CheckYourEmail email={email.trim().toLowerCase()} next={redirectParam || undefined} />
+        </div>
+      )}
 
       {error && (
         <p className="mb-5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-semibold px-4 py-3">

@@ -47,6 +47,7 @@ export default function WhatsappSignIn({ onSuccess }: { onSuccess: (account: Acc
   // Fill in the number used last time on this browser.
   useEffect(() => {
     const saved = rememberedNumber();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is only readable after the page has loaded
     if (saved) setPhone((current) => (cleanPhone(current) ? current : saved));
   }, []);
 

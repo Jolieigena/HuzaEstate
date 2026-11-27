@@ -65,6 +65,7 @@ export default function EditPanel({
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the saved chat lives in localStorage, readable only after load
     if (open) setMessages(load(key));
   }, [open, key]);
 

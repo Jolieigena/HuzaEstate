@@ -10,6 +10,7 @@ import { useSubscription } from '@/lib/postingPlans/hooks';
 import { PER_POST_PRICE, type PlanTier } from '@/lib/postingPlans/types';
 import { useAuth } from '@/lib/auth-context';
 import { discounted, useMyDiscount } from '@/lib/clientDiscounts/api';
+import ConfirmEmailForDiscount from "@/components/shared/ConfirmEmailForDiscount";
 import { useLanguage } from '@/lib/i18n/language';
 import { useIsNativeIosApp } from '@/lib/nativeApp';
 
@@ -41,6 +42,7 @@ export default function PlanTab() {
 
   return (
     <div className="flex flex-col gap-8">
+      <ConfirmEmailForDiscount token={discountToken} />
       <SubscriptionPanel onCancel={() => setCancelling(true)} onUpgrade={(tier) => setCheckout({ kind: 'subscribe', tier })} />
 
       <section>

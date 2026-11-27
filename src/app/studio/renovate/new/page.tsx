@@ -128,6 +128,8 @@ function NewProjectContent() {
     const draft = draftId ? RenovationProjectService.getById(draftId) : undefined;
     // Still on the first question (nothing past "what are you renovating" done) and not started from a search: reopen it.
     if (draft && !words.trim() && draft.assessment.completedSteps.every((k) => k === "areas") && !draft.concepts?.length) {
+      // Reads this browser's saved draft, which only exists after the page has loaded.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProject(draft);
       setInitial(initialFrom(draft));
       setStep("property");

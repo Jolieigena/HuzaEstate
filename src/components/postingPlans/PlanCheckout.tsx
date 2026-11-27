@@ -7,6 +7,7 @@ import { usePlanMoney } from "@/lib/postingPlans/usePlanMoney";
 import PlanCurrencyToggle from "./PlanCurrencyToggle";
 import { PLAN_LABELS, PLAN_PRICES, PER_POST_PRICE, type PlanTier } from "@/lib/postingPlans/types";
 import { discounted, useMyDiscount } from "@/lib/clientDiscounts/api";
+import ConfirmEmailForDiscount from "@/components/shared/ConfirmEmailForDiscount";
 import { createPerPostCheckout, createSubscribeCheckout } from "@/lib/postingPlans/api";
 import { notifySubscriptionChanged } from "@/lib/postingPlans/hooks";
 import { Card, PrimaryButton, SecondaryButton } from "@/components/finance/ui";
@@ -94,6 +95,8 @@ export default function PlanCheckout({ mode, onClose }: { mode: Mode; onClose: (
           {t("Cancel")}
         </button>
       </div>
+
+      <ConfirmEmailForDiscount token={token} className="mb-4" />
 
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">

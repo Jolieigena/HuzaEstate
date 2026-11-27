@@ -13,6 +13,7 @@ import { useCurrentCountry } from "@/lib/geo/useCurrentCountry";
 import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from "@/lib/passwordRules";
 import { RoleRequestsApi } from "@/lib/roleRequests/api";
 import { useToast } from "@/lib/toast-context";
+import CheckYourEmail from "@/components/auth/CheckYourEmail";
 
 const PATH = "/open-a-shop";
 const fieldClass = "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[15px] focus:border-[#2ec440] focus:outline-none focus:ring-4 focus:ring-[#2ec440]/15 transition";
@@ -39,6 +40,8 @@ export default function OpenAShopPage() {
   const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
+  // Signed up, waiting for the emailed link; it brings them back to this page, signed in, to finish opening the shop.
+  const [confirmSent, setConfirmSent] = useState<{ email: string; emailSent: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
 
   if (!isAuthReady) return <p className="py-24 text-center text-sm font-semibold text-slate-400">Loading…</p>;
@@ -83,6 +86,10 @@ export default function OpenAShopPage() {
     </main>
   );
 
+  if (confirmSent) {
+    return panel("Confirm your email", <CheckYourEmail email={confirmSent.email} emailSent={confirmSent.emailSent} next="/open-a-shop" />);
+  }
+
   if (!needsAccount && roles.includes("supplier")) {
     return panel(
       "Your shop is open",
@@ -125,10 +132,15 @@ export default function OpenAShopPage() {
         termsAccepted,
         country: shownCountry,
         phone: cleanPhone(phone),
+        next: "/open-a-shop",
       });
       if (!created.ok) {
         setSaving(false);
         return setError(created.error);
+      }
+      if ("confirmEmail" in created) {
+        setSaving(false);
+        return setConfirmSent({ email: created.email, emailSent: created.emailSent });
       }
       sessionToken = created.token;
     }

@@ -7,6 +7,7 @@ import { formatMoney } from '@/lib/finance/money';
 import { PROMOTION_PACKAGES, isPromotedNow, promotionDaysLeft } from '@/lib/promotion/types';
 import { createPromoteCheckout } from '@/lib/promotion/api';
 import { discounted, useMyDiscount } from '@/lib/clientDiscounts/api';
+import ConfirmEmailForDiscount from "@/components/shared/ConfirmEmailForDiscount";
 import { getGalleryImages } from '@/lib/properties/gallery';
 import { PHOTO_LIMIT_ENABLED } from '@/components/PhotoLimitNotice';
 import type { Property } from '@/lib/properties/types';
@@ -97,6 +98,7 @@ export default function PromoteListingModal({ property, onClose }: PromoteListin
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
+      <ConfirmEmailForDiscount token={token} className="mb-4" />
       <p className="text-sm text-slate-500 mb-5">
         <span className="font-semibold text-slate-700">{property.title}</span> — {t('shown on the top row of Browse Properties for buyers, with an eye-catching badge on the card')}
         {!alreadyActive && (hiddenPhotos > 0 || hasHiddenVideo) ? (

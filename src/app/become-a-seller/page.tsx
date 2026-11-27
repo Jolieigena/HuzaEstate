@@ -19,6 +19,7 @@ import { usePlanMoney } from '@/lib/postingPlans/usePlanMoney';
 import Select from "@/components/shared/Select";
 import { useLanguage } from '@/lib/i18n/language';
 import { useIsNativeIosApp } from '@/lib/nativeApp';
+import CheckYourEmail from '@/components/auth/CheckYourEmail';
 
 function isPlanTier(value: string | null): value is PlanTier {
   return value === 'free' || value === 'silver' || value === 'gold' || value === 'diamond';
@@ -63,6 +64,8 @@ function BecomeASellerForm() {
   const usingCode = accessCode.trim() !== '';
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Signed up, waiting for the emailed link; it brings them back here, signed in, with the same plan chosen.
+  const [confirmSent, setConfirmSent] = useState<{ email: string; emailSent: boolean; next: string } | null>(null);
   // Stripe not configured server-side — fall back to the existing simulated
   // checkout instead of erroring, same "unset key = demo mode" convention as
   // WORLD_LABS_API_KEY / GEMINI_API_KEY elsewhere in this app.
@@ -147,9 +150,15 @@ function BecomeASellerForm() {
       return;
     }
 
-    const result = await signup({ firstName, lastName, email, address, password, termsAccepted, country: detectedCountry?.name, sellerType, companyName: sellerType === 'agent' && companyName.trim() ? companyName.trim() : undefined, phone: phone.trim() || undefined });
+    const next = `${window.location.pathname}${window.location.search}`;
+    const result = await signup({ firstName, lastName, email, address, password, termsAccepted, country: detectedCountry?.name, sellerType, companyName: sellerType === 'agent' && companyName.trim() ? companyName.trim() : undefined, phone: phone.trim() || undefined, next, ...(usingCode ? { accessCode: accessCode.trim() } : {}) });
     if (!result.ok) {
       setError(result.error);
+      setSubmitting(false);
+      return;
+    }
+    if ('confirmEmail' in result) {
+      setConfirmSent({ email: result.email, emailSent: result.emailSent, next });
       setSubmitting(false);
       return;
     }
@@ -203,6 +212,9 @@ function BecomeASellerForm() {
           </p>
         )}
 
+        {confirmSent ? (
+          <CheckYourEmail email={confirmSent.email} emailSent={confirmSent.emailSent} next={confirmSent.next} />
+        ) : (
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
             <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wide">{t('Contact Information')}</h2>
@@ -372,8 +384,9 @@ function BecomeASellerForm() {
             {submitting ? t('Submitting…') : usingCode ? t('Apply Code & Create Seller Account') : paidTier ? t('Continue to Payment') : t('Create Seller Account')}
           </button>
         </form>
+        )}
 
-        {!isLoggedIn && (
+        {!isLoggedIn && !confirmSent && (
           <p className="mt-6 text-center text-slate-500 text-sm">
             {t('Already have an account?')}{' '}
             <Link

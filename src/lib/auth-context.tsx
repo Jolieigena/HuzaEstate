@@ -42,6 +42,8 @@ export interface Account {
   isApprovedSeller: boolean;
   /** The WhatsApp number this account signs in with, once proven with a code. */
   whatsappPhone?: string;
+  /** The holder proved they read this email (confirm link, password reset, or Google/Apple). Client discounts need it. */
+  emailVerified?: boolean;
   /** True for accounts created by an administrator (or the bootstrap admin account) that are
    * still on their own emailed, randomly generated password. The app should force a
    * change-password step before letting the account use anything else. */
@@ -58,6 +60,10 @@ export interface Account {
 }
 
 export interface SignupInput {
+  /** The page on this site the confirm link brings them back to after signing in. */
+  next?: string;
+  /** An access code sent to this email: it proves the inbox, so the account opens straight away (no confirm link). */
+  accessCode?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -84,7 +90,9 @@ export interface SignupInput {
 /** Google sign-in outcome; noAccount means no account exists for that Google identity and none was created. */
 export type GoogleAuthResult = AuthResult | { ok: false; error: string; noAccount: true };
 
-export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string };
+export type AuthResult = { ok: true; account: Account; token: string } | { ok: false; error: string; reason?: string };
+/** A new email+password account has no session yet: its holder must open the link emailed to them first. */
+export type SignupResult = AuthResult | { ok: true; confirmEmail: true; email: string; emailSent: boolean };
 
 export interface CreateUserInput {
   firstName: string;
@@ -122,7 +130,7 @@ export type CreateUserResult = { ok: true; emailDelivered: boolean } | { ok: fal
 
 interface AuthContextValue {
   isLoggedIn: boolean;
-  signup: (input: SignupInput) => Promise<AuthResult>;
+  signup: (input: SignupInput) => Promise<SignupResult>;
   loginWithCredentials: (email: string, password: string, rememberMe?: boolean) => Promise<AuthResult>;
   /** Signs in with a Google ID token. A new Google identity gets a customer account only when termsAccepted is true (sign-up page). */
   loginWithGoogle: (idToken: string, options?: { termsAccepted?: boolean; country?: string }) => Promise<GoogleAuthResult>;
@@ -173,11 +181,15 @@ function deriveActiveRole(account: Account, preferred?: string | null): AccountR
 }
 
 async function parseErrorMessage(res: Response): Promise<string> {
+  return (await parseError(res)).error;
+}
+
+async function parseError(res: Response): Promise<{ error: string; reason?: string }> {
   try {
     const data = await res.json();
-    return data?.message || data?.error || "Something went wrong. Please try again.";
+    return { error: data?.message || data?.error || "Something went wrong. Please try again.", reason: typeof data?.reason === "string" ? data.reason : undefined };
   } catch {
-    return "Something went wrong. Please try again.";
+    return { error: "Something went wrong. Please try again." };
   }
 }
 
@@ -280,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { window.fetch = original; };
   }, []);
 
-  const signup = async (input: SignupInput): Promise<AuthResult> => {
+  const signup = async (input: SignupInput): Promise<SignupResult> => {
     try {
       const res = await fetch(`${API_URL}/auth/signup`, {
         method: "POST",
@@ -289,6 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
       const data = await res.json();
+      if (data.confirmEmail) return { ok: true, confirmEmail: true, email: String(data.email || input.email), emailSent: data.emailSent !== false };
       const nextAccount = data.account as Account;
       applySession(data.token as string, nextAccount);
       return { ok: true, account: nextAccount, token: data.token as string };
@@ -304,7 +317,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         headers: { "Content-Type": "application/json", "x-huza-client": "web" },
         body: JSON.stringify({ email, password, rememberMe }),
       });
-      if (!res.ok) return { ok: false, error: await parseErrorMessage(res) };
+      if (!res.ok) return { ok: false, ...(await parseError(res)) };
       const data = await res.json();
       const nextAccount = data.account as Account;
       applySession(data.token as string, nextAccount);

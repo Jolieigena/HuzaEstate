@@ -77,31 +77,46 @@ export const ClientDiscountsApi = {
   list: (token: string, search = "") => call<{ discounts: ClientDiscount[] }>(`/client-discounts${search ? `?search=${encodeURIComponent(search)}` : ""}`, token),
   create: (token: string, input: DiscountInput) => call<{ discount: ClientDiscount }>("/client-discounts", token, { method: "POST", body: input }),
   end: (token: string, id: string) => call<{ discount: ClientDiscount }>(`/client-discounts/${encodeURIComponent(id)}/end`, token, { method: "POST", body: {} }),
-  mine: (token: string) => call<{ discounts: MyDiscount[] }>("/client-discounts/me", token),
+  // confirmEmail: discounts are waiting, but they only apply once the account's email is confirmed.
+  mine: (token: string) => call<{ discounts: MyDiscount[]; confirmEmail?: boolean }>("/client-discounts/me", token),
 };
 
-// The signed-in client's discounts, asked once per sign-in and shared by every price on the page.
-let cache: { token: string; promise: Promise<MyDiscount[]> } | null = null;
-function loadMine(token: string): Promise<MyDiscount[]> {
-  if (!cache || cache.token !== token) cache = { token, promise: ClientDiscountsApi.mine(token).then((r) => (r.ok ? r.data.discounts : [])) };
+type Mine = { discounts: MyDiscount[]; confirmEmail: boolean };
+
+// The signed-in client's discounts, asked once per sign-in and shared by every price on the page. A confirmed email brings a new
+// token, so the list is asked again then.
+let cache: { token: string; promise: Promise<Mine> } | null = null;
+function loadMine(token: string): Promise<Mine> {
+  if (!cache || cache.token !== token) {
+    cache = { token, promise: ClientDiscountsApi.mine(token).then((r) => (r.ok ? { discounts: r.data.discounts, confirmEmail: r.data.confirmEmail === true } : { discounts: [], confirmEmail: false })) };
+  }
   return cache.promise;
 }
 
-/** The best discount the client has for one kind of purchase, or null. Null for a visitor who is not signed in. */
-export function useMyDiscount(token: string | null, kind: DiscountKind): MyDiscount | null {
-  const [discounts, setDiscounts] = useState<MyDiscount[]>([]);
+function useMine(token: string | null): Mine | null {
+  const [mine, setMine] = useState<Mine | null>(null);
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
-    loadMine(token).then((list) => {
-      if (!cancelled) setDiscounts(list);
+    loadMine(token).then((result) => {
+      if (!cancelled) setMine(result);
     });
     return () => {
       cancelled = true;
     };
   }, [token]);
-  if (!token) return null;
-  return discounts.filter((d) => d.appliesTo.includes(kind)).sort((a, b) => b.percent - a.percent)[0] ?? null;
+  return token ? mine : null;
+}
+
+/** The best discount the client has for one kind of purchase, or null. Null for a visitor who is not signed in. */
+export function useMyDiscount(token: string | null, kind: DiscountKind): MyDiscount | null {
+  const mine = useMine(token);
+  return mine?.discounts.filter((d) => d.appliesTo.includes(kind)).sort((a, b) => b.percent - a.percent)[0] ?? null;
+}
+
+/** True when the client has a discount waiting that needs their email confirmed first. */
+export function useDiscountNeedsConfirmedEmail(token: string | null): boolean {
+  return useMine(token)?.confirmEmail === true;
 }
 
 /** A price with the client's discount taken off. */

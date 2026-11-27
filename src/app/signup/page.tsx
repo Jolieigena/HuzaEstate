@@ -11,6 +11,7 @@ import PasswordInput from '@/components/shared/PasswordInput';
 import PasswordChecklist from '@/components/shared/PasswordChecklist';
 import { PASSWORD_MIN_LENGTH, passwordIsAcceptable } from '@/lib/passwordRules';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import CheckYourEmail from '@/components/auth/CheckYourEmail';
 import PhoneInput from '@/components/shared/PhoneInput';
 import { useLanguage } from '@/lib/i18n/language';
 
@@ -30,6 +31,7 @@ function SignupForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [confirmSent, setConfirmSent] = useState<{ email: string; emailSent: boolean } | null>(null);
 
   const redirectParam = searchParams.get('redirect');
   const loginHref = redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login';
@@ -43,14 +45,27 @@ function SignupForm() {
       return;
     }
     setIsSubmitting(true);
-    const result = await signup({ firstName, lastName, email, phone, password, termsAccepted, country: detectedCountry?.name });
+    const result = await signup({ firstName, lastName, email, phone, password, termsAccepted, country: detectedCountry?.name, next: redirectParam || undefined });
     if (!result.ok) {
       setError(result.error);
       setIsSubmitting(false);
       return;
     }
+    if ('confirmEmail' in result) {
+      setConfirmSent({ email: result.email, emailSent: result.emailSent });
+      return;
+    }
     router.push(accountDestination(result.account, redirectParam));
   };
+
+  if (confirmSent) {
+    return (
+      <>
+        <h1 className="text-2xl font-bold text-slate-900 mb-6">{t('Create an account')}</h1>
+        <CheckYourEmail email={confirmSent.email} emailSent={confirmSent.emailSent} next={redirectParam || undefined} />
+      </>
+    );
+  }
 
   return (
     <>
